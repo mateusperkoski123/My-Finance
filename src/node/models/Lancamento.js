@@ -54,6 +54,14 @@ class Lancamento {
             params
         );
         const totalRegistros = countRes[0].total || 0;
+        const [somaRes] = await db.query(
+            `SELECT COALESCE(SUM(ABS(l.valor)), 0) AS soma
+             FROM lancamentos l
+             LEFT JOIN categorias c ON l.categoria_id = c.id
+             ${where}`,
+            params
+        );
+        const somaFiltrada = parseFloat(somaRes[0].soma) || 0;
         let effectivePorPagina = porPagina;
         let effectiveOffset = (pagina - 1) * porPagina;
 
@@ -142,6 +150,7 @@ class Lancamento {
             lancamentos: rows,
             grupos,
             totalRegistros,
+            somaFiltrada,
             totalPaginas,
             paginaAtual: pagina
         };

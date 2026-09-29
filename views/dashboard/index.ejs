@@ -214,6 +214,17 @@ function gfAtualizarParam(chave, valor) {
 }
 </script>
 
+<% const _filtroAtivo = (filtros.tipo && filtros.tipo !== 'todas') || filtros.busca || filtros.categoria_id || filtros.subcategoria_id; %>
+<% if (_filtroAtivo) { %>
+<div class="filtro-ativo" role="status">
+    <span><i class="ph ph-funnel"></i>
+        <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'Somente despesas' : ((filtros.tipo === 'receitas' || filtros.tipo === 'receita') ? 'Somente receitas' : 'Filtro ativo') %>
+        · <strong><%= totalRegistros %></strong> lançamento(s) · total <strong><%= moeda(somaFiltrada) %></strong>
+    </span>
+    <a href="<%= periodo.customizado ? '/?data_inicio=' + periodo.inicio + '&data_fim=' + periodo.fim : '/?mes=' + periodo.mes + '&ano=' + periodo.ano %>">Limpar filtros</a>
+</div>
+<% } %>
+
 <!-- Conteúdo: Exibição Agrupada (Accordion) ou Tabela Padrão -->
 <div class="card" style="border-radius: 16px; padding: 20px;">
     <% if (agrupamento && agrupamento !== 'sem_agrupamento' && grupos && grupos.length > 0) { %>

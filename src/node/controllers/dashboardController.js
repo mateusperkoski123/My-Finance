@@ -132,6 +132,7 @@ const dashboardController = {
             lancamentos: dadosLancamentos.lancamentos,
             grupos: dadosLancamentos.grupos,
             totalRegistros: dadosLancamentos.totalRegistros,
+            somaFiltrada: dadosLancamentos.somaFiltrada,
             totalPaginas: dadosLancamentos.totalPaginas,
             paginaAtual: dadosLancamentos.paginaAtual,
             porPagina
