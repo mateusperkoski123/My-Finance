@@ -1502,3 +1502,7 @@ h1 > .ph, .page-header h1 .ph { vertical-align: -0.12em; margin-right: 6px; colo
 
 .sub-dica { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }
 .sub-dica a { color: var(--text); font-weight: 600; }
+
+/* O botao flutuante some enquanto um formulario (modal) esta aberto */
+body:has(.modal-backdrop.is-open) .fab,
+body:has(.modal-backdrop.is-open) .fab-fundo { display: none !important; }
