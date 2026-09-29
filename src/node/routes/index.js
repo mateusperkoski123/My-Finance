@@ -22,7 +22,7 @@ const configuracoesController = require('../controllers/configuracoesController'
 const { requireAuth, guestOnly } = require('../middleware/authMiddleware');
 
 const multer = require('multer');
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
 
 // Public downloadable simulation JSON file route
 router.get('/simulacao_comercial_2026.json', (req, res) => {
@@ -71,6 +71,7 @@ router.post('/categorias/:id/restaurar', requireAuth, categoriasController.resta
 
 // Relatorios routes
 router.get('/relatorios', requireAuth, relatoriosController.index);
+router.get('/relatorios/exportar', requireAuth, relatoriosController.exportar);
 
 // Divisao de Patrimonio route (Fase 5 - Placeholder)
 router.get('/patrimonio', requireAuth, (req, res) => {

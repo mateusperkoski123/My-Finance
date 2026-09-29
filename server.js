@@ -16,7 +16,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Trust proxy for Hostinger / Nginx reverse proxy
-app.set('trust proxy', true);
+app.set('trust proxy', 1);
 
 // Helmet security headers
 app.use(
@@ -112,11 +112,11 @@ app.use((req, res, next) => {
     next();
 });
 
-// Saldo por conta exibido no Painel e nos Relatorios (atualiza a cada carregamento)
+// Saldo por conta exibido na aba de Lancamentos Pendentes (atualiza a cada carregamento)
 const Conta = require('./src/node/models/Conta');
 app.use(async (req, res, next) => {
     res.locals.contasSaldos = null;
-    if (req.method === 'GET' && req.user && (req.path === '/' || (req.path === '/relatorios' && req.query.aba === 'pendentes'))) {
+    if (req.method === 'GET' && req.user && (req.path === '/relatorios' && req.query.aba === 'pendentes')) {
         try {
             res.locals.contasSaldos = await Conta.buscarPorUsuario(req.user.id, false);
         } catch (err) {

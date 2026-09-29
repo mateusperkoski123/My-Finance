@@ -8,7 +8,7 @@ const categoriasController = {
         const busca = req.query.busca || '';
         const comSubcategoria = req.query.com_subcategoria === '1';
 
-        let arvore = await Categoria.buscarArvore(userId, abaArquivadas, busca);
+        let arvore = await Categoria.buscarArvoreGerenciar(userId, { arquivadas: abaArquivadas, busca });
         if (comSubcategoria) {
             arvore = arvore.filter(c => c.subcategorias && c.subcategorias.length > 0);
         }

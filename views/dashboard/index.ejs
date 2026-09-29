@@ -57,11 +57,42 @@ const nomesMeses = {
     <div style="font-size: 32px; font-weight: 800; color: <%= resumo.saldo_disponivel >= 0 ? 'var(--green)' : 'var(--red)' %>;">
         <%= moeda(resumo.saldo_disponivel) %>
     </div>
+    <% if (Math.abs(resumo.saldo_previsto - resumo.saldo_disponivel) > 0.5) { %>
     <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
-        <span class="muted"><%= t('painel.saldo_previsto') %>:</span>
+        <span class="muted"><%= t('painel.saldo_previsto') %> (após pendências):</span>
         <strong style="color: var(--text); font-weight: 700;"><%= moeda(resumo.saldo_previsto) %></strong>
     </div>
+    <% } %>
 </div>
+
+<% if (pendenciasUrgentes && pendenciasUrgentes.total > 0) { %>
+<!-- Pendencias vencidas ou que vencem hoje -->
+<section class="card pendencias" aria-label="Pendências">
+    <div class="pendencias__topo">
+        <span class="pendencias__titulo"><i class="ph ph-warning-circle" style="color: #d97706; font-size: 18px;"></i> Vencidas ou de hoje (<%= pendenciasUrgentes.total %>)</span>
+        <a href="/relatorios?aba=pendentes" class="muted" style="font-size: 12px; font-weight: 600;">Ver todas</a>
+    </div>
+    <div class="pendencias__lista">
+        <% pendenciasUrgentes.itens.forEach(p => { const dias = parseInt(p.dias_atraso, 10) || 0; %>
+            <div class="pendencias__item">
+                <div class="pendencias__info">
+                    <div class="pendencias__desc"><%= p.descricao %></div>
+                    <div class="pendencias__meta"><%= p.conta_nome %> · <%= formatDate(p.data_competencia, 'DD/MM/YYYY') %> ·
+                        <% if (dias > 0) { %><span class="atraso"><%= dias %> dia<%= dias > 1 ? 's' : '' %> em atraso</span><% } else { %>vence hoje<% } %>
+                    </div>
+                </div>
+                <div class="pendencias__valor" style="color: <%= p.tipo === 'receita' ? 'var(--green)' : 'var(--red)' %>;"><%= p.tipo === 'receita' ? '+' : '-' %> <%= moeda(Math.abs(parseFloat(p.valor))) %></div>
+                <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" data-ajax>
+                    <%- csrfCampo %>
+                    <input type="hidden" name="voltar" value="<%= currentUrl %>">
+                    <input type="hidden" name="status" value="pago">
+                    <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span><%= p.tipo === 'receita' ? 'Receber' : 'Pagar' %></span></button>
+                </form>
+            </div>
+        <% }) %>
+    </div>
+</section>
+<% } %>
 
 <!-- KPIs do periodo (Saldo anterior / Receitas / Despesas) -->
 <div class="kpi-grid">
@@ -82,6 +113,25 @@ const nomesMeses = {
         <span class="kpi-card__sub">Não pago <b style="color: #d97706;"><%= moeda(resumo.despesas_nao_pagas) %></b></span>
     </div>
 </div>
+
+<% if (despesasPorCategoria && despesasPorCategoria.length > 0) { %>
+<section class="card grafico-card" style="margin-bottom: 16px;">
+    <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: var(--red);"></span>Despesas por categoria</h3>
+    <div class="grafico-card__corpo grafico-card__corpo--rosca">
+        <div class="grafico-card__canvas-wrap"><canvas id="chartDespesasPainel"></canvas></div>
+        <ul class="gf-leg" id="legDespesasPainel"></ul>
+    </div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/assets/js/charts.js?v=<%= Date.now() %>"></script>
+<script>
+(function () {
+    var dados = <%- JSON.stringify(despesasPorCategoria) %>;
+    function desenhar() { if (window.Chart && window.GFCharts) GFCharts.rosca('chartDespesasPainel', 'legDespesasPainel', dados, { rotulo: 'Despesas' }); }
+    if (window.Chart && window.GFCharts) { desenhar(); } else { window.addEventListener('load', desenhar); }
+})();
+</script>
+<% } %>
 
 <!-- Botões de Ação (+ Ingreso / - Gasto) diretamente abaixo do Saldo Disponível -->
 <div class="myfinance-action-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
@@ -112,6 +162,13 @@ const nomesMeses = {
         return '/?' + new URLSearchParams(cleaned).toString();
     }
     %>
+    <form method="get" action="/" class="busca-linha" role="search">
+        <% const _p = Object.assign({}, periodo.customizado ? { data_inicio: periodo.inicio, data_fim: periodo.fim } : { mes: periodo.mes, ano: periodo.ano }, { tipo: filtros.tipo, categoria_id: filtros.categoria_id, subcategoria_id: filtros.subcategoria_id, ordenar: ordenacao, agrupar: agrupamento }); %>
+        <% Object.keys(_p).forEach(k => { if (_p[k] !== null && _p[k] !== undefined && _p[k] !== '' && _p[k] !== 'sem_agrupamento') { %><input type="hidden" name="<%= k %>" value="<%= _p[k] %>"><% } }) %>
+        <input class="input" type="search" name="busca" value="<%= filtros.busca %>" placeholder="Buscar por descrição ou categoria" aria-label="Buscar lançamentos">
+        <button type="submit" class="btn btn-outline" aria-label="Buscar"><i class="ph ph-magnifying-glass"></i></button>
+        <% if (filtros.busca) { %><a class="btn btn-outline" href="<%= buildQueryLink({ busca: '' }) %>" title="Limpar busca"><i class="ph ph-x"></i></a><% } %>
+    </form>
     <div style="display: flex; gap: 16px; font-size: 13px; font-weight: 600; flex-wrap: wrap;">
         <a href="<%= buildQueryLink({ tipo: 'todas' }) %>" style="text-decoration: none; color: <%= filtros.tipo === 'todas' ? 'var(--text)' : 'var(--muted)' %>; <%= filtros.tipo === 'todas' ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.todas') %></a>
         <a href="<%= buildQueryLink({ tipo: 'despesas' }) %>" style="text-decoration: none; color: <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'var(--text)' : 'var(--muted)' %>; <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.despesas') %></a>
@@ -234,37 +291,7 @@ function gfAtualizarParam(chave, valor) {
                                                     <%= l.status === 'pago' ? (l.tipo === 'receita' ? 'Recebido' : 'Pago') : 'Pendente' %>
                                                 </span>
                                             </td>
-                                            <td>
-                                                <div style="display: flex; gap: 6px; align-items: center;">
-                                                    <% if (l.status !== 'pago') { %>
-                                                        <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" style="display:inline;">
-                                                            <%- csrfCampo %>
-<input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                            <input type="hidden" name="status" value="pago">
-                                                            <button type="submit" class="icon-btn" title="Marcar como Pago">✅</button>
-                                                        </form>
-                                                    <% } else if (l.tipo === 'receita' || l.tipo === 'despesa') { %>
-                                                        <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" style="display:inline;">
-                                                            <%- csrfCampo %>
-                                                            <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                            <input type="hidden" name="status" value="pendente">
-                                                            <button type="submit" class="icon-btn" title="Desfazer pagamento (voltar para pendente)">↩️</button>
-                                                        </form>
-                                                    <% } %>
-                                                    <% if (l.tipo === 'receita' || l.tipo === 'despesa') { %>
-                                                    <button type="button" class="icon-btn" title="Editar" data-modal-open="modal-editar-<%= l.id %>">✏️</button>
-                                                    <% if (l.serie_id) { %>
-                                                        <button type="button" class="icon-btn" title="Excluir" data-modal-open="modal-excluir-<%= l.id %>" style="color: var(--red);">🗑️</button>
-                                                    <% } else { %>
-                                                        <form method="post" action="/lancamentos/<%= l.id %>/excluir" onsubmit="return confirm('<%= t('painel.lancamento.confirmar_exclusao') %>')">
-                                                            <%- csrfCampo %>
-                                                            <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                            <button type="submit" class="icon-btn" title="Excluir" style="color: var(--red);">🗑️</button>
-                                                        </form>
-                                                    <% } %>
-                                                    <% } %>
-                                                </div>
-                                            </td>
+                                            <td class="td-acoes"><%- include('../partials/acoes_lancamento', { l: l, modalSerie: true }) %></td>
                                         </tr>
                                     <% }) %>
                                 </tbody>
@@ -292,7 +319,7 @@ function gfAtualizarParam(chave, valor) {
                 <tbody>
                     <% if (!lancamentos || lancamentos.length === 0) { %>
                         <tr>
-                            <td colspan="7" class="tabela__vazio"><%= t('painel.lista_vazia') %></td>
+                            <td colspan="7" class="tabela__vazio"><div class="vazio"><i class="ph ph-receipt"></i><strong><%= t('painel.lista_vazia') %></strong>Use o botão + para registrar uma receita ou despesa.</div></td>
                         </tr>
                     <% } else { %>
                         <% lancamentos.forEach(l => { %>
@@ -328,37 +355,7 @@ function gfAtualizarParam(chave, valor) {
                                         <%= l.status === 'pago' ? (l.tipo === 'receita' ? 'Recebido' : 'Pago') : 'Pendente' %>
                                     </span>
                                 </td>
-                                <td>
-                                    <div style="display: flex; gap: 6px; align-items: center;">
-                                        <% if (l.status !== 'pago') { %>
-                                            <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" style="display:inline;">
-                                                <%- csrfCampo %>
-<input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                <input type="hidden" name="status" value="pago">
-                                                <button type="submit" class="icon-btn" title="Marcar como Pago">✅</button>
-                                            </form>
-                                        <% } else if (l.tipo === 'receita' || l.tipo === 'despesa') { %>
-                                                        <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" style="display:inline;">
-                                                            <%- csrfCampo %>
-                                                            <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                            <input type="hidden" name="status" value="pendente">
-                                                            <button type="submit" class="icon-btn" title="Desfazer pagamento (voltar para pendente)">↩️</button>
-                                                        </form>
-                                                    <% } %>
-                                        <% if (l.tipo === 'receita' || l.tipo === 'despesa') { %>
-                                        <button type="button" class="icon-btn" title="Editar" data-modal-open="modal-editar-<%= l.id %>">✏️</button>
-                                        <% if (l.serie_id) { %>
-                                            <button type="button" class="icon-btn" title="Excluir" data-modal-open="modal-excluir-<%= l.id %>" style="color: var(--red);">🗑️</button>
-                                        <% } else { %>
-                                            <form method="post" action="/lancamentos/<%= l.id %>/excluir" onsubmit="return confirm('<%= t('painel.lancamento.confirmar_exclusao') %>')">
-                                                <%- csrfCampo %>
-                                                <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                <button type="submit" class="icon-btn" title="Excluir" style="color: var(--red);">🗑️</button>
-                                            </form>
-                                        <% } %>
-                                        <% } %>
-                                    </div>
-                                </td>
+                                <td class="td-acoes"><%- include('../partials/acoes_lancamento', { l: l, modalSerie: true }) %></td>
                             </tr>
                         <% }) %>
                     <% } %>
@@ -859,4 +856,16 @@ function gfAtualizarParam(chave, valor) {
 window.gfCategoriasArvore = <%- JSON.stringify(categoriasArvore || []) %>;
 </script>
 
+<% } %>
+
+<% if (contas && contas.length > 0) { %>
+<!-- Botao flutuante (celular) -->
+<div class="fab" id="fab">
+    <div class="fab__menu">
+        <button type="button" class="fab__item fab__item--receita" data-modal-open="modal-novo-receita" onclick="document.getElementById('fab').classList.remove('is-open')"><i class="ph ph-arrow-circle-up"></i> Receita</button>
+        <button type="button" class="fab__item fab__item--despesa" data-modal-open="modal-novo-despesa" onclick="document.getElementById('fab').classList.remove('is-open')"><i class="ph ph-arrow-circle-down"></i> Despesa</button>
+    </div>
+    <button type="button" class="fab__botao" aria-label="Novo lançamento" onclick="document.getElementById('fab').classList.toggle('is-open')"><i class="ph ph-plus"></i></button>
+</div>
+<div class="fab-fundo" onclick="document.getElementById('fab').classList.remove('is-open')"></div>
 <% } %>

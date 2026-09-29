@@ -40,12 +40,18 @@ const relatoriosController = {
             fim = toLocalYMD(end);
         }
 
+        const mesAnt = new Date(ano, mes - 2, 1);
+        const mesProx = new Date(ano, mes, 1);
         const periodo = {
             mes,
             ano,
             inicio,
             fim,
-            preset
+            preset,
+            mes_anterior: mesAnt.getMonth() + 1,
+            ano_anterior: mesAnt.getFullYear(),
+            mes_proximo: mesProx.getMonth() + 1,
+            ano_proximo: mesProx.getFullYear()
         };
 
         const aba = query.aba || 'graficos';
@@ -113,6 +119,29 @@ const relatoriosController = {
         // Fetch resumo do período
         const resumo = await Lancamento.resumoPeriodo(userId, periodo);
 
+        // Evolucao do saldo dia a dia (saldo anterior + movimentos pagos acumulados; contas ativas)
+        let evolucao = [];
+        if (aba === 'graficos') {
+            const [movs] = await db.query(
+                `SELECT l.data_competencia AS dia, SUM(l.valor) AS total
+                 FROM lancamentos l JOIN contas c ON c.id = l.conta_id AND c.status = 'ativa'
+                 WHERE l.user_id = ? AND l.status = 'pago' AND l.data_competencia BETWEEN ? AND ?
+                 GROUP BY l.data_competencia`,
+                [userId, inicio, fim]
+            );
+            const porDia = {};
+            movs.forEach(m => { porDia[toLocalYMD(m.dia)] = parseFloat(m.total) || 0; });
+            let acumulado = resumo.saldo_anterior;
+            const [ay, am, ad] = inicio.split('-').map(Number);
+            const [by, bm, bd] = fim.split('-').map(Number);
+            const ini = new Date(ay, am - 1, ad), end = new Date(by, bm - 1, bd);
+            for (let d = new Date(ini), n = 0; d <= end && n < 400; d.setDate(d.getDate() + 1), n++) {
+                const k = toLocalYMD(d);
+                acumulado += porDia[k] || 0;
+                evolucao.push({ data: k, saldo: acumulado });
+            }
+        }
+
         res.render('relatorios/index', {
             title: req.t('pages.relatorios.titulo'),
             periodo,
@@ -123,12 +152,49 @@ const relatoriosController = {
             agrupar,
             catData,
             frequencia,
+            evolucao,
             pendentes,
             demonstrativoLinhas,
             demonstrativoAnual,
             resumo
         });
     }
+};
+
+relatoriosController.exportar = async (req, res) => {
+    const userId = req.user.id;
+    const hoje = new Date();
+    let inicio = req.query.data_inicio, fim = req.query.data_fim;
+    const ymd = /^\d{4}-\d{2}-\d{2}$/;
+    if (!ymd.test(inicio || '') || !ymd.test(fim || '')) {
+        inicio = toLocalYMD(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
+        fim = toLocalYMD(new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0));
+    }
+    const [rows] = await db.query(
+        `SELECT l.data_competencia, l.tipo, l.descricao, l.valor, l.status, l.data_pagamento,
+                COALESCE(p.nome, c.nome) AS categoria, IF(p.id IS NOT NULL, c.nome, NULL) AS subcategoria, cb.nome AS conta
+         FROM lancamentos l
+         LEFT JOIN categorias c ON l.categoria_id = c.id
+         LEFT JOIN categorias p ON c.parent_id = p.id
+         LEFT JOIN contas cb ON l.conta_id = cb.id
+         WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ?
+         ORDER BY l.data_competencia ASC, l.id ASC`,
+        [userId, inicio, fim]
+    );
+    const esc = (v) => {
+        const t = v === null || v === undefined ? '' : String(v);
+        // Neutraliza formulas de planilha (CSV injection) e escapa aspas.
+        const seguro = /^[=+\-@]/.test(t) && isNaN(Number(t)) ? "'" + t : t;
+        return '"' + seguro.replace(/"/g, '""') + '"';
+    };
+    const linhas = [['Data', 'Tipo', 'Descricao', 'Categoria', 'Subcategoria', 'Conta', 'Valor', 'Status', 'Data pagamento'].join(';')];
+    rows.forEach(r => linhas.push([
+        toLocalYMD(r.data_competencia), r.tipo, esc(r.descricao), esc(r.categoria), esc(r.subcategoria), esc(r.conta),
+        String(parseFloat(r.valor)).replace('.', ','), r.status, r.data_pagamento ? toLocalYMD(r.data_pagamento) : ''
+    ].join(';')));
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="lancamentos_${inicio}_a_${fim}.csv"`);
+    res.send(String.fromCharCode(0xFEFF) + linhas.join(String.fromCharCode(13, 10)));
 };
 
 module.exports = relatoriosController;

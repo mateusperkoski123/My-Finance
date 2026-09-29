@@ -137,5 +137,39 @@
     });
   }
 
-  window.GFCharts = { rosca: rosca, frequencia: frequencia, moeda: moeda };
+
+  /* dados: [{data:'YYYY-MM-DD', saldo}] -> linha 2px com lavado de 10% e ponto final */
+  function evolucao(canvasId, dados) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    var cor = escuro() ? '#3987e5' : '#2a78d6', grade = css('--border', '#e5e7eb'), muted = css('--muted', '#6b7280');
+    var rot = dados.map(function (d) { var p = String(d.data).split('T')[0].split('-'); return p[2] + '/' + p[1]; });
+    var ultimo = dados.length - 1;
+    new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: rot,
+        datasets: [{
+          label: 'Saldo', data: dados.map(function (d) { return Number(d.saldo) || 0; }),
+          borderColor: cor, backgroundColor: cor + '1a', fill: true, borderWidth: 2, tension: 0, stepped: 'before',
+          pointRadius: dados.map(function (d, i) { return i === ultimo ? 5 : 0; }), pointHoverRadius: 6,
+          pointBackgroundColor: cor, pointBorderColor: css('--card', '#ffffff'), pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, animation: { duration: 500 },
+        interaction: { mode: 'index', intersect: false },
+        scales: {
+          x: { grid: { display: false }, border: { display: false }, ticks: { color: muted, font: { size: 11 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 } },
+          y: { border: { display: false }, grid: { color: grade, lineWidth: 1 }, ticks: { color: muted, font: { size: 11 }, maxTicksLimit: 5, callback: function (v) { return compacto(v); } } }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: Object.assign(tooltipBase(), { callbacks: { label: function (c) { return ' Saldo: ' + moeda(c.parsed.y); } } })
+        }
+      }
+    });
+  }
+
+  window.GFCharts = { rosca: rosca, frequencia: frequencia, evolucao: evolucao, moeda: moeda };
 })();

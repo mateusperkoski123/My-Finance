@@ -116,6 +116,12 @@ const configuracoesController = {
             [userId]
         );
 
+        const ymd = (v) => (v ? require('../core/helpers').toLocalYMD(v) : null);
+        const lancamentosExport = lancamentos.map(l => Object.assign({}, l, {
+            data_competencia: ymd(l.data_competencia),
+            data_pagamento: ymd(l.data_pagamento)
+        }));
+
         const payload = {
             versao: "1.0",
             exportado_em: new Date().toISOString(),
@@ -128,7 +134,7 @@ const configuracoesController = {
             },
             contas,
             categorias,
-            lancamentos
+            lancamentos: lancamentosExport
         };
 
         const filename = `backup_gestao_financeira_${new Date().toISOString().slice(0,10)}.json`;
@@ -157,94 +163,111 @@ const configuracoesController = {
         const categoriasData = payload.categorias || [];
         const lancamentosData = payload.lancamentos || [];
 
+        const { toLocalYMD } = require('../core/helpers');
+        // Aceita 'YYYY-MM-DD' ou ISO com fuso (backups antigos gravavam '...T03:00:00.000Z').
+        const normData = (v) => {
+            if (!v) return null;
+            const t = String(v);
+            if (/^\d{4}-\d{2}-\d{2}$/.test(t)) return t;
+            const d = new Date(t);
+            return isNaN(d.getTime()) ? null : toLocalYMD(d);
+        };
+        const TIPOS = ['receita', 'despesa', 'transferencia', 'ajuste'];
+        const STATUS = ['pago', 'pendente'];
+
+        await Categoria.garantirCategoriasSistema(userId);
+
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
 
-            // 1. Import accounts
+            // 1. Contas (mescla por nome: reaproveita a conta existente)
             const contaMap = {};
             let contasCount = 0;
             for (const c of contasData) {
                 if (!c.nome) continue;
+                const [existente] = await conn.query('SELECT id FROM contas WHERE user_id = ? AND nome = ? LIMIT 1', [userId, c.nome]);
+                if (existente.length) {
+                    if (c.id) contaMap[c.id] = existente[0].id;
+                    continue;
+                }
                 const [resAcc] = await conn.query(
                     `INSERT INTO contas (user_id, nome, tipo, cor, saldo_inicial, conta_padrao, status, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, 0, ?, NOW(), NOW())`,
-                    [userId, c.nome, c.tipo || 'corrente', c.cor || '#2563eb', parseFloat(c.saldo_inicial) || 0, c.status || 'ativa']
+                    [userId, c.nome, c.tipo || 'corrente', c.cor || '#2563eb', parseFloat(c.saldo_inicial) || 0, c.status === 'arquivada' ? 'arquivada' : 'ativa']
                 );
-                if (c.id) {
-                    contaMap[c.id] = resAcc.insertId;
-                }
+                if (c.id) contaMap[c.id] = resAcc.insertId;
                 contasCount++;
             }
 
-            // Get default user account if none mapped
-            const [userAccounts] = await conn.query('SELECT id FROM contas WHERE user_id = ? ORDER BY id ASC LIMIT 1', [userId]);
+            const [userAccounts] = await conn.query("SELECT id FROM contas WHERE user_id = ? AND status = 'ativa' ORDER BY id ASC LIMIT 1", [userId]);
             const fallbackAccountId = userAccounts[0]?.id || null;
 
-            // 2. Import categories
+            // 2. Categorias (mescla por nome + pai; categorias de sistema reaproveitadas)
             const catMap = {};
             let categoriasCount = 0;
-
-            // Fetch existing system categories for this user
             const [existingSysCats] = await conn.query('SELECT id, chave_sistema FROM categorias WHERE user_id = ? AND sistema = 1', [userId]);
             const sysCatMap = {};
             existingSysCats.forEach(sc => { sysCatMap[sc.chave_sistema] = sc.id; });
 
-            // Sort top-level first
             const sortedCats = [...categoriasData].sort((a, b) => (a.parent_id ? 1 : 0) - (b.parent_id ? 1 : 0));
             for (const cat of sortedCats) {
                 if (!cat.nome) continue;
-
-                // Handle system category remapping
                 if (cat.sistema && cat.chave_sistema && sysCatMap[cat.chave_sistema]) {
                     catMap[cat.id] = sysCatMap[cat.chave_sistema];
                     continue;
                 }
-
                 const parentId = cat.parent_id ? (catMap[cat.parent_id] || null) : null;
+                const [existente] = await conn.query(
+                    'SELECT id FROM categorias WHERE user_id = ? AND nome = ? AND parent_id <=> ? LIMIT 1',
+                    [userId, cat.nome, parentId]
+                );
+                if (existente.length) {
+                    if (cat.id) catMap[cat.id] = existente[0].id;
+                    continue;
+                }
+                const tipoCat = ['receita', 'despesa', 'ambas'].includes(cat.tipo) ? cat.tipo : 'despesa';
                 const [resCat] = await conn.query(
                     `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, limite_gasto, sistema, chave_sistema, status, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, 0, NULL, ?, NOW(), NOW())`,
-                    [userId, parentId, cat.nome, cat.cor || '#3b82f6', cat.tipo || 'despesa', cat.limite_gasto ? parseFloat(cat.limite_gasto) : null, cat.status || 'ativa']
+                    [userId, parentId, cat.nome, cat.cor || '#3b82f6', tipoCat, cat.limite_gasto ? parseFloat(cat.limite_gasto) : null, cat.status === 'arquivada' ? 'arquivada' : 'ativa']
                 );
-                if (cat.id) {
-                    catMap[cat.id] = resCat.insertId;
-                }
+                if (cat.id) catMap[cat.id] = resCat.insertId;
                 categoriasCount++;
             }
 
-            // 3. Import transactions
+            // 3. Lancamentos (ignora os que ja existem identicos: importar 2x nao duplica)
             let lancamentosCount = 0;
             for (const l of lancamentosData) {
                 if (!l.descricao || !l.valor) continue;
                 const mappedContaId = contaMap[l.conta_id] || fallbackAccountId;
                 if (!mappedContaId) continue;
-
                 const mappedCatId = l.categoria_id ? (catMap[l.categoria_id] || null) : null;
+                const tipo = TIPOS.includes(l.tipo) ? l.tipo : 'despesa';
+                const status = STATUS.includes(l.status) ? l.status : 'pendente';
+                const dataComp = normData(l.data_competencia) || toLocalYMD(new Date());
+                const dataPag = normData(l.data_pagamento);
+                const valor = parseFloat(l.valor) || 0;
+
+                const [dup] = await conn.query(
+                    'SELECT id FROM lancamentos WHERE user_id = ? AND conta_id = ? AND tipo = ? AND descricao = ? AND valor = ? AND data_competencia = ? LIMIT 1',
+                    [userId, mappedContaId, tipo, l.descricao, valor, dataComp]
+                );
+                if (dup.length) continue;
 
                 await conn.query(
                     `INSERT INTO lancamentos (user_id, conta_id, categoria_id, tipo, descricao, valor,
                                                data_competencia, data_pagamento, status, recorrente,
                                                serie_id, observacoes, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-                    [
-                        userId,
-                        mappedContaId,
-                        mappedCatId,
-                        l.tipo || 'despesa',
-                        l.descricao,
-                        parseFloat(l.valor) || 0,
-                        l.data_competencia || require('../core/helpers').toLocalYMD(new Date()),
-                        l.data_pagamento || null,
-                        l.status || 'pendente',
-                        l.recorrente || l.e_fixo ? 1 : 0,
-                        l.serie_id || null,
-                        l.observacoes || null
-                    ]
+                    [userId, mappedContaId, mappedCatId, tipo, String(l.descricao).slice(0, 190), valor, dataComp,
+                     status === 'pago' ? (dataPag || dataComp) : null, status, l.recorrente || l.e_fixo ? 1 : 0,
+                     l.serie_id ? String(l.serie_id).slice(0, 36) : null, l.observacoes ? String(l.observacoes).slice(0, 500) : null]
                 );
                 lancamentosCount++;
             }
 
+            await Conta.garantirContaPadrao(userId);
             await conn.commit();
             req.session.flash = {
                 tipo: 'sucesso',

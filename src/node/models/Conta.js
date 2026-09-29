@@ -4,17 +4,19 @@ class Conta {
     static async buscarPorUsuario(userId, incluirArquivadas = false) {
         const sql = incluirArquivadas
             ? `SELECT c.*,
+                      (SELECT COUNT(*) FROM lancamentos l2 WHERE l2.conta_id = c.id) AS total_lancamentos,
                       c.saldo_inicial + COALESCE((
                           SELECT SUM(l.valor) FROM lancamentos l
-                          WHERE l.conta_id = c.id AND l.status = 'pago'
+                          WHERE l.conta_id = c.id AND l.user_id = c.user_id AND l.status = 'pago'
                       ), 0) AS saldo_atual
                FROM contas c
                WHERE c.user_id = ?
                ORDER BY c.conta_padrao DESC, c.nome ASC`
             : `SELECT c.*,
+                      (SELECT COUNT(*) FROM lancamentos l2 WHERE l2.conta_id = c.id) AS total_lancamentos,
                       c.saldo_inicial + COALESCE((
                           SELECT SUM(l.valor) FROM lancamentos l
-                          WHERE l.conta_id = c.id AND l.status = 'pago'
+                          WHERE l.conta_id = c.id AND l.user_id = c.user_id AND l.status = 'pago'
                       ), 0) AS saldo_atual
                FROM contas c
                WHERE c.user_id = ? AND c.status = 'ativa'
@@ -28,7 +30,7 @@ class Conta {
             `SELECT c.*,
                     c.saldo_inicial + COALESCE((
                         SELECT SUM(l.valor) FROM lancamentos l
-                        WHERE l.conta_id = c.id AND l.status = 'pago'
+                        WHERE l.conta_id = c.id AND l.user_id = c.user_id AND l.status = 'pago'
                     ), 0) AS saldo_atual
              FROM contas c
              WHERE c.id = ? AND c.user_id = ? LIMIT 1`,
@@ -42,7 +44,7 @@ class Conta {
             `SELECT c.*,
                     c.saldo_inicial + COALESCE((
                         SELECT SUM(l.valor) FROM lancamentos l
-                        WHERE l.conta_id = c.id AND l.status = 'pago'
+                        WHERE l.conta_id = c.id AND l.user_id = c.user_id AND l.status = 'pago'
                     ), 0) AS saldo_atual
              FROM contas c
              WHERE c.user_id = ? AND c.conta_padrao = 1 AND c.status = 'ativa' LIMIT 1`,

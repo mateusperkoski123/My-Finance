@@ -16,3 +16,5 @@ Thumbs.db
 *.png
 *.zip
 node_modules/
+
+!/public/assets/icons/*.png

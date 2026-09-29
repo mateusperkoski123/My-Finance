@@ -19,6 +19,15 @@
 <!-- Global Filter Bar (Period presets, Grouping, Ordering) -->
 <form method="get" action="/relatorios" class="card" style="margin-bottom: 20px; padding: 14px 18px;">
     <input type="hidden" name="aba" value="<%= aba %>">
+    <% const _base = '/relatorios?aba=' + aba + '&preset=mes&ordenar=' + ordenar + '&agrupar=' + agrupar; %>
+    <div class="mes-nav">
+        <a class="btn btn-outline btn-sm" href="<%= _base %>&mes=<%= periodo.mes_anterior %>&ano=<%= periodo.ano_anterior %>" aria-label="Mês anterior"><i class="ph ph-caret-left"></i></a>
+        <div class="mes-nav__centro">
+            <strong><%= periodo.preset === 'mes' ? t('painel.mes.' + periodo.mes) + ' ' + periodo.ano : 'Período' %></strong>
+            <span class="muted"><%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> – <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></span>
+        </div>
+        <a class="btn btn-outline btn-sm" href="<%= _base %>&mes=<%= periodo.mes_proximo %>&ano=<%= periodo.ano_proximo %>" aria-label="Próximo mês"><i class="ph ph-caret-right"></i></a>
+    </div>
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
         
         <!-- Period presets -->
@@ -53,14 +62,17 @@
 
     </div>
 
-    <!-- Custom Date Range -->
-    <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 10px;">
-        <span class="muted" style="font-size: 12px; font-weight: 600;"><%= t('filtro.periodo_personalizado') %></span>
-        <input type="date" name="data_inicio" value="<%= periodo.inicio %>" class="input" style="width: 140px; padding: 4px 8px; font-size: 12px; border-radius: 8px;">
-        <span class="muted" style="font-size: 12px;"><%= t('filtro.ate') %></span>
-        <input type="date" name="data_fim" value="<%= periodo.fim %>" class="input" style="width: 140px; padding: 4px 8px; font-size: 12px; border-radius: 8px;">
-        <button type="submit" class="btn btn-outline btn-sm" style="border-radius: 8px;"><%= t('filtro.aplicar_datas') %></button>
-    </div>
+    <!-- Periodo personalizado (recolhido por padrao) -->
+    <details class="periodo-custom" <%= periodo.preset === 'custom' ? 'open' : '' %>>
+        <summary><i class="ph ph-calendar-blank"></i> <%= t('filtro.periodo_personalizado') %></summary>
+        <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap;">
+            <input type="date" name="data_inicio" value="<%= periodo.inicio %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;" aria-label="Data inicial">
+            <span class="muted" style="font-size: 12px;"><%= t('filtro.ate') %></span>
+            <input type="date" name="data_fim" value="<%= periodo.fim %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;" aria-label="Data final">
+            <button type="submit" class="btn btn-outline btn-sm" style="border-radius: 8px;"><%= t('filtro.aplicar_datas') %></button>
+        </div>
+    </details>
+    <a class="exportar-link" href="/relatorios/exportar?data_inicio=<%= periodo.inicio %>&data_fim=<%= periodo.fim %>"><i class="ph ph-download-simple"></i> Exportar CSV do período</a>
 </form>
 
 <% if (aba === 'graficos') { %>
@@ -133,6 +145,13 @@
         </div>
     </div>
 
+    <!-- Evolucao do saldo -->
+    <div class="card grafico-card" style="margin-top: 20px;">
+        <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: #2a78d6;"></span>Evolução do saldo no período</h3>
+        <div class="grafico-freq-card__canvas-wrap"><canvas id="chartEvolucao"></canvas></div>
+        <p class="muted grafico-vazio" id="vazioEvolucao" hidden>Sem dados no período.</p>
+    </div>
+
     <!-- Grafico de Frequencia Diaria -->
     <div class="card grafico-card" style="margin-top: 20px;">
         <h3 class="grafico-card__titulo"><%= t('relatorios.frequencia_titulo') %></h3>
@@ -157,6 +176,14 @@
                 document.getElementById('vazio' + nome).hidden = false;
             }
         });
+
+        const evoData = <%- JSON.stringify(evolucao || []) %>;
+        if (evoData.length > 1) {
+            GFCharts.evolucao('chartEvolucao', evoData);
+        } else {
+            document.querySelector('#chartEvolucao').parentElement.hidden = true;
+            document.getElementById('vazioEvolucao').hidden = false;
+        }
 
         if (freqData.length > 0) {
             GFCharts.frequencia('chartFrequencia', freqData);
@@ -212,13 +239,13 @@
                                     </td>
                                     <td>
                                         <div style="display: flex; gap: 6px; align-items: center;">
-                                            <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" style="display:inline;">
+                                            <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" style="display:inline;" data-ajax>
                                                 <%- csrfCampo %>
 <input type="hidden" name="voltar" value="<%= currentUrl %>">
                                                 <input type="hidden" name="status" value="pago">
-                                                <button type="submit" class="btn btn-outline btn-sm" style="color: var(--green); border-color: var(--green); padding: 4px 8px; font-size: 11px;">Receber</button>
+                                                <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span>Receber</span></button>
                                             </form>
-                                            <form method="post" action="/lancamentos/<%= p.id %>/excluir" onsubmit="return confirm('<%= t('painel.lancamento.confirmar_exclusao') %>')" style="display:inline;">
+                                            <form method="post" action="/lancamentos/<%= p.id %>/excluir" data-ajax data-confirm="<%= t('painel.lancamento.confirmar_exclusao') %>" style="display:inline;">
                                                 <%- csrfCampo %>
                                                 <input type="hidden" name="voltar" value="<%= currentUrl %>">
                                                 <button type="submit" class="icon-btn" title="Excluir" style="color: var(--red);"><i class="ph ph-trash"></i></button>
@@ -271,13 +298,13 @@
                                     </td>
                                     <td>
                                         <div style="display: flex; gap: 6px; align-items: center;">
-                                            <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" style="display:inline;">
+                                            <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" style="display:inline;" data-ajax>
                                                 <%- csrfCampo %>
 <input type="hidden" name="voltar" value="<%= currentUrl %>">
                                                 <input type="hidden" name="status" value="pago">
-                                                <button type="submit" class="btn btn-outline btn-sm" style="color: var(--green); border-color: var(--green); padding: 4px 8px; font-size: 11px;">Pagar</button>
+                                                <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span>Pagar</span></button>
                                             </form>
-                                            <form method="post" action="/lancamentos/<%= p.id %>/excluir" onsubmit="return confirm('<%= t('painel.lancamento.confirmar_exclusao') %>')" style="display:inline;">
+                                            <form method="post" action="/lancamentos/<%= p.id %>/excluir" data-ajax data-confirm="<%= t('painel.lancamento.confirmar_exclusao') %>" style="display:inline;">
                                                 <%- csrfCampo %>
                                                 <input type="hidden" name="voltar" value="<%= currentUrl %>">
                                                 <button type="submit" class="icon-btn" title="Excluir" style="color: var(--red);"><i class="ph ph-trash"></i></button>

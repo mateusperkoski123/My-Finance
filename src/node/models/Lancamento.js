@@ -147,7 +147,20 @@ class Lancamento {
         };
     }
 
+    // Garante que conta e categoria informadas pertencem ao usuario (evita mexer no saldo de terceiros).
+    static async validarPropriedade(userId, contaId, categoriaId) {
+        if (contaId) {
+            const [c] = await db.query('SELECT id FROM contas WHERE id = ? AND user_id = ? LIMIT 1', [contaId, userId]);
+            if (!c.length) { const e = new Error('conta_invalida'); e.codigo = 'conta_invalida'; throw e; }
+        }
+        if (categoriaId) {
+            const [c] = await db.query('SELECT id FROM categorias WHERE id = ? AND user_id = ? LIMIT 1', [categoriaId, userId]);
+            if (!c.length) { const e = new Error('categoria_invalida'); e.codigo = 'categoria_invalida'; throw e; }
+        }
+    }
+
     static async criar(userId, data) {
+        await this.validarPropriedade(userId, data.conta_id, data.subcategoria_id || data.categoria_id);
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
@@ -205,6 +218,7 @@ class Lancamento {
     static async atualizar(id, userId, data, escopoSerie = 'apenas_esta') {
         const itemAtual = await this.buscarPorId(id, userId);
         if (!itemAtual) return false;
+        await this.validarPropriedade(userId, data.conta_id, data.subcategoria_id || data.categoria_id);
 
         const statusStr = data.status === 'pago' || data.status === 1 ? 'pago' : 'pendente';
         const dataPagStr = statusStr === 'pago' ? (data.data_pagamento || itemAtual.data_pagamento || data.data_competencia || itemAtual.data_competencia) : null;
@@ -326,6 +340,36 @@ class Lancamento {
             saldo_disponivel: saldoAnt + recRec - despPag + ajustes,
             saldo_previsto: saldoAnt + recRec + recPen - despPag - despPen + ajustes
         };
+    }
+
+    // Pendencias vencidas ou que vencem hoje (contas ativas), mais antigas primeiro.
+    static async pendentesUrgentes(userId, hojeYMD, limite = 5) {
+        const base = `FROM lancamentos l
+             JOIN contas cb ON cb.id = l.conta_id AND cb.status = 'ativa'
+             WHERE l.user_id = ? AND l.status = 'pendente' AND l.tipo IN ('receita', 'despesa') AND l.data_competencia <= ?`;
+        const [rows] = await db.query(
+            `SELECT l.id, l.tipo, l.descricao, l.valor, l.data_competencia, cb.nome AS conta_nome,
+                    DATEDIFF(?, l.data_competencia) AS dias_atraso
+             ${base} ORDER BY l.data_competencia ASC, l.id ASC LIMIT ?`,
+            [hojeYMD, userId, hojeYMD, limite]
+        );
+        const [cnt] = await db.query(`SELECT COUNT(*) AS total ${base}`, [userId, hojeYMD]);
+        return { itens: rows, total: cnt[0].total || 0 };
+    }
+
+    // Total por categoria (subcategorias somadas na categoria pai), so receitas/despesas do periodo.
+    static async resumoPorCategoriaPai(userId, periodo, tipo) {
+        const [rows] = await db.query(
+            `SELECT COALESCE(p.nome, c.nome, 'Sem categoria') AS nome, COALESCE(p.cor, c.cor) AS cor, SUM(ABS(l.valor)) AS total
+             FROM lancamentos l
+             LEFT JOIN categorias c ON l.categoria_id = c.id
+             LEFT JOIN categorias p ON c.parent_id = p.id
+             WHERE l.user_id = ? AND l.tipo = ? AND l.data_competencia BETWEEN ? AND ?
+             GROUP BY COALESCE(p.id, c.id), COALESCE(p.nome, c.nome, 'Sem categoria'), COALESCE(p.cor, c.cor)
+             ORDER BY total DESC`,
+            [userId, tipo, periodo.inicio, periodo.fim]
+        );
+        return rows.map(r => ({ nome: r.nome, cor: r.cor, valor: parseFloat(r.total) || 0 }));
     }
 
     static async totalDespesasMes(userId, mes, ano) {

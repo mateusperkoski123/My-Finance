@@ -946,7 +946,7 @@ img, svg, canvas { max-width: 100%; height: auto; }
 /* Regras para telas Mobile (< 769px) */
 @media (max-width: 768px) {
   /* Layout e Container com recuo inferior para o Bottom Nav */
-  .container { padding: 14px 12px 32px; }
+  .container { padding: 14px 12px 96px; }
   .card { padding: 16px; border-radius: 14px; }
   .page-header { margin-bottom: 14px; }
   .page-header--acoes { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
@@ -955,7 +955,7 @@ img, svg, canvas { max-width: 100%; height: auto; }
   /* Botões e Inputs com área de toque mínima confortável (44px) */
   .btn { min-height: 44px; font-size: 14px; }
   .btn-sm { min-height: 38px; }
-  .input, select.input { min-height: 44px; font-size: 15px; }
+  .input, select.input { min-height: 44px; font-size: 16px; }
 
   /* Navbar superior compacta: so icones (igual a referencia) */
   .navbar__inner { flex-wrap: nowrap; padding: 6px 10px; gap: 6px; min-height: 46px; }
@@ -1338,3 +1338,119 @@ img, svg, canvas { max-width: 100%; height: auto; }
   .gf-leg { max-height: none; min-width: 0; }
   .grafico-freq-card__canvas-wrap { height: 230px; }
 }
+
+/* Acoes da linha: Pagar + menu ⋮ ------------------------------------------ */
+.acoes-linha { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.acoes-linha form { display: inline-flex; margin: 0; }
+.btn-pagar {
+  display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+  background: var(--green-bg); color: var(--green); border: 1px solid transparent;
+  border-radius: 999px; padding: 6px 12px; font-size: 12.5px; font-weight: 700; min-height: 34px;
+}
+.btn-pagar i { font-size: 16px; }
+.btn-pagar:hover { border-color: var(--green); }
+.menu-acoes { position: relative; }
+.menu-acoes > summary {
+  list-style: none; cursor: pointer; width: 34px; height: 34px; border-radius: 10px;
+  display: inline-flex; align-items: center; justify-content: center; color: var(--muted); font-size: 20px;
+}
+.menu-acoes > summary::-webkit-details-marker { display: none; }
+.menu-acoes > summary:hover, .menu-acoes[open] > summary { background: var(--bg); color: var(--text); }
+.menu-acoes__lista {
+  position: fixed; z-index: 1500; min-width: 190px; padding: 6px;
+  background: var(--card); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow);
+  display: flex; flex-direction: column;
+}
+.menu-acoes__lista form { display: block; }
+.menu-acoes__lista button {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; cursor: pointer;
+  background: none; border: none; color: var(--text); font-size: 14px; font-weight: 500;
+  padding: 10px 12px; border-radius: 8px; min-height: 40px;
+}
+.menu-acoes__lista button:hover { background: var(--bg); }
+.menu-acoes__lista button.perigo { color: var(--red); }
+.menu-acoes__lista i { font-size: 17px; }
+
+/* Carregando (envio) e toast --------------------------------------------- */
+button.is-loading { position: relative; opacity: .65; pointer-events: none; }
+button.is-loading::after {
+  content: ""; width: 12px; height: 12px; margin-left: 8px; border-radius: 50%;
+  border: 2px solid currentColor; border-right-color: transparent; display: inline-block; animation: gfSpin .7s linear infinite;
+}
+@keyframes gfSpin { to { transform: rotate(360deg); } }
+.gf-toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); z-index: 3000;
+  max-width: min(92vw, 460px); padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 600;
+  background: #16181d; color: #fff; box-shadow: 0 10px 30px rgba(0,0,0,.25); opacity: 0; transition: all .25s ease;
+}
+.gf-toast--erro { background: #b91c1c; }
+.gf-toast.is-visivel { opacity: 1; transform: translate(-50%, 0); }
+
+/* Botao flutuante "+" (celular) ------------------------------------------- */
+.fab { display: none; }
+@media (max-width: 768px) {
+  .myfinance-action-buttons { display: none !important; }
+  .fab { display: block; position: fixed; right: 16px; bottom: 20px; z-index: 1200; }
+  .fab__botao {
+    width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; font-size: 26px;
+    background: var(--primary); color: var(--primary-text); box-shadow: 0 8px 22px rgba(0,0,0,.28);
+    display: flex; align-items: center; justify-content: center; transition: transform .2s ease;
+  }
+  .fab.is-open .fab__botao { transform: rotate(45deg); }
+  .fab__menu { position: absolute; right: 0; bottom: 68px; display: none; flex-direction: column; gap: 10px; align-items: flex-end; }
+  .fab.is-open .fab__menu { display: flex; }
+  .fab__item {
+    display: inline-flex; align-items: center; gap: 8px; border: none; cursor: pointer; color: #fff;
+    padding: 12px 18px; border-radius: 999px; font-size: 14px; font-weight: 700; box-shadow: 0 6px 16px rgba(0,0,0,.25); white-space: nowrap;
+  }
+  .fab__item--receita { background: var(--green); }
+  .fab__item--despesa { background: var(--red); }
+  .fab-fundo { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 1100; display: none; }
+  .fab.is-open ~ .fab-fundo, .fab-fundo.is-open { display: block; }
+  .gf-toast { bottom: 90px; }
+
+  /* Acoes em card: Pagar visivel + ⋮ */
+  .td-acoes .acoes-linha { justify-content: flex-end; }
+  .btn-pagar { min-height: 38px; }
+}
+
+/* Nome da pagina ativa ao lado dos icones (celular) ------------------------ */
+@media (max-width: 768px) {
+  .navbar__link.is-active .navbar__label { display: inline; font-size: 12px; margin-left: 6px; }
+  .navbar__link.is-active { flex-direction: row; gap: 0; }
+}
+
+/* Pendencias do dia (painel) ---------------------------------------------- */
+.pendencias { border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; border-left: 4px solid #d97706; }
+.pendencias__topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+.pendencias__titulo { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.pendencias__lista { display: flex; flex-direction: column; }
+.pendencias__item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+.pendencias__info { flex: 1; min-width: 0; }
+.pendencias__desc { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pendencias__meta { font-size: 12px; color: var(--muted); }
+.pendencias__meta .atraso { color: var(--red); font-weight: 700; }
+.pendencias__valor { font-weight: 800; font-size: 14px; white-space: nowrap; }
+.pendencias form { margin: 0; }
+
+/* Estados vazios e barra de busca ----------------------------------------- */
+.vazio { text-align: center; padding: 28px 12px; color: var(--muted); }
+.vazio i { font-size: 34px; display: block; margin-bottom: 6px; opacity: .6; }
+.vazio strong { display: block; color: var(--text); margin-bottom: 4px; }
+.busca-linha { display: flex; gap: 8px; margin-bottom: 12px; }
+.busca-linha .input { flex: 1; min-width: 0; }
+
+/* Relatorios: navegador de mes, periodo personalizado e exportar ----------- */
+.mes-nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 8px 10px; margin-bottom: 12px; }
+.mes-nav__centro { text-align: center; display: flex; flex-direction: column; line-height: 1.25; }
+.mes-nav__centro strong { font-size: 15px; }
+.mes-nav__centro span { font-size: 11.5px; }
+.periodo-custom { margin-top: 12px; border-top: 1px solid var(--border); padding-top: 10px; }
+.periodo-custom > summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: var(--muted); list-style: none; display: inline-flex; align-items: center; gap: 6px; }
+.periodo-custom > summary::-webkit-details-marker { display: none; }
+.exportar-link { display: inline-flex; align-items: center; gap: 6px; float: right; margin-top: 12px; font-size: 12.5px; font-weight: 600; color: var(--muted); text-decoration: none; }
+.exportar-link:hover { color: var(--text); }
+@media (max-width: 768px) { .exportar-link { float: none; margin-top: 10px; } }
+
+.aviso-exclusao { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--red-bg); color: var(--text); font-size: 13px; line-height: 1.45; }
+.aviso-exclusao i { color: var(--red); font-size: 20px; flex-shrink: 0; margin-top: 1px; }

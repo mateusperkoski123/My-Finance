@@ -25,6 +25,24 @@ class Categoria {
         return raiz;
     }
 
+    // Arvore para a tela de gestao: aba ativas ou arquivadas + busca por nome (pai ou sub).
+    static async buscarArvoreGerenciar(userId, { arquivadas = false, busca = '' } = {}) {
+        const [rows] = await db.query(
+            'SELECT * FROM categorias WHERE user_id = ? AND status = ? ORDER BY nome ASC',
+            [userId, arquivadas ? 'arquivada' : 'ativa']
+        );
+        const mapa = {};
+        rows.forEach(c => { mapa[c.id] = { ...c, e_sistema: !!c.sistema, subcategorias: [] }; });
+        const raiz = [];
+        rows.forEach(c => {
+            if (c.parent_id && mapa[c.parent_id]) mapa[c.parent_id].subcategorias.push(mapa[c.id]);
+            else raiz.push(mapa[c.id]); // sub arquivada cujo pai segue ativo aparece como item proprio
+        });
+        const termo = String(busca || '').trim().toLowerCase();
+        if (!termo) return raiz;
+        return raiz.filter(c => c.nome.toLowerCase().includes(termo) || c.subcategorias.some(sc => sc.nome.toLowerCase().includes(termo)));
+    }
+
     static async buscarPorId(id, userId) {
         const [rows] = await db.query('SELECT * FROM categorias WHERE id = ? AND user_id = ? LIMIT 1', [id, userId]);
         return rows[0] || null;
@@ -51,7 +69,13 @@ class Categoria {
         }
     }
 
-    static async criar(userId, { parent_id, nome, cor, tipo, limite_gasto }) {
+    static async criar(userId, { parent_id, categoria_pai_id, nome, cor, tipo, limite_gasto }) {
+        parent_id = parent_id || categoria_pai_id || null;
+        if (parent_id) {
+            const pai = await this.buscarPorId(parent_id, userId);
+            if (!pai || pai.parent_id) parent_id = null; // pai invalido/de outro usuario ou ja e sub (so 1 nivel)
+            else if (!tipo || tipo === 'ambas') tipo = pai.tipo;
+        }
         const [res] = await db.query(
             `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, limite_gasto, sistema, status, created_at, updated_at) 
              VALUES (?, ?, ?, ?, ?, ?, 0, 'ativa', NOW(), NOW())`,

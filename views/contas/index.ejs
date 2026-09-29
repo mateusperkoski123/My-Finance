@@ -57,15 +57,15 @@
                         <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-editar-<%= c.id %>"><%= t('contas.editar') %></button>
                         <form method="post" action="/contas/<%= c.id %>/arquivar" style="display:inline;">
                             <%- csrfCampo %>
-                            <button type="submit" class="btn btn-outline btn-sm" title="<%= t('contas.arquivar') %>">🗄️</button>
+                            <button type="submit" class="btn btn-outline btn-sm" title="<%= t('contas.arquivar') %>" aria-label="Arquivar"><i class="ph ph-archive"></i></button>
                         </form>
-                        <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-excluir-<%= c.id %>" title="Eliminar Conta">🗑️</button>
+                        <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-excluir-<%= c.id %>" title="Eliminar Conta" aria-label="Eliminar conta"><i class="ph ph-trash"></i></button>
                     <% } else { %>
                         <form method="post" action="/contas/<%= c.id %>/restaurar" style="display:inline;">
                             <%- csrfCampo %>
                             <button type="submit" class="btn btn-outline btn-sm"><%= t('contas.restaurar') %></button>
                         </form>
-                        <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-excluir-<%= c.id %>" title="Eliminar Conta">🗑️</button>
+                        <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-excluir-<%= c.id %>" title="Eliminar Conta" aria-label="Eliminar conta"><i class="ph ph-trash"></i></button>
                     <% } %>
                 </div>
             </div>
@@ -80,6 +80,10 @@
                     <div class="modal__body" style="padding: 16px 0;">
                         <p style="font-size: 15px; font-weight: 500;"><%= t('contas.eliminar_confirma', { nome: c.nome }) %></p>
                         <p class="muted" style="font-size: 13px; margin-top: 8px; color: var(--red);"><%= t('contas.eliminar_aviso') %></p>
+                        <div class="aviso-exclusao">
+                            <i class="ph ph-warning"></i>
+                            <span>Serão apagados <strong><%= parseInt(c.total_lancamentos, 10) || 0 %> lançamento(s)</strong> desta conta e o saldo de <strong><%= moeda(c.saldo_atual) %></strong> deixará de contar no total. Esta ação não pode ser desfeita. Prefere <em>arquivar</em>?</span>
+                        </div>
                     </div>
                     <div class="modal__actions" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
                         <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>

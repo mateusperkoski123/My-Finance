@@ -77,6 +77,9 @@ const dashboardController = {
 
         const dadosLancamentos = await Lancamento.buscarFiltrados(userId, periodo, filtros, ordenacao, pagina, porPagina, agrupamento);
 
+        const pendenciasUrgentes = await Lancamento.pendentesUrgentes(userId, toLocalYMD(new Date()));
+        const despesasPorCategoria = await Lancamento.resumoPorCategoriaPai(userId, periodo, 'despesa');
+
         const mesesTira = [];
         if (!periodo.customizado) {
             for (let offset = -5; offset <= 5; offset++) {
@@ -122,6 +125,8 @@ const dashboardController = {
             categoriasArvore,
             resumo,
             mesesTira,
+            pendenciasUrgentes,
+            despesasPorCategoria,
             temDadosLateral,
             dadosLateral,
             lancamentos: dadosLancamentos.lancamentos,
@@ -172,7 +177,16 @@ const dashboardController = {
             observacoes: b.observacoes || null
         };
 
-        const criados = await Lancamento.criar(userId, payload);
+        let criados;
+        try {
+            criados = await Lancamento.criar(userId, payload);
+        } catch (err) {
+            if (err.codigo) {
+                req.session.flash = { tipo: 'erro', mensagem: 'Conta ou categoria inválida.' };
+                return res.redirect(destinoRetorno(req));
+            }
+            throw err;
+        }
         if (criados.length > 1) {
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.lancamentos_criados_repeticao', { n: criados.length }) };
         } else {
@@ -216,7 +230,15 @@ const dashboardController = {
         };
 
         const escopo = b.escopo_serie || 'apenas_esta';
-        await Lancamento.atualizar(id, userId, payload, escopo);
+        try {
+            await Lancamento.atualizar(id, userId, payload, escopo);
+        } catch (err) {
+            if (err.codigo) {
+                req.session.flash = { tipo: 'erro', mensagem: 'Conta ou categoria inválida.' };
+                return res.redirect(destinoRetorno(req));
+            }
+            throw err;
+        }
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.lancamento_atualizado') };
         res.redirect(destinoRetorno(req));
     },

@@ -42,16 +42,7 @@
                                     <%= l.status === 'pago' ? 'Pago' : 'Pendente' %>
                                 </span>
                             </td>
-                            <td>
-                                <div style="display: flex; gap: 6px; align-items: center;">
-                                    <button type="button" class="icon-btn" title="Editar" data-modal-open="modal-editar-<%= l.id %>">✏️</button>
-                                    <form method="post" action="/lancamentos/<%= l.id %>/excluir" onsubmit="return confirm('<%= t('painel.lancamento.confirmar_exclusao') %>')">
-                                        <%- csrfCampo %>
-                                        <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                        <button type="submit" class="icon-btn" title="Excluir">🗑️</button>
-                                    </form>
-                                </div>
-                            </td>
+                            <td class="td-acoes"><%- include('../partials/acoes_lancamento', { l: l, modalSerie: false }) %></td>
                         </tr>
 
                         <!-- Modal Editar do Extrato -->
