@@ -1,0 +1,862 @@
+
+
+<%
+const dataHoje = formatDate(new Date());
+const data7DiasDate = new Date(); data7DiasDate.setDate(data7DiasDate.getDate() - 7);
+const data7Dias = formatDate(data7DiasDate);
+const dataAnoInicio = new Date().getFullYear() + '-01-01';
+const dataAnoFim = new Date().getFullYear() + '-12-31';
+
+const e7Dias = periodo.customizado && periodo.inicio === data7Dias && periodo.fim === dataHoje;
+const eAno = periodo.customizado && periodo.inicio === dataAnoInicio && periodo.fim === dataAnoFim;
+const eMes = !periodo.customizado && periodo.e_mes_atual;
+const eHoje = periodo.customizado && periodo.inicio === dataHoje && periodo.fim === dataHoje;
+
+const nomesMeses = {
+    1: t('painel.mes.1'), 2: t('painel.mes.2'), 3: t('painel.mes.3'), 4: t('painel.mes.4'),
+    5: t('painel.mes.5'), 6: t('painel.mes.6'), 7: t('painel.mes.7'), 8: t('painel.mes.8'),
+    9: t('painel.mes.9'), 10: t('painel.mes.10'), 11: t('painel.mes.11'), 12: t('painel.mes.12')
+};
+%>
+
+<div class="myfinance-top-controls card" style="margin-bottom: 20px; padding: 14px 16px;">
+    <!-- Top row: Month navigator & Period Badge -->
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 220px; justify-content: space-between; background: var(--bg); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border);">
+            <a class="btn btn-outline btn-sm" href="/?mes=<%= periodo.mes_anterior %>&ano=<%= periodo.ano_anterior %>" style="border-radius: 8px;"><i class="ph ph-caret-left"></i></a>
+            <div style="text-align: center;">
+                <strong style="font-size: 15px; font-weight: 700; display: block; color: var(--text);"><%= nomesMeses[periodo.mes] %> <%= periodo.ano %></strong>
+                <span class="muted" style="font-size: 11px; font-weight: 500;"><%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> - <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></span>
+            </div>
+            <a class="btn btn-outline btn-sm" href="/?mes=<%= periodo.mes_proximo %>&ano=<%= periodo.ano_proximo %>" style="border-radius: 8px;"><i class="ph ph-caret-right"></i></a>
+        </div>
+
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            <a href="/?data_inicio=<%= dataHoje %>&data_fim=<%= dataHoje %>" class="btn <%= eHoje ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('painel.hoje') %></a>
+            <a href="/?mes=<%= new Date().getMonth() + 1 %>&ano=<%= new Date().getFullYear() %>" class="btn <%= eMes ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
+            <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-filtro-avancado" style="border-radius: 20px;"><i class="ph ph-sliders-horizontal"></i> <%= t('filtro.filtrar') %></button>
+        </div>
+    </div>
+
+    <!-- Action Buttons Row (+ Receita / - Despesa) Grid -->
+</div>
+
+<% if (!contas || contas.length === 0) { %>
+    <div class="card placeholder-card">
+        <p class="muted"><%= t('painel.sem_contas') %></p>
+        <p><a href="/contas" class="btn btn-primary"><%= t('painel.ir_para_contas') %></a></p>
+    </div>
+<% } else { %>
+
+<!-- Card Principal: Saldo Disponível -->
+<div class="card resumo-card" style="border-radius: 20px; padding: 22px 24px; margin-bottom: 16px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span class="muted" style="font-size: 14px; font-weight: 600;"><%= t('painel.saldo_disponivel') %></span>
+        <span style="font-size: 11px; background: var(--bg); padding: 4px 10px; border-radius: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--border);"><%= t('contas.total_consolidado') %></span>
+    </div>
+    <div style="font-size: 32px; font-weight: 800; color: <%= resumo.saldo_disponivel >= 0 ? 'var(--green)' : 'var(--red)' %>;">
+        <%= moeda(resumo.saldo_disponivel) %>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
+        <span class="muted"><%= t('painel.saldo_previsto') %>:</span>
+        <strong style="color: var(--text); font-weight: 700;"><%= moeda(resumo.saldo_previsto) %></strong>
+    </div>
+</div>
+
+<!-- KPIs do periodo (Saldo anterior / Receitas / Despesas) -->
+<div class="kpi-grid">
+    <div class="card kpi-card" style="border-left: 4px solid #2563eb;">
+        <span class="kpi-card__label">Saldo anterior</span>
+        <strong class="kpi-card__valor" style="color: #2563eb;"><%= moeda(resumo.saldo_anterior) %></strong>
+    </div>
+    <div class="card kpi-card" style="border-left: 4px solid var(--green);">
+        <span class="kpi-card__label">Receitas</span>
+        <strong class="kpi-card__valor" style="color: var(--green);"><%= moeda(resumo.receitas_recebidas + resumo.receitas_a_receber) %></strong>
+        <span class="kpi-card__sub">Recebido <b style="color: var(--green);"><%= moeda(resumo.receitas_recebidas) %></b></span>
+        <span class="kpi-card__sub">A receber <b style="color: #d97706;"><%= moeda(resumo.receitas_a_receber) %></b></span>
+    </div>
+    <div class="card kpi-card kpi-card--full" style="border-left: 4px solid var(--red);">
+        <span class="kpi-card__label">Despesas</span>
+        <strong class="kpi-card__valor" style="color: var(--red);"><%= moeda(resumo.despesas_pagas + resumo.despesas_nao_pagas) %></strong>
+        <span class="kpi-card__sub">Pago <b style="color: var(--green);"><%= moeda(resumo.despesas_pagas) %></b></span>
+        <span class="kpi-card__sub">Não pago <b style="color: #d97706;"><%= moeda(resumo.despesas_nao_pagas) %></b></span>
+    </div>
+</div>
+
+<!-- Botões de Ação (+ Ingreso / - Gasto) diretamente abaixo do Saldo Disponível -->
+<div class="myfinance-action-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+    <% if (contas && contas.length > 0) { %>
+        <button type="button" class="btn btn-primary" data-modal-open="modal-novo-receita" style="background: var(--green); border: none; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 14px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="ph ph-plus-circle" style="font-size: 20px;"></i> <%= t('painel.nova_receita') %></button>
+        <button type="button" class="btn btn-primary" data-modal-open="modal-novo-despesa" style="background: var(--red); border: none; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 14px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="ph ph-minus-circle" style="font-size: 20px;"></i> <%= t('painel.nova_despesa') %></button>
+    <% } %>
+</div>
+
+<!-- Sub-filtros por tipo (Todas / Despesas / Receitas) -->
+<div class="card" style="border-radius: 16px; padding: 18px 24px; margin-bottom: 16px;">
+    <%
+    function buildQueryLink(novosParams) {
+        const raw = Object.assign(
+            {},
+            periodo.customizado ? { data_inicio: periodo.inicio, data_fim: periodo.fim } : { mes: periodo.mes, ano: periodo.ano },
+            filtros,
+            { ordenar: ordenacao, agrupar: agrupamento },
+            novosParams
+        );
+        const cleaned = {};
+        for (const key in raw) {
+            const val = raw[key];
+            if (val !== null && val !== undefined && val !== '' && val !== 'null' && val !== 'undefined' && val !== 'sem_agrupamento') {
+                cleaned[key] = val;
+            }
+        }
+        return '/?' + new URLSearchParams(cleaned).toString();
+    }
+    %>
+    <div style="display: flex; gap: 16px; font-size: 13px; font-weight: 600; flex-wrap: wrap;">
+        <a href="<%= buildQueryLink({ tipo: 'todas' }) %>" style="text-decoration: none; color: <%= filtros.tipo === 'todas' ? 'var(--text)' : 'var(--muted)' %>; <%= filtros.tipo === 'todas' ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.todas') %></a>
+        <a href="<%= buildQueryLink({ tipo: 'despesas' }) %>" style="text-decoration: none; color: <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'var(--text)' : 'var(--muted)' %>; <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.despesas') %></a>
+        <a href="<%= buildQueryLink({ tipo: 'receitas' }) %>" style="text-decoration: none; color: <%= (filtros.tipo === 'receitas' || filtros.tipo === 'receita') ? 'var(--text)' : 'var(--muted)' %>; <%= (filtros.tipo === 'receitas' || filtros.tipo === 'receita') ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.receitas') %></a>
+    </div>
+
+<!-- Barra de Ferramentas: Agrupamento & Ordenação (no mesmo cartão das abas, menos ruído visual) -->
+<div class="painel-toolbar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border);">
+    <div style="display: flex; align-items: center; gap: 8px;">
+        <i class="ph ph-folder" style="font-size: 18px; color: var(--muted);"></i>
+        <select class="input" style="padding: 6px 12px; font-size: 13px; border-radius: 12px; min-width: 160px;" onchange="gfAtualizarParam('agrupar', this.value)">
+            <option value="sem_agrupamento" <%= agrupamento === 'sem_agrupamento' ? 'selected' : '' %>>📁 <%= t('filtro.sem_agrupamento') %></option>
+            <option value="categoria" <%= agrupamento === 'categoria' ? 'selected' : '' %>>📁 <%= t('modal.categoria') %></option>
+            <option value="subcategoria" <%= agrupamento === 'subcategoria' ? 'selected' : '' %>>📁 <%= t('modal.subcategoria') %></option>
+            <option value="vencimento" <%= agrupamento === 'vencimento' ? 'selected' : '' %>>📁 <%= t('filtro.vencimento') %></option>
+            <option value="criacao" <%= agrupamento === 'criacao' ? 'selected' : '' %>>📁 <%= t('filtro.criacao') %></option>
+            <option value="status" <%= agrupamento === 'status' ? 'selected' : '' %>>📁 <%= t('filtro.status') %></option>
+        </select>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <span class="muted" style="font-size: 13px;"><%= t('filtro.ordenar') %></span>
+            <select class="input" style="padding: 6px 12px; font-size: 13px; border-radius: 12px;" onchange="gfAtualizarParam('ordenar', this.value)">
+                <option value="data" <%= ordenacao === 'data' || ordenacao === 'criacao' ? 'selected' : '' %>><%= t('filtro.criacao') %></option>
+                <option value="vencimento" <%= ordenacao === 'vencimento' ? 'selected' : '' %>><%= t('filtro.vencimento') %></option>
+                <option value="valor" <%= ordenacao === 'valor' ? 'selected' : '' %>><%= t('modal.valor') %></option>
+            </select>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+function gfAtualizarParam(chave, valor) {
+    const url = new URL(window.location.href);
+    if (valor && valor !== 'sem_agrupamento' && valor !== 'null' && valor !== 'undefined') {
+        url.searchParams.set(chave, valor);
+    } else {
+        url.searchParams.delete(chave);
+    }
+    window.location.href = url.toString();
+}
+</script>
+
+<!-- Conteúdo: Exibição Agrupada (Accordion) ou Tabela Padrão -->
+<div class="card" style="border-radius: 16px; padding: 20px;">
+    <% if (agrupamento && agrupamento !== 'sem_agrupamento' && grupos && grupos.length > 0) { %>
+        <!-- Renderização de Acordeões Agrupados estilo Referência -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <% grupos.forEach((g, idx) => { %>
+                <details class="card" style="border-radius: 12px; padding: 0; border: 1px solid var(--border); overflow: hidden;" <%= idx === 0 ? 'open' : '' %>>
+                    <summary style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; cursor: pointer; background: var(--bg); font-weight: 600; font-size: 13.5px; user-select: none;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="ph ph-caret-right" style="font-size: 14px; transition: transform 0.2s;"></i>
+                            <strong><%= g.key %></strong>
+                            <span class="muted" style="font-size: 12px; font-weight: normal;">(<%= g.count %>)</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
+                            <% if (g.pagoCount > 0) { %>
+                                <span class="badge badge-sucesso"><%= g.pagoCount %> pago</span>
+                            <% } %>
+                            <% if (g.pendenteCount > 0) { %>
+                                <span class="badge badge-alerta"><%= g.pendenteCount %> pendente</span>
+                            <% } %>
+                            <% if (g.totalReceitas > 0) { %>
+                                <span style="color: var(--green); font-weight: 700;">+<%= moeda(g.totalReceitas) %></span>
+                            <% } %>
+                            <% if (g.totalDespesas > 0) { %>
+                                <span style="color: var(--red); font-weight: 700;">-<%= moeda(g.totalDespesas) %></span>
+                            <% } %>
+                        </div>
+                    </summary>
+
+                    <div style="padding: 12px 18px; border-top: 1px solid var(--border);">
+                        <div class="tabela-container">
+                            <table class="tabela tabela-lanc">
+                                <thead>
+                                    <tr>
+                                        <th><%= t('painel.lancamento.descricao_label') %></th>
+                                        <th><%= t('painel.lancamento.categoria_label') %></th>
+                                        <th><%= t('painel.lancamento.conta_label') %></th>
+                                        <th><%= t('painel.lancamento.data_label') %></th>
+                                        <th><%= t('painel.lancamento.valor_label') %></th>
+                                        <th><%= t('painel.lancamento.status_label') %></th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% g.lancamentos.forEach(l => { %>
+                                        <tr>
+                                            <td>
+                                                <strong title="<%= l.descricao %>"><%= truncarTexto(l.descricao, 45) %></strong>
+                                                <% if (l.serie_id) { %>
+                                                    <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;">🔄 Série</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <% if (l.categoria_nome) { %>
+                                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                                        <span style="font-weight: 600; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                                                            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: <%= l.categoria_cor || '#3b82f6' %>; flex-shrink: 0;"></span>
+                                                            <%= l.categoria_nome %>
+                                                        </span>
+                                                        <% if (l.subcategoria_nome) { %>
+                                                            <span class="muted" style="font-size: 11px; padding-left: 14px; white-space: nowrap;"><%= l.subcategoria_nome %></span>
+                                                        <% } %>
+                                                    </div>
+                                                <% } else { %>
+                                                    <span class="muted">—</span>
+                                                <% } %>
+                                            </td>
+                                            <td><%= l.conta_nome || '—' %></td>
+                                            <td><%= formatDate(l.data_competencia, 'DD/MM/YYYY') %></td>
+                                            <td style="font-weight: 700; white-space: nowrap; color: <%= parseFloat(l.valor) < 0 ? 'var(--red)' : 'var(--green)' %>;">
+                                                <%= parseFloat(l.valor) < 0 ? '-' : '+' %> <%= moeda(Math.abs(parseFloat(l.valor))) %>
+                                            </td>
+                                            <td>
+                                                <span class="badge <%= l.status === 'pago' ? 'badge-sucesso' : 'badge-alerta' %>">
+                                                    <%= l.status === 'pago' ? (l.tipo === 'receita' ? 'Recebido' : 'Pago') : 'Pendente' %>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div style="display: flex; gap: 6px; align-items: center;">
+                                                    <% if (l.status !== 'pago') { %>
+                                                        <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" style="display:inline;">
+                                                            <%- csrfCampo %>
+<input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                                            <input type="hidden" name="status" value="pago">
+                                                            <button type="submit" class="icon-btn" title="Marcar como Pago">✅</button>
+                                                        </form>
+                                                    <% } else if (l.tipo === 'receita' || l.tipo === 'despesa') { %>
+                                                        <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" style="display:inline;">
+                                                            <%- csrfCampo %>
+                                                            <input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                                            <input type="hidden" name="status" value="pendente">
+                                                            <button type="submit" class="icon-btn" title="Desfazer pagamento (voltar para pendente)">↩️</button>
+                                                        </form>
+                                                    <% } %>
+                                                    <% if (l.tipo === 'receita' || l.tipo === 'despesa') { %>
+                                                    <button type="button" class="icon-btn" title="Editar" data-modal-open="modal-editar-<%= l.id %>">✏️</button>
+                                                    <% if (l.serie_id) { %>
+                                                        <button type="button" class="icon-btn" title="Excluir" data-modal-open="modal-excluir-<%= l.id %>" style="color: var(--red);">🗑️</button>
+                                                    <% } else { %>
+                                                        <form method="post" action="/lancamentos/<%= l.id %>/excluir" onsubmit="return confirm('<%= t('painel.lancamento.confirmar_exclusao') %>')">
+                                                            <%- csrfCampo %>
+                                                            <input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                                            <button type="submit" class="icon-btn" title="Excluir" style="color: var(--red);">🗑️</button>
+                                                        </form>
+                                                    <% } %>
+                                                    <% } %>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </details>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <!-- Tabela Padrão (Sem Agrupamento) -->
+        <div class="tabela-container">
+            <table class="tabela tabela-lanc">
+                <thead>
+                    <tr>
+                        <th><%= t('painel.lancamento.descricao_label') %></th>
+                        <th><%= t('painel.lancamento.categoria_label') %></th>
+                        <th><%= t('painel.lancamento.conta_label') %></th>
+                        <th><%= t('painel.lancamento.data_label') %></th>
+                        <th><%= t('painel.lancamento.valor_label') %></th>
+                        <th><%= t('painel.lancamento.status_label') %></th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (!lancamentos || lancamentos.length === 0) { %>
+                        <tr>
+                            <td colspan="7" class="tabela__vazio"><%= t('painel.lista_vazia') %></td>
+                        </tr>
+                    <% } else { %>
+                        <% lancamentos.forEach(l => { %>
+                            <tr>
+                                <td>
+                                    <strong title="<%= l.descricao %>"><%= truncarTexto(l.descricao, 45) %></strong>
+                                    <% if (l.serie_id) { %>
+                                        <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;">🔄 Série</span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (l.categoria_nome) { %>
+                                        <div style="display: flex; flex-direction: column; gap: 2px;">
+                                            <span style="font-weight: 600; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
+                                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: <%= l.categoria_cor || '#3b82f6' %>; flex-shrink: 0;"></span>
+                                                <%= l.categoria_nome %>
+                                            </span>
+                                            <% if (l.subcategoria_nome) { %>
+                                                <span class="muted" style="font-size: 11px; padding-left: 14px; white-space: nowrap;"><%= l.subcategoria_nome %></span>
+                                            <% } %>
+                                        </div>
+                                    <% } else { %>
+                                        <span class="muted">—</span>
+                                    <% } %>
+                                </td>
+                                <td><%= l.conta_nome || '—' %></td>
+                                <td><%= formatDate(l.data_competencia, 'DD/MM/YYYY') %></td>
+                                <td style="font-weight: 700; white-space: nowrap; color: <%= parseFloat(l.valor) < 0 ? 'var(--red)' : 'var(--green)' %>;">
+                                                <%= parseFloat(l.valor) < 0 ? '-' : '+' %> <%= moeda(Math.abs(parseFloat(l.valor))) %>
+                                </td>
+                                <td>
+                                    <span class="badge <%= l.status === 'pago' ? 'badge-sucesso' : 'badge-alerta' %>">
+                                        <%= l.status === 'pago' ? (l.tipo === 'receita' ? 'Recebido' : 'Pago') : 'Pendente' %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <div style="display: flex; gap: 6px; align-items: center;">
+                                        <% if (l.status !== 'pago') { %>
+                                            <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" style="display:inline;">
+                                                <%- csrfCampo %>
+<input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                                <input type="hidden" name="status" value="pago">
+                                                <button type="submit" class="icon-btn" title="Marcar como Pago">✅</button>
+                                            </form>
+                                        <% } else if (l.tipo === 'receita' || l.tipo === 'despesa') { %>
+                                                        <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" style="display:inline;">
+                                                            <%- csrfCampo %>
+                                                            <input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                                            <input type="hidden" name="status" value="pendente">
+                                                            <button type="submit" class="icon-btn" title="Desfazer pagamento (voltar para pendente)">↩️</button>
+                                                        </form>
+                                                    <% } %>
+                                        <% if (l.tipo === 'receita' || l.tipo === 'despesa') { %>
+                                        <button type="button" class="icon-btn" title="Editar" data-modal-open="modal-editar-<%= l.id %>">✏️</button>
+                                        <% if (l.serie_id) { %>
+                                            <button type="button" class="icon-btn" title="Excluir" data-modal-open="modal-excluir-<%= l.id %>" style="color: var(--red);">🗑️</button>
+                                        <% } else { %>
+                                            <form method="post" action="/lancamentos/<%= l.id %>/excluir" onsubmit="return confirm('<%= t('painel.lancamento.confirmar_exclusao') %>')">
+                                                <%- csrfCampo %>
+                                                <input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                                <button type="submit" class="icon-btn" title="Excluir" style="color: var(--red);">🗑️</button>
+                                            </form>
+                                        <% } %>
+                                        <% } %>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
+</div>
+
+<!-- Modal Filtro Avançado por Categoria/Subcategoria -->
+<div class="modal-backdrop" id="modal-filtro-avancado">
+    <div class="modal card">
+        <div class="modal__header">
+            <h3>Filtrar Lançamentos</h3>
+            <button type="button" class="modal__close" data-modal-close>&times;</button>
+        </div>
+        <form method="get" action="/" class="form">
+            <input type="hidden" name="tipo" value="<%= filtros.tipo %>">
+            <input type="hidden" name="agrupar" value="<%= agrupamento %>">
+            <input type="hidden" name="ordenar" value="<%= ordenacao %>">
+
+            <div class="form-group">
+                <label>Buscar por Descrição</label>
+                <input class="input" type="text" name="busca" value="<%= filtros.busca %>" placeholder="<%= t('painel.filtro.buscar_placeholder') %>">
+            </div>
+
+            <div class="form-group">
+                <label>Categoria</label>
+                <select class="input" name="categoria_id" id="filtro-categoria-select">
+                    <option value="">Todas as categorias</option>
+                    <% categoriasArvore.forEach(c => { %>
+                        <option value="<%= c.id %>" <%= filtros.categoria_id == c.id ? 'selected' : '' %>><%= c.nome %></option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Subcategoria</label>
+                <select class="input" name="subcategoria_id" id="filtro-subcategoria-select">
+                    <option value="">Todas as subcategorias</option>
+                    <% categoriasArvore.forEach(c => { %>
+                        <% (c.subcategorias || []).forEach(sub => { %>
+                            <option value="<%= sub.id %>" <%= filtros.subcategoria_id == sub.id ? 'selected' : '' %>><%= c.nome %> / <%= sub.nome %></option>
+                        <% }) %>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close>Cancelar</button>
+                <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modais Editar e Excluir Série -->
+<% if (lancamentos && lancamentos.length > 0) { %>
+    <% lancamentos.filter(l => l.tipo === 'receita' || l.tipo === 'despesa').forEach(l => { %>
+        <div class="modal-backdrop" id="modal-editar-<%= l.id %>">
+            <div class="modal card">
+                <div class="modal__header">
+                    <h3><%= l.tipo === 'receita' ? t('modal.editar_receita') : t('modal.editar_despesa') %></h3>
+                    <button type="button" class="modal__close" data-modal-close>&times;</button>
+                </div>
+                <form method="post" action="/lancamentos/<%= l.id %>/atualizar" class="form">
+                    <%- csrfCampo %>
+<input type="hidden" name="voltar" value="<%= currentUrl %>">
+
+                    <div class="form-group">
+                        <label><%= t('modal.descricao') %></label>
+                        <input class="input" type="text" name="descricao" value="<%= l.descricao %>" required>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><%= t('modal.valor') %></label>
+                            <input class="input" type="text" name="valor" value="<%= Math.abs(parseFloat(l.valor)) %>" data-money required>
+                        </div>
+                        <div class="form-group">
+                            <label><%= t('modal.conta') %></label>
+                            <select class="input" name="conta_id" required>
+                                <% contas.forEach(c => { %>
+                                    <option value="<%= c.id %>" <%= c.id === l.conta_id ? 'selected' : '' %>><%= c.nome %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label><%= t('modal.categoria') %> *</label>
+                            <select class="input" name="categoria_id" required>
+                                <option value=""><%= t('modal.escolha_cat') %></option>
+                                <% categoriasArvore.forEach(c => { %>
+                                    <option value="<%= c.id %>" <%= c.id === l.categoria_id ? 'selected' : '' %>><%= c.nome %></option>
+                                    <% (c.subcategorias || []).forEach(sc => { %>
+                                        <option value="<%= sc.id %>" <%= sc.id === l.categoria_id ? 'selected' : '' %>>&nbsp;&nbsp;↳ <%= sc.nome %></option>
+                                    <% }) %>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label><%= t('modal.data_competencia') %></label>
+                            <input class="input" type="date" name="data_competencia" value="<%= formatDate(l.data_competencia, 'YYYY-MM-DD') %>" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="checkbox-linha">
+                            <input type="checkbox" name="status" value="pago" <%= l.status === 'pago' ? 'checked' : '' %>>
+                            <%= l.tipo === 'receita' ? t('modal.foi_recebida') : t('modal.foi_pago') %>
+                        </label>
+                    </div>
+
+                    <% if (l.serie_id) { %>
+                        <div style="background: var(--bg); padding: 14px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
+                            <p style="font-weight: 600; font-size: 13px; margin: 0 0 8px 0;"><%= t('series.titulo') %></p>
+                            <p class="muted" style="font-size: 11.5px; margin: 0 0 10px 0;"><%= t('series.atencao') %></p>
+
+                            <label style="display: block; margin-bottom: 6px; font-size: 12px;">
+                                <input type="radio" name="escopo_serie" value="apenas_esta" checked> <%= t('series.apenas_esta') %>
+                            </label>
+                            <label style="display: block; margin-bottom: 6px; font-size: 12px;">
+                                <input type="radio" name="escopo_serie" value="esta_e_proximas"> <%= t('series.esta_e_proximas') %>
+                            </label>
+                            <label style="display: block; font-size: 12px;">
+                                <input type="radio" name="escopo_serie" value="toda_serie"> <%= t('series.toda_serie') %>
+                            </label>
+                        </div>
+                    <% } %>
+
+                    <div class="modal__actions">
+                        <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
+                        <button type="submit" class="btn btn-primary"><%= t('modal.salvar') %></button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <% if (l.serie_id) { %>
+            <div class="modal-backdrop" id="modal-excluir-<%= l.id %>">
+                <div class="modal card">
+                    <div class="modal__header">
+                        <h3>Excluir Transação Repetida</h3>
+                        <button type="button" class="modal__close" data-modal-close>&times;</button>
+                    </div>
+                    <form method="post" action="/lancamentos/<%= l.id %>/excluir" class="form">
+                        <%- csrfCampo %>
+<input type="hidden" name="voltar" value="<%= currentUrl %>">
+                        <p style="font-weight: 600; font-size: 13.5px; margin-bottom: 6px;">Atenção: Esta transação faz parte de uma série repetida.</p>
+                        <p class="muted" style="font-size: 12px; margin-top: 0; margin-bottom: 16px;">Como você gostaria de aplicar a exclusão?</p>
+
+                        <div style="background: var(--bg); padding: 14px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
+                            <label style="display: block; margin-bottom: 10px; font-size: 13px; cursor: pointer;">
+                                <input type="radio" name="escopo_serie" value="apenas_esta" checked>
+                                <strong><%= t('series.apenas_esta') %></strong>
+                                <span class="muted" style="display: block; font-size: 11px; margin-left: 20px;"><%= t('series.apenas_esta_desc') %></span>
+                            </label>
+                            <label style="display: block; margin-bottom: 10px; font-size: 13px; cursor: pointer;">
+                                <input type="radio" name="escopo_serie" value="esta_e_proximas">
+                                <strong><%= t('series.esta_e_proximas') %></strong>
+                                <span class="muted" style="display: block; font-size: 11px; margin-left: 20px;"><%= t('series.esta_e_proximas_desc') %></span>
+                            </label>
+                            <label style="display: block; font-size: 13px; cursor: pointer;">
+                                <input type="radio" name="escopo_serie" value="toda_serie">
+                                <strong><%= t('series.toda_serie') %></strong>
+                                <span class="muted" style="display: block; font-size: 11px; margin-left: 20px;"><%= t('series.toda_serie_desc') %></span>
+                            </label>
+                        </div>
+
+                        <div class="modal__actions">
+                            <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
+                            <button type="submit" class="btn btn-primary" style="background: var(--red); border: none;">Confirmar Exclusão</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        <% } %>
+    <% }) %>
+<% } %>
+
+<!-- Modal Nova Receita -->
+<div class="modal-backdrop" id="modal-novo-receita" data-modal style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);">
+    <div class="modal card" style="max-width: 520px; border-radius: 20px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid var(--border);">
+        <div class="modal__header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--green-bg); display: flex; align-items: center; justify-content: center;">
+                    <i class="ph ph-trend-up" style="color: var(--green); font-size: 20px;"></i>
+                </div>
+                <h2 style="font-size: 18px; font-weight: 700; margin: 0;">Adicionar Receita</h2>
+            </div>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="Fechar" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
+        </div>
+
+        <form method="post" action="/lancamentos" class="form" style="display: flex; flex-direction: column; gap: 16px;">
+            <%- csrfCampo %>
+            <input type="hidden" name="tipo" value="receita">
+
+            <div>
+                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;">Informações Básicas</h4>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="novo-receita-descricao" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Descrição</label>
+                    <input class="input" type="text" id="novo-receita-descricao" name="descricao" placeholder="Ex: Salário" style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="novo-receita-valor" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Valor</label>
+                    <input class="input" type="text" id="novo-receita-valor" name="valor" data-money inputmode="decimal" placeholder="0" style="border-radius: 12px; padding: 10px 14px; font-size: 16px; font-weight: 700;" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="novo-receita-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Categoria *</label>
+                    <select class="input" id="novo-receita-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="" required style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
+                        <option value="">Escolha uma categoria</option>
+                        <% (categoriasArvore || []).forEach(cat => { %>
+                            <option value="<%= cat.id %>"><%= cat.nome %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="novo-receita-subcategoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Subcategoria</label>
+                    <select class="input" id="novo-receita-subcategoria" name="subcategoria_id" data-gf-subcategoria-select disabled style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
+                        <option value="">Selecione uma categoria primeiro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;">Configurações de Transação</h4>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--red-bg); display: flex; align-items: center; justify-content: center;" data-status-icon-box>
+                                <i class="ph ph-trend-down" style="font-size: 18px; color: var(--red);" data-status-icon></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;" data-status-title>Não Foi Recebida</strong>
+                                <span style="font-size: 11px; color: var(--muted);">Status do recebimento</span>
+                            </div>
+                        </div>
+                        <label class="toggle" style="margin: 0;">
+                            <input type="checkbox" name="foi_recebida" value="1" data-gf-status-toggle data-tipo="receita">
+                            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                        </label>
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-calendar" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;" data-status-date-label>Data de Vencimento</strong>
+                            </div>
+                        </div>
+                        <input class="input" type="date" id="novo-receita-data-pagamento" name="data_pagamento" value="<%= dataHoje %>" style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-bank" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;">Conta</strong>
+                            </div>
+                        </div>
+                        <select class="input" id="novo-receita-conta" name="conta_id" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+                            <% (contas || []).forEach(c => { %>
+                                <option value="<%= c.id %>"><%= c.nome %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-push-pin" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;">Receita Fixa</strong>
+                            </div>
+                        </div>
+                        <label class="toggle" style="margin: 0;">
+                            <input type="checkbox" name="e_fixo" value="1">
+                            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                        </label>
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-arrows-clockwise" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;">Repetir Transação</strong>
+                            </div>
+                        </div>
+                        <label class="toggle" style="margin: 0;">
+                            <input type="checkbox" name="repetir" value="1" data-gf-toggle-repetir>
+                            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" data-gf-repetir-alvo hidden style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg);">
+                        <label for="novo-receita-quantidade-repeticoes" style="font-size: 12px; font-weight: 600;">Quantidade de repetições (meses)</label>
+                        <input class="input" type="number" id="novo-receita-quantidade-repeticoes" name="quantidade_repeticoes" min="2" max="60" value="12" style="border-radius: 8px; padding: 6px 10px; font-size: 13px;">
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-calendar-blank" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;">Data de Competência</strong>
+                            </div>
+                        </div>
+                        <input class="input" type="date" id="novo-receita-data" name="data_competencia" value="<%= dataHoje %>" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                <button type="submit" class="btn" style="background: var(--green); color: #fff; border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="ph ph-floppy-disk" style="font-size: 18px;"></i> Salvar Receita
+                </button>
+                <button type="button" class="btn btn-outline" data-modal-close style="border-radius: 12px; padding: 10px; font-size: 13.5px; font-weight: 600; width: 100%;">
+                    Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal Nova Despesa -->
+<div class="modal-backdrop" id="modal-novo-despesa" data-modal style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);">
+    <div class="modal card" style="max-width: 520px; border-radius: 20px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid var(--border);">
+        <div class="modal__header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--red-bg); display: flex; align-items: center; justify-content: center;">
+                    <i class="ph ph-trend-down" style="color: var(--red); font-size: 20px;"></i>
+                </div>
+                <h2 style="font-size: 18px; font-weight: 700; margin: 0;">Adicionar Despesa</h2>
+            </div>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="Fechar" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
+        </div>
+
+        <form method="post" action="/lancamentos" class="form" style="display: flex; flex-direction: column; gap: 16px;">
+            <%- csrfCampo %>
+            <input type="hidden" name="tipo" value="despesa">
+
+            <div>
+                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;">Informações Básicas</h4>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="novo-despesa-descricao" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Descrição</label>
+                    <input class="input" type="text" id="novo-despesa-descricao" name="descricao" placeholder="Ex: Mercado" style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="novo-despesa-valor" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Valor</label>
+                    <input class="input" type="text" id="novo-despesa-valor" name="valor" data-money inputmode="decimal" placeholder="0" style="border-radius: 12px; padding: 10px 14px; font-size: 16px; font-weight: 700;" required>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="novo-despesa-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Categoria *</label>
+                    <select class="input" id="novo-despesa-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="" required style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
+                        <option value="">Escolha uma categoria</option>
+                        <% (categoriasArvore || []).forEach(cat => { %>
+                            <option value="<%= cat.id %>"><%= cat.nome %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="novo-despesa-subcategoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Subcategoria</label>
+                    <select class="input" id="novo-despesa-subcategoria" name="subcategoria_id" data-gf-subcategoria-select disabled style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
+                        <option value="">Selecione uma categoria primeiro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;">Configurações de Transação</h4>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--red-bg); display: flex; align-items: center; justify-content: center;" data-status-icon-box>
+                                <i class="ph ph-trend-down" style="font-size: 18px; color: var(--red);" data-status-icon></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;" data-status-title>Não Foi Pago</strong>
+                                <span style="font-size: 11px; color: var(--muted);">Status do pagamento</span>
+                            </div>
+                        </div>
+                        <label class="toggle" style="margin: 0;">
+                            <input type="checkbox" name="foi_pago" value="1" data-gf-status-toggle data-tipo="despesa">
+                            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                        </label>
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-calendar" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;" data-status-date-label>Data de Vencimento</strong>
+                            </div>
+                        </div>
+                        <input class="input" type="date" id="novo-despesa-data-pagamento" name="data_pagamento" value="<%= dataHoje %>" style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-bank" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;">Conta</strong>
+                            </div>
+                        </div>
+                        <select class="input" id="novo-despesa-conta" name="conta_id" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+                            <% (contas || []).forEach(c => { %>
+                                <option value="<%= c.id %>"><%= c.nome %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-push-pin" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;">Despesa Fixa</strong>
+                            </div>
+                        </div>
+                        <label class="toggle" style="margin: 0;">
+                            <input type="checkbox" name="e_fixo" value="1">
+                            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                        </label>
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-arrows-clockwise" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;">Repetir Transação</strong>
+                            </div>
+                        </div>
+                        <label class="toggle" style="margin: 0;">
+                            <input type="checkbox" name="repetir" value="1" data-gf-toggle-repetir>
+                            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                        </label>
+                    </div>
+
+                    <div class="form-group" data-gf-repetir-alvo hidden style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg);">
+                        <label for="novo-despesa-quantidade-repeticoes" style="font-size: 12px; font-weight: 600;">Quantidade de repetições (meses)</label>
+                        <input class="input" type="number" id="novo-despesa-quantidade-repeticoes" name="quantidade_repeticoes" min="2" max="60" value="12" style="border-radius: 8px; padding: 6px 10px; font-size: 13px;">
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-calendar-blank" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;">Data de Competência</strong>
+                            </div>
+                        </div>
+                        <input class="input" type="date" id="novo-despesa-data" name="data_competencia" value="<%= dataHoje %>" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                <button type="submit" class="btn" style="background: var(--red); color: #fff; border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="ph ph-floppy-disk" style="font-size: 18px;"></i> Salvar Despesa
+                </button>
+                <button type="button" class="btn btn-outline" data-modal-close style="border-radius: 12px; padding: 10px; font-size: 13.5px; font-weight: 600; width: 100%;">
+                    Cancelar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+window.gfCategoriasArvore = <%- JSON.stringify(categoriasArvore || []) %>;
+</script>
+
+<% } %>

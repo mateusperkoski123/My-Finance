@@ -1,0 +1,18 @@
+node_modules/
+.env
+.env.local
+/vendor/
+/config/config.local.php
+/storage/backups/*
+!/storage/backups/.gitkeep
+.DS_Store
+Thumbs.db
+
+# Backups locais, scripts de teste (contem credenciais) e materiais de referencia
+/backups/
+/scratch/
+/.agents/
+*.pdf
+*.png
+*.zip
+node_modules/

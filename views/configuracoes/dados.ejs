@@ -1,0 +1,31 @@
+<div class="page-header">
+    <h1>⚙️ <%= t('config.titulo') %></h1>
+</div>
+
+<div class="settings-layout">
+    <%- include('_menu', { menuAtivo: 'dados' }) %>
+
+    <section class="settings-content">
+        <div class="card" style="margin-bottom: 20px;">
+            <h2><%= t('config.dados.exportar_titulo') %></h2>
+            <p class="muted"><%= t('config.dados.exportar_texto') %></p>
+            <a href="/configuracoes/dados/exportar" class="btn btn-primary"><%= t('config.dados.exportar_botao') %></a>
+        </div>
+
+        <div class="card">
+            <h2><%= t('config.dados.importar_titulo') %></h2>
+            <p class="muted"><%= t('config.dados.importar_texto') %></p>
+
+            <div class="alert alert-aviso"><%= t('config.dados.importar_aviso') %></div>
+
+            <form method="post" action="/configuracoes/dados/importar?_csrf=<%= csrfToken %>" enctype="multipart/form-data" class="form">
+                <%- csrfCampo %>
+                <div class="form-group">
+                    <label for="arquivo"><%= t('config.dados.importar_arquivo_label') %></label>
+                    <input class="input" type="file" id="arquivo" name="arquivo" accept="application/json,.json" required>
+                </div>
+                <button type="submit" class="btn btn-primary"><%= t('config.dados.importar_botao') %></button>
+            </form>
+        </div>
+    </section>
+</div>

@@ -1,0 +1,56 @@
+<div class="page-header">
+    <h1>⚙️ <%= t('config.titulo') %></h1>
+</div>
+
+<div class="settings-layout">
+    <%- include('_menu', { menuAtivo: 'perfil' }) %>
+
+    <section class="card settings-content">
+        <h2><%= t('config.perfil.titulo') %></h2>
+        <p class="muted"><%= t('config.perfil.subtitulo') %></p>
+
+        <form method="post" action="/configuracoes/perfil" class="form">
+            <%- csrfCampo %>
+
+            <div class="form-group">
+                <label for="nome"><%= t('config.perfil.nome_label') %></label>
+                <input class="input" type="text" id="nome" name="nome" value="<%= usuarioLogado.nome %>" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email"><%= t('config.perfil.email_label') %></label>
+                <input class="input" type="email" id="email" name="email" value="<%= usuarioLogado.email %>" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary">💾 <%= t('config.perfil.salvar') %></button>
+        </form>
+
+        <hr style="margin: 32px 0; border: none; border-top: 1px solid var(--border);">
+
+        <h2><%= t('config.perfil.senha_titulo') %></h2>
+        <p class="muted"><%= t('config.perfil.senha_subtitulo') %></p>
+
+        <form method="post" action="/configuracoes/perfil/senha" class="form">
+            <%- csrfCampo %>
+
+            <div class="form-group">
+                <label for="senha_atual"><%= t('config.perfil.senha_atual_label') %></label>
+                <input class="input" type="password" id="senha_atual" name="senha_atual" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="nova_senha"><%= t('config.perfil.senha_nova_label') %></label>
+                    <input class="input" type="password" id="nova_senha" name="nova_senha" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmar_nova_senha"><%= t('config.perfil.senha_confirmar_label') %></label>
+                    <input class="input" type="password" id="confirmar_nova_senha" name="confirmar_nova_senha" required minlength="6">
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">🔒 <%= t('config.perfil.senha_salvar') %></button>
+        </form>
+    </section>
+</div>

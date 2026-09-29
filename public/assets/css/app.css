@@ -1,0 +1,1340 @@
+/* ==========================================================================
+   Gestão Financeira — design system base
+   Tema controlado via [data-tema="claro"|"escuro"] no <html>.
+   ========================================================================== */
+
+:root[data-tema="claro"] {
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --text: #16181d;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --nav-bg: #0b0d12;
+  --nav-text: #e8eaed;
+  --nav-text-muted: #9aa0aa;
+  --primary: #111827;
+  --primary-text: #ffffff;
+  --green: #16a34a;
+  --green-bg: #e7f7ee;
+  --red: #dc2626;
+  --red-bg: #fdecec;
+  /* Sombra em 2 camadas (contato + ambiente) - da mais "elevacao"/profundidade
+     aos .card do que uma sombra unica e apertada, sem ficar pesada. */
+  --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 8px 20px rgba(16, 24, 40, .07);
+}
+
+:root[data-tema="escuro"] {
+  --bg: #0e1015;
+  --card: #171a21;
+  --text: #e7e9ee;
+  --muted: #9aa0aa;
+  --border: #2a2e37;
+  --nav-bg: #000000;
+  --nav-text: #e7e9ee;
+  --nav-text-muted: #8b909b;
+  --primary: #e7e9ee;
+  --primary-text: #14161b;
+  --green: #34d399;
+  --green-bg: #113127;
+  --red: #f87171;
+  --red-bg: #3a1618;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 24px rgba(0, 0, 0, .4);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 15px;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+a { color: inherit; }
+
+h1, h2, h3 { margin: 0 0 .25em; }
+
+.muted { color: var(--muted); }
+
+/* Navbar ------------------------------------------------------------- */
+
+.navbar {
+  background: var(--nav-bg);
+  color: var(--nav-text);
+}
+
+.navbar__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 10px 20px;
+}
+
+.navbar__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-weight: 700;
+  text-decoration: none;
+  color: var(--nav-text);
+  white-space: nowrap;
+}
+
+.navbar__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  flex: 1;
+  justify-content: flex-start;
+  margin-left: 20px;
+}
+
+.navbar__link {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 10px;
+  text-decoration: none;
+  color: var(--nav-text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  border-bottom: 2px solid transparent;
+}
+
+.navbar__link:hover { color: var(--nav-text); }
+
+.navbar__link.is-active {
+  color: var(--nav-text);
+  font-weight: 700;
+  border-bottom-color: #fff;
+}
+
+.navbar__icon { font-size: 20px; }
+
+.navbar__user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.navbar__user-nome { font-size: 13.5px; color: var(--nav-text-muted); }
+
+/* Layout --------------------------------------------------------------- */
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 20px 64px;
+}
+
+.page-header { margin-bottom: 20px; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 22px;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Botões ----------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn-primary { background: var(--primary); color: var(--primary-text); }
+.btn-primary:hover { opacity: .9; }
+
+.btn-outline {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-outline:hover { background: var(--bg); }
+
+.btn-sm { padding: 6px 12px; font-size: 13px; }
+.btn-block { width: 100%; }
+
+/* Formulários -------------------------------------------------------- */
+
+.form-group { margin-bottom: 16px; }
+.form-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.form-row .form-group { flex: 1; min-width: 200px; }
+
+label { display: block; margin-bottom: 6px; font-size: 13.5px; font-weight: 600; }
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+}
+
+.input:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+
+.input:disabled { opacity: .6; cursor: not-allowed; }
+
+.form-help { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* Campo de valor em destaque (topo do modal de lançamento) --------------- */
+.form-group--valor .input { font-size: 26px; font-weight: 700; padding: 12px 14px; }
+
+/* Alertas -------------------------------------------------------------- */
+
+.alert {
+  padding: 12px 14px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 13.5px;
+}
+
+.alert-sucesso { background: var(--green-bg); color: var(--green); }
+.alert-erro { background: var(--red-bg); color: var(--red); }
+.alert-aviso { background: var(--bg); color: var(--muted); border: 1px solid var(--border); margin-top: 12px; }
+
+/* Badges / pills ------------------------------------------------------- */
+
+.badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badge-neutro { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+
+/* Autenticação ----------------------------------------------------------- */
+
+.auth-body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+.auth-wrapper { width: 100%; max-width: 400px; padding: 20px; }
+.auth-card { text-align: left; }
+.auth-title { font-size: 20px; }
+.auth-footer { margin-top: 16px; font-size: 13.5px; text-align: center; }
+
+/* Configurações ---------------------------------------------------------- */
+
+.settings-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-menu { padding: 8px; height: fit-content; }
+
+.settings-menu__item {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.settings-menu__item:hover { background: var(--bg); color: var(--text); }
+
+.settings-menu__item.is-active {
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.settings-menu__item--futuro { opacity: .45; cursor: not-allowed; }
+.settings-menu__item--futuro:hover { background: none; color: var(--muted); }
+
+.tema-opcoes { display: flex; gap: 12px; }
+
+.tema-opcao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tema-opcao__amostra {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  display: inline-block;
+}
+
+.tema-opcao--claro .tema-opcao__amostra { background: #ffffff; }
+.tema-opcao--escuro .tema-opcao__amostra { background: #14161b; }
+
+/* Cabeçalho de página com ação ------------------------------------------- */
+
+.page-header--acoes {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+/* Abas (tabs) ------------------------------------------------------------ */
+
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* .tabs__item e usado tanto em links (<a>, navegacao real entre paginas/
+   abas via URL) quanto em botoes (<button>, abas 100% client-side, ex.: o
+   card lateral do Painel) - background/font-family/cursor sao redundantes
+   num <a> (ja vem assim por padrao) mas necessarios pra um <button> nao
+   herdar o "chrome" padrao do navegador e destoar visualmente do resto. */
+.tabs__item {
+  padding: 8px 14px;
+  border-radius: 9px;
+  text-decoration: none;
+  background: none;
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.tabs__item.is-active {
+  background: var(--card);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.contas-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 20px 0;
+}
+
+/* Valores positivos/negativos ------------------------------------------ */
+
+.valor-positivo { color: var(--green); }
+.valor-negativo { color: var(--red); }
+
+/* Grid de contas ----------------------------------------------------------- */
+
+.contas-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.conta-card { --conta-cor: #2563eb; display: flex; flex-direction: column; gap: 8px; }
+
+.conta-card__topo { display: flex; align-items: center; gap: 8px; }
+
+.conta-card__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--conta-cor);
+  flex-shrink: 0;
+}
+
+.conta-card__topo h3 { font-size: 15px; }
+
+.conta-card__saldo-linha { font-size: 12.5px; }
+
+.conta-card__saldo { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+
+.conta-card__acoes { display: flex; gap: 8px; margin-top: 6px; }
+.conta-card__acoes .btn, .conta-card__acoes form { flex: 1; }
+.conta-card__acoes form { display: flex; }
+
+/* Checkbox linha ------------------------------------------------------- */
+
+.checkbox-linha {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  font-weight: 500;
+  margin: 4px 0 16px;
+  cursor: pointer;
+}
+
+/* Seletor de cor ------------------------------------------------------- */
+
+.cor-opcoes { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.cor-opcao {
+  --cor: #2563eb;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--cor);
+  display: inline-flex;
+  cursor: pointer;
+  border: 2px solid transparent;
+}
+
+.cor-opcao input { position: absolute; opacity: 0; width: 0; height: 0; }
+.cor-opcao:has(input:checked) { border-color: var(--text); }
+
+/* Toggle switch (on/off) ------------------------------------------------- */
+/* Mesmo padrao :has(input:checked) usado em .cor-opcao, so que aplicado a
+   um switch deslizante em vez de uma amostra de cor. --toggle-cor define a
+   cor do estado "ligado" (default var(--primary), sobrescrita conforme o
+   sentido do toggle - ex. vermelho para "nao foi paga"). */
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin: 4px 0 16px;
+}
+
+.toggle input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle__track {
+  --toggle-cor: var(--primary);
+  width: 40px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--border);
+  position: relative;
+  flex-shrink: 0;
+  transition: background .15s ease;
+}
+
+.toggle__thumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  transition: left .15s ease;
+}
+
+.toggle:has(input:checked) .toggle__track { background: var(--toggle-cor); }
+.toggle:has(input:checked) .toggle__thumb { left: 19px; }
+
+.toggle--negativo .toggle__track { --toggle-cor: var(--red); }
+
+.toggle__texto { font-size: 13.5px; font-weight: 500; }
+.toggle__ajuda { display: block; font-size: 12px; font-weight: 400; color: var(--muted); margin-top: 2px; }
+
+/* Modais ----------------------------------------------------------------- */
+
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .45);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal-backdrop.is-open { display: flex; }
+
+.modal { width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.modal__header h2 { font-size: 17px; }
+
+.modal__fechar {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px;
+}
+
+.modal__acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+/* Link "voltar" ------------------------------------------------------- */
+
+.link-voltar {
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.link-voltar:hover { color: var(--text); }
+
+/* Tabelas (ex.: extrato de conta) --------------------------------------- */
+
+.tabela-wrapper, .tabela-container {
+  padding: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabela { width: 100%; border-collapse: collapse; font-size: 13.5px; white-space: nowrap; }
+
+.tabela th, .tabela td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.tabela th { color: var(--muted); font-weight: 600; font-size: 12.5px; text-transform: uppercase; letter-spacing: .02em; }
+
+.tabela tbody tr:last-child td { border-bottom: none; }
+
+.tabela__num { text-align: right; font-weight: 600; }
+
+/* Filtros de listagem (categorias) --------------------------------------- */
+
+.categorias-filtros {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.categorias-filtros .input { max-width: 260px; }
+
+.checkbox-linha--inline { margin: 0; white-space: nowrap; }
+
+/* Lista de categorias (accordion) ---------------------------------------- */
+
+.categorias-lista { padding: 8px; }
+
+.categoria-item { border-bottom: 1px solid var(--border); }
+.categoria-item:last-of-type { border-bottom: none; }
+
+.categoria-item > summary { list-style: none; cursor: pointer; }
+.categoria-item > summary::-webkit-details-marker { display: none; }
+
+.categoria-linha {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 10px;
+}
+
+.categoria-linha--sub { padding-left: 34px; }
+.categoria-linha--sistema { opacity: .75; }
+
+.categoria-linha__principal {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.categoria-linha__principal strong,
+.categoria-linha__principal { font-size: 14px; }
+
+.categoria-dot {
+  --cor: #2563eb;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--cor);
+  flex-shrink: 0;
+}
+
+.categoria-linha__limite { font-size: 13px; min-width: 110px; text-align: right; }
+
+.categoria-linha__acoes { display: flex; align-items: center; gap: 4px; }
+.categoria-linha__acoes form { display: flex; }
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 6px;
+  border-radius: 7px;
+  line-height: 1;
+}
+.icon-btn:hover { background: var(--bg); }
+
+.categorias-sistema-titulo {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+  padding: 16px 10px 4px;
+}
+
+/* Painel Inicial (dashboard) ---------------------------------------------- */
+
+.painel-acoes-topo { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.periodo-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 12px 20px;
+  margin: 20px 0;
+}
+
+.periodo-nav__seta {
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 18px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+.periodo-nav__seta:hover { background: var(--bg); color: var(--text); }
+
+.periodo-nav__label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  text-align: center;
+}
+
+.periodo-nav__hoje {
+  text-decoration: none;
+  color: var(--primary);
+  font-size: 12.5px;
+  font-weight: 700;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+.periodo-nav__hoje:hover { background: var(--bg); }
+
+.resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.resumo-card { display: flex; flex-direction: column; gap: 4px; padding: 16px; }
+
+.resumo-card__label { font-size: 12.5px; color: var(--muted); font-weight: 600; }
+.resumo-card__valor { font-size: 20px; font-weight: 700; }
+.resumo-card__sub { font-size: 12px; }
+
+.lancamentos-lista { padding: 4px; }
+
+.lancamento-linha {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.lancamento-linha:last-child { border-bottom: none; }
+
+.lancamento-linha__data { font-size: 12.5px; min-width: 78px; }
+
+.lancamento-linha__principal { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 6px; }
+
+.lancamento-linha__descricao { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.lancamento-linha__tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Pill colorida: usa a cor da categoria (custom property --cor, declarada
+   inline no proprio .lancamento-tag - ver views/dashboard/index.php e
+   views/relatorios/index.php) num fundo bem suave (18% de opacidade) com o
+   texto na cor cheia por cima - mesma formula ja usada e validada em
+   --green/--green-bg e --red/--red-bg (badges de status). A tag "conta"
+   (sem categoria, classe .muted, sem --cor proprio) cai no fallback
+   var(--muted) tanto pra cor quanto pro fundo, entao continua neutra mas
+   ganha a mesma forma de pilula. Paleta de cores de categoria (10 tons,
+   ver views/categorias/_modal_nova.php) e toda de tons medios/saturados -
+   nunca pastel/claro - entao o texto em cor cheia sobre o fundo a 18% se
+   mantem legivel nos dois temas. */
+.lancamento-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: var(--cor, var(--muted));
+  background: color-mix(in srgb, var(--cor, var(--muted)) 18%, transparent);
+}
+
+.lancamento-linha__valor { font-size: 14.5px; font-weight: 700; min-width: 110px; text-align: right; }
+
+.lancamento-linha__acoes { display: flex; align-items: center; gap: 2px; }
+.lancamento-linha__acoes form { display: flex; }
+
+.badge-sucesso { background: var(--green-bg); color: var(--green); }
+.badge-pendente { background: var(--red-bg); color: var(--red); }
+
+/* Faixa de meses (janela de 11 meses ao redor do periodo navegado) ------- */
+
+.meses-tira {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+.meses-tira__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+  min-width: 82px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  text-decoration: none;
+  text-align: center;
+}
+
+.meses-tira__item:hover { background: var(--bg); }
+
+.meses-tira__nome {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  color: var(--muted);
+}
+
+.meses-tira__valor { font-size: 13px; font-weight: 700; }
+
+.meses-tira__item.is-atual {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+.meses-tira__item.is-atual .meses-tira__nome,
+.meses-tira__item.is-atual .meses-tira__valor {
+  color: var(--primary-text);
+}
+
+/* Ordenacao (Data/Valor) - reaproveita o toggle .grafico-toggle, empurrado
+   pra ponta direita da linha de filtros via margin-left:auto. */
+.painel-ordenacao { margin-left: auto; }
+
+/* Layout de 2 colunas do Painel: lista de lancamentos + card lateral
+   compacto com o mini grafico. Mesmo espirito de .settings-layout (menu +
+   conteudo), so que aqui a coluna secundaria (o grafico) e que tem largura
+   fixa, e a coluna principal (a lista) que cresce. */
+.painel-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+.painel-layout__principal { min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+
+.painel-lateral { display: flex; flex-direction: column; gap: 14px; }
+
+/* .tabs dentro de um .card ja tem o mesmo fundo (var(--card)) do proprio
+   card - sem este ajuste a aba ativa (que usa var(--card) como fundo, ver
+   regra base de .tabs__item.is-active) ficaria invisivel por cima do
+   proprio card. Mesma solucao ja usada em .settings-menu__item.is-active. */
+.painel-lateral__tabs .tabs__item.is-active {
+  background: var(--bg);
+  border-color: var(--border);
+}
+
+/* Rodape de paginacao ------------------------------------------------- */
+
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 14px 20px;
+  margin-top: 16px;
+}
+
+.paginacao__info { font-size: 13px; }
+
+.paginacao__nav { display: flex; gap: 8px; }
+
+@media (max-width: 960px) {
+  .painel-layout { grid-template-columns: 1fr; }
+}
+
+/* Relatórios --------------------------------------------------------- */
+
+.graficos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.grafico-card__titulo { font-size: 15px; }
+
+.grafico-card__corpo {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.grafico-card__canvas-wrap { width: 190px; height: 190px; flex-shrink: 0; position: relative; margin: 0 auto; }
+
+.grafico-legenda { flex: 1; min-width: 200px; display: flex; flex-direction: column; gap: 10px; }
+
+.grafico-legenda__item { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+
+.grafico-legenda__nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.grafico-legenda__valor { font-weight: 700; white-space: nowrap; }
+
+.grafico-legenda__pct { color: var(--muted); font-size: 12px; min-width: 42px; text-align: right; }
+
+.grafico-freq-card__topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.grafico-freq-card__canvas-wrap { height: 280px; position: relative; margin-top: 14px; }
+
+.grafico-toggle { display: flex; gap: 4px; }
+.grafico-toggle .btn.is-active { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
+
+/* Demonstrativo Financeiro ------------------------------------------- */
+
+.relatorios-resumo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.relatorios-dre-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.relatorios-dre-lista { display: flex; flex-direction: column; margin-top: 12px; }
+
+.relatorios-dre-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+}
+.relatorios-dre-linha:last-child { border-bottom: none; }
+
+.relatorios-dre-linha__nome { flex: 1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+
+.relatorios-dre-linha__valor { font-weight: 600; white-space: nowrap; }
+
+.relatorios-dre-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 2px 2px;
+  margin-top: 8px;
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+}
+
+/* Demonstrativo Anual (categoria x mes) -----------------------------------
+   Tabela real (dentro do .tabela-wrapper/.tabela ja usados no extrato de
+   contas, que ja resolve o overflow-x). Subcategorias comecam ocultas
+   (atributo hidden) e sao reveladas via JS (data-anual-toggle/data-anual-pai
+   em app.js), evitando <details> dentro de <tr>/<td> (invalido em HTML). */
+
+.tabela-anual { min-width: 920px; }
+
+.tabela-anual__secao td {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-weight: 700;
+  color: var(--muted);
+  background: var(--bg);
+}
+
+.tabela-anual__nome { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+
+.tabela-anual__linha--sub .tabela-anual__nome { padding-left: 22px; }
+
+.tabela-anual__linha--expansivel { cursor: pointer; }
+.tabela-anual__linha--expansivel:hover { background: var(--bg); }
+
+.tabela-anual__seta { display: inline-block; font-size: 10px; color: var(--muted); transition: transform .15s ease; }
+.tabela-anual__linha--expansivel.is-expandido .tabela-anual__seta { transform: rotate(90deg); }
+
+.tabela-anual__subtotal td { font-weight: 700; border-top: 2px solid var(--border); background: var(--bg); }
+
+.tabela-anual__saldo td { font-weight: 700; border-top: 2px solid var(--border); }
+
+/* Placeholder de página futura ------------------------------------------- */
+
+.placeholder-card { text-align: center; padding: 48px 24px; }
+.placeholder-emoji { font-size: 40px; margin: 0 0 8px; }
+
+/* Responsivo Mobile Master Rules ----------------------------------------- */
+img, svg, canvas { max-width: 100%; height: auto; }
+
+/* Regras para telas Mobile (< 769px) */
+@media (max-width: 768px) {
+  /* Layout e Container com recuo inferior para o Bottom Nav */
+  .container { padding: 14px 12px 32px; }
+  .card { padding: 16px; border-radius: 14px; }
+  .page-header { margin-bottom: 14px; }
+  .page-header--acoes { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
+  .page-header--acoes .btn { width: 100%; justify-content: center; min-height: 44px; }
+
+  /* Botões e Inputs com área de toque mínima confortável (44px) */
+  .btn { min-height: 44px; font-size: 14px; }
+  .btn-sm { min-height: 38px; }
+  .input, select.input { min-height: 44px; font-size: 15px; }
+
+  /* Navbar superior compacta: so icones (igual a referencia) */
+  .navbar__inner { flex-wrap: nowrap; padding: 6px 10px; gap: 6px; min-height: 46px; }
+  .navbar__brand span { display: none; }
+  .navbar__brand { flex-direction: row; flex-shrink: 0; padding: 0 4px; }
+  .navbar__links {
+    display: flex !important;
+    flex-wrap: nowrap;
+    flex: 1;
+    margin: 0;
+    gap: 0;
+    justify-content: space-around;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .navbar__links::-webkit-scrollbar { display: none; }
+  .navbar__link { padding: 8px 10px; flex-shrink: 0; min-width: 40px; min-height: 40px; justify-content: center; }
+  .navbar__label { display: none; }
+  .navbar__icon { font-size: 20px; line-height: 1; }
+  .navbar__user-nome { display: none; }
+  .navbar__user { flex-shrink: 0; }
+
+  /* Controles Superiores do Painel */
+  .myfinance-top-controls {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+  .myfinance-top-controls > div {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    width: 100% !important;
+  }
+  .myfinance-top-controls .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  /* Dashboard: Layout em 1 coluna */
+  .painel-layout { grid-template-columns: 1fr; }
+  .resumo-grid { grid-template-columns: 1fr; gap: 10px; }
+
+  /* Lançamentos no Mobile (Formato Card) */
+  .lancamentos-lista { padding: 0; }
+  .lancamento-linha {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 14px;
+    border-radius: 12px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .lancamento-linha__data { font-size: 12px; color: var(--muted); min-width: auto; }
+  .lancamento-linha__principal { width: 100%; min-width: 0; }
+  .lancamento-linha__descricao { font-size: 15px; justify-content: space-between; width: 100%; }
+  .lancamento-linha__valor { font-size: 16px; width: 100%; text-align: left; min-width: auto; margin-top: 2px; }
+  .lancamento-linha__acoes {
+    width: 100%;
+    justify-content: flex-end;
+    border-top: 1px dashed var(--border);
+    padding-top: 8px;
+    margin-top: 4px;
+  }
+  .lancamento-linha__acoes .icon-btn { padding: 8px 12px; min-height: 40px; font-size: 16px; }
+
+  /* Paginação Mobile Touch */
+  .paginacao { flex-direction: column; align-items: center; gap: 10px; }
+  .paginacao__nav { width: 100%; justify-content: center; }
+  .paginacao__nav .btn { flex: 1; min-height: 44px; }
+
+  /* Modais estilo Bottom Sheet */
+  .modal-backdrop { padding: 0; align-items: flex-end; }
+  .modal {
+    max-width: 100%;
+    width: 100%;
+    max-height: 90vh;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    padding: 20px 16px 28px;
+    animation: gfSlideUp 0.22s ease-out;
+  }
+  @keyframes gfSlideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal__header h2 { font-size: 18px; }
+  .modal__acoes { flex-direction: column-reverse; gap: 8px; }
+  .modal__acoes .btn { width: 100%; min-height: 44px; }
+
+  /* Contas Bancárias */
+  .contas-grid { grid-template-columns: 1fr; }
+  .conta-card__acoes { flex-direction: column; gap: 8px; }
+  .conta-card__acoes .btn { width: 100%; min-height: 44px; }
+
+  /* Categorias */
+  .categoria-linha { flex-wrap: wrap; gap: 8px; }
+  .categoria-linha__limite { width: 100%; text-align: left; min-width: auto; }
+  .categoria-linha__acoes { width: 100%; justify-content: flex-end; border-top: 1px dashed var(--border); padding-top: 6px; }
+
+  /* Relatórios & Gráficos */
+  .graficos-grid { grid-template-columns: 1fr; }
+  .relatorios-resumo-grid { grid-template-columns: 1fr; }
+  .relatorios-dre-grid { grid-template-columns: 1fr; }
+
+  /* Tabela de Demonstrativo Financeiro Sticky */
+  .tabela-anual { min-width: 750px; }
+  .tabela-anual th:first-child,
+  .tabela-anual td:first-child {
+    position: sticky;
+    left: 0;
+    background: var(--card);
+    z-index: 5;
+    box-shadow: 2px 0 6px rgba(0, 0, 0, 0.08);
+  }
+  .tabela-anual__secao td:first-child,
+  .tabela-anual__subtotal td:first-child {
+    background: var(--bg);
+  }
+
+  /* Tabelas de lancamentos -> cards (sem rolagem horizontal) */
+  .tabela-lanc, .tabela-extrato, .tabela-pend { white-space: normal; min-width: 0; }
+  .tabela-lanc thead, .tabela-extrato thead, .tabela-pend thead { display: none; }
+  .tabela-lanc, .tabela-lanc tbody, .tabela-extrato, .tabela-extrato tbody, .tabela-pend, .tabela-pend tbody { display: block; width: 100%; }
+  .tabela-lanc tr, .tabela-extrato tr, .tabela-pend tr {
+    display: grid; gap: 4px 10px; align-items: center;
+    padding: 12px 14px; margin-bottom: 10px;
+    border: 1px solid var(--border); border-left: 4px solid var(--border);
+    border-radius: 12px; background: var(--card);
+  }
+  .tabela-lanc td, .tabela-extrato td, .tabela-pend td { display: block; padding: 0; border: none; min-width: 0; }
+  .tabela-lanc td[colspan], .tabela-extrato td[colspan], .tabela-pend td[colspan] { grid-column: 1 / -1; text-align: center; }
+  .tabela-container { overflow-x: visible; }
+
+  /* Painel: [descricao | valor] / [categoria conta] / [data status | acoes] */
+  .tabela-lanc tr:not(:has(td[colspan])) {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "desc valor" "cat cat" "conta conta" "data acoes" "status acoes";
+  }
+  .tabela-lanc td:nth-child(1) { grid-area: desc; font-size: 14.5px; overflow-wrap: anywhere; }
+  .tabela-lanc td:nth-child(2) { grid-area: cat; }
+  .tabela-lanc td:nth-child(3) { grid-area: conta; color: var(--muted); font-size: 12.5px; }
+  .tabela-lanc td:nth-child(4) { grid-area: data; color: var(--muted); font-size: 12px; }
+  .tabela-lanc td:nth-child(5) { grid-area: valor; text-align: right; font-size: 15px; }
+  .tabela-lanc td:nth-child(6) { grid-area: status; }
+  .tabela-lanc td:nth-child(7) { grid-area: acoes; justify-self: end; }
+
+  /* Extrato: [descricao | valor] / [data tipo] / [status | acoes] */
+  .tabela-extrato tr:not(:has(td[colspan])) {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "desc valor" "data data" "status acoes";
+  }
+  .tabela-extrato td:nth-child(1) { grid-area: data; color: var(--muted); font-size: 12px; }
+  .tabela-extrato td:nth-child(2) { grid-area: desc; overflow-wrap: anywhere; }
+  .tabela-extrato td:nth-child(3) { display: none; }
+  .tabela-extrato td:nth-child(4) { grid-area: valor; text-align: right; }
+  .tabela-extrato td:nth-child(5) { grid-area: status; }
+  .tabela-extrato td:nth-child(6) { grid-area: acoes; justify-self: end; }
+
+  /* Pendentes: [descricao | valor] / [data | acoes] */
+  .tabela-pend tr:not(:has(td[colspan])) {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "desc valor" "data acoes";
+  }
+  .tabela-pend td:nth-child(1) { grid-area: desc; }
+  .tabela-pend td:nth-child(1) strong, .tabela-pend td:nth-child(1) div { max-width: none !important; }
+  .tabela-pend td:nth-child(2) { grid-area: data; color: var(--muted); }
+  .tabela-pend td:nth-child(3) { grid-area: valor; text-align: right; }
+  .tabela-pend td:nth-child(4) { grid-area: acoes; justify-self: end; }
+  .tabela-pend .btn-sm { min-height: 36px !important; padding: 6px 12px !important; font-size: 12px !important; }
+
+  /* Telas de Autenticação */
+  .auth-wrapper { padding: 12px; max-width: 100%; }
+  .auth-card { padding: 22px 16px; }
+}
+
+/* Mobile Toggle Button & Drawer Menu ------------------------------------ */
+
+
+.drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  z-index: 2000;
+  display: none !important;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.drawer-backdrop.is-open {
+  display: block !important;
+  opacity: 1;
+}
+
+.drawer-panel {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 280px;
+  max-width: 85vw;
+  background: var(--card);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.3);
+  transform: translateX(-100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+}
+
+.drawer-backdrop.is-open .drawer-panel {
+  transform: translateX(0);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.drawer-close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--muted);
+  line-height: 1;
+  padding: 4px;
+}
+
+.drawer-user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.drawer-user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #ffffff;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.drawer-links {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  flex: 1;
+}
+
+.drawer-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.15s ease;
+}
+
+.drawer-link i {
+  font-size: 20px;
+  color: var(--muted);
+}
+
+.drawer-link:hover, .drawer-link.is-active {
+  background: var(--bg);
+  font-weight: 700;
+}
+
+.drawer-link.is-active i {
+  color: var(--green);
+}
+
+.drawer-footer {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+
+.navbar__avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--green); color: #fff; border: none;
+  font-weight: 700; font-size: 14px; cursor: pointer; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* KPIs do painel ------------------------------------------------------- */
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+.kpi-card { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 14px; min-width: 0; }
+.kpi-card__label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.kpi-card__valor { font-size: 17px; font-weight: 800; overflow-wrap: anywhere; }
+.kpi-card__sub { font-size: 11.5px; color: var(--muted); display: flex; justify-content: space-between; gap: 6px; }
+@media (max-width: 768px) {
+  .kpi-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .kpi-card { padding: 12px; }
+  .kpi-card--full { grid-column: 1 / -1; }
+  .kpi-card__valor { font-size: 15px; }
+}
+
+@media (max-width: 768px) {
+  /* Abas em uma unica linha rolavel */
+  .tabs { flex-wrap: nowrap !important; gap: 4px !important; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabs__item { white-space: nowrap; flex-shrink: 0; }
+
+  /* Cartoes de conta: acoes em grade de 3 colunas (igual a referencia) */
+  .conta-card__footer { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 8px !important; }
+  .conta-card__footer .btn, .conta-card__footer form, .conta-card__footer form .btn { width: 100%; }
+  .conta-card__footer .btn { justify-content: center; padding-left: 4px; padding-right: 4px; font-size: 12.5px; }
+
+  .page-header h1 { font-size: 22px; }
+  .contas-toolbar { flex-direction: column; align-items: stretch !important; gap: 10px; }
+  .contas-resumo-topo { justify-content: space-between; }
+}
+
+/* Saldo por conta (Painel e Relatorios) ------------------------------- */
+.saldos-contas { padding: 12px 14px; border-radius: 16px; margin-bottom: 16px; }
+.saldos-contas__topo { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.saldos-contas__titulo { font-size: 13px; font-weight: 700; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.saldos-contas__lista { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; }
+.saldos-contas__item { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 8px 12px; min-width: 0; }
+.saldos-contas__nome { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.saldos-contas__linha { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.saldos-contas__valor { font-size: 15px; font-weight: 800; white-space: nowrap; }
+.saldos-contas__olho { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 6px; line-height: 1; min-width: 32px; min-height: 32px; display: inline-flex; align-items: center; justify-content: center; }
+
+@media (max-width: 768px) {
+  .saldos-contas__lista { grid-template-columns: 1fr 1fr; }
+  .saldos-contas__valor { font-size: 14px; }
+  /* Nenhuma tabela (exceto o demonstrativo anual) pode exigir rolagem lateral */
+  .tabela:not(.tabela-anual) { white-space: normal; min-width: 0; }
+  .tabela:not(.tabela-anual) th, .tabela:not(.tabela-anual) td { padding-left: 6px; padding-right: 6px; }
+}
+
+/* Graficos modernos (charts.js) ----------------------------------------- */
+.grafico-card { border-radius: 18px; padding: 18px 20px; min-width: 0; }
+.grafico-card__titulo { font-size: 14px; font-weight: 700; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+.grafico-card__marca { width: 4px; height: 16px; border-radius: 4px; display: inline-block; }
+.graficos-grid--duplo { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px; margin-top: 20px; }
+.grafico-card__corpo--rosca { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; margin-top: 0; }
+.grafico-card__corpo--rosca .grafico-card__canvas-wrap { width: 180px; height: 180px; margin: 0 auto; }
+.grafico-freq-card__canvas-wrap { height: 260px; position: relative; }
+.grafico-vazio { margin: 8px 0 0; font-size: 13px; }
+
+.gf-leg { list-style: none; margin: 0; padding: 0; flex: 1; min-width: 200px; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+.gf-leg__item { display: flex; flex-direction: column; gap: 5px; }
+.gf-leg__linha { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.gf-leg__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.gf-leg__nome { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); font-weight: 600; }
+.gf-leg__valor { font-weight: 700; white-space: nowrap; color: var(--text); }
+.gf-leg__pct { color: var(--muted); font-size: 11.5px; min-width: 40px; text-align: right; }
+.gf-leg__barra { height: 4px; border-radius: 4px; background: var(--bg); overflow: hidden; }
+.gf-leg__barra > span { display: block; height: 100%; border-radius: 4px; }
+
+@media (max-width: 768px) {
+  .graficos-grid--duplo { grid-template-columns: 1fr; gap: 14px; }
+  .grafico-card { padding: 16px; }
+  .grafico-card__corpo--rosca { flex-direction: column; align-items: stretch; gap: 14px; }
+  .gf-leg { max-height: none; min-width: 0; }
+  .grafico-freq-card__canvas-wrap { height: 230px; }
+}

@@ -1,0 +1,206 @@
+<div class="page-header page-header--acoes">
+    <div>
+        <h1><%= t('categorias.titulo') %></h1>
+        <p class="muted"><%= t('categorias.subtitulo') %></p>
+    </div>
+    <button type="button" class="btn btn-primary" data-modal-open="modal-nova-categoria"><%= t('categorias.nova') %></button>
+</div>
+
+<div class="contas-toolbar">
+    <div class="tabs">
+        <a href="/categorias" class="tabs__item <%= !abaArquivadas ? 'is-active' : '' %>"><%= t('categorias.aba_ativas') %></a>
+        <a href="/categorias?aba=arquivadas" class="tabs__item <%= abaArquivadas ? 'is-active' : '' %>"><%= t('categorias.aba_arquivadas') %></a>
+    </div>
+</div>
+
+<form method="get" action="/categorias" class="card categorias-filtros" style="display: flex; gap: 12px; align-items: center; margin-bottom: 20px; padding: 14px;">
+    <% if (abaArquivadas) { %><input type="hidden" name="aba" value="arquivadas"><% } %>
+    <input class="input" type="text" name="busca" placeholder="<%= t('categorias.buscar_placeholder') %>" value="<%= filtros.busca %>" style="flex: 1;">
+    <label class="checkbox-linha checkbox-linha--inline">
+        <input type="checkbox" name="com_subcategoria" value="1" <%= filtros.com_subcategoria ? 'checked' : '' %> onchange="this.form.submit()">
+        <%= t('categorias.filtro_com_subcategoria') %>
+    </label>
+    <button type="submit" class="btn btn-outline btn-sm"><%= t('categorias.buscar') %></button>
+</form>
+
+<% if ((!categorias || categorias.length === 0) && (!sistema || sistema.length === 0)) { %>
+    <div class="card placeholder-card">
+        <p class="muted"><%= abaArquivadas ? t('categorias.nenhuma_arquivada') : t('categorias.nenhuma_ativa') %></p>
+    </div>
+<% } else { %>
+    <div class="card categorias-lista" style="padding: 16px;">
+        <% categorias.forEach(c => { %>
+            <div class="categoria-item" style="border-bottom: 1px solid var(--border); padding: 12px 0;">
+                <div class="categoria-linha" style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="categoria-linha__principal" style="display: flex; align-items: center; gap: 8px;">
+                        <span class="categoria-dot" style="background: <%= c.cor || '#3b82f6' %>; width: 12px; height: 12px; border-radius: 50%; display: inline-block;"></span>
+                        <strong style="font-size: 15px;"><%= c.nome %></strong>
+                        <% if (c.subcategorias && c.subcategorias.length > 0) { %>
+                            <span class="badge badge-neutro" style="font-size: 10px;"><%= c.subcategorias.length %> sub</span>
+                        <% } %>
+                    </span>
+                    <span class="categoria-linha__acoes" style="display: flex; gap: 6px;">
+                        <% if (!abaArquivadas) { %>
+                            <button type="button" class="icon-btn" title="<%= t('categorias.add_sub') %>" data-modal-open="modal-sub-<%= c.id %>"><i class="ph ph-plus-circle"></i></button>
+                            <button type="button" class="icon-btn" title="<%= t('categorias.editar') %>" data-modal-open="modal-editar-<%= c.id %>"><i class="ph ph-pencil-simple"></i></button>
+                            <form method="post" action="/categorias/<%= c.id %>/arquivar" style="display:inline;">
+                                <%- csrfCampo %>
+                                <button type="submit" class="icon-btn" title="<%= t('categorias.arquivar') %>"><i class="ph ph-archive"></i></button>
+                            </form>
+                        <% } else { %>
+                            <form method="post" action="/categorias/<%= c.id %>/restaurar" style="display:inline;">
+                                <%- csrfCampo %>
+                                <button type="submit" class="icon-btn" title="<%= t('categorias.restaurar') %>"><i class="ph ph-arrow-counter-clockwise"></i></button>
+                            </form>
+                        <% } %>
+                    </span>
+                </div>
+
+                <% if (c.subcategorias && c.subcategorias.length > 0) { %>
+                    <div style="margin-left: 24px; margin-top: 8px; display: flex; flex-direction: column; gap: 6px;">
+                        <% c.subcategorias.forEach(sub => { %>
+                            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg); padding: 8px 12px; border-radius: 8px;">
+                                <span style="font-size: 13px; font-weight: 500;">↳ <%= sub.nome %></span>
+                                <% if (!abaArquivadas) { %>
+                                    <form method="post" action="/categorias/<%= sub.id %>/arquivar" style="display:inline;">
+                                        <%- csrfCampo %>
+                                        <button type="submit" class="icon-btn" title="<%= t('categorias.arquivar') %>"><i class="ph ph-archive"></i></button>
+                                    </form>
+                                <% } %>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } %>
+            </div>
+
+            <!-- Modal Editar Categoria -->
+            <div class="modal-backdrop" id="modal-editar-<%= c.id %>">
+                <div class="modal card" style="max-width: 460px; border-radius: 12px;">
+                    <div class="modal__header">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 600;"><%= t('categorias.modal.editar_titulo') %></h3>
+                        <button type="button" class="modal__close" data-modal-close>&times;</button>
+                    </div>
+                    <form method="post" action="/categorias/<%= c.id %>/atualizar" class="form" style="display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
+                        <%- csrfCampo %>
+                        <div class="form-group">
+                            <label style="display: block; font-weight: 500; margin-bottom: 6px;"><%= t('categorias.nome_label') %></label>
+                            <input class="input" type="text" name="nome" value="<%= c.nome %>" required placeholder="Nome da categoria">
+                        </div>
+
+                        <div class="form-group">
+                            <label style="display: block; font-weight: 500; margin-bottom: 8px;"><%= t('categorias.cor_label') %></label>
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                                <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                                    <% ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#64748B'].forEach(swatch => { %>
+                                        <button type="button" style="background: <%= swatch %>; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); cursor: pointer;" onclick="setCatColor('cor-input-<%= c.id %>', 'cor-hex-<%= c.id %>', 'cor-preview-<%= c.id %>', '<%= swatch %>')"></button>
+                                    <% }) %>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="position: relative; width: 34px; height: 34px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); cursor: pointer;" id="cor-preview-<%= c.id %>-wrap">
+                                        <div id="cor-preview-<%= c.id %>" style="width: 100%; height: 100%; background: <%= c.cor || '#3b82f6' %>;"></div>
+                                        <input type="color" id="cor-input-<%= c.id %>" name="cor" value="<%= c.cor || '#3b82f6' %>" style="position: absolute; top: -10px; left: -10px; width: 60px; height: 60px; opacity: 0; cursor: pointer;" oninput="onCatColorInput('cor-hex-<%= c.id %>', 'cor-preview-<%= c.id %>', this.value)">
+                                    </div>
+                                    <input type="text" id="cor-hex-<%= c.id %>" value="<%= (c.cor || '#3B82F6').toUpperCase() %>" style="width: 85px; text-transform: uppercase; font-family: monospace; text-align: center;" class="input" oninput="onCatHexInput('cor-input-<%= c.id %>', 'cor-preview-<%= c.id %>', this.value)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal__actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                            <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
+                            <button type="submit" class="btn" style="background-color: #10B981; border-color: #10B981; color: #ffffff; font-weight: 600;"><%= t('categorias.salvar_btn') %></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal Subcategoria -->
+            <div class="modal-backdrop" id="modal-sub-<%= c.id %>">
+                <div class="modal card" style="max-width: 440px;">
+                    <div class="modal__header">
+                        <h3><%= t('categorias.modal.nova_sub_titulo') %></h3>
+                        <button type="button" class="modal__close" data-modal-close>&times;</button>
+                    </div>
+                    <form method="post" action="/categorias/criar" class="form">
+                        <%- csrfCampo %>
+                        <input type="hidden" name="categoria_pai_id" value="<%= c.id %>">
+                        <input type="hidden" name="tipo" value="<%= c.tipo %>">
+                        <div class="form-group">
+                            <label><%= t('categorias.nome_label') %></label>
+                            <input class="input" type="text" name="nome" required placeholder="<%= t('categorias.nome_label') %>">
+                        </div>
+                        <div class="modal__actions">
+                            <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
+                            <button type="submit" class="btn" style="background-color: #10B981; border-color: #10B981; color: #ffffff; font-weight: 600;"><%= t('categorias.salvar_btn') %></button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+<% } %>
+
+<!-- Modal Nova Categoria -->
+<div class="modal-backdrop" id="modal-nova-categoria">
+    <div class="modal card" style="max-width: 460px; border-radius: 12px;">
+        <div class="modal__header">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600;"><%= t('categorias.adicionar_titulo') %></h3>
+            <button type="button" class="modal__close" data-modal-close>&times;</button>
+        </div>
+        <form method="post" action="/categorias/criar" class="form" style="display: flex; flex-direction: column; gap: 16px; margin-top: 16px;">
+            <%- csrfCampo %>
+
+            <div class="form-group">
+                <label style="display: block; font-weight: 500; margin-bottom: 6px;"><%= t('categorias.nome_label') %></label>
+                <input class="input" type="text" name="nome" required placeholder="<%= t('categorias.nome_label') %>">
+            </div>
+
+            <div class="form-group">
+                <label style="display: block; font-weight: 500; margin-bottom: 8px;"><%= t('categorias.cor_label') %></label>
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                        <% ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#64748B'].forEach(swatch => { %>
+                            <button type="button" style="background: <%= swatch %>; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); cursor: pointer;" onclick="setCatColor('cor-input-nova', 'cor-hex-nova', 'cor-preview-nova', '<%= swatch %>')"></button>
+                        <% }) %>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div style="position: relative; width: 34px; height: 34px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); cursor: pointer;" id="cor-preview-nova-wrap">
+                            <div id="cor-preview-nova" style="width: 100%; height: 100%; background: #3B82F6;"></div>
+                            <input type="color" id="cor-input-nova" name="cor" value="#3B82F6" style="position: absolute; top: -10px; left: -10px; width: 60px; height: 60px; opacity: 0; cursor: pointer;" oninput="onCatColorInput('cor-hex-nova', 'cor-preview-nova', this.value)">
+                        </div>
+                        <input type="text" id="cor-hex-nova" value="#3B82F6" style="width: 85px; text-transform: uppercase; font-family: monospace; text-align: center;" class="input" oninput="onCatHexInput('cor-input-nova', 'cor-preview-nova', this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal__actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
+                <button type="submit" class="btn" style="background-color: #10B981; border-color: #10B981; color: #ffffff; font-weight: 600;"><%= t('categorias.salvar_btn') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function setCatColor(inputId, hexId, previewId, colorVal) {
+    const input = document.getElementById(inputId);
+    const hex = document.getElementById(hexId);
+    const preview = document.getElementById(previewId);
+    if (input) input.value = colorVal;
+    if (hex) hex.value = colorVal.toUpperCase();
+    if (preview) preview.style.backgroundColor = colorVal;
+}
+function onCatColorInput(hexId, previewId, colorVal) {
+    const hex = document.getElementById(hexId);
+    const preview = document.getElementById(previewId);
+    if (hex) hex.value = colorVal.toUpperCase();
+    if (preview) preview.style.backgroundColor = colorVal;
+}
+function onCatHexInput(inputId, previewId, hexVal) {
+    if (/^#[0-9A-F]{6}$/i.test(hexVal)) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        if (input) input.value = hexVal;
+        if (preview) preview.style.backgroundColor = hexVal;
+    }
+}
+</script>

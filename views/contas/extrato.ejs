@@ -1,0 +1,109 @@
+<div class="page-header">
+    <div>
+        <h1>📋 <%= t('contas.extrato.titulo') %> - <%= conta.nome %></h1>
+        <p class="muted"><a href="/contas"><%= t('contas.extrato.voltar') %></a></p>
+    </div>
+</div>
+
+<div class="card" style="border-radius: 16px; padding: 20px;">
+    <div class="tabela-container">
+        <table class="tabela tabela-extrato">
+            <thead>
+                <tr>
+                    <th><%= t('contas.extrato.col.data') %></th>
+                    <th><%= t('contas.extrato.col.descricao') %></th>
+                    <th><%= t('contas.extrato.col.tipo') %></th>
+                    <th><%= t('contas.extrato.col.valor') %></th>
+                    <th><%= t('contas.extrato.col.status') %></th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% if (!lancamentos || lancamentos.length === 0) { %>
+                    <tr>
+                        <td colspan="6" class="tabela__vazio"><%= t('contas.extrato.vazio') %></td>
+                    </tr>
+                <% } else { %>
+                    <% lancamentos.forEach(l => { %>
+                        <tr>
+                            <td><%= formatDate(l.data_competencia, 'DD/MM/YYYY') %></td>
+                            <td>
+                                <strong title="<%= l.descricao %>"><%= truncarTexto(l.descricao, 45) %></strong>
+                                <% if (l.categoria_nome) { %>
+                                    <span class="lancamento-tag" style="margin-left: 6px;"><%= l.categoria_nome %></span>
+                                <% } %>
+                            </td>
+                            <td><%= l.tipo %></td>
+                            <td style="font-weight: 600; color: <%= parseFloat(l.valor) < 0 ? 'var(--red)' : 'var(--green)' %>;">
+                                <%= parseFloat(l.valor) < 0 ? '-' : '+' %> <%= moeda(Math.abs(parseFloat(l.valor))) %>
+                            </td>
+                            <td>
+                                <span class="badge <%= l.status === 'pago' ? 'badge-sucesso' : 'badge-alerta' %>">
+                                    <%= l.status === 'pago' ? 'Pago' : 'Pendente' %>
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 6px; align-items: center;">
+                                    <button type="button" class="icon-btn" title="Editar" data-modal-open="modal-editar-<%= l.id %>">✏️</button>
+                                    <form method="post" action="/lancamentos/<%= l.id %>/excluir" onsubmit="return confirm('<%= t('painel.lancamento.confirmar_exclusao') %>')">
+                                        <%- csrfCampo %>
+                                        <input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                        <button type="submit" class="icon-btn" title="Excluir">🗑️</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Modal Editar do Extrato -->
+                        <div class="modal-backdrop" id="modal-editar-<%= l.id %>">
+                            <div class="modal card">
+                                <div class="modal__header">
+                                    <h3><%= l.tipo === 'receita' ? t('modal.editar_receita') : t('modal.editar_despesa') %></h3>
+                                    <button type="button" class="modal__close" data-modal-close>&times;</button>
+                                </div>
+                                <form method="post" action="/lancamentos/<%= l.id %>/atualizar" class="form">
+                                    <%- csrfCampo %>
+<input type="hidden" name="voltar" value="<%= currentUrl %>">
+
+                                    <div class="form-group">
+                                        <label><%= t('modal.descricao') %></label>
+                                        <input class="input" type="text" name="descricao" value="<%= l.descricao %>" required>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label><%= t('modal.valor') %></label>
+                                            <input class="input" type="text" name="valor" value="<%= l.valor %>" data-money required>
+                                        </div>
+                                        <div class="form-group">
+                                            <label><%= t('modal.conta') %></label>
+                                            <input class="input" type="text" value="<%= conta.nome %>" readonly disabled>
+                                            <input type="hidden" name="conta_id" value="<%= conta.id %>">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label><%= t('modal.data_competencia') %></label>
+                                        <input class="input" type="date" name="data_competencia" value="<%= formatDate(l.data_competencia, 'YYYY-MM-DD') %>" required>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label class="checkbox-linha">
+                                            <input type="checkbox" name="status" value="pago" <%= l.status === 'pago' ? 'checked' : '' %>>
+                                            <%= l.tipo === 'receita' ? t('modal.foi_recebida') : t('modal.foi_pago') %>
+                                        </label>
+                                    </div>
+
+                                    <div class="modal__actions">
+                                        <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
+                                        <button type="submit" class="btn btn-primary"><%= t('modal.salvar') %></button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    <% }) %>
+                <% } %>
+            </tbody>
+        </table>
+    </div>
+</div>

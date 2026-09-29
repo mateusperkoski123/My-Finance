@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="<%= lang %>" data-tema="<%= theme %>">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title><%= title ? title + ' - ' + t('app.nome') : t('app.nome') %></title>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="/assets/css/app.css?v=<%= Date.now() %>">
+</head>
+<body>
+<header class="navbar">
+    <div class="navbar__inner">
+        <!-- Top Left: Menu Toggle (Mobile Only) + Brand Logo -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <a href="/" class="navbar__brand" style="display: flex; align-items: center; gap: 6px;">
+                <i class="ph-fill ph-hands-clapping" style="font-size: 22px;"></i>
+                <span style="font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em;">MyFinance</span>
+            </a>
+        </div>
+
+        <% if (usuarioLogado) { %>
+            <nav class="navbar__links">
+                <a href="/" title="<%= t('nav.visao_geral') %>" class="navbar__link <%= currentRoute === '/' ? 'is-active' : '' %>">
+                    <span class="navbar__icon"><i class="ph ph-squares-four"></i></span>
+                    <span class="navbar__label"><%= t('nav.visao_geral') %></span>
+                </a>
+                <a href="/relatorios" title="<%= t('nav.relatorios') %>" class="navbar__link <%= currentRoute === '/relatorios' ? 'is-active' : '' %>">
+                    <span class="navbar__icon"><i class="ph ph-chart-bar"></i></span>
+                    <span class="navbar__label"><%= t('nav.relatorios') %></span>
+                </a>
+                <a href="/categorias" title="<%= t('nav.categorias') %>" class="navbar__link <%= currentRoute === '/categorias' ? 'is-active' : '' %>">
+                    <span class="navbar__icon"><i class="ph ph-tag"></i></span>
+                    <span class="navbar__label"><%= t('nav.categorias') %></span>
+                </a>
+                <a href="/contas" title="<%= t('nav.contas') %>" class="navbar__link <%= currentRoute === '/contas' ? 'is-active' : '' %>">
+                    <span class="navbar__icon"><i class="ph ph-bank"></i></span>
+                    <span class="navbar__label"><%= t('nav.contas') %></span>
+                </a>
+                <a href="/configuracoes" title="<%= t('nav.configuracoes') %>" class="navbar__link <%= currentRoute.startsWith('/configuracoes') ? 'is-active' : '' %>">
+                    <span class="navbar__icon"><i class="ph ph-gear"></i></span>
+                    <span class="navbar__label"><%= t('nav.configuracoes') %></span>
+                </a>
+            </nav>
+            <div class="navbar__user">
+                <span class="navbar__user-nome" style="font-weight: 600;"><%= usuarioLogado.nome %></span>
+                <button type="button" class="navbar__avatar" id="btn-toggle-menu" aria-label="Menu"><%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %></button>
+            </div>
+        <% } %>
+    </div>
+</header>
+
+<main class="container">
+    <% if (flash) { %>
+        <%
+            let msgText = flash.mensagem || '';
+            if (msgText.startsWith('flash.')) {
+                const resText = t(msgText);
+                msgText = resText.startsWith('flash.') ? (flash.tipo === 'sucesso' ? 'Operação realizada com sucesso!' : 'Ocorreu um erro ao processar a solicitação.') : resText;
+            }
+        %>
+        <div class="alert alert-<%= flash.tipo === 'sucesso' ? 'sucesso' : 'erro' %>" style="display: flex; align-items: center; gap: 8px;">
+            <i class="ph-bold <%= flash.tipo === 'sucesso' ? 'ph-check-circle' : 'ph-warning-circle' %>" style="font-size: 18px;"></i>
+            <span><%= msgText %></span>
+        </div>
+    <% } %>
+
+    <%- include('partials/saldos_contas') %>
+
+    <%- body %>
+</main>
+
+<% if (usuarioLogado) { %>
+
+    <!-- Mobile Drawer Overlay & Menu Panel -->
+    <div class="drawer-backdrop" id="mobile-drawer-backdrop" style="display: none;" onclick="fecharMenuMobile()">
+        <div class="drawer-panel" onclick="event.stopPropagation()">
+            <div class="drawer-header">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <i class="ph-fill ph-hands-clapping" style="font-size: 24px; color: var(--green);"></i>
+                    <strong style="font-size: 16px;">MyFinance</strong>
+                </div>
+                <button type="button" class="drawer-close-btn" onclick="fecharMenuMobile()">&times;</button>
+            </div>
+            
+            <div class="drawer-user-info">
+                <div class="drawer-user-avatar"><%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %></div>
+                <div style="min-width: 0; flex: 1;">
+                    <div style="font-weight: 700; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= usuarioLogado.nome %></div>
+                    <div style="font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= usuarioLogado.email || '' %></div>
+                </div>
+            </div>
+
+            <nav class="drawer-links">
+                <a href="/" class="drawer-link <%= currentRoute === '/' ? 'is-active' : '' %>">
+                    <i class="ph ph-squares-four"></i>
+                    <span><%= t('nav.visao_geral') %></span>
+                </a>
+                <a href="/relatorios" class="drawer-link <%= currentRoute === '/relatorios' ? 'is-active' : '' %>">
+                    <i class="ph ph-chart-bar"></i>
+                    <span><%= t('nav.relatorios') %></span>
+                </a>
+                <a href="/categorias" class="drawer-link <%= currentRoute === '/categorias' ? 'is-active' : '' %>">
+                    <i class="ph ph-tag"></i>
+                    <span><%= t('nav.categorias') %></span>
+                </a>
+                <a href="/contas" class="drawer-link <%= currentRoute === '/contas' ? 'is-active' : '' %>">
+                    <i class="ph ph-bank"></i>
+                    <span><%= t('nav.contas') %></span>
+                </a>
+                <a href="/configuracoes" class="drawer-link <%= currentRoute.startsWith('/configuracoes') ? 'is-active' : '' %>">
+                    <i class="ph ph-gear"></i>
+                    <span><%= t('nav.configuracoes') %></span>
+                </a>
+            </nav>
+
+            <div class="drawer-footer">
+                <form method="post" action="/logout" style="width: 100%;">
+                    <%- csrfCampo %>
+                    <button type="submit" class="btn btn-outline btn-block" style="color: var(--red); border-color: var(--red-bg); justify-content: flex-start; gap: 8px;">
+                        <i class="ph ph-sign-out" style="font-size: 18px;"></i>
+                        <span><%= t('nav.sair') %></span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+<% } %>
+
+<script>
+window.gfMoeda = {
+    codigo: '<%= currency %>',
+    decimais: <%= currency === 'PYG' ? 0 : 2 %>,
+    temCentavos: <%= currency !== 'PYG' %>,
+    simbolo: '<%= currency === "PYG" ? "Gs." : (currency === "BRL" ? "R$" : (currency === "USD" ? "$" : (currency === "EUR" ? "€" : "$"))) %>',
+    milhar: '<%= currency === "USD" ? "," : "." %>',
+    decimal: '<%= currency === "USD" ? "." : "," %>',
+    separadorMilhar: '<%= currency === "USD" ? "," : "." %>',
+    separadorDecimal: '<%= currency === "USD" ? "." : "," %>'
+};
+
+function abrirMenuMobile() {
+    
+    const backdrop = document.getElementById('mobile-drawer-backdrop');
+    if (backdrop) {
+        backdrop.style.display = 'block';
+        setTimeout(() => backdrop.classList.add('is-open'), 10);
+    }
+}
+function fecharMenuMobile() {
+    const backdrop = document.getElementById('mobile-drawer-backdrop');
+    if (backdrop) {
+        backdrop.classList.remove('is-open');
+        setTimeout(() => { backdrop.style.display = 'none'; }, 200);
+    }
+}
+document.addEventListener('DOMContentLoaded', () => {
+    const toggleBtn = document.getElementById('btn-toggle-menu');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            abrirMenuMobile();
+        });
+    }
+});
+</script>
+<script src="/assets/js/app.js"></script>
+</body>
+</html>

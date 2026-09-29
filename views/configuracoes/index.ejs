@@ -1,0 +1,55 @@
+<div class="page-header">
+    <h1>⚙️ <%= t('config.titulo') %></h1>
+</div>
+
+<div class="settings-layout">
+    <%- include('_menu', { menuAtivo: 'preferencia' }) %>
+
+    <section class="card settings-content">
+        <h2><%= t('config.preferencia.titulo') %></h2>
+        <p class="muted"><%= t('config.preferencia.subtitulo') %></p>
+
+        <form method="post" action="/configuracoes/preferencia" class="form">
+            <%- csrfCampo %>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="idioma"><%= t('config.idioma') %></label>
+                    <select class="input" id="idioma" name="idioma">
+                        <% Object.entries(config.idiomas).forEach(([codigo, label]) => { %>
+                            <option value="<%= codigo %>" <%= usuarioLogado.idioma === codigo ? 'selected' : '' %>>
+                                <%= label %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="moeda"><%= t('config.moeda') %></label>
+                    <select class="input" id="moeda" name="moeda">
+                        <% Object.entries(config.moedas).forEach(([codigo, label]) => { %>
+                            <option value="<%= codigo %>" <%= usuarioLogado.moeda === codigo ? 'selected' : '' %>>
+                                <%= label %>
+                            </option>
+                        <% }) %>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label><%= t('config.tema') %></label>
+                <div class="tema-opcoes">
+                    <% Object.keys(config.temas).forEach(codigo => { %>
+                        <label class="tema-opcao tema-opcao--<%= codigo %>">
+                            <input type="radio" name="tema" value="<%= codigo %>" <%= usuarioLogado.tema === codigo ? 'checked' : '' %>>
+                            <span class="tema-opcao__amostra"></span>
+                            <%= t('tema.' + codigo) %>
+                        </label>
+                    <% }) %>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">💾 <%= t('config.salvar') %></button>
+        </form>
+    </section>
+</div>

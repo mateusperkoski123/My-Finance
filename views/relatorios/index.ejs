@@ -1,0 +1,433 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="page-header page-header--acoes">
+    <div>
+        <h1>📊 <%= t('relatorios.titulo') %></h1>
+        <p class="muted"><%= t('relatorios.subtitulo') %></p>
+    </div>
+</div>
+
+<div class="contas-toolbar">
+    <div class="tabs" style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+        <a href="/relatorios?aba=graficos&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'graficos' ? 'is-active' : '' %>">📊 <%= t('relatorios.aba_graficos') %></a>
+        <a href="/relatorios?aba=pendentes&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'pendentes' ? 'is-active' : '' %>">⏰ <%= t('relatorios.aba_pendentes') %></a>
+        <a href="/relatorios?aba=demonstrativo&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'demonstrativo' ? 'is-active' : '' %>">📑 <%= t('relatorios.aba_demonstrativo') %></a>
+        <a href="/relatorios?aba=demonstrativo_anual&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'demonstrativo_anual' ? 'is-active' : '' %>">📅 Demonstrativo Anual</a>
+    </div>
+</div>
+
+<!-- Global Filter Bar (Period presets, Grouping, Ordering) -->
+<form method="get" action="/relatorios" class="card" style="margin-bottom: 20px; padding: 14px 18px;">
+    <input type="hidden" name="aba" value="<%= aba %>">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        
+        <!-- Period presets -->
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            <a href="/relatorios?aba=<%= aba %>&preset=hoje&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === 'hoje' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.hoje') %></a>
+            <a href="/relatorios?aba=<%= aba %>&preset=7dias&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === '7dias' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.7dias') %></a>
+            <a href="/relatorios?aba=<%= aba %>&preset=anual&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === 'anual' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.anual') %></a>
+            <a href="/relatorios?aba=<%= aba %>&preset=mes&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === 'mes' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
+        </div>
+
+        <% if (aba !== 'graficos') { %>
+            <!-- Grouping & Ordering -->
+            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <label style="font-size: 12px; margin: 0; color: var(--muted); font-weight: 600;"><%= t('filtro.agrupar') %></label>
+                    <select name="agrupar" class="input" style="padding: 4px 8px; font-size: 12px; width: auto; border-radius: 8px;" onchange="this.form.submit()">
+                        <option value="categoria" <%= agrupar === 'categoria' ? 'selected' : '' %>><%= t('filtro.por_categoria') %></option>
+                        <option value="subcategoria" <%= agrupar === 'subcategoria' ? 'selected' : '' %>><%= t('filtro.por_subcategoria') %></option>
+                    </select>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <label style="font-size: 12px; margin: 0; color: var(--muted); font-weight: 600;"><%= t('filtro.ordenar') %></label>
+                    <select name="ordenar" class="input" style="padding: 4px 8px; font-size: 12px; width: auto; border-radius: 8px;" onchange="this.form.submit()">
+                        <option value="vencimento" <%= (ordenar === 'vencimento' || ordenar === 'data') ? 'selected' : '' %>><%= t('filtro.vencimento') %></option>
+                        <option value="preco" <%= (ordenar === 'preco' || ordenar === 'valor') ? 'selected' : '' %>><%= t('filtro.preco') %></option>
+                        <option value="criacao" <%= (ordenar === 'criacao' || ordenar === 'data_criacao') ? 'selected' : '' %>><%= t('filtro.criacao') %></option>
+                    </select>
+                </div>
+            </div>
+        <% } %>
+
+    </div>
+
+    <!-- Custom Date Range -->
+    <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 10px;">
+        <span class="muted" style="font-size: 12px; font-weight: 600;"><%= t('filtro.periodo_personalizado') %></span>
+        <input type="date" name="data_inicio" value="<%= periodo.inicio %>" class="input" style="width: 140px; padding: 4px 8px; font-size: 12px; border-radius: 8px;">
+        <span class="muted" style="font-size: 12px;"><%= t('filtro.ate') %></span>
+        <input type="date" name="data_fim" value="<%= periodo.fim %>" class="input" style="width: 140px; padding: 4px 8px; font-size: 12px; border-radius: 8px;">
+        <button type="submit" class="btn btn-outline btn-sm" style="border-radius: 8px;"><%= t('filtro.aplicar_datas') %></button>
+    </div>
+</form>
+
+<% if (aba === 'graficos') { %>
+    <% if (resumo) { %>
+        <!-- Summary Cards transferred from Dashboard -->
+        <div class="resumo-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-top: 20px;">
+            <!-- Saldo Anterior com Comparativo -->
+            <% const saldoAtualNoPeriodo = (resumo.receitas_recebidas - resumo.despesas_pagas + (resumo.ajustes_periodo || 0)); %>
+            <% const saldoAcumuladoTotal = resumo.saldo_anterior + saldoAtualNoPeriodo; %>
+            <div class="card resumo-card" style="border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <span class="muted" style="font-size: 13px; font-weight: 500;"><%= t('painel.saldo_anterior') %></span>
+                    <div style="font-size: 22px; font-weight: 700; margin-top: 6px; color: var(--text);"><%= moeda(resumo.saldo_anterior) %></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
+                    <span class="muted">Saldo Final (Anterior + Atual):</span>
+                    <strong style="color: <%= saldoAcumuladoTotal >= 0 ? 'var(--green)' : 'var(--red)' %>;">
+                        <%= moeda(saldoAcumuladoTotal) %>
+                        (<%= saldoAtualNoPeriodo >= 0 ? '+' : '' %><%= moeda(saldoAtualNoPeriodo) %>)
+                    </strong>
+                </div>
+            </div>
+
+            <!-- Receitas / Ingresos -->
+            <div class="card resumo-card" style="border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 6px; color: var(--green); font-size: 13px; font-weight: 600;">
+                        <i class="ph ph-arrow-circle-up" style="font-size: 18px;"></i> <%= t('painel.receitas') %>
+                    </div>
+                    <div style="font-size: 22px; font-weight: 700; margin-top: 6px; color: var(--green);"><%= moeda(resumo.receitas_recebidas) %></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
+                    <span class="muted"><%= t('painel.a_receber') %>:</span>
+                    <strong style="color: var(--text);"><%= moeda(resumo.receitas_a_receber) %></strong>
+                </div>
+            </div>
+
+            <!-- Despesas / Gastos -->
+            <div class="card resumo-card" style="border-radius: 16px; padding: 18px 20px; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 6px; color: var(--red); font-size: 13px; font-weight: 600;">
+                        <i class="ph ph-arrow-circle-down" style="font-size: 18px;"></i> <%= t('painel.despesas') %>
+                    </div>
+                    <div style="font-size: 22px; font-weight: 700; margin-top: 6px; color: var(--red);"><%= moeda(resumo.despesas_pagas) %></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
+                    <span class="muted"><%= t('painel.nao_pago') %>:</span>
+                    <strong style="color: var(--text);"><%= moeda(resumo.despesas_nao_pagas) %></strong>
+                </div>
+            </div>
+        </div>
+    <% } %>
+    <div class="graficos-grid graficos-grid--duplo">
+        <div class="card grafico-card">
+            <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: var(--red);"></span><%= t('relatorios.grafico_despesas_titulo') %></h3>
+            <div id="wrapDespesas" class="grafico-card__corpo grafico-card__corpo--rosca">
+                <div class="grafico-card__canvas-wrap"><canvas id="chartDespesas"></canvas></div>
+                <ul class="gf-leg" id="legDespesas"></ul>
+            </div>
+            <p class="muted grafico-vazio" id="vazioDespesas" hidden>Sem despesas no período.</p>
+        </div>
+
+        <div class="card grafico-card">
+            <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: var(--green);"></span><%= t('relatorios.grafico_receitas_titulo') %></h3>
+            <div id="wrapReceitas" class="grafico-card__corpo grafico-card__corpo--rosca">
+                <div class="grafico-card__canvas-wrap"><canvas id="chartReceitas"></canvas></div>
+                <ul class="gf-leg" id="legReceitas"></ul>
+            </div>
+            <p class="muted grafico-vazio" id="vazioReceitas" hidden>Sem receitas no período.</p>
+        </div>
+    </div>
+
+    <!-- Grafico de Frequencia Diaria -->
+    <div class="card grafico-card" style="margin-top: 20px;">
+        <h3 class="grafico-card__titulo"><%= t('relatorios.frequencia_titulo') %></h3>
+        <div class="grafico-freq-card__canvas-wrap"><canvas id="chartFrequencia"></canvas></div>
+        <p class="muted grafico-vazio" id="vazioFreq" hidden>Sem movimentações no período.</p>
+    </div>
+
+    <script src="/assets/js/charts.js?v=<%= Date.now() %>"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const catData = <%- JSON.stringify(catData || []) %>;
+        const freqData = <%- JSON.stringify(frequencia || []) %>;
+        const itens = (tipo) => catData.filter(d => d.tipo === tipo)
+            .map(d => ({ nome: d.nome || 'Sem categoria', cor: d.cor, valor: Math.abs(parseFloat(d.total)) || 0 }));
+
+        [['Despesas', 'despesa'], ['Receitas', 'receita']].forEach(([nome, tipo]) => {
+            const lista = itens(tipo);
+            if (lista.some(i => i.valor > 0)) {
+                GFCharts.rosca('chart' + nome, 'leg' + nome, lista, { rotulo: 'Total' });
+            } else {
+                document.getElementById('wrap' + nome).hidden = true;
+                document.getElementById('vazio' + nome).hidden = false;
+            }
+        });
+
+        if (freqData.length > 0) {
+            GFCharts.frequencia('chartFrequencia', freqData);
+        } else {
+            document.querySelector('.grafico-freq-card__canvas-wrap').hidden = true;
+            document.getElementById('vazioFreq').hidden = false;
+        }
+    });
+    </script>
+<% } else if (aba === 'pendentes') { %>
+    <% 
+        const pendentesIngresos = (pendentes || []).filter(p => p.tipo === 'receita' || p.tipo === 'ingreso');
+        const pendentesEgresos = (pendentes || []).filter(p => p.tipo === 'despesa' || p.tipo === 'gasto');
+    %>
+    <p class="muted" style="font-size: 13px; margin-top: 16px; margin-bottom: 16px;"><%= t('relatorios.pendentes_ajuda') %></p>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px;">
+        <!-- Coluna Esquerda: Ingresos (Receitas) -->
+        <div class="card" style="border-radius: 16px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 700; color: var(--green); display: flex; align-items: center; gap: 8px; margin: 0;">
+                    <i class="ph ph-arrow-circle-up" style="font-size: 20px;"></i> <%= t('relatorios.ingresos_pendentes') %>
+                </h3>
+                <span class="badge" style="background: var(--green-bg); color: var(--green); font-weight: 600; font-size: 11px;"><%= t('relatorios.registros', { n: pendentesIngresos.length }) %></span>
+            </div>
+            <div class="tabela-container">
+                <table class="tabela tabela-pend">
+                    <thead>
+                        <tr>
+                            <th>Descrição / Categoria</th>
+                            <th>Data</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (pendentesIngresos.length === 0) { %>
+                            <tr>
+                                <td colspan="4" class="tabela__vazio" style="text-align: center; color: var(--muted); padding: 20px;"><%= t('relatorios.pendentes_vazio') %></td>
+                            </tr>
+                        <% } else { %>
+                            <% pendentesIngresos.forEach(p => { %>
+                                <tr>
+                                    <td>
+                                        <strong title="<%= p.descricao %>" style="display: block; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><%= truncarTexto(p.descricao, 45) %></strong>
+                                        <div style="font-size: 11px; color: var(--muted); max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <%= p.categoria_nome || '—' %><%= p.subcategoria_nome ? ' / ' + p.subcategoria_nome : '' %> • <%= p.conta_nome || '—' %>
+                                        </div>
+                                    </td>
+                                    <td style="white-space: nowrap; font-size: 13px;"><%= formatDate(p.data_competencia, 'DD/MM/YYYY') %></td>
+                                    <td style="font-weight: 700; color: var(--green); white-space: nowrap;">
+                                        + <%= moeda(Math.abs(p.valor)) %>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 6px; align-items: center;">
+                                            <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" style="display:inline;">
+                                                <%- csrfCampo %>
+<input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                                <input type="hidden" name="status" value="pago">
+                                                <button type="submit" class="btn btn-outline btn-sm" style="color: var(--green); border-color: var(--green); padding: 4px 8px; font-size: 11px;">Receber</button>
+                                            </form>
+                                            <form method="post" action="/lancamentos/<%= p.id %>/excluir" onsubmit="return confirm('<%= t('painel.lancamento.confirmar_exclusao') %>')" style="display:inline;">
+                                                <%- csrfCampo %>
+                                                <input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                                <button type="submit" class="icon-btn" title="Excluir" style="color: var(--red);"><i class="ph ph-trash"></i></button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Coluna Direita: Egresos (Gastos) -->
+        <div class="card" style="border-radius: 16px; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
+                <h3 style="font-size: 16px; font-weight: 700; color: var(--red); display: flex; align-items: center; gap: 8px; margin: 0;">
+                    <i class="ph ph-arrow-circle-down" style="font-size: 20px;"></i> <%= t('relatorios.egresos_pendentes') %>
+                </h3>
+                <span class="badge" style="background: var(--red-bg); color: var(--red); font-weight: 600; font-size: 11px;"><%= t('relatorios.registros', { n: pendentesEgresos.length }) %></span>
+            </div>
+            <div class="tabela-container">
+                <table class="tabela tabela-pend">
+                    <thead>
+                        <tr>
+                            <th>Descrição / Categoria</th>
+                            <th>Data</th>
+                            <th>Valor</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (pendentesEgresos.length === 0) { %>
+                            <tr>
+                                <td colspan="4" class="tabela__vazio" style="text-align: center; color: var(--muted); padding: 20px;"><%= t('relatorios.pendentes_vazio') %></td>
+                            </tr>
+                        <% } else { %>
+                            <% pendentesEgresos.forEach(p => { %>
+                                <tr>
+                                    <td>
+                                        <strong title="<%= p.descricao %>" style="display: block; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><%= truncarTexto(p.descricao, 45) %></strong>
+                                        <div style="font-size: 11px; color: var(--muted); max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                            <%= p.categoria_nome || '—' %><%= p.subcategoria_nome ? ' / ' + p.subcategoria_nome : '' %> • <%= p.conta_nome || '—' %>
+                                        </div>
+                                    </td>
+                                    <td style="white-space: nowrap; font-size: 13px;"><%= formatDate(p.data_competencia, 'DD/MM/YYYY') %></td>
+                                    <td style="font-weight: 700; color: var(--red); white-space: nowrap;">
+                                        - <%= moeda(Math.abs(p.valor)) %>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 6px; align-items: center;">
+                                            <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" style="display:inline;">
+                                                <%- csrfCampo %>
+<input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                                <input type="hidden" name="status" value="pago">
+                                                <button type="submit" class="btn btn-outline btn-sm" style="color: var(--green); border-color: var(--green); padding: 4px 8px; font-size: 11px;">Pagar</button>
+                                            </form>
+                                            <form method="post" action="/lancamentos/<%= p.id %>/excluir" onsubmit="return confirm('<%= t('painel.lancamento.confirmar_exclusao') %>')" style="display:inline;">
+                                                <%- csrfCampo %>
+                                                <input type="hidden" name="voltar" value="<%= currentUrl %>">
+                                                <button type="submit" class="icon-btn" title="Excluir" style="color: var(--red);"><i class="ph ph-trash"></i></button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+<% } else if (aba === 'demonstrativo') { %>
+    <div class="card" style="border-radius: 16px; padding: 20px; margin-top: 20px;">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;"><%= t('relatorios.aba_demonstrativo') %></h3>
+        <div class="tabela-container">
+            <table class="tabela">
+                <thead>
+                    <tr>
+                        <th><%= t('relatorios.demonstrativo_categoria_col') %></th>
+                        <th>Subcategoria</th>
+                        <th>Tipo</th>
+                        <th><%= t('relatorios.demonstrativo_total_geral') %></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (!demonstrativoLinhas || demonstrativoLinhas.length === 0) { %>
+                        <tr>
+                            <td colspan="4" class="tabela__vazio"><%= t('relatorios.demonstrativo_sem_dados') %></td>
+                        </tr>
+                    <% } else { %>
+                        <% demonstrativoLinhas.forEach(d => { %>
+                            <tr>
+                                <td><strong><%= d.categoria || t('relatorios.sem_categoria') %></strong></td>
+                                <td><%= d.subcategoria || '—' %></td>
+                                <td><%= d.tipo %></td>
+                                <td style="font-weight: 600; color: <%= d.tipo === 'receita' ? 'var(--green)' : 'var(--red)' %>;">
+                                    <%= moeda(d.total) %>
+                                </td>
+                            </tr>
+                        <% }) %>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<% } else if (aba === 'demonstrativo_anual') { %>
+    <div class="periodo-nav card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; margin-top: 20px; border-radius: 16px;">
+        <a class="btn btn-outline btn-sm" href="/relatorios?aba=demonstrativo_anual&ano_anual=<%= anoAnual - 1 %>">← <%= anoAnual - 1 %></a>
+        <strong>Ano: <%= anoAnual %></strong>
+        <a class="btn btn-outline btn-sm" href="/relatorios?aba=demonstrativo_anual&ano_anual=<%= anoAnual + 1 %>"><%= anoAnual + 1 %> →</a>
+    </div>
+
+    <div class="card" style="border-radius: 16px; padding: 20px; margin-top: 16px; overflow-x: auto;">
+        <%
+        const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        %>
+        <table class="tabela tabela-anual" style="min-width: 900px;">
+            <thead>
+                <tr>
+                    <th>Categoria</th>
+                    <% mesesNomes.forEach(m => { %>
+                        <th style="text-align: right;"><%= m %></th>
+                    <% }) %>
+                    <th style="text-align: right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Receitas -->
+                <tr style="background: var(--green-bg); font-weight: 700;">
+                    <td colspan="14" style="color: var(--green);"><%= t('relatorios.receitas_upper') %></td>
+                </tr>
+                <% if (!demonstrativoAnual || !demonstrativoAnual.receitas || demonstrativoAnual.receitas.length === 0) { %>
+                    <tr><td colspan="14" class="tabela__vazio"><%= t('relatorios.sem_receitas_ano') %></td></tr>
+                <% } else { %>
+                    <% demonstrativoAnual.receitas.forEach(cat => { %>
+                        <tr class="tabela-anual__linha <%= cat.subcategorias && cat.subcategorias.length > 0 ? 'tabela-anual__linha--expansivel' : '' %>" data-anual-toggle="cat-rec-<%= cat.categoria_id %>">
+                            <td>
+                                <% if (cat.subcategorias && cat.subcategorias.length > 0) { %><span>▸ </span><% } %>
+                                <strong><%= cat.categoria_nome || t('relatorios.sem_categoria') %></strong>
+                            </td>
+                            <% for (let m = 1; m <= 12; m++) { %>
+                                <td style="text-align: right;"><%= cat.meses[m] > 0 ? moeda(cat.meses[m]) : '—' %></td>
+                            <% } %>
+                            <td style="text-align: right; font-weight: 700;"><%= moeda(cat.total) %></td>
+                        </tr>
+                        <% (cat.subcategorias || []).forEach(sub => { %>
+                            <tr class="tabela-anual__linha--sub" data-anual-pai="cat-rec-<%= cat.categoria_id %>" hidden style="background: var(--bg);">
+                                <td style="padding-left: 28px;"><%= sub.categoria_nome %></td>
+                                <% for (let m = 1; m <= 12; m++) { %>
+                                    <td style="text-align: right;"><%= sub.meses[m] > 0 ? moeda(sub.meses[m]) : '—' %></td>
+                                <% } %>
+                                <td style="text-align: right;"><%= moeda(sub.total) %></td>
+                            </tr>
+                        <% }) %>
+                    <% }) %>
+                <% } %>
+
+                <!-- Despesas -->
+                <tr style="background: var(--red-bg); font-weight: 700;">
+                    <td colspan="14" style="color: var(--red);"><%= t('relatorios.despesas_upper') %></td>
+                </tr>
+                <% if (!demonstrativoAnual || !demonstrativoAnual.despesas || demonstrativoAnual.despesas.length === 0) { %>
+                    <tr><td colspan="14" class="tabela__vazio"><%= t('relatorios.sem_despesas_ano') %></td></tr>
+                <% } else { %>
+                    <% demonstrativoAnual.despesas.forEach(cat => { %>
+                        <tr class="tabela-anual__linha <%= cat.subcategorias && cat.subcategorias.length > 0 ? 'tabela-anual__linha--expansivel' : '' %>" data-anual-toggle="cat-desp-<%= cat.categoria_id %>">
+                            <td>
+                                <% if (cat.subcategorias && cat.subcategorias.length > 0) { %><span>▸ </span><% } %>
+                                <strong><%= cat.categoria_nome || t('relatorios.sem_categoria') %></strong>
+                            </td>
+                            <% for (let m = 1; m <= 12; m++) { %>
+                                <td style="text-align: right;"><%= cat.meses[m] > 0 ? moeda(cat.meses[m]) : '—' %></td>
+                            <% } %>
+                            <td style="text-align: right; font-weight: 700;"><%= moeda(cat.total) %></td>
+                        </tr>
+                        <% (cat.subcategorias || []).forEach(sub => { %>
+                            <tr class="tabela-anual__linha--sub" data-anual-pai="cat-desp-<%= cat.categoria_id %>" hidden style="background: var(--bg);">
+                                <td style="padding-left: 28px;"><%= sub.categoria_nome %></td>
+                                <% for (let m = 1; m <= 12; m++) { %>
+                                    <td style="text-align: right;"><%= sub.meses[m] > 0 ? moeda(sub.meses[m]) : '—' %></td>
+                                <% } %>
+                                <td style="text-align: right;"><%= moeda(sub.total) %></td>
+                            </tr>
+                        <% }) %>
+                    <% }) %>
+                <% } %>
+
+                <!-- Saldo Mensal -->
+                <tr style="font-weight: 800; border-top: 2px solid var(--border);">
+                    <td><%= t('relatorios.balanco_liquido') %></td>
+                    <% for (let m = 1; m <= 12; m++) { %>
+                        <% const sVal = demonstrativoAnual ? (demonstrativoAnual.saldo_mensal[m] || 0) : 0; %>
+                        <td style="text-align: right; color: <%= sVal >= 0 ? 'var(--green)' : 'var(--red)' %>;">
+                            <%= sVal !== 0 ? moeda(sVal) : '—' %>
+                        </td>
+                    <% } %>
+                    <td style="text-align: right; color: var(--text);">
+                        <%
+                        let totSaldo = 0;
+                        if (demonstrativoAnual && demonstrativoAnual.saldo_mensal) {
+                            for (let m = 1; m <= 12; m++) totSaldo += (demonstrativoAnual.saldo_mensal[m] || 0);
+                        }
+                        %>
+                        <%= moeda(totSaldo) %>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+<% } %>

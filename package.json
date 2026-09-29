@@ -1,0 +1,24 @@
+{
+  "name": "gestao-financeira",
+  "version": "1.0.0",
+  "description": "Sistema de Gestão Financeira Inteligente Multi-Tenant em Node.js",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.9",
+    "express": "^4.19.2",
+    "express-ejs-layouts": "^2.5.1",
+    "express-mysql-session": "^3.0.3",
+    "express-rate-limit": "^8.7.0",
+    "express-session": "^1.18.0",
+    "helmet": "^8.3.0",
+    "multer": "^2.4.0",
+    "mysql2": "^3.9.7",
+    "nodemailer": "^10.0.10"
+  }
+}

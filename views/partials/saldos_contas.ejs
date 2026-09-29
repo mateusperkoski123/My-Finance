@@ -1,0 +1,52 @@
+<% if (typeof contasSaldos !== 'undefined' && contasSaldos && contasSaldos.length > 0) { %>
+<section class="saldos-contas card" id="saldos-contas" aria-label="Saldo por conta">
+    <div class="saldos-contas__topo">
+        <span class="saldos-contas__titulo"><i class="ph ph-bank"></i> Saldo por conta</span>
+        <button type="button" class="saldos-contas__olho" id="saldos-olho-todas" title="Ocultar/exibir todos os saldos" aria-label="Ocultar ou exibir todos os saldos"><i class="ph ph-eye"></i></button>
+    </div>
+    <div class="saldos-contas__lista">
+        <% contasSaldos.forEach(c => { %>
+            <div class="saldos-contas__item" data-conta-id="<%= c.id %>">
+                <div class="saldos-contas__nome"><%= c.nome %></div>
+                <div class="saldos-contas__linha">
+                    <strong class="saldos-contas__valor" data-texto="<%= moeda(c.saldo_atual) %>" style="color: <%= parseFloat(c.saldo_atual) >= 0 ? 'var(--green)' : 'var(--red)' %>;"><%= moeda(c.saldo_atual) %></strong>
+                    <button type="button" class="saldos-contas__olho saldos-contas__olho--item" title="Ocultar/exibir saldo" aria-label="Ocultar ou exibir saldo de <%= c.nome %>"><i class="ph ph-eye"></i></button>
+                </div>
+            </div>
+        <% }) %>
+    </div>
+</section>
+<script>
+(function () {
+    var CHAVE = 'gf_contas_ocultas'; // mesma chave da tela de Contas Bancarias
+    function ler() { try { return JSON.parse(localStorage.getItem(CHAVE) || '[]').map(String); } catch (e) { return []; } }
+    function gravar(l) { try { localStorage.setItem(CHAVE, JSON.stringify(l)); } catch (e) {} }
+    var itens = Array.prototype.slice.call(document.querySelectorAll('#saldos-contas .saldos-contas__item'));
+    function aplicar() {
+        var ocultas = ler();
+        itens.forEach(function (it) {
+            var oculto = ocultas.indexOf(it.getAttribute('data-conta-id')) !== -1;
+            var v = it.querySelector('.saldos-contas__valor');
+            v.textContent = oculto ? '••••••' : v.getAttribute('data-texto');
+            it.querySelector('.saldos-contas__olho i').className = 'ph ' + (oculto ? 'ph-eye-slash' : 'ph-eye');
+        });
+        var todas = itens.length > 0 && itens.every(function (it) { return ocultas.indexOf(it.getAttribute('data-conta-id')) !== -1; });
+        document.querySelector('#saldos-olho-todas i').className = 'ph ' + (todas ? 'ph-eye-slash' : 'ph-eye');
+    }
+    itens.forEach(function (it) {
+        it.querySelector('.saldos-contas__olho').addEventListener('click', function () {
+            var id = it.getAttribute('data-conta-id'), l = ler(), i = l.indexOf(id);
+            if (i === -1) l.push(id); else l.splice(i, 1);
+            gravar(l); aplicar();
+        });
+    });
+    document.getElementById('saldos-olho-todas').addEventListener('click', function () {
+        var ocultas = ler();
+        var todas = itens.every(function (it) { return ocultas.indexOf(it.getAttribute('data-conta-id')) !== -1; });
+        gravar(todas ? [] : itens.map(function (it) { return it.getAttribute('data-conta-id'); }));
+        aplicar();
+    });
+    aplicar();
+})();
+</script>
+<% } %>
