@@ -117,19 +117,13 @@
                         <div class="form-group">
                             <label><%= t('contas.inf_valor') %></label>
                             <div style="display: flex; gap: 8px; align-items: center;">
-                                <button type="button" class="btn btn-outline" id="btn-toggle-tipo-<%= c.id %>" onclick="
-                                    const input = document.getElementById('tipo-ajuste-input-<%= c.id %>');
-                                    if (input.value === 'ingreso') {
-                                        input.value = 'salida';
-                                        this.innerHTML = '<i class="ph ph-minus"></i> <%= t('contas.subtrair_saldo') %>';
-                                        this.style.color = 'var(--red)';
-                                    } else {
-                                        input.value = 'ingreso';
-                                        this.innerHTML = '<i class="ph ph-plus"></i> <%= t('contas.adicionar_saldo') %>';
-                                        this.style.color = 'var(--green)';
-                                    }
-                                " style="white-space: nowrap; color: var(--green); font-weight: 600;">
-                                    <i class="ph ph-plus"></i> <%= t('contas.adicionar_saldo') %>
+                                <button type="button" class="btn btn-outline" id="btn-toggle-tipo-<%= c.id %>"
+                                        data-input="tipo-ajuste-input-<%= c.id %>"
+                                        data-rotulo-add="<%= t('contas.adicionar_saldo') %>"
+                                        data-rotulo-sub="<%= t('contas.subtrair_saldo') %>"
+                                        onclick="gfAlternarAjuste(this)"
+                                        style="white-space: nowrap; color: var(--green); font-weight: 600;">
+                                    <i class="ph ph-plus"></i> <span><%= t('contas.adicionar_saldo') %></span>
                                 </button>
                                 <input class="input" type="text" name="valor_ajuste" data-money required placeholder="0,00" style="flex: 1;">
                             </div>
@@ -329,6 +323,16 @@
 
 <script>
 const ocultasSet = new Set(JSON.parse(localStorage.getItem('gf_contas_ocultas') || '[]'));
+
+// Alterna o ajuste entre "adicionar" e "subtrair" (sem HTML dentro de atributo inline).
+function gfAlternarAjuste(btn) {
+    var input = document.getElementById(btn.getAttribute('data-input'));
+    var adicionando = input.value === 'ingreso';
+    input.value = adicionando ? 'salida' : 'ingreso';
+    btn.querySelector('i').className = 'ph ' + (adicionando ? 'ph-minus' : 'ph-plus');
+    btn.querySelector('span').textContent = btn.getAttribute(adicionando ? 'data-rotulo-sub' : 'data-rotulo-add');
+    btn.style.color = adicionando ? 'var(--red)' : 'var(--green)';
+}
 
 function toggleOlhoConta(contaId) {
     if (ocultasSet.has(contaId)) {
