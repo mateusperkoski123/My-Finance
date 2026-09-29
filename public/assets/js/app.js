@@ -64,6 +64,23 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     selectSubcategoria.disabled = subcategorias.length === 0;
+
+    // Texto do campo e dica coerentes com o estado (evita "Selecione uma categoria" com categoria já escolhida).
+    var temCategoria = !!categoria;
+    placeholder.textContent = !temCategoria ? 'Selecione uma categoria primeiro'
+      : (subcategorias.length ? 'Sem subcategoria' : 'Esta categoria não tem subcategorias');
+    var grupo = selectSubcategoria.parentElement;
+    var dica = grupo.querySelector('.sub-dica');
+    if (temCategoria && subcategorias.length === 0) {
+      if (!dica) {
+        dica = document.createElement('small');
+        dica.className = 'sub-dica';
+        dica.innerHTML = 'Quer detalhar mais? <a href="/categorias">Crie subcategorias em Categorias</a>.';
+        grupo.appendChild(dica);
+      }
+    } else if (dica) {
+      dica.remove();
+    }
   }
 
   gfBinders.push(function (root) {

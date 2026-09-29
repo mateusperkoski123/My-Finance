@@ -1499,3 +1499,6 @@ h1 > .ph, .page-header h1 .ph { vertical-align: -0.12em; margin-right: 6px; colo
   .painel-resumo:has(.grafico-card) .grafico-card__corpo--rosca { flex-wrap: nowrap; }
 }
 @media (min-width: 769px) { .painel-resumo .kpi-card--full { grid-column: auto; } }
+
+.sub-dica { display: block; margin-top: 6px; font-size: 12px; color: var(--muted); }
+.sub-dica a { color: var(--text); font-weight: 600; }
