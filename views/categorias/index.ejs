@@ -155,6 +155,15 @@
             </div>
 
             <div class="form-group">
+                <label style="display: block; font-weight: 500; margin-bottom: 6px;">Tipo</label>
+                <select class="input" name="tipo">
+                    <option value="despesa">Despesa</option>
+                    <option value="receita">Receita</option>
+                    <option value="ambas">Receita e despesa</option>
+                </select>
+            </div>
+
+            <div class="form-group">
                 <label style="display: block; font-weight: 500; margin-bottom: 8px;"><%= t('categorias.cor_label') %></label>
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
                     <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">

@@ -80,41 +80,6 @@ const dashboardController = {
         const pendenciasUrgentes = await Lancamento.pendentesUrgentes(userId, toLocalYMD(new Date()));
         const despesasPorCategoria = await Lancamento.resumoPorCategoriaPai(userId, periodo, 'despesa');
 
-        const mesesTira = [];
-        if (!periodo.customizado) {
-            for (let offset = -5; offset <= 5; offset++) {
-                const d = new Date(ano, (mes - 1) + offset, 1);
-                const m = d.getMonth() + 1;
-                const a = d.getFullYear();
-                const totalDespesa = await Lancamento.totalDespesasMes(userId, m, a);
-                mesesTira.push({
-                    mes: m,
-                    ano: a,
-                    total: totalDespesa,
-                    atual: (m === mes && a === ano)
-                });
-            }
-        }
-
-        const lateralReceitasTotal = (parseFloat(resumo.receitas_recebidas) || 0) + (parseFloat(resumo.receitas_a_receber) || 0);
-        const lateralDespesasTotal = (parseFloat(resumo.despesas_pagas) || 0) + (parseFloat(resumo.despesas_nao_pagas) || 0);
-        const temDadosLateral = (lateralReceitasTotal + lateralDespesasTotal) > 0;
-
-        const dadosLateral = {
-            todas: {
-                labels: [req.t('painel.lateral.aba_receitas'), req.t('painel.lateral.aba_despesas')],
-                valores: [lateralReceitasTotal, lateralDespesasTotal]
-            },
-            receitas: {
-                labels: [req.t('painel.lateral.recebidas'), req.t('painel.resumo.a_receber')],
-                valores: [parseFloat(resumo.receitas_recebidas) || 0, parseFloat(resumo.receitas_a_receber) || 0]
-            },
-            despesas: {
-                labels: [req.t('painel.lateral.pagas'), req.t('painel.resumo.nao_pagas')],
-                valores: [parseFloat(resumo.despesas_pagas) || 0, parseFloat(resumo.despesas_nao_pagas) || 0]
-            }
-        };
-
         res.render('dashboard/index', {
             title: req.t('pages.painel.titulo'),
             periodo,
@@ -124,11 +89,8 @@ const dashboardController = {
             contas,
             categoriasArvore,
             resumo,
-            mesesTira,
             pendenciasUrgentes,
             despesasPorCategoria,
-            temDadosLateral,
-            dadosLateral,
             lancamentos: dadosLancamentos.lancamentos,
             grupos: dadosLancamentos.grupos,
             totalRegistros: dadosLancamentos.totalRegistros,

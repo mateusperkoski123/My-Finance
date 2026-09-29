@@ -16,6 +16,7 @@ class User {
             'INSERT INTO users (nome, email, senha_hash, idioma, moeda, tema, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())',
             [nome, email, senha_hash, idioma, moeda, tema]
         );
+        await require('./Categoria').criarPadrao(result.insertId);
         return { id: result.insertId };
     }
 
@@ -83,6 +84,7 @@ class User {
             [nome, email, hash, googleId, 'pt-BR', 'PYG', 'claro']
         );
 
+        await require('./Categoria').criarPadrao(result.insertId);
         return this.findById(result.insertId);
     }
 }

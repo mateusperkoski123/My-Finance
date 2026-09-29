@@ -42,9 +42,15 @@ const nomesMeses = {
 </div>
 
 <% if (!contas || contas.length === 0) { %>
-    <div class="card placeholder-card">
-        <p class="muted"><%= t('painel.sem_contas') %></p>
-        <p><a href="/contas" class="btn btn-primary"><%= t('painel.ir_para_contas') %></a></p>
+    <div class="card boas-vindas">
+        <h2>Bem-vindo! Vamos começar em 3 passos</h2>
+        <p class="muted" style="margin: 0;">Leva menos de um minuto para ver seu dinheiro organizado.</p>
+        <ol>
+            <li><b>1</b><span><strong>Crie sua primeira conta</strong> (ex.: Carteira, Nubank, Conta corrente) e informe o saldo atual.</span></li>
+            <li><b>2</b><span><strong>Registre uma receita ou despesa</strong> pelo botão + (as categorias já vieram prontas).</span></li>
+            <li><b>3</b><span><strong>Acompanhe</strong> saldos, pendências e gráficos por categoria.</span></li>
+        </ol>
+        <a href="/contas" class="btn btn-primary"><%= t('painel.ir_para_contas') %></a>
     </div>
 <% } else { %>
 
@@ -583,7 +589,7 @@ function gfAtualizarParam(chave, valor) {
                     <label for="novo-receita-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Categoria *</label>
                     <select class="input" id="novo-receita-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="" required style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
                         <option value="">Escolha uma categoria</option>
-                        <% (categoriasArvore || []).forEach(cat => { %>
+                        <% (categoriasArvore || []).filter(cat => cat.tipo === 'receita' || cat.tipo === 'ambas').forEach(cat => { %>
                             <option value="<%= cat.id %>"><%= cat.nome %></option>
                         <% }) %>
                     </select>
@@ -740,7 +746,7 @@ function gfAtualizarParam(chave, valor) {
                     <label for="novo-despesa-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Categoria *</label>
                     <select class="input" id="novo-despesa-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="" required style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
                         <option value="">Escolha uma categoria</option>
-                        <% (categoriasArvore || []).forEach(cat => { %>
+                        <% (categoriasArvore || []).filter(cat => cat.tipo === 'despesa' || cat.tipo === 'ambas').forEach(cat => { %>
                             <option value="<%= cat.id %>"><%= cat.nome %></option>
                         <% }) %>
                     </select>

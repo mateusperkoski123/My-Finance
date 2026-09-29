@@ -1458,3 +1458,12 @@ button.is-loading::after {
 .filtro-ativo { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--primary); font-size: 13px; }
 .filtro-ativo i { margin-right: 4px; }
 .filtro-ativo a { font-weight: 700; color: var(--red); text-decoration: none; }
+
+.badge-alerta { background: #fef3c7; color: #b45309; }
+:root[data-tema="escuro"] .badge-alerta { background: #3b2a08; color: #fbbf24; }
+
+.boas-vindas { text-align: left; padding: 24px; }
+.boas-vindas h2 { margin: 0 0 6px; font-size: 20px; }
+.boas-vindas ol { margin: 14px 0 18px; padding-left: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.boas-vindas li { display: flex; gap: 12px; align-items: flex-start; font-size: 14px; }
+.boas-vindas li b { flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--primary); color: var(--primary-text); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; }

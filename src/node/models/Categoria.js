@@ -69,7 +69,32 @@ class Categoria {
         }
     }
 
+    // Categorias iniciais para quem acabou de se cadastrar (evita tela vazia e formulario travado).
+    static async criarPadrao(userId) {
+        const [ex] = await db.query('SELECT COUNT(*) AS n FROM categorias WHERE user_id = ? AND sistema = 0', [userId]);
+        if (ex[0].n > 0) return;
+        const padrao = [
+            ['Alimentação', '#F97316', 'despesa'], ['Moradia', '#EF4444', 'despesa'], ['Transporte', '#3B82F6', 'despesa'],
+            ['Saúde', '#10B981', 'despesa'], ['Lazer', '#8B5CF6', 'despesa'], ['Educação', '#06B6D4', 'despesa'],
+            ['Assinaturas', '#6366F1', 'despesa'], ['Outros', '#64748B', 'despesa'],
+            ['Salário', '#16A34A', 'receita'], ['Renda extra', '#F59E0B', 'receita']
+        ];
+        for (const [nome, cor, tipo] of padrao) {
+            await db.query(
+                `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, sistema, status, created_at, updated_at)
+                 VALUES (?, NULL, ?, ?, ?, 0, 'ativa', NOW(), NOW())`,
+                [userId, nome, cor, tipo]
+            );
+        }
+    }
+
     static async criar(userId, { parent_id, categoria_pai_id, nome, cor, tipo, limite_gasto }) {
+        // Cor padrao do formulario (azul) vira uma cor distinta da paleta, para os graficos nao ficarem todos iguais.
+        if (!cor || String(cor).toLowerCase() === '#3b82f6') {
+            const paleta = ['#F97316', '#EF4444', '#10B981', '#8B5CF6', '#06B6D4', '#EC4899', '#F59E0B', '#6366F1', '#64748B', '#16A34A'];
+            const [n] = await db.query('SELECT COUNT(*) AS n FROM categorias WHERE user_id = ? AND parent_id IS NULL', [userId]);
+            cor = paleta[n[0].n % paleta.length];
+        }
         parent_id = parent_id || categoria_pai_id || null;
         if (parent_id) {
             const pai = await this.buscarPorId(parent_id, userId);
