@@ -247,7 +247,10 @@ const configuracoesController = {
                 const status = STATUS.includes(l.status) ? l.status : 'pendente';
                 const dataComp = normData(l.data_competencia) || toLocalYMD(new Date());
                 const dataPag = normData(l.data_pagamento);
-                const valor = parseFloat(l.valor) || 0;
+                let valor = parseFloat(l.valor) || 0;
+                // Invariante do sistema: despesa e negativa, receita e positiva (ajuste/transferencia mantem o sinal informado).
+                if (tipo === 'despesa') valor = -Math.abs(valor);
+                else if (tipo === 'receita') valor = Math.abs(valor);
 
                 const [dup] = await conn.query(
                     'SELECT id FROM lancamentos WHERE user_id = ? AND conta_id = ? AND tipo = ? AND descricao = ? AND valor = ? AND data_competencia = ? LIMIT 1',

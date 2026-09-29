@@ -351,6 +351,13 @@ class Lancamento {
         };
     }
 
+    // Corrige registros legados (ex.: importados de simulacao) com sinal incompativel com o tipo. Idempotente.
+    static async normalizarSinais() {
+        const [d] = await db.query("UPDATE lancamentos SET valor = -ABS(valor) WHERE tipo = 'despesa' AND valor > 0");
+        const [r] = await db.query("UPDATE lancamentos SET valor = ABS(valor) WHERE tipo = 'receita' AND valor < 0");
+        return { despesas: d.affectedRows || 0, receitas: r.affectedRows || 0 };
+    }
+
     // Pendencias vencidas ou que vencem hoje (contas ativas), mais antigas primeiro.
     static async pendentesUrgentes(userId, hojeYMD, limite = 5) {
         const base = `FROM lancamentos l

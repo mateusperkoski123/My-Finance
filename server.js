@@ -142,6 +142,11 @@ app.use((err, req, res, next) => {
     res.status(500).render('500', { title: 'Erro no Servidor' });
 });
 
+// Reparo de sinais (despesa negativa / receita positiva) antes de aceitar requisicoes
+require('./src/node/models/Lancamento').normalizarSinais()
+    .then((r) => { if (r.despesas || r.receitas) console.log(`Sinais corrigidos: ${r.despesas} despesa(s), ${r.receitas} receita(s).`); })
+    .catch((err) => console.error('Falha ao normalizar sinais:', err.message));
+
 // Start Server
 app.listen(PORT, () => {
     console.log(`====================================================`);
