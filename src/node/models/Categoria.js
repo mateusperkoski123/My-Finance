@@ -88,6 +88,36 @@ class Categoria {
         }
     }
 
+    // Garante que existam categorias ativas (nao-sistema) utilizaveis para despesa E para receita.
+    // Cobre contas antigas que so tinham as categorias de sistema ou so um dos tipos.
+    static async garantirCategoriasBasicas(userId) {
+        const conjuntos = {
+            despesa: [['Alimentação', '#F97316'], ['Moradia', '#EF4444'], ['Transporte', '#3B82F6'], ['Saúde', '#10B981'],
+                      ['Lazer', '#8B5CF6'], ['Educação', '#06B6D4'], ['Assinaturas', '#6366F1'], ['Outros', '#64748B']],
+            receita: [['Salário', '#16A34A'], ['Renda extra', '#F59E0B']]
+        };
+        for (const tipo of ['despesa', 'receita']) {
+            const [r] = await db.query(
+                "SELECT COUNT(*) AS n FROM categorias WHERE user_id = ? AND sistema = 0 AND status = 'ativa' AND parent_id IS NULL AND tipo IN (?, 'ambas')",
+                [userId, tipo]
+            );
+            if (r[0].n > 0) continue;
+            for (const [nome, cor] of conjuntos[tipo]) {
+                const [ex] = await db.query('SELECT id, status, tipo FROM categorias WHERE user_id = ? AND nome = ? AND parent_id IS NULL AND sistema = 0 LIMIT 1', [userId, nome]);
+                if (ex.length) {
+                    // mesma categoria ja existe (arquivada ou de outro tipo): reativa / amplia em vez de duplicar
+                    await db.query("UPDATE categorias SET status = 'ativa', tipo = IF(tipo = ?, tipo, 'ambas'), updated_at = NOW() WHERE id = ?", [tipo, ex[0].id]);
+                } else {
+                    await db.query(
+                        `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, sistema, status, created_at, updated_at)
+                         VALUES (?, NULL, ?, ?, ?, 0, 'ativa', NOW(), NOW())`,
+                        [userId, nome, cor, tipo]
+                    );
+                }
+            }
+        }
+    }
+
     static async criar(userId, { parent_id, categoria_pai_id, nome, cor, tipo, limite_gasto }) {
         // Cor padrao do formulario (azul) vira uma cor distinta da paleta, para os graficos nao ficarem todos iguais.
         if (!cor || String(cor).toLowerCase() === '#3b82f6') {

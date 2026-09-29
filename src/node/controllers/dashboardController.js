@@ -70,6 +70,7 @@ const dashboardController = {
         const porPagina = parseInt(query.por_pagina || '30', 10);
 
         const contas = await Conta.buscarPorUsuario(userId, false);
+        await Categoria.garantirCategoriasBasicas(userId); // contas antigas sem categorias de despesa/receita
         const categoriasArvore = await Categoria.buscarArvore(userId, false);
         const resumo = await Lancamento.resumoPeriodo(userId, periodo);
         
