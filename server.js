@@ -79,6 +79,7 @@ app.set('layout', 'layout');
 app.use((req, res, next) => {
     res.locals.currentRoute = req.path;
     res.locals.currentUrl = req.originalUrl;
+    res.locals.googleAtivo = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
     res.locals.usuarioLogado = null;
     next();
 });
@@ -104,11 +105,12 @@ app.use(i18nMiddleware);
 app.use(csrfMiddleware);
 
 // Helpers in views
-const { moeda, formatDate, truncarTexto } = require('./src/node/core/helpers');
+const { moeda, formatDate, truncarTexto, descricaoLancamento } = require('./src/node/core/helpers');
 app.use((req, res, next) => {
     res.locals.moeda = (val) => moeda(val, res.locals.currency);
     res.locals.formatDate = formatDate;
     res.locals.truncarTexto = truncarTexto;
+    res.locals.descricaoLancamento = descricaoLancamento;
     next();
 });
 

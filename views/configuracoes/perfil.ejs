@@ -1,5 +1,5 @@
 <div class="page-header">
-    <h1>⚙️ <%= t('config.titulo') %></h1>
+    <h1><i class="ph ph-gear"></i> <%= t('config.titulo') %></h1>
 </div>
 
 <div class="settings-layout">
@@ -22,7 +22,7 @@
                 <input class="input" type="email" id="email" name="email" value="<%= usuarioLogado.email %>" required>
             </div>
 
-            <button type="submit" class="btn btn-primary">💾 <%= t('config.perfil.salvar') %></button>
+            <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('config.perfil.salvar') %></button>
         </form>
 
         <hr style="margin: 32px 0; border: none; border-top: 1px solid var(--border);">
@@ -50,7 +50,7 @@
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary">🔒 <%= t('config.perfil.senha_salvar') %></button>
+            <button type="submit" class="btn btn-primary"><i class="ph ph-lock-key"></i> <%= t('config.perfil.senha_salvar') %></button>
         </form>
     </section>
 </div>

@@ -102,7 +102,23 @@ function addMonthsYMD(ymd, n) {
     return toLocalYMD(alvo);
 }
 
+// Texto amigavel para lancamentos de sistema (ajuste/transferencia), inclusive os antigos com "#id" e valores no texto.
+function descricaoLancamento(l) {
+    if (!l) return '';
+    const d = String(l.descricao || '');
+    if (l.tipo === 'ajuste') return parseFloat(l.valor) < 0 ? 'Ajuste de saldo (saída)' : 'Ajuste de saldo (entrada)';
+    if (l.tipo === 'transferencia') {
+        const entrada = /recebida/i.test(d) || parseFloat(l.valor) > 0;
+        const m = d.match(/\b(?:para|de|da)\s+(.+?)(?:\s+-\s+.*)?$/i);
+        let outra = m ? m[1].trim() : '';
+        if (/^(conta\s+)?#?\d+$/i.test(outra)) outra = '';
+        return (entrada ? 'Transferência recebida' : 'Transferência enviada') + (outra ? (entrada ? ' de ' : ' para ') + outra : '');
+    }
+    return d;
+}
+
 module.exports = {
+    descricaoLancamento,
     addMonthsYMD,
     moeda,
     parseMoeda,

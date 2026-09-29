@@ -1,6 +1,6 @@
 <div class="page-header">
     <div>
-        <h1>📋 <%= t('contas.extrato.titulo') %> - <%= conta.nome %></h1>
+        <h1><i class="ph ph-receipt"></i> <%= t('contas.extrato.titulo') %> - <%= conta.nome %></h1>
         <p class="muted"><a href="/contas"><%= t('contas.extrato.voltar') %></a></p>
     </div>
 </div>
@@ -28,7 +28,7 @@
                         <tr>
                             <td><%= formatDate(l.data_competencia, 'DD/MM/YYYY') %></td>
                             <td>
-                                <strong title="<%= l.descricao %>"><%= truncarTexto(l.descricao, 45) %></strong>
+                                <strong title="<%= descricaoLancamento(l) %>"><%= (l.tipo === 'ajuste' || l.tipo === 'transferencia') ? descricaoLancamento(l) : truncarTexto(l.descricao, 45) %></strong>
                                 <% if (l.categoria_nome) { %>
                                     <span class="lancamento-tag" style="margin-left: 6px;"><%= l.categoria_nome %></span>
                                 <% } %>

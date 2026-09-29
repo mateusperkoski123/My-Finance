@@ -151,7 +151,7 @@ const contasController = {
                  VALUES (?, ?, ?, 'ajuste', ?, ?, ?, ?, 'pago', NOW(), NOW())`,
                 [
                     userId, id, catId,
-                    `Ajuste de Saldo (${delta >= 0 ? '+' : ''}${delta})`,
+                    delta >= 0 ? 'Ajuste de saldo (entrada)' : 'Ajuste de saldo (saída)',
                     delta,
                     b.data || toLocalYMD(new Date()),
                     b.data || toLocalYMD(new Date())
@@ -202,14 +202,14 @@ const contasController = {
             await db.query(
                 `INSERT INTO lancamentos (user_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia, data_pagamento, status, created_at, updated_at) 
                  VALUES (?, ?, ?, 'transferencia', ?, ?, ?, ?, 'pago', NOW(), NOW())`,
-                [userId, origem_id, catId, `Transferência para ${contaDestino.nome} - ${descStr}`, -val, dataComp, dataComp]
+                [userId, origem_id, catId, `Transferência enviada para ${contaDestino.nome}${descricao && descricao.trim() ? ' - ' + descStr : ''}`, -val, dataComp, dataComp]
             );
 
             // Entrada no destino
             await db.query(
                 `INSERT INTO lancamentos (user_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia, data_pagamento, status, created_at, updated_at) 
                  VALUES (?, ?, ?, 'transferencia', ?, ?, ?, ?, 'pago', NOW(), NOW())`,
-                [userId, destino_id, catId, `Transferência recebida de ${contaOrigem.nome} - ${descStr}`, val, dataComp, dataComp]
+                [userId, destino_id, catId, `Transferência recebida de ${contaOrigem.nome}${descricao && descricao.trim() ? ' - ' + descStr : ''}`, val, dataComp, dataComp]
             );
 
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.transferencia_realizada') };

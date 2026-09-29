@@ -77,7 +77,7 @@ class Lancamento {
             orderBy = 'ABS(l.valor) DESC, l.data_competencia DESC';
         } else if (ordenacao === 'vencimento') {
             orderBy = 'l.data_competencia ASC, l.id ASC';
-        } else if (ordenacao === 'criacao' || ordenacao === 'data') {
+        } else if (ordenacao === 'criacao') {
             orderBy = 'l.created_at DESC, l.id DESC';
         }
 

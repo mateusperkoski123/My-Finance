@@ -100,6 +100,7 @@ const nomesMeses = {
 </section>
 <% } %>
 
+<div class="painel-resumo">
 <!-- KPIs do periodo (Saldo anterior / Receitas / Despesas) -->
 <div class="kpi-grid">
     <div class="card kpi-card" style="border-left: 4px solid #2563eb;">
@@ -139,6 +140,8 @@ const nomesMeses = {
 </script>
 <% } %>
 
+</div>
+
 <!-- Botões de Ação (+ Ingreso / - Gasto) diretamente abaixo do Saldo Disponível -->
 <div class="myfinance-action-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
     <% if (contas && contas.length > 0) { %>
@@ -175,10 +178,10 @@ const nomesMeses = {
         <button type="submit" class="btn btn-outline" aria-label="Buscar"><i class="ph ph-magnifying-glass"></i></button>
         <% if (filtros.busca) { %><a class="btn btn-outline" href="<%= buildQueryLink({ busca: '' }) %>" title="Limpar busca"><i class="ph ph-x"></i></a><% } %>
     </form>
-    <div style="display: flex; gap: 16px; font-size: 13px; font-weight: 600; flex-wrap: wrap;">
-        <a href="<%= buildQueryLink({ tipo: 'todas' }) %>" style="text-decoration: none; color: <%= filtros.tipo === 'todas' ? 'var(--text)' : 'var(--muted)' %>; <%= filtros.tipo === 'todas' ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.todas') %></a>
-        <a href="<%= buildQueryLink({ tipo: 'despesas' }) %>" style="text-decoration: none; color: <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'var(--text)' : 'var(--muted)' %>; <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.despesas') %></a>
-        <a href="<%= buildQueryLink({ tipo: 'receitas' }) %>" style="text-decoration: none; color: <%= (filtros.tipo === 'receitas' || filtros.tipo === 'receita') ? 'var(--text)' : 'var(--muted)' %>; <%= (filtros.tipo === 'receitas' || filtros.tipo === 'receita') ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.receitas') %></a>
+    <div class="tipo-tabs" style="display: flex; gap: 16px; font-size: 13px; font-weight: 600; flex-wrap: wrap;">
+        <a href="<%= buildQueryLink({ tipo: 'todas' }) %>" class="<%= filtros.tipo === 'todas' ? 'is-active' : '' %>" style="text-decoration: none; color: <%= filtros.tipo === 'todas' ? 'var(--text)' : 'var(--muted)' %>; <%= filtros.tipo === 'todas' ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.todas') %></a>
+        <a href="<%= buildQueryLink({ tipo: 'despesas' }) %>" class="<%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'is-active' : '' %>" style="text-decoration: none; color: <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'var(--text)' : 'var(--muted)' %>; <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.despesas') %></a>
+        <a href="<%= buildQueryLink({ tipo: 'receitas' }) %>" class="<%= (filtros.tipo === 'receitas' || filtros.tipo === 'receita') ? 'is-active' : '' %>" style="text-decoration: none; color: <%= (filtros.tipo === 'receitas' || filtros.tipo === 'receita') ? 'var(--text)' : 'var(--muted)' %>; <%= (filtros.tipo === 'receitas' || filtros.tipo === 'receita') ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.receitas') %></a>
     </div>
 
 <!-- Barra de Ferramentas: Agrupamento & Ordenação (no mesmo cartão das abas, menos ruído visual) -->
@@ -186,12 +189,12 @@ const nomesMeses = {
     <div style="display: flex; align-items: center; gap: 8px;">
         <i class="ph ph-folder" style="font-size: 18px; color: var(--muted);"></i>
         <select class="input" style="padding: 6px 12px; font-size: 13px; border-radius: 12px; min-width: 160px;" onchange="gfAtualizarParam('agrupar', this.value)">
-            <option value="sem_agrupamento" <%= agrupamento === 'sem_agrupamento' ? 'selected' : '' %>>📁 <%= t('filtro.sem_agrupamento') %></option>
-            <option value="categoria" <%= agrupamento === 'categoria' ? 'selected' : '' %>>📁 <%= t('modal.categoria') %></option>
-            <option value="subcategoria" <%= agrupamento === 'subcategoria' ? 'selected' : '' %>>📁 <%= t('modal.subcategoria') %></option>
-            <option value="vencimento" <%= agrupamento === 'vencimento' ? 'selected' : '' %>>📁 <%= t('filtro.vencimento') %></option>
-            <option value="criacao" <%= agrupamento === 'criacao' ? 'selected' : '' %>>📁 <%= t('filtro.criacao') %></option>
-            <option value="status" <%= agrupamento === 'status' ? 'selected' : '' %>>📁 <%= t('filtro.status') %></option>
+            <option value="sem_agrupamento" <%= agrupamento === 'sem_agrupamento' ? 'selected' : '' %>> <%= t('filtro.sem_agrupamento') %></option>
+            <option value="categoria" <%= agrupamento === 'categoria' ? 'selected' : '' %>> <%= t('modal.categoria') %></option>
+            <option value="subcategoria" <%= agrupamento === 'subcategoria' ? 'selected' : '' %>> <%= t('modal.subcategoria') %></option>
+            <option value="vencimento" <%= agrupamento === 'vencimento' ? 'selected' : '' %>> <%= t('filtro.vencimento') %></option>
+            <option value="criacao" <%= agrupamento === 'criacao' ? 'selected' : '' %>> <%= t('filtro.criacao') %></option>
+            <option value="status" <%= agrupamento === 'status' ? 'selected' : '' %>> <%= t('filtro.status') %></option>
         </select>
     </div>
 
@@ -199,9 +202,10 @@ const nomesMeses = {
         <div style="display: flex; align-items: center; gap: 6px;">
             <span class="muted" style="font-size: 13px;"><%= t('filtro.ordenar') %></span>
             <select class="input" style="padding: 6px 12px; font-size: 13px; border-radius: 12px;" onchange="gfAtualizarParam('ordenar', this.value)">
-                <option value="data" <%= ordenacao === 'data' || ordenacao === 'criacao' ? 'selected' : '' %>><%= t('filtro.criacao') %></option>
-                <option value="vencimento" <%= ordenacao === 'vencimento' ? 'selected' : '' %>><%= t('filtro.vencimento') %></option>
-                <option value="valor" <%= ordenacao === 'valor' ? 'selected' : '' %>><%= t('modal.valor') %></option>
+                <option value="data" <%= (ordenacao === 'data') ? 'selected' : '' %>>Data (mais recentes)</option>
+                <option value="vencimento" <%= ordenacao === 'vencimento' ? 'selected' : '' %>>Vencimento (mais antigos)</option>
+                <option value="valor" <%= ordenacao === 'valor' ? 'selected' : '' %>>Maior valor</option>
+                <option value="criacao" <%= ordenacao === 'criacao' ? 'selected' : '' %>>Adicionados por último</option>
             </select>
         </div>
     </div>
@@ -278,9 +282,10 @@ function gfAtualizarParam(chave, valor) {
                                     <% g.lancamentos.forEach(l => { %>
                                         <tr>
                                             <td>
-                                                <strong title="<%= l.descricao %>"><%= truncarTexto(l.descricao, 45) %></strong>
+                                                <% const _sis = (l.tipo === 'ajuste' || l.tipo === 'transferencia'); const _desc = descricaoLancamento(l); %>
+                                                <strong title="<%= _desc %>"><% if (_sis) { %><i class="ph <%= l.tipo === 'ajuste' ? 'ph-scales' : 'ph-arrows-left-right' %>" style="color: var(--muted); margin-right: 4px;"></i><% } %><%= _sis ? _desc : truncarTexto(l.descricao, 45) %></strong>
                                                 <% if (l.serie_id) { %>
-                                                    <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;">🔄 Série</span>
+                                                    <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;"><i class="ph ph-repeat"></i> Série</span>
                                                 <% } %>
                                             </td>
                                             <td>
@@ -342,9 +347,10 @@ function gfAtualizarParam(chave, valor) {
                         <% lancamentos.forEach(l => { %>
                             <tr>
                                 <td>
-                                    <strong title="<%= l.descricao %>"><%= truncarTexto(l.descricao, 45) %></strong>
+                                    <% const _sis = (l.tipo === 'ajuste' || l.tipo === 'transferencia'); const _desc = descricaoLancamento(l); %>
+                                                <strong title="<%= _desc %>"><% if (_sis) { %><i class="ph <%= l.tipo === 'ajuste' ? 'ph-scales' : 'ph-arrows-left-right' %>" style="color: var(--muted); margin-right: 4px;"></i><% } %><%= _sis ? _desc : truncarTexto(l.descricao, 45) %></strong>
                                     <% if (l.serie_id) { %>
-                                        <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;">🔄 Série</span>
+                                        <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;"><i class="ph ph-repeat"></i> Série</span>
                                     <% } %>
                                 </td>
                                 <td>

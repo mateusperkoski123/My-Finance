@@ -1,18 +1,18 @@
 <nav class="card settings-menu" style="margin-bottom: 16px; padding: 12px;">
     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
         <a href="/configuracoes" class="settings-menu__item <%= menuAtivo === 'preferencia' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
-            ⚙️ <%= t('config.menu.preferencia') %>
+            <i class="ph ph-gear"></i> <%= t('config.menu.preferencia') %>
         </a>
         <a href="/configuracoes/perfil" class="settings-menu__item <%= menuAtivo === 'perfil' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
-            👤 <%= t('config.menu.perfil') %>
+            <i class="ph ph-user"></i> <%= t('config.menu.perfil') %>
         </a>
         <a href="/configuracoes/dados" class="settings-menu__item <%= menuAtivo === 'dados' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
-            💾 <%= t('config.menu.dados') %>
+            <i class="ph ph-floppy-disk"></i> <%= t('config.menu.dados') %>
         </a>
         <form method="post" action="/logout" style="flex: 1 1 120px; margin: 0;">
             <%- csrfCampo %>
             <button type="submit" class="settings-menu__item" style="width: 100%; text-align: center; justify-content: center; padding: 10px 12px; background: none; border: 1px solid var(--red-bg); color: var(--red); cursor: pointer; font-size: 13.5px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; gap: 6px;">
-                🚪 <%= t('nav.sair') %>
+                <i class="ph ph-sign-out"></i> <%= t('nav.sair') %>
             </button>
         </form>
     </div>

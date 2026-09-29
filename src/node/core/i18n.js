@@ -1,5 +1,5 @@
 const ptBR = {
-    'app.nome': 'Gestão Financeira',
+    'app.nome': 'MyFinance',
     'nav.painel': 'Painel Inicial',
     'nav.categorias': 'Categorias',
     'nav.contas': 'Contas Bancárias',
@@ -55,7 +55,7 @@ const ptBR = {
     'config.dados.importar_texto': 'Envie um arquivo JSON exportado por esta mesma ferramenta para restaurar dados.',
     'config.dados.importar_aviso': 'A importação ADICIONA os dados do arquivo às suas contas, categorias e lançamentos atuais.',
     'config.dados.importar_arquivo_label': 'Arquivo de backup (.json)',
-    'config.dados.importar_botao': '⬆️ Importar backup',
+    'config.dados.importar_botao': 'Importar backup',
 
     'contas.titulo': 'Contas Bancárias',
     'contas.subtitulo': 'Acompanhe saldos e contas em um só lugar.',
@@ -181,9 +181,9 @@ const ptBR = {
     'painel.lateral.recebidas': 'Recebidas',
     'painel.lateral.pagas': 'Pagas',
 
-    'painel.filtro.todas': 'Todos os lançamentos',
-    'painel.filtro.receitas': 'Somente receitas',
-    'painel.filtro.despesas': 'Somente despesas',
+    'painel.filtro.todas': 'Todos',
+    'painel.filtro.receitas': 'Receitas',
+    'painel.filtro.despesas': 'Despesas',
     'painel.filtro.buscar_placeholder': 'Buscar por descrição...',
 
     'painel.ordenar.data': 'Data',
@@ -326,7 +326,7 @@ const ptBR = {
     'relatorios.receber': 'Receber',
     'relatorios.pagar': 'Pagar',
     'relatorios.registros': '{n} registro(s)',
-    'relatorios.frequencia_titulo': '📈 Frequência de Movimentações no Período',
+    'relatorios.frequencia_titulo': 'Frequência de Movimentações no Período',
     'relatorios.receitas_upper': 'RECEITAS',
     'relatorios.despesas_upper': 'DESPESAS',
     'relatorios.balanco_liquido': 'BALANÇO LÍQUIDO',
@@ -339,7 +339,7 @@ const ptBR = {
     'categorias.salvar_btn': 'Salvar Categoria',
     'categorias.adicionar_titulo': 'Adicionar Categoria',
 
-    'contas.eliminar_titulo': '⚠️ Eliminar Conta',
+    'contas.eliminar_titulo': 'Eliminar Conta',
     'contas.eliminar_confirma': 'Você realmente deseja eliminar esta conta ({nome})?',
     'contas.eliminar_aviso': 'Esta ação apagará permanentemente a conta e todo o seu histórico de lançamentos associados.',
     'contas.sim_eliminar': 'Sim, Eliminar',
@@ -392,7 +392,7 @@ const ptBR = {
 };
 
 const esPY = {
-    'app.nome': 'Gestão Financeira',
+    'app.nome': 'MyFinance',
     'nav.painel': 'Panel Inicial',
     'nav.categorias': 'Categorías',
     'nav.contas': 'Cuentas Bancarias',
@@ -448,7 +448,7 @@ const esPY = {
     'config.dados.importar_texto': 'Subí un archivo JSON exportado por esta misma herramienta para restaurar datos.',
     'config.dados.importar_aviso': 'La importación AGREGA los datos del archivo a tus cuentas, categorías y movimientos actuales.',
     'config.dados.importar_arquivo_label': 'Archivo de backup (.json)',
-    'config.dados.importar_botao': '⬆️ Importar backup',
+    'config.dados.importar_botao': 'Importar backup',
 
     'contas.titulo': 'Cuentas Bancarias',
     'contas.subtitulo': 'Seguí tus saldos y cuentas en un solo lugar.',
@@ -719,7 +719,7 @@ const esPY = {
     'relatorios.receber': 'Cobrar',
     'relatorios.pagar': 'Pagar',
     'relatorios.registros': '{n} registro(s)',
-    'relatorios.frequencia_titulo': '📈 Frecuencia de Movimientos en el Período',
+    'relatorios.frequencia_titulo': 'Frecuencia de Movimientos en el Período',
     'relatorios.receitas_upper': 'INGRESOS',
     'relatorios.despesas_upper': 'GASTOS',
     'relatorios.balanco_liquido': 'BALANCE LÍQUIDO',
@@ -732,7 +732,7 @@ const esPY = {
     'categorias.salvar_btn': 'Guardar Categoría',
     'categorias.adicionar_titulo': 'Agregar Categoría',
 
-    'contas.eliminar_titulo': '⚠️ Eliminar Cuenta',
+    'contas.eliminar_titulo': 'Eliminar Cuenta',
     'contas.eliminar_confirma': '¿Realmente deseas eliminar esta cuenta ({nome})?',
     'contas.eliminar_aviso': 'Esta acción eliminará permanentemente la cuenta y todo su historial de movimientos asociados.',
     'contas.sim_eliminar': 'Sí, Eliminar',
