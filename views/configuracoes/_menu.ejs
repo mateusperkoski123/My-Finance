@@ -9,6 +9,12 @@
         <a href="/configuracoes/dados" class="settings-menu__item <%= menuAtivo === 'dados' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
             <i class="ph ph-floppy-disk"></i> <%= t('config.menu.dados') %>
         </a>
+        <a href="/assinatura" class="settings-menu__item <%= menuAtivo === 'assinatura' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
+            <i class="ph ph-crown-simple"></i> <%= t('config.menu.assinatura') %>
+        </a>
+        <a href="/configuracoes/conta" class="settings-menu__item <%= menuAtivo === 'conta' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
+            <i class="ph ph-identification-card"></i> <%= t('config.menu.conta') %>
+        </a>
         <form method="post" action="/logout" style="flex: 1 1 120px; margin: 0;">
             <%- csrfCampo %>
             <button type="submit" class="settings-menu__item" style="width: 100%; text-align: center; justify-content: center; padding: 10px 12px; background: none; border: 1px solid var(--red-bg); color: var(--red); cursor: pointer; font-size: 13.5px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; gap: 6px;">

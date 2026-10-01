@@ -1,20 +1,20 @@
 <div class="auth-card card">
-    <h1><i class="ph ph-lock-key"></i> Redefinir Senha</h1>
-    <p class="muted">Digite sua nova senha de acesso abaixo.</p>
+    <h1><i class="ph ph-lock-key"></i> <%= t('auth.redefinir_titulo') %></h1>
+    <p class="muted"><%= t('auth.redefinir_texto') %></p>
 
     <form method="post" action="/redefinir-senha/<%= token %>" class="form">
         <%- csrfCampo %>
 
         <div class="form-group">
-            <label for="nova_senha">Nova Senha</label>
+            <label for="nova_senha"><%= t('auth.nova_senha') %></label>
             <input class="input" type="password" id="nova_senha" name="nova_senha" minlength="6" required autofocus>
         </div>
 
         <div class="form-group">
-            <label for="confirmar_nova_senha">Confirmar Nova Senha</label>
+            <label for="confirmar_nova_senha"><%= t('auth.confirmar_nova_senha') %></label>
             <input class="input" type="password" id="confirmar_nova_senha" name="confirmar_nova_senha" minlength="6" required>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block">Salvar Nova Senha</button>
+        <button type="submit" class="btn btn-primary btn-block"><%= t('auth.salvar_nova_senha') %></button>
     </form>
 </div>

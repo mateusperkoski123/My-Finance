@@ -108,15 +108,15 @@ const dashboardController = {
         const val = parseMoeda(b.valor);
 
         if (!b.descricao || !b.descricao.trim()) {
-            req.session.flash = { tipo: 'erro', mensagem: 'Por favor, informe a descrição (nome) do lançamento.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_descricao_obrigatoria') };
             return res.redirect('/');
         }
         if (val <= 0) {
-            req.session.flash = { tipo: 'erro', mensagem: 'Por favor, informe um valor válido maior que zero.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_valor_invalido') };
             return res.redirect('/');
         }
         if (!b.categoria_id) {
-            req.session.flash = { tipo: 'erro', mensagem: 'Por favor, selecione uma categoria para a transação.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_categoria_obrigatoria') };
             return res.redirect('/');
         }
         if (!b.conta_id) {
@@ -146,7 +146,7 @@ const dashboardController = {
             criados = await Lancamento.criar(userId, payload);
         } catch (err) {
             if (err.codigo) {
-                req.session.flash = { tipo: 'erro', mensagem: 'Conta ou categoria inválida.' };
+                req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_conta_categoria_invalida') };
                 return res.redirect(destinoRetorno(req));
             }
             throw err;
@@ -167,15 +167,15 @@ const dashboardController = {
         const val = parseMoeda(b.valor);
 
         if (!b.descricao || !b.descricao.trim()) {
-            req.session.flash = { tipo: 'erro', mensagem: 'Por favor, informe a descrição (nome) do lançamento.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_descricao_obrigatoria') };
             return res.redirect(destinoRetorno(req));
         }
         if (val <= 0) {
-            req.session.flash = { tipo: 'erro', mensagem: 'Por favor, informe um valor válido maior que zero.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_valor_invalido') };
             return res.redirect(destinoRetorno(req));
         }
         if (!b.categoria_id) {
-            req.session.flash = { tipo: 'erro', mensagem: 'Por favor, selecione uma categoria para a transação.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_categoria_obrigatoria') };
             return res.redirect(destinoRetorno(req));
         }
 
@@ -198,7 +198,7 @@ const dashboardController = {
             await Lancamento.atualizar(id, userId, payload, escopo);
         } catch (err) {
             if (err.codigo) {
-                req.session.flash = { tipo: 'erro', mensagem: 'Conta ou categoria inválida.' };
+                req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_conta_categoria_invalida') };
                 return res.redirect(destinoRetorno(req));
             }
             throw err;
@@ -221,7 +221,7 @@ const dashboardController = {
         const status = req.body.status === 'pendente' ? 'pendente' : 'pago';
         const antes = await Lancamento.buscarPorId(id, userId);
         await Lancamento.marcarComoPago(id, userId, status);
-        let mensagem = status === 'pendente' ? 'Pagamento desfeito: o lançamento voltou para pendente.' : req.t('flash.lancamento_marcado_pago');
+        let mensagem = status === 'pendente' ? req.t('flash.pagamento_desfeito') : req.t('flash.lancamento_marcado_pago');
         if (antes) {
             const conta = await Conta.buscarPorId(antes.conta_id, userId);
             if (conta) mensagem += ` — ${conta.nome}: ${moeda(conta.saldo_atual, res.locals.currency)}`;

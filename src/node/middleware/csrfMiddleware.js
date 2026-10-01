@@ -19,7 +19,7 @@ function csrfProtection(req, res, next) {
         const token = bodyToken || queryToken || headerToken;
 
         if (!token || token !== req.session.csrfToken) {
-            req.session.flash = { tipo: 'erro', mensagem: 'Validação CSRF falhou. Tente novamente.' };
+            req.session.flash = { tipo: 'erro', mensagem: (req.t ? req.t('flash.csrf_falhou') : 'flash.csrf_falhou') };
             return res.status(403).redirect(req.get('Referrer') || '/');
         }
     }

@@ -1,0 +1,101 @@
+<%
+const m = metricas;
+const nomePlano = (c) => t('plano.' + c + '.nome');
+const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge-sucesso', vencida: 'badge-pendente', cancelada: 'badge-pendente', sem: 'badge-neutro' };
+%>
+<div class="page-header">
+    <h1><i class="ph ph-shield-star"></i> <%= t('admin.titulo') %></h1>
+    <p class="muted"><%= t('admin.subtitulo') %></p>
+</div>
+
+<div class="kpi-grid admin-kpis">
+    <div class="card kpi-card"><span class="kpi-card__label"><%= t('admin.kpi_usuarios') %></span><strong class="kpi-card__valor"><%= m.usuarios.total %></strong>
+        <span class="kpi-card__sub"><%= t('admin.kpi_novos', { d7: m.usuarios.novos_7d || 0, d30: m.usuarios.novos_30d || 0 }) %></span></div>
+    <div class="card kpi-card"><span class="kpi-card__label"><%= t('admin.kpi_teste') %></span><strong class="kpi-card__valor"><%= (Number(m.assinaturas.beta) || 0) + (Number(m.assinaturas.trial) || 0) %></strong>
+        <span class="kpi-card__sub"><%= t('admin.kpi_teste_det', { beta: m.assinaturas.beta || 0, trial: m.assinaturas.trial || 0 }) %></span></div>
+    <div class="card kpi-card"><span class="kpi-card__label"><%= t('admin.kpi_pagantes') %></span><strong class="kpi-card__valor"><%= m.assinaturas.ativas || 0 %></strong>
+        <span class="kpi-card__sub"><%= t('admin.kpi_pagantes_det', { vencidas: m.assinaturas.vencidas || 0, canceladas: m.assinaturas.canceladas || 0 }) %></span></div>
+    <div class="card kpi-card"><span class="kpi-card__label"><%= t('admin.kpi_mrr') %></span><strong class="kpi-card__valor">Gs. <%= fmt(m.mrr) %></strong>
+        <span class="kpi-card__sub"><%= t('admin.kpi_receita_mes', { valor: fmt(m.receitaMes) }) %></span></div>
+</div>
+
+<% if (Number(m.assinaturas.solicitacoes) > 0) { %>
+    <div class="alert alert-aviso"><i class="ph ph-hourglass"></i> <%= t('admin.pedidos_pendentes', { n: m.assinaturas.solicitacoes }) %></div>
+<% } %>
+
+<section class="card" style="margin-top: 16px;">
+    <form method="get" action="/admin" class="busca-linha" role="search" style="margin-bottom: 12px;">
+        <input class="input" type="search" name="q" value="<%= busca %>" placeholder="<%= t('admin.buscar') %>">
+        <button type="submit" class="btn btn-outline" aria-label="<%= t('categorias.buscar') %>"><i class="ph ph-magnifying-glass"></i></button>
+    </form>
+
+    <div class="tabela-container">
+        <table class="tabela">
+            <thead><tr>
+                <th><%= t('admin.col_usuario') %></th><th><%= t('admin.col_plano') %></th><th><%= t('admin.col_vence') %></th>
+                <th><%= t('admin.col_pedido') %></th><th><%= t('admin.col_acesso') %></th><th><%= t('tabela.acoes') %></th>
+            </tr></thead>
+            <tbody>
+            <% usuarios.forEach(u => {
+                const venc = u.status_efetivo === 'trial' ? u.trial_fim : (u.status_efetivo === 'ativa' ? u.periodo_fim : null);
+            %>
+                <tr>
+                    <td>
+                        <strong><%= u.nome %></strong>
+                        <% if (u.role === 'admin') { %><span class="badge badge-neutro">admin</span><% } %>
+                        <% if (u.user_status !== 'ativo') { %><span class="badge badge-pendente"><%= t('admin.suspenso') %></span><% } %>
+                        <div class="muted" style="font-size: 12px;"><%= u.email %> <% if (!u.email_verificado_em) { %>· <%= t('admin.sem_verificar') %><% } %></div>
+                    </td>
+                    <td>
+                        <%= u.plano_codigo ? nomePlano(u.plano_codigo) : '-' %>
+                        <div><span class="badge <%= corStatus[u.status_efetivo] || 'badge-neutro' %>"><%= t('assinatura.status.' + u.status_efetivo) %></span></div>
+                    </td>
+                    <td><%= venc ? formatDate(venc, 'DD/MM/YYYY') : '-' %></td>
+                    <td><%= u.solicitado_codigo ? nomePlano(u.solicitado_codigo) + ' (' + t('assinatura.ciclo_' + (u.ciclo_solicitado || 'mensal')) + ')' : '-' %></td>
+                    <td class="muted" style="font-size: 12px;"><%= u.ultimo_login_em ? formatDate(u.ultimo_login_em, 'DD/MM/YYYY') : '-' %></td>
+                    <td>
+                        <details class="menu-acoes">
+                            <summary aria-label="<%= t('acao.mais') %>"><i class="ph ph-dots-three-vertical"></i></summary>
+                            <div class="menu-acoes__lista admin-acoes">
+                                <form method="post" action="/admin/usuarios/<%= u.id %>/pagamento" class="admin-form">
+                                    <%- csrfCampo %>
+                                    <strong><%= t('admin.registrar_pagamento') %></strong>
+                                    <select class="input" name="plano">
+                                        <% planos.filter(p => p.codigo !== 'prueba').forEach(p => { %>
+                                            <option value="<%= p.codigo %>" <%= u.solicitado_codigo === p.codigo ? 'selected' : '' %>><%= nomePlano(p.codigo) %></option>
+                                        <% }) %>
+                                    </select>
+                                    <select class="input" name="ciclo">
+                                        <option value="mensal" <%= u.ciclo_solicitado === 'mensal' ? 'selected' : '' %>><%= t('assinatura.ciclo_mensal') %></option>
+                                        <option value="anual" <%= u.ciclo_solicitado === 'anual' ? 'selected' : '' %>><%= t('assinatura.ciclo_anual') %></option>
+                                    </select>
+                                    <input class="input" type="text" name="metodo" placeholder="<%= t('admin.metodo_ph') %>" value="transferencia">
+                                    <input class="input" type="text" name="referencia" placeholder="<%= t('admin.referencia_ph') %>">
+                                    <button type="submit" class="btn btn-primary btn-sm"><%= t('admin.ativar') %></button>
+                                </form>
+                                <form method="post" action="/admin/usuarios/<%= u.id %>/trial" class="admin-form">
+                                    <%- csrfCampo %>
+                                    <strong><%= t('admin.estender_teste') %></strong>
+                                    <input class="input" type="number" name="dias" value="7" min="1" max="365">
+                                    <button type="submit" class="btn btn-outline btn-sm"><%= t('admin.estender') %></button>
+                                </form>
+                                <form method="post" action="/admin/usuarios/<%= u.id %>/cancelar" data-confirm="<%= t('admin.confirmar_cancelar') %>" class="admin-form">
+                                    <%- csrfCampo %>
+                                    <button type="submit" class="perigo"><i class="ph ph-prohibit"></i> <%= t('admin.cancelar_assinatura') %></button>
+                                </form>
+                                <% if (u.id !== usuarioLogado.id) { %>
+                                <form method="post" action="/admin/usuarios/<%= u.id %>/status" class="admin-form">
+                                    <%- csrfCampo %>
+                                    <input type="hidden" name="status" value="<%= u.user_status === 'ativo' ? 'suspenso' : 'ativo' %>">
+                                    <button type="submit" class="<%= u.user_status === 'ativo' ? 'perigo' : '' %>"><i class="ph ph-user-<%= u.user_status === 'ativo' ? 'minus' : 'check' %>"></i> <%= t(u.user_status === 'ativo' ? 'admin.suspender' : 'admin.reativar') %></button>
+                                </form>
+                                <% } %>
+                            </div>
+                        </details>
+                    </td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+</section>

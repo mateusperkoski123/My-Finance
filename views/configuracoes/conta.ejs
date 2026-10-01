@@ -1,0 +1,48 @@
+<div class="page-header">
+    <h1><i class="ph ph-gear"></i> <%= t('config.titulo') %></h1>
+</div>
+
+<div class="settings-layout">
+    <%- include('_menu', { menuAtivo: 'conta' }) %>
+
+    <section class="settings-content">
+        <div class="card" style="margin-bottom: 20px;">
+            <h2><%= t('conta.verificacao_titulo') %></h2>
+            <% if (usuarioLogado.email_verificado_em) { %>
+                <p><span class="badge badge-sucesso"><i class="ph ph-seal-check"></i> <%= t('conta.email_verificado') %></span> <span class="muted"><%= usuarioLogado.email %></span></p>
+            <% } else { %>
+                <p class="muted"><%= t('conta.email_nao_verificado', { email: usuarioLogado.email }) %></p>
+                <form method="post" action="/verificar-email/reenviar">
+                    <%- csrfCampo %>
+                    <button type="submit" class="btn btn-outline"><i class="ph ph-paper-plane-tilt"></i> <%= t('conta.reenviar') %></button>
+                </form>
+            <% } %>
+        </div>
+
+        <div class="card" style="margin-bottom: 20px;">
+            <h2><%= t('conta.legal_titulo') %></h2>
+            <p class="muted"><%= t('conta.legal_texto', { data: formatDate(usuarioLogado.termos_aceitos_em || usuarioLogado.created_at, 'DD/MM/YYYY') }) %></p>
+            <a href="/termos" class="btn btn-outline btn-sm"><%= t('legal.termos_titulo') %></a>
+            <a href="/privacidade" class="btn btn-outline btn-sm"><%= t('legal.privacidade_titulo') %></a>
+        </div>
+
+        <div class="card" style="border: 1px solid var(--red);">
+            <h2 style="color: var(--red);"><i class="ph ph-warning"></i> <%= t('conta.excluir_titulo') %></h2>
+            <p class="muted"><%= t('conta.excluir_texto') %></p>
+            <form method="post" action="/configuracoes/conta/excluir" class="form" onsubmit="return confirm(<%- JSON.stringify(t('conta.excluir_confirmar')) %>);">
+                <%- csrfCampo %>
+                <div class="form-group">
+                    <label for="confirmar_email"><%= t('conta.excluir_digite_email', { email: usuarioLogado.email }) %></label>
+                    <input class="input" type="email" id="confirmar_email" name="confirmar_email" required autocomplete="off">
+                </div>
+                <% if (!viaGoogle) { %>
+                    <div class="form-group">
+                        <label for="senha_excluir"><%= t('auth.senha') %></label>
+                        <input class="input" type="password" id="senha_excluir" name="senha" required autocomplete="current-password">
+                    </div>
+                <% } %>
+                <button type="submit" class="btn btn-danger" style="background: var(--red); color: var(--on-accent); border: none;"><i class="ph ph-trash"></i> <%= t('conta.excluir_botao') %></button>
+            </form>
+        </div>
+    </section>
+</div>

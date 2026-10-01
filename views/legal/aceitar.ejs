@@ -1,0 +1,13 @@
+<div class="auth-card card">
+    <h1><i class="ph ph-shield-check"></i> <%= t('legal.aceitar_titulo') %></h1>
+    <p class="muted"><%= t('legal.aceitar_texto') %></p>
+
+    <form method="post" action="/aceitar-termos" class="form">
+        <%- csrfCampo %>
+        <label class="checkbox-linha" style="font-weight: 400; font-size: 13.5px; align-items: flex-start; gap: 8px;">
+            <input type="checkbox" name="aceitar_termos" value="1" required style="margin-top: 3px;">
+            <span><%- t('auth.aceito_termos', { termos: '<a href="/termos" target="_blank">' + t('legal.termos_titulo') + '</a>', privacidade: '<a href="/privacidade" target="_blank">' + t('legal.privacidade_titulo') + '</a>' }) %></span>
+        </label>
+        <button type="submit" class="btn btn-primary btn-block"><%= t('legal.aceitar_botao') %></button>
+    </form>
+</div>

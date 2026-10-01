@@ -6,6 +6,9 @@
     <%- include('_menu', { menuAtivo: 'dados' }) %>
 
     <section class="settings-content">
+        <% if (typeof assinatura !== 'undefined' && assinatura && !assinatura.plano.rec_backup) { %>
+            <div class="alert alert-aviso"><i class="ph ph-lock-simple"></i> <%= t('assinatura.recurso_premium_aviso') %> <a href="/assinatura"><%= t('faixa.ver_planos') %></a></div>
+        <% } %>
         <div class="card" style="margin-bottom: 20px;">
             <h2><%= t('config.dados.exportar_titulo') %></h2>
             <p class="muted"><%= t('config.dados.exportar_texto') %></p>

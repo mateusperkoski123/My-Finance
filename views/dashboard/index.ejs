@@ -43,12 +43,12 @@ const nomesMeses = {
 
 <% if (!contas || contas.length === 0) { %>
     <div class="card boas-vindas">
-        <h2>Bem-vindo! Vamos começar em 3 passos</h2>
-        <p class="muted" style="margin: 0;">Leva menos de um minuto para ver seu dinheiro organizado.</p>
+        <h2><%= t('painel.bv_titulo') %></h2>
+        <p class="muted" style="margin: 0;"><%= t('painel.bv_sub') %></p>
         <ol>
-            <li><b>1</b><span><strong>Crie sua primeira conta</strong> (ex.: Carteira, Nubank, Conta corrente) e informe o saldo atual.</span></li>
-            <li><b>2</b><span><strong>Registre uma receita ou despesa</strong> pelo botão + (as categorias já vieram prontas).</span></li>
-            <li><b>3</b><span><strong>Acompanhe</strong> saldos, pendências e gráficos por categoria.</span></li>
+            <li><b>1</b><span><%- t('painel.bv_passo1') %></span></li>
+            <li><b>2</b><span><%- t('painel.bv_passo2') %></span></li>
+            <li><b>3</b><span><%- t('painel.bv_passo3') %></span></li>
         </ol>
         <a href="/contas" class="btn btn-primary"><%= t('painel.ir_para_contas') %></a>
     </div>
@@ -65,7 +65,7 @@ const nomesMeses = {
     </div>
     <% if (Math.abs(resumo.saldo_previsto - resumo.saldo_disponivel) > 0.5) { %>
     <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
-        <span class="muted"><%= t('painel.saldo_previsto') %> (após pendências):</span>
+        <span class="muted"><%= t('painel.saldo_previsto_apos') %></span>
         <strong style="color: var(--text); font-weight: 700;"><%= moeda(resumo.saldo_previsto) %></strong>
     </div>
     <% } %>
@@ -73,10 +73,10 @@ const nomesMeses = {
 
 <% if (pendenciasUrgentes && pendenciasUrgentes.total > 0) { %>
 <!-- Pendencias vencidas ou que vencem hoje -->
-<section class="card pendencias" aria-label="Pendências">
+<section class="card pendencias" aria-label="<%= t('painel.pendencias') %>">
     <div class="pendencias__topo">
-        <span class="pendencias__titulo"><i class="ph ph-warning-circle" style="color: #d97706; font-size: 18px;"></i> Vencidas ou de hoje (<%= pendenciasUrgentes.total %>)</span>
-        <a href="/relatorios?aba=pendentes" class="muted" style="font-size: 12px; font-weight: 600;">Ver todas</a>
+        <span class="pendencias__titulo"><i class="ph ph-warning-circle" style="color: var(--pendente); font-size: 18px;"></i> <%= t('painel.vencidas_hoje', { n: pendenciasUrgentes.total }) %></span>
+        <a href="/relatorios?aba=pendentes" class="muted" style="font-size: 12px; font-weight: 600;"><%= t('painel.ver_todas') %></a>
     </div>
     <div class="pendencias__lista">
         <% pendenciasUrgentes.itens.forEach(p => { const dias = parseInt(p.dias_atraso, 10) || 0; %>
@@ -84,7 +84,7 @@ const nomesMeses = {
                 <div class="pendencias__info">
                     <div class="pendencias__desc"><%= p.descricao %></div>
                     <div class="pendencias__meta"><%= p.conta_nome %> · <%= formatDate(p.data_competencia, 'DD/MM/YYYY') %> ·
-                        <% if (dias > 0) { %><span class="atraso"><%= dias %> dia<%= dias > 1 ? 's' : '' %> em atraso</span><% } else { %>vence hoje<% } %>
+                        <% if (dias > 0) { %><span class="atraso"><%= t(dias > 1 ? 'painel.dias_atraso' : 'painel.dia_atraso', { n: dias }) %></span><% } else { %><%= t('painel.vence_hoje') %><% } %>
                     </div>
                 </div>
                 <div class="pendencias__valor" style="color: <%= p.tipo === 'receita' ? 'var(--green)' : 'var(--red)' %>;"><%= p.tipo === 'receita' ? '+' : '-' %> <%= moeda(Math.abs(parseFloat(p.valor))) %></div>
@@ -92,7 +92,7 @@ const nomesMeses = {
                     <%- csrfCampo %>
                     <input type="hidden" name="voltar" value="<%= currentUrl %>">
                     <input type="hidden" name="status" value="pago">
-                    <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span><%= p.tipo === 'receita' ? 'Receber' : 'Pagar' %></span></button>
+                    <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span><%= p.tipo === 'receita' ? t('acao.receber') : t('acao.pagar') %></span></button>
                 </form>
             </div>
         <% }) %>
@@ -103,27 +103,27 @@ const nomesMeses = {
 <div class="painel-resumo">
 <!-- KPIs do periodo (Saldo anterior / Receitas / Despesas) -->
 <div class="kpi-grid">
-    <div class="card kpi-card" style="border-left: 4px solid #2563eb;">
-        <span class="kpi-card__label">Saldo anterior</span>
-        <strong class="kpi-card__valor" style="color: #2563eb;"><%= moeda(resumo.saldo_anterior) %></strong>
+    <div class="card kpi-card" style="border-left: 4px solid var(--blue);">
+        <span class="kpi-card__label"><%= t('painel.saldo_anterior') %></span>
+        <strong class="kpi-card__valor" style="color: var(--blue);"><%= moeda(resumo.saldo_anterior) %></strong>
     </div>
     <div class="card kpi-card" style="border-left: 4px solid var(--green);">
-        <span class="kpi-card__label">Receitas</span>
+        <span class="kpi-card__label"><%= t('comum.receitas') %></span>
         <strong class="kpi-card__valor" style="color: var(--green);"><%= moeda(resumo.receitas_recebidas + resumo.receitas_a_receber) %></strong>
-        <span class="kpi-card__sub">Recebido <b style="color: var(--green);"><%= moeda(resumo.receitas_recebidas) %></b></span>
-        <span class="kpi-card__sub">A receber <b style="color: #d97706;"><%= moeda(resumo.receitas_a_receber) %></b></span>
+        <span class="kpi-card__sub"><%= t('painel.recebido') %> <b style="color: var(--green);"><%= moeda(resumo.receitas_recebidas) %></b></span>
+        <span class="kpi-card__sub"><%= t('painel.a_receber') %> <b style="color: var(--pendente);"><%= moeda(resumo.receitas_a_receber) %></b></span>
     </div>
     <div class="card kpi-card kpi-card--full" style="border-left: 4px solid var(--red);">
-        <span class="kpi-card__label">Despesas</span>
+        <span class="kpi-card__label"><%= t('comum.despesas') %></span>
         <strong class="kpi-card__valor" style="color: var(--red);"><%= moeda(resumo.despesas_pagas + resumo.despesas_nao_pagas) %></strong>
-        <span class="kpi-card__sub">Pago <b style="color: var(--green);"><%= moeda(resumo.despesas_pagas) %></b></span>
-        <span class="kpi-card__sub">Não pago <b style="color: #d97706;"><%= moeda(resumo.despesas_nao_pagas) %></b></span>
+        <span class="kpi-card__sub"><%= t('painel.pago') %> <b style="color: var(--green);"><%= moeda(resumo.despesas_pagas) %></b></span>
+        <span class="kpi-card__sub"><%= t('painel.nao_pago') %> <b style="color: var(--pendente);"><%= moeda(resumo.despesas_nao_pagas) %></b></span>
     </div>
 </div>
 
 <% if (despesasPorCategoria && despesasPorCategoria.length > 0) { %>
 <section class="card grafico-card" style="margin-bottom: 16px;">
-    <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: var(--red);"></span>Despesas por categoria</h3>
+    <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: var(--red);"></span><%= t('relatorios.grafico_despesas_titulo') %></h3>
     <div class="grafico-card__corpo grafico-card__corpo--rosca">
         <div class="grafico-card__canvas-wrap"><canvas id="chartDespesasPainel"></canvas></div>
         <ul class="gf-leg" id="legDespesasPainel"></ul>
@@ -134,7 +134,7 @@ const nomesMeses = {
 <script>
 (function () {
     var dados = <%- JSON.stringify(despesasPorCategoria) %>;
-    function desenhar() { if (window.Chart && window.GFCharts) GFCharts.rosca('chartDespesasPainel', 'legDespesasPainel', dados, { rotulo: 'Despesas' }); }
+    function desenhar() { if (window.Chart && window.GFCharts) GFCharts.rosca('chartDespesasPainel', 'legDespesasPainel', dados, { rotulo: (window.GF_T || {}).despesas || 'Despesas' }); }
     if (window.Chart && window.GFCharts) { desenhar(); } else { window.addEventListener('load', desenhar); }
 })();
 </script>
@@ -174,9 +174,9 @@ const nomesMeses = {
     <form method="get" action="/" class="busca-linha" role="search">
         <% const _p = Object.assign({}, periodo.customizado ? { data_inicio: periodo.inicio, data_fim: periodo.fim } : { mes: periodo.mes, ano: periodo.ano }, { tipo: filtros.tipo, categoria_id: filtros.categoria_id, subcategoria_id: filtros.subcategoria_id, ordenar: ordenacao, agrupar: agrupamento }); %>
         <% Object.keys(_p).forEach(k => { if (_p[k] !== null && _p[k] !== undefined && _p[k] !== '' && _p[k] !== 'sem_agrupamento') { %><input type="hidden" name="<%= k %>" value="<%= _p[k] %>"><% } }) %>
-        <input class="input" type="search" name="busca" value="<%= filtros.busca %>" placeholder="Buscar por descrição ou categoria" aria-label="Buscar lançamentos">
-        <button type="submit" class="btn btn-outline" aria-label="Buscar"><i class="ph ph-magnifying-glass"></i></button>
-        <% if (filtros.busca) { %><a class="btn btn-outline" href="<%= buildQueryLink({ busca: '' }) %>" title="Limpar busca"><i class="ph ph-x"></i></a><% } %>
+        <input class="input" type="search" name="busca" value="<%= filtros.busca %>" placeholder="<%= t('painel.busca_placeholder') %>" aria-label="<%= t('painel.buscar_lancamentos') %>">
+        <button type="submit" class="btn btn-outline" aria-label="<%= t('categorias.buscar') %>"><i class="ph ph-magnifying-glass"></i></button>
+        <% if (filtros.busca) { %><a class="btn btn-outline" href="<%= buildQueryLink({ busca: '' }) %>" title="<%= t('painel.limpar_busca') %>"><i class="ph ph-x"></i></a><% } %>
     </form>
     <div class="tipo-tabs" style="display: flex; gap: 16px; font-size: 13px; font-weight: 600; flex-wrap: wrap;">
         <a href="<%= buildQueryLink({ tipo: 'todas' }) %>" class="<%= filtros.tipo === 'todas' ? 'is-active' : '' %>" style="text-decoration: none; color: <%= filtros.tipo === 'todas' ? 'var(--text)' : 'var(--muted)' %>; <%= filtros.tipo === 'todas' ? 'border-bottom: 2px solid var(--text); padding-bottom: 4px;' : '' %>"><%= t('painel.filtro.todas') %></a>
@@ -245,15 +245,15 @@ function gfAtualizarParam(chave, valor) {
                     <summary style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; cursor: pointer; background: var(--bg); font-weight: 600; font-size: 13.5px; user-select: none;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <i class="ph ph-caret-right" style="font-size: 14px; transition: transform 0.2s;"></i>
-                            <strong><%= g.key %></strong>
+                            <strong><%= ({ 'Pagos': t('grupo.pagos'), 'Pendentes': t('grupo.pendentes'), 'Sem Data': t('grupo.sem_data'), 'Outros': t('grupo.outros'), 'Sem categoria': t('comum.sem_categoria'), 'Sem Categoria': t('comum.sem_categoria') })[g.key] || g.key %></strong>
                             <span class="muted" style="font-size: 12px; font-weight: normal;">(<%= g.count %>)</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
                             <% if (g.pagoCount > 0) { %>
-                                <span class="badge badge-sucesso"><%= g.pagoCount %> pago</span>
+                                <span class="badge badge-sucesso"><%= g.pagoCount %> <%= t('lancamento.status.pago').toLowerCase() %></span>
                             <% } %>
                             <% if (g.pendenteCount > 0) { %>
-                                <span class="badge badge-alerta"><%= g.pendenteCount %> pendente</span>
+                                <span class="badge badge-alerta"><%= g.pendenteCount %> <%= t('lancamento.status.pendente').toLowerCase() %></span>
                             <% } %>
                             <% if (g.totalReceitas > 0) { %>
                                 <span style="color: var(--green); font-weight: 700;">+<%= moeda(g.totalReceitas) %></span>
@@ -275,7 +275,7 @@ function gfAtualizarParam(chave, valor) {
                                         <th><%= t('painel.lancamento.data_label') %></th>
                                         <th><%= t('painel.lancamento.valor_label') %></th>
                                         <th><%= t('painel.lancamento.status_label') %></th>
-                                        <th>Ações</th>
+                                        <th><%= t('tabela.acoes') %></th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -285,7 +285,7 @@ function gfAtualizarParam(chave, valor) {
                                                 <% const _sis = (l.tipo === 'ajuste' || l.tipo === 'transferencia'); const _desc = descricaoLancamento(l); %>
                                                 <strong title="<%= _desc %>"><% if (_sis) { %><i class="ph <%= l.tipo === 'ajuste' ? 'ph-scales' : 'ph-arrows-left-right' %>" style="color: var(--muted); margin-right: 4px;"></i><% } %><%= _sis ? _desc : truncarTexto(l.descricao, 45) %></strong>
                                                 <% if (l.serie_id) { %>
-                                                    <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;"><i class="ph ph-repeat"></i> Série</span>
+                                                    <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;"><i class="ph ph-repeat"></i> <%= t('painel.serie') %></span>
                                                 <% } %>
                                             </td>
                                             <td>
@@ -335,13 +335,13 @@ function gfAtualizarParam(chave, valor) {
                         <th><%= t('painel.lancamento.data_label') %></th>
                         <th><%= t('painel.lancamento.valor_label') %></th>
                         <th><%= t('painel.lancamento.status_label') %></th>
-                        <th>Ações</th>
+                        <th><%= t('tabela.acoes') %></th>
                     </tr>
                 </thead>
                 <tbody>
                     <% if (!lancamentos || lancamentos.length === 0) { %>
                         <tr>
-                            <td colspan="7" class="tabela__vazio"><div class="vazio"><i class="ph ph-receipt"></i><strong><%= t('painel.lista_vazia') %></strong>Use o botão + para registrar uma receita ou despesa.</div></td>
+                            <td colspan="7" class="tabela__vazio"><div class="vazio"><i class="ph ph-receipt"></i><strong><%= t('painel.lista_vazia') %></strong><%= t('painel.vazio_dica') %></div></td>
                         </tr>
                     <% } else { %>
                         <% lancamentos.forEach(l => { %>
@@ -350,7 +350,7 @@ function gfAtualizarParam(chave, valor) {
                                     <% const _sis = (l.tipo === 'ajuste' || l.tipo === 'transferencia'); const _desc = descricaoLancamento(l); %>
                                                 <strong title="<%= _desc %>"><% if (_sis) { %><i class="ph <%= l.tipo === 'ajuste' ? 'ph-scales' : 'ph-arrows-left-right' %>" style="color: var(--muted); margin-right: 4px;"></i><% } %><%= _sis ? _desc : truncarTexto(l.descricao, 45) %></strong>
                                     <% if (l.serie_id) { %>
-                                        <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;"><i class="ph ph-repeat"></i> Série</span>
+                                        <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;"><i class="ph ph-repeat"></i> <%= t('painel.serie') %></span>
                                     <% } %>
                                 </td>
                                 <td>
@@ -392,7 +392,7 @@ function gfAtualizarParam(chave, valor) {
 <div class="modal-backdrop" id="modal-filtro-avancado">
     <div class="modal card">
         <div class="modal__header">
-            <h3>Filtrar Lançamentos</h3>
+            <h3><%= t('painel.filtrar_titulo') %></h3>
             <button type="button" class="modal__close" data-modal-close>&times;</button>
         </div>
         <form method="get" action="/" class="form">
@@ -401,14 +401,14 @@ function gfAtualizarParam(chave, valor) {
             <input type="hidden" name="ordenar" value="<%= ordenacao %>">
 
             <div class="form-group">
-                <label>Buscar por Descrição</label>
+                <label><%= t('painel.buscar_desc_label') %></label>
                 <input class="input" type="text" name="busca" value="<%= filtros.busca %>" placeholder="<%= t('painel.filtro.buscar_placeholder') %>">
             </div>
 
             <div class="form-group">
-                <label>Categoria</label>
+                <label><%= t('comum.categoria') %></label>
                 <select class="input" name="categoria_id" id="filtro-categoria-select">
-                    <option value="">Todas as categorias</option>
+                    <option value=""><%= t('painel.todas_categorias') %></option>
                     <% categoriasArvore.forEach(c => { %>
                         <option value="<%= c.id %>" <%= filtros.categoria_id == c.id ? 'selected' : '' %>><%= c.nome %></option>
                     <% }) %>
@@ -416,9 +416,9 @@ function gfAtualizarParam(chave, valor) {
             </div>
 
             <div class="form-group">
-                <label>Subcategoria</label>
+                <label><%= t('comum.subcategoria') %></label>
                 <select class="input" name="subcategoria_id" id="filtro-subcategoria-select">
-                    <option value="">Todas as subcategorias</option>
+                    <option value=""><%= t('painel.todas_subcategorias') %></option>
                     <% categoriasArvore.forEach(c => { %>
                         <% (c.subcategorias || []).forEach(sub => { %>
                             <option value="<%= sub.id %>" <%= filtros.subcategoria_id == sub.id ? 'selected' : '' %>><%= c.nome %> / <%= sub.nome %></option>
@@ -428,8 +428,8 @@ function gfAtualizarParam(chave, valor) {
             </div>
 
             <div class="modal__actions">
-                <button type="button" class="btn btn-outline" data-modal-close>Cancelar</button>
-                <button type="submit" class="btn btn-primary">Aplicar Filtros</button>
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><%= t('painel.aplicar_filtros') %></button>
             </div>
         </form>
     </div>
@@ -523,14 +523,14 @@ function gfAtualizarParam(chave, valor) {
             <div class="modal-backdrop" id="modal-excluir-<%= l.id %>">
                 <div class="modal card">
                     <div class="modal__header">
-                        <h3>Excluir Transação Repetida</h3>
+                        <h3><%= t('painel.excluir_serie_titulo') %></h3>
                         <button type="button" class="modal__close" data-modal-close>&times;</button>
                     </div>
                     <form method="post" action="/lancamentos/<%= l.id %>/excluir" class="form">
                         <%- csrfCampo %>
 <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                        <p style="font-weight: 600; font-size: 13.5px; margin-bottom: 6px;">Atenção: Esta transação faz parte de uma série repetida.</p>
-                        <p class="muted" style="font-size: 12px; margin-top: 0; margin-bottom: 16px;">Como você gostaria de aplicar a exclusão?</p>
+                        <p style="font-weight: 600; font-size: 13.5px; margin-bottom: 6px;"><%= t('painel.excluir_serie_aviso') %></p>
+                        <p class="muted" style="font-size: 12px; margin-top: 0; margin-bottom: 16px;"><%= t('painel.excluir_serie_pergunta') %></p>
 
                         <div style="background: var(--bg); padding: 14px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
                             <label style="display: block; margin-bottom: 10px; font-size: 13px; cursor: pointer;">
@@ -552,7 +552,7 @@ function gfAtualizarParam(chave, valor) {
 
                         <div class="modal__actions">
                             <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
-                            <button type="submit" class="btn btn-primary" style="background: var(--red); border: none;">Confirmar Exclusão</button>
+                            <button type="submit" class="btn btn-primary" style="background: var(--red); border: none;"><%= t('painel.confirmar_exclusao_btn') %></button>
                         </div>
                     </form>
                 </div>
@@ -569,9 +569,9 @@ function gfAtualizarParam(chave, valor) {
                 <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--green-bg); display: flex; align-items: center; justify-content: center;">
                     <i class="ph ph-trend-up" style="color: var(--green); font-size: 20px;"></i>
                 </div>
-                <h2 style="font-size: 18px; font-weight: 700; margin: 0;">Adicionar Receita</h2>
+                <h2 style="font-size: 18px; font-weight: 700; margin: 0;"><%= t('painel.add_receita') %></h2>
             </div>
-            <button type="button" class="modal__fechar" data-modal-close aria-label="Fechar" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
         </div>
 
         <form method="post" action="/lancamentos" class="form" style="display: flex; flex-direction: column; gap: 16px;">
@@ -579,22 +579,22 @@ function gfAtualizarParam(chave, valor) {
             <input type="hidden" name="tipo" value="receita">
 
             <div>
-                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;">Informações Básicas</h4>
+                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;"><%= t('modal.inf_basicas') %></h4>
 
                 <div class="form-group" style="margin-bottom: 14px;">
-                    <label for="novo-receita-descricao" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Descrição</label>
-                    <input class="input" type="text" id="novo-receita-descricao" name="descricao" placeholder="Ex: Salário" style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;" required>
+                    <label for="novo-receita-descricao" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('modal.descricao') %></label>
+                    <input class="input" type="text" id="novo-receita-descricao" name="descricao" placeholder="<%= t('painel.ph_receita') %>" style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;" required>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 14px;">
-                    <label for="novo-receita-valor" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Valor</label>
+                    <label for="novo-receita-valor" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('modal.valor') %></label>
                     <input class="input" type="text" id="novo-receita-valor" name="valor" data-money inputmode="decimal" placeholder="0" style="border-radius: 12px; padding: 10px 14px; font-size: 16px; font-weight: 700;" required>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 14px;">
-                    <label for="novo-receita-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Categoria *</label>
+                    <label for="novo-receita-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('comum.categoria') %> *</label>
                     <select class="input" id="novo-receita-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="" required style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
-                        <option value="">Escolha uma categoria</option>
+                        <option value=""><%= t('modal.escolha_cat') %></option>
                         <% (categoriasArvore || []).filter(cat => !cat.sistema && (cat.tipo === 'receita' || cat.tipo === 'ambas')).forEach(cat => { %>
                             <option value="<%= cat.id %>"><%= cat.nome %></option>
                         <% }) %>
@@ -602,15 +602,15 @@ function gfAtualizarParam(chave, valor) {
                 </div>
 
                 <div class="form-group" style="margin-bottom: 14px;">
-                    <label for="novo-receita-subcategoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Subcategoria</label>
+                    <label for="novo-receita-subcategoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('comum.subcategoria') %></label>
                     <select class="input" id="novo-receita-subcategoria" name="subcategoria_id" data-gf-subcategoria-select disabled style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
-                        <option value="">Selecione uma categoria primeiro</option>
+                        <option value=""><%= t('modal.sel_cat_primeiro') %></option>
                     </select>
                 </div>
             </div>
 
             <div>
-                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;">Configurações de Transação</h4>
+                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;"><%= t('modal.config_transacao') %></h4>
 
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
@@ -619,8 +619,8 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-trend-down" style="font-size: 18px; color: var(--red);" data-status-icon></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;" data-status-title>Não Foi Recebida</strong>
-                                <span style="font-size: 11px; color: var(--muted);">Status do recebimento</span>
+                                <strong style="font-size: 13px; display: block;" data-status-title><%= t('modal.nao_foi_recebida') %></strong>
+                                <span style="font-size: 11px; color: var(--muted);"><%= t('painel.status_recebimento') %></span>
                             </div>
                         </div>
                         <label class="toggle" style="margin: 0;">
@@ -635,7 +635,7 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-calendar" style="font-size: 18px; color: var(--muted);"></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;" data-status-date-label>Data de Vencimento</strong>
+                                <strong style="font-size: 13px; display: block;" data-status-date-label><%= t('modal.data_vencimento') %></strong>
                             </div>
                         </div>
                         <input class="input" type="date" id="novo-receita-data-pagamento" name="data_pagamento" value="<%= dataHoje %>" style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
@@ -647,7 +647,7 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-bank" style="font-size: 18px; color: var(--muted);"></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;">Conta</strong>
+                                <strong style="font-size: 13px; display: block;"><%= t('modal.conta') %></strong>
                             </div>
                         </div>
                         <select class="input" id="novo-receita-conta" name="conta_id" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
@@ -663,7 +663,7 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-push-pin" style="font-size: 18px; color: var(--muted);"></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;">Receita Fixa</strong>
+                                <strong style="font-size: 13px; display: block;"><%= t('modal.receita_fixa') %></strong>
                             </div>
                         </div>
                         <label class="toggle" style="margin: 0;">
@@ -678,7 +678,7 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-arrows-clockwise" style="font-size: 18px; color: var(--muted);"></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;">Repetir Transação</strong>
+                                <strong style="font-size: 13px; display: block;"><%= t('modal.repetir') %></strong>
                             </div>
                         </div>
                         <label class="toggle" style="margin: 0;">
@@ -688,7 +688,7 @@ function gfAtualizarParam(chave, valor) {
                     </div>
 
                     <div class="form-group" data-gf-repetir-alvo hidden style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg);">
-                        <label for="novo-receita-quantidade-repeticoes" style="font-size: 12px; font-weight: 600;">Quantidade de repetições (meses)</label>
+                        <label for="novo-receita-quantidade-repeticoes" style="font-size: 12px; font-weight: 600;"><%= t('modal.qtd_repeticoes') %></label>
                         <input class="input" type="number" id="novo-receita-quantidade-repeticoes" name="quantidade_repeticoes" min="2" max="60" value="12" style="border-radius: 8px; padding: 6px 10px; font-size: 13px;">
                     </div>
 
@@ -698,7 +698,7 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-calendar-blank" style="font-size: 18px; color: var(--muted);"></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;">Data de Competência</strong>
+                                <strong style="font-size: 13px; display: block;"><%= t('modal.data_competencia') %></strong>
                             </div>
                         </div>
                         <input class="input" type="date" id="novo-receita-data" name="data_competencia" value="<%= dataHoje %>" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
@@ -707,11 +707,11 @@ function gfAtualizarParam(chave, valor) {
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-                <button type="submit" class="btn" style="background: var(--green); color: #fff; border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="ph ph-floppy-disk" style="font-size: 18px;"></i> Salvar Receita
+                <button type="submit" class="btn" style="background: var(--green); color: var(--on-accent); border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="ph ph-floppy-disk" style="font-size: 18px;"></i> <%= t('painel.salvar_receita') %>
                 </button>
                 <button type="button" class="btn btn-outline" data-modal-close style="border-radius: 12px; padding: 10px; font-size: 13.5px; font-weight: 600; width: 100%;">
-                    Cancelar
+                    <%= t('modal.cancelar') %>
                 </button>
             </div>
         </form>
@@ -726,9 +726,9 @@ function gfAtualizarParam(chave, valor) {
                 <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--red-bg); display: flex; align-items: center; justify-content: center;">
                     <i class="ph ph-trend-down" style="color: var(--red); font-size: 20px;"></i>
                 </div>
-                <h2 style="font-size: 18px; font-weight: 700; margin: 0;">Adicionar Despesa</h2>
+                <h2 style="font-size: 18px; font-weight: 700; margin: 0;"><%= t('painel.add_despesa') %></h2>
             </div>
-            <button type="button" class="modal__fechar" data-modal-close aria-label="Fechar" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
         </div>
 
         <form method="post" action="/lancamentos" class="form" style="display: flex; flex-direction: column; gap: 16px;">
@@ -736,22 +736,22 @@ function gfAtualizarParam(chave, valor) {
             <input type="hidden" name="tipo" value="despesa">
 
             <div>
-                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;">Informações Básicas</h4>
+                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;"><%= t('modal.inf_basicas') %></h4>
 
                 <div class="form-group" style="margin-bottom: 14px;">
-                    <label for="novo-despesa-descricao" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Descrição</label>
-                    <input class="input" type="text" id="novo-despesa-descricao" name="descricao" placeholder="Ex: Mercado" style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;" required>
+                    <label for="novo-despesa-descricao" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('modal.descricao') %></label>
+                    <input class="input" type="text" id="novo-despesa-descricao" name="descricao" placeholder="<%= t('painel.ph_despesa') %>" style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;" required>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 14px;">
-                    <label for="novo-despesa-valor" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Valor</label>
+                    <label for="novo-despesa-valor" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('modal.valor') %></label>
                     <input class="input" type="text" id="novo-despesa-valor" name="valor" data-money inputmode="decimal" placeholder="0" style="border-radius: 12px; padding: 10px 14px; font-size: 16px; font-weight: 700;" required>
                 </div>
 
                 <div class="form-group" style="margin-bottom: 14px;">
-                    <label for="novo-despesa-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Categoria *</label>
+                    <label for="novo-despesa-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('comum.categoria') %> *</label>
                     <select class="input" id="novo-despesa-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="" required style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
-                        <option value="">Escolha uma categoria</option>
+                        <option value=""><%= t('modal.escolha_cat') %></option>
                         <% (categoriasArvore || []).filter(cat => !cat.sistema && (cat.tipo === 'despesa' || cat.tipo === 'ambas')).forEach(cat => { %>
                             <option value="<%= cat.id %>"><%= cat.nome %></option>
                         <% }) %>
@@ -759,15 +759,15 @@ function gfAtualizarParam(chave, valor) {
                 </div>
 
                 <div class="form-group" style="margin-bottom: 14px;">
-                    <label for="novo-despesa-subcategoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;">Subcategoria</label>
+                    <label for="novo-despesa-subcategoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('comum.subcategoria') %></label>
                     <select class="input" id="novo-despesa-subcategoria" name="subcategoria_id" data-gf-subcategoria-select disabled style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
-                        <option value="">Selecione uma categoria primeiro</option>
+                        <option value=""><%= t('modal.sel_cat_primeiro') %></option>
                     </select>
                 </div>
             </div>
 
             <div>
-                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;">Configurações de Transação</h4>
+                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;"><%= t('modal.config_transacao') %></h4>
 
                 <div style="display: flex; flex-direction: column; gap: 10px;">
                     <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
@@ -776,8 +776,8 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-trend-down" style="font-size: 18px; color: var(--red);" data-status-icon></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;" data-status-title>Não Foi Pago</strong>
-                                <span style="font-size: 11px; color: var(--muted);">Status do pagamento</span>
+                                <strong style="font-size: 13px; display: block;" data-status-title><%= t('modal.nao_foi_pago') %></strong>
+                                <span style="font-size: 11px; color: var(--muted);"><%= t('painel.status_pagamento') %></span>
                             </div>
                         </div>
                         <label class="toggle" style="margin: 0;">
@@ -792,7 +792,7 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-calendar" style="font-size: 18px; color: var(--muted);"></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;" data-status-date-label>Data de Vencimento</strong>
+                                <strong style="font-size: 13px; display: block;" data-status-date-label><%= t('modal.data_vencimento') %></strong>
                             </div>
                         </div>
                         <input class="input" type="date" id="novo-despesa-data-pagamento" name="data_pagamento" value="<%= dataHoje %>" style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
@@ -804,7 +804,7 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-bank" style="font-size: 18px; color: var(--muted);"></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;">Conta</strong>
+                                <strong style="font-size: 13px; display: block;"><%= t('modal.conta') %></strong>
                             </div>
                         </div>
                         <select class="input" id="novo-despesa-conta" name="conta_id" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
@@ -820,7 +820,7 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-push-pin" style="font-size: 18px; color: var(--muted);"></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;">Despesa Fixa</strong>
+                                <strong style="font-size: 13px; display: block;"><%= t('modal.despesa_fixa') %></strong>
                             </div>
                         </div>
                         <label class="toggle" style="margin: 0;">
@@ -835,7 +835,7 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-arrows-clockwise" style="font-size: 18px; color: var(--muted);"></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;">Repetir Transação</strong>
+                                <strong style="font-size: 13px; display: block;"><%= t('modal.repetir') %></strong>
                             </div>
                         </div>
                         <label class="toggle" style="margin: 0;">
@@ -845,7 +845,7 @@ function gfAtualizarParam(chave, valor) {
                     </div>
 
                     <div class="form-group" data-gf-repetir-alvo hidden style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg);">
-                        <label for="novo-despesa-quantidade-repeticoes" style="font-size: 12px; font-weight: 600;">Quantidade de repetições (meses)</label>
+                        <label for="novo-despesa-quantidade-repeticoes" style="font-size: 12px; font-weight: 600;"><%= t('modal.qtd_repeticoes') %></label>
                         <input class="input" type="number" id="novo-despesa-quantidade-repeticoes" name="quantidade_repeticoes" min="2" max="60" value="12" style="border-radius: 8px; padding: 6px 10px; font-size: 13px;">
                     </div>
 
@@ -855,7 +855,7 @@ function gfAtualizarParam(chave, valor) {
                                 <i class="ph ph-calendar-blank" style="font-size: 18px; color: var(--muted);"></i>
                             </div>
                             <div>
-                                <strong style="font-size: 13px; display: block;">Data de Competência</strong>
+                                <strong style="font-size: 13px; display: block;"><%= t('modal.data_competencia') %></strong>
                             </div>
                         </div>
                         <input class="input" type="date" id="novo-despesa-data" name="data_competencia" value="<%= dataHoje %>" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
@@ -864,11 +864,11 @@ function gfAtualizarParam(chave, valor) {
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
-                <button type="submit" class="btn" style="background: var(--red); color: #fff; border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <i class="ph ph-floppy-disk" style="font-size: 18px;"></i> Salvar Despesa
+                <button type="submit" class="btn" style="background: var(--red); color: var(--on-accent); border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="ph ph-floppy-disk" style="font-size: 18px;"></i> <%= t('painel.salvar_despesa') %>
                 </button>
                 <button type="button" class="btn btn-outline" data-modal-close style="border-radius: 12px; padding: 10px; font-size: 13.5px; font-weight: 600; width: 100%;">
-                    Cancelar
+                    <%= t('modal.cancelar') %>
                 </button>
             </div>
         </form>
@@ -885,10 +885,10 @@ window.gfCategoriasArvore = <%- JSON.stringify(categoriasArvore || []) %>;
 <!-- Botao flutuante (celular) -->
 <div class="fab" id="fab">
     <div class="fab__menu">
-        <button type="button" class="fab__item fab__item--receita" data-modal-open="modal-novo-receita" onclick="document.getElementById('fab').classList.remove('is-open')"><i class="ph ph-arrow-circle-up"></i> Receita</button>
-        <button type="button" class="fab__item fab__item--despesa" data-modal-open="modal-novo-despesa" onclick="document.getElementById('fab').classList.remove('is-open')"><i class="ph ph-arrow-circle-down"></i> Despesa</button>
+        <button type="button" class="fab__item fab__item--receita" data-modal-open="modal-novo-receita" onclick="document.getElementById('fab').classList.remove('is-open')"><i class="ph ph-arrow-circle-up"></i> <%= t('painel.nova_receita') %></button>
+        <button type="button" class="fab__item fab__item--despesa" data-modal-open="modal-novo-despesa" onclick="document.getElementById('fab').classList.remove('is-open')"><i class="ph ph-arrow-circle-down"></i> <%= t('painel.nova_despesa') %></button>
     </div>
-    <button type="button" class="fab__botao" aria-label="Novo lançamento" onclick="document.getElementById('fab').classList.toggle('is-open')"><i class="ph ph-plus"></i></button>
+    <button type="button" class="fab__botao" aria-label="<%= t('painel.novo_lancamento') %>" onclick="document.getElementById('fab').classList.toggle('is-open')"><i class="ph ph-plus"></i></button>
 </div>
 <div class="fab-fundo" onclick="document.getElementById('fab').classList.remove('is-open')"></div>
 <% } %>

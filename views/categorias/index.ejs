@@ -36,7 +36,7 @@
                         <span class="categoria-dot" style="background: <%= c.cor || '#3b82f6' %>; width: 12px; height: 12px; border-radius: 50%; display: inline-block;"></span>
                         <strong style="font-size: 15px;"><%= c.nome %></strong>
                         <% if (c.subcategorias && c.subcategorias.length > 0) { %>
-                            <span class="badge badge-neutro" style="font-size: 10px;"><%= c.subcategorias.length %> sub</span>
+                            <span class="badge badge-neutro" style="font-size: 10px;"><%= c.subcategorias.length %> <%= t('categorias.sub_abrev') %></span>
                         <% } %>
                     </span>
                     <span class="categoria-linha__acoes" style="display: flex; gap: 6px;">
@@ -84,7 +84,7 @@
                         <%- csrfCampo %>
                         <div class="form-group">
                             <label style="display: block; font-weight: 500; margin-bottom: 6px;"><%= t('categorias.nome_label') %></label>
-                            <input class="input" type="text" name="nome" value="<%= c.nome %>" required placeholder="Nome da categoria">
+                            <input class="input" type="text" name="nome" value="<%= c.nome %>" required placeholder="<%= t('categorias.nome_placeholder') %>">
                         </div>
 
                         <div class="form-group">
@@ -92,7 +92,7 @@
                             <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
                                 <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                                     <% ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#64748B'].forEach(swatch => { %>
-                                        <button type="button" style="background: <%= swatch %>; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); cursor: pointer;" onclick="setCatColor('cor-input-<%= c.id %>', 'cor-hex-<%= c.id %>', 'cor-preview-<%= c.id %>', '<%= swatch %>')"></button>
+                                        <button type="button" style="background: <%= swatch %>; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px var(--border); cursor: pointer;" onclick="setCatColor('cor-input-<%= c.id %>', 'cor-hex-<%= c.id %>', 'cor-preview-<%= c.id %>', '<%= swatch %>')"></button>
                                     <% }) %>
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -107,7 +107,7 @@
 
                         <div class="modal__actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
                             <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
-                            <button type="submit" class="btn" style="background-color: #10B981; border-color: #10B981; color: #ffffff; font-weight: 600;"><%= t('categorias.salvar_btn') %></button>
+                            <button type="submit" class="btn" style="background-color: var(--green); border-color: var(--green); color: var(--on-accent); font-weight: 600;"><%= t('categorias.salvar_btn') %></button>
                         </div>
                     </form>
                 </div>
@@ -130,7 +130,7 @@
                         </div>
                         <div class="modal__actions">
                             <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
-                            <button type="submit" class="btn" style="background-color: #10B981; border-color: #10B981; color: #ffffff; font-weight: 600;"><%= t('categorias.salvar_btn') %></button>
+                            <button type="submit" class="btn" style="background-color: var(--green); border-color: var(--green); color: var(--on-accent); font-weight: 600;"><%= t('categorias.salvar_btn') %></button>
                         </div>
                     </form>
                 </div>
@@ -155,11 +155,11 @@
             </div>
 
             <div class="form-group">
-                <label style="display: block; font-weight: 500; margin-bottom: 6px;">Tipo</label>
+                <label style="display: block; font-weight: 500; margin-bottom: 6px;"><%= t('categorias.tipo_label') %></label>
                 <select class="input" name="tipo">
-                    <option value="despesa">Despesa</option>
-                    <option value="receita">Receita</option>
-                    <option value="ambas">Receita e despesa</option>
+                    <option value="despesa"><%= t('lancamento.tipo.despesa') %></option>
+                    <option value="receita"><%= t('lancamento.tipo.receita') %></option>
+                    <option value="ambas"><%= t('categorias.tipo.ambas') %></option>
                 </select>
             </div>
 
@@ -168,7 +168,7 @@
                 <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;">
                     <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                         <% ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#64748B'].forEach(swatch => { %>
-                            <button type="button" style="background: <%= swatch %>; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--border); cursor: pointer;" onclick="setCatColor('cor-input-nova', 'cor-hex-nova', 'cor-preview-nova', '<%= swatch %>')"></button>
+                            <button type="button" style="background: <%= swatch %>; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px var(--border); cursor: pointer;" onclick="setCatColor('cor-input-nova', 'cor-hex-nova', 'cor-preview-nova', '<%= swatch %>')"></button>
                         <% }) %>
                     </div>
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -183,7 +183,7 @@
 
             <div class="modal__actions" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px;">
                 <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
-                <button type="submit" class="btn" style="background-color: #10B981; border-color: #10B981; color: #ffffff; font-weight: 600;"><%= t('categorias.salvar_btn') %></button>
+                <button type="submit" class="btn" style="background-color: var(--green); border-color: var(--green); color: var(--on-accent); font-weight: 600;"><%= t('categorias.salvar_btn') %></button>
             </div>
         </form>
     </div>

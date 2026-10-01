@@ -15,7 +15,7 @@
         <a href="/contas?aba=arquivadas" class="tabs__item <%= abaArquivadas ? 'is-active' : '' %>"><%= t('contas.aba_arquivadas') %></a>
     </div>
     <div class="contas-resumo-topo" style="display: flex; align-items: center; gap: 12px;">
-        <span class="badge badge-neutro" style="font-size: 12px; font-weight: 600;"><%= totalContas %> conta(s)</span>
+        <span class="badge badge-neutro" style="font-size: 12px; font-weight: 600;"><%= t('contas.n_contas', { n: totalContas }) %></span>
         <span class="muted"><%= t('contas.saldo_total') %>:</span>
         <strong class="moeda-destaque" id="header-saldo-total" style="font-size: 18px; margin-left: 4px; color: var(--green);"><%= moeda(saldoTotal) %></strong>
     </div>
@@ -38,7 +38,7 @@
                         <% } %>
                     </div>
                     <% if (!abaArquivadas) { %>
-                        <button type="button" class="btn-olho-toggle" data-conta-id="<%= c.id %>" onclick="toggleOlhoConta('<%= c.id %>')" title="Ocultar/Exibir Capital" style="background: none; border: none; cursor: pointer; padding: 4px;">
+                        <button type="button" class="btn-olho-toggle" data-conta-id="<%= c.id %>" onclick="toggleOlhoConta('<%= c.id %>')" title="<%= t('contas.ocultar_exibir') %>" style="background: none; border: none; cursor: pointer; padding: 4px;">
                             <span id="btn-olho-icon-<%= c.id %>"><i class="ph ph-eye" style="font-size: 18px; color: var(--muted);"></i></span>
                         </button>
                     <% } %>
@@ -57,15 +57,15 @@
                         <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-editar-<%= c.id %>"><%= t('contas.editar') %></button>
                         <form method="post" action="/contas/<%= c.id %>/arquivar" style="display:inline;">
                             <%- csrfCampo %>
-                            <button type="submit" class="btn btn-outline btn-sm" title="<%= t('contas.arquivar') %>" aria-label="Arquivar"><i class="ph ph-archive"></i></button>
+                            <button type="submit" class="btn btn-outline btn-sm" title="<%= t('contas.arquivar') %>" aria-label="<%= t('contas.arquivar') %>"><i class="ph ph-archive"></i></button>
                         </form>
-                        <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-excluir-<%= c.id %>" title="Eliminar Conta" aria-label="Eliminar conta"><i class="ph ph-trash"></i></button>
+                        <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-excluir-<%= c.id %>" title="<%= t('contas.eliminar_titulo') %>" aria-label="<%= t('contas.eliminar_titulo') %>"><i class="ph ph-trash"></i></button>
                     <% } else { %>
                         <form method="post" action="/contas/<%= c.id %>/restaurar" style="display:inline;">
                             <%- csrfCampo %>
                             <button type="submit" class="btn btn-outline btn-sm"><%= t('contas.restaurar') %></button>
                         </form>
-                        <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-excluir-<%= c.id %>" title="Eliminar Conta" aria-label="Eliminar conta"><i class="ph ph-trash"></i></button>
+                        <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-excluir-<%= c.id %>" title="<%= t('contas.eliminar_titulo') %>" aria-label="<%= t('contas.eliminar_titulo') %>"><i class="ph ph-trash"></i></button>
                     <% } %>
                 </div>
             </div>
@@ -82,14 +82,14 @@
                         <p class="muted" style="font-size: 13px; margin-top: 8px; color: var(--red);"><%= t('contas.eliminar_aviso') %></p>
                         <div class="aviso-exclusao">
                             <i class="ph ph-warning"></i>
-                            <span>Serão apagados <strong><%= parseInt(c.total_lancamentos, 10) || 0 %> lançamento(s)</strong> desta conta e o saldo de <strong><%= moeda(c.saldo_atual) %></strong> deixará de contar no total. Esta ação não pode ser desfeita. Prefere <em>arquivar</em>?</span>
+                            <span><%- t('contas.aviso_exclusao', { n: parseInt(c.total_lancamentos, 10) || 0, saldo: moeda(c.saldo_atual) }) %></span>
                         </div>
                     </div>
                     <div class="modal__actions" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
                         <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
                         <form method="post" action="/contas/<%= c.id %>/excluir" style="display:inline;">
                             <%- csrfCampo %>
-                            <button type="submit" class="btn btn-danger" style="background: var(--red); color: #fff; border: none;"><%= t('contas.sim_eliminar') %></button>
+                            <button type="submit" class="btn btn-danger" style="background: var(--red); color: var(--on-accent); border: none;"><%= t('contas.sim_eliminar') %></button>
                         </form>
                     </div>
                 </div>
@@ -168,14 +168,14 @@
                                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
                                     <input class="input" type="color" id="cor-picker-<%= c.id %>" name="cor" value="<%= c.cor || '#3b82f6' %>" style="width: 44px; height: 38px; padding: 2px; cursor: pointer;">
                                     <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                                        <button type="button" style="background: #3b82f6; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#3b82f6'"></button>
-                                        <button type="button" style="background: #10b981; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#10b981'"></button>
-                                        <button type="button" style="background: #ef4444; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#ef4444'"></button>
-                                        <button type="button" style="background: #8b5cf6; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#8b5cf6'"></button>
-                                        <button type="button" style="background: #f59e0b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#f59e0b'"></button>
-                                        <button type="button" style="background: #f97316; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#f97316'"></button>
-                                        <button type="button" style="background: #ec4899; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#ec4899'"></button>
-                                        <button type="button" style="background: #64748b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#64748b'"></button>
+                                        <button type="button" style="background: #3b82f6; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#3b82f6'"></button>
+                                        <button type="button" style="background: #10b981; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#10b981'"></button>
+                                        <button type="button" style="background: #ef4444; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#ef4444'"></button>
+                                        <button type="button" style="background: #8b5cf6; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#8b5cf6'"></button>
+                                        <button type="button" style="background: #f59e0b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#f59e0b'"></button>
+                                        <button type="button" style="background: #f97316; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#f97316'"></button>
+                                        <button type="button" style="background: #ec4899; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#ec4899'"></button>
+                                        <button type="button" style="background: #64748b; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-<%= c.id %>').value='#64748b'"></button>
                                     </div>
                                 </div>
                             </div>
@@ -211,7 +211,7 @@
 
             <div class="form-group">
                 <label><%= t('contas.nome_label') %></label>
-                <input class="input" type="text" name="nome" required placeholder="Ex.: Itaú, Nubank, BCP...">
+                <input class="input" type="text" name="nome" required placeholder="<%= t('contas.nome_placeholder') %>">
             </div>
 
             <div class="form-row">
@@ -237,14 +237,14 @@
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px;">
                         <input class="input" type="color" id="cor-picker-nova" name="cor" value="#3b82f6" style="width: 44px; height: 38px; padding: 2px; cursor: pointer;">
                         <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-                            <button type="button" style="background: #3b82f6; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#3b82f6'"></button>
-                            <button type="button" style="background: #10b981; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#10b981'"></button>
-                            <button type="button" style="background: #ef4444; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#ef4444'"></button>
-                            <button type="button" style="background: #8b5cf6; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#8b5cf6'"></button>
-                            <button type="button" style="background: #f59e0b; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#f59e0b'"></button>
-                            <button type="button" style="background: #f97316; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#f97316'"></button>
-                            <button type="button" style="background: #ec4899; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#ec4899'"></button>
-                            <button type="button" style="background: #64748b; width: 26px; height: 26px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#64748b'"></button>
+                            <button type="button" style="background: #3b82f6; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#3b82f6'"></button>
+                            <button type="button" style="background: #10b981; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#10b981'"></button>
+                            <button type="button" style="background: #ef4444; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#ef4444'"></button>
+                            <button type="button" style="background: #8b5cf6; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#8b5cf6'"></button>
+                            <button type="button" style="background: #f59e0b; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#f59e0b'"></button>
+                            <button type="button" style="background: #f97316; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#f97316'"></button>
+                            <button type="button" style="background: #ec4899; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#ec4899'"></button>
+                            <button type="button" style="background: #64748b; width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px #ccc; cursor: pointer;" onclick="document.getElementById('cor-picker-nova').value='#64748b'"></button>
                         </div>
                     </div>
                 </div>
@@ -310,7 +310,7 @@
 
             <div class="form-group">
                 <label><%= t('contas.transferir.descricao_label') %></label>
-                <input class="input" type="text" name="descricao" placeholder="Ex.: Reserva do mês">
+                <input class="input" type="text" name="descricao" placeholder="<%= t('contas.descricao_placeholder') %>">
             </div>
 
             <div class="modal__actions">

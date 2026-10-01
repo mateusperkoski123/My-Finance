@@ -24,7 +24,7 @@ const contasController = {
             });
         } catch (err) {
             console.error('Erro em contasController.index:', err);
-            res.status(500).render('500', { message: 'Erro ao carregar a lista de contas.' });
+            res.status(500).render('500', { message: req.t('flash.conta_erro_listar') });
         }
     },
 
@@ -48,7 +48,7 @@ const contasController = {
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.conta_criada') };
         } catch (err) {
             console.error('Erro em contasController.criar:', err);
-            req.session.flash = { tipo: 'erro', mensagem: 'Erro ao criar a conta.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_criar') };
         }
         res.redirect('/contas');
     },
@@ -69,7 +69,7 @@ const contasController = {
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.conta_atualizada') };
         } catch (err) {
             console.error('Erro em contasController.atualizar:', err);
-            req.session.flash = { tipo: 'erro', mensagem: 'Erro ao atualizar a conta.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_atualizar') };
         }
         res.redirect('/contas');
     },
@@ -82,7 +82,7 @@ const contasController = {
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.conta_arquivada') };
         } catch (err) {
             console.error('Erro em contasController.arquivar:', err);
-            req.session.flash = { tipo: 'erro', mensagem: 'Erro ao arquivar a conta.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_arquivar') };
         }
         res.redirect('/contas');
     },
@@ -95,7 +95,7 @@ const contasController = {
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.conta_restaurada') };
         } catch (err) {
             console.error('Erro em contasController.restaurar:', err);
-            req.session.flash = { tipo: 'erro', mensagem: 'Erro ao restaurar a conta.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_restaurar') };
         }
         res.redirect('/contas?aba=arquivadas');
     },
@@ -105,10 +105,10 @@ const contasController = {
             const userId = req.user.id;
             const id = req.params.id;
             await Conta.excluir(id, userId);
-            req.session.flash = { tipo: 'sucesso', mensagem: 'Conta eliminada com sucesso.' };
+            req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.conta_eliminada') };
         } catch (err) {
             console.error('Erro em contasController.excluir:', err);
-            req.session.flash = { tipo: 'erro', mensagem: 'Erro ao eliminar a conta.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_eliminar') };
         }
         res.redirect('/contas');
     },
@@ -121,7 +121,7 @@ const contasController = {
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.conta_atualizada') };
         } catch (err) {
             console.error('Erro em contasController.definirPadrao:', err);
-            req.session.flash = { tipo: 'erro', mensagem: 'Erro ao definir a conta padrão.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_padrao') };
         }
         res.redirect('/contas');
     },
@@ -161,7 +161,7 @@ const contasController = {
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.saldo_ajustado') };
         } catch (err) {
             console.error('Erro em contasController.ajustarSaldo:', err);
-            req.session.flash = { tipo: 'erro', mensagem: 'Erro ao realizar o ajuste de saldo.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_ajuste') };
         }
         res.redirect('/contas');
     },
@@ -215,7 +215,7 @@ const contasController = {
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.transferencia_realizada') };
         } catch (err) {
             console.error('Erro em contasController.transferir:', err);
-            req.session.flash = { tipo: 'erro', mensagem: 'Erro ao realizar a transferência.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_transferir') };
         }
         res.redirect('/contas');
     },

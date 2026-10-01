@@ -1,0 +1,111 @@
+<%
+const ass = assinatura;
+const st = ass ? ass.status_efetivo : null;
+const ciclos = { mensal: t('assinatura.ciclo_mensal'), anual: t('assinatura.ciclo_anual') };
+const nomePlano = (c) => t('plano.' + c + '.nome');
+const itensPlano = (c) => { const l = []; for (let i = 1; i <= 8; i++) { const k = 'plano.' + c + '.item.' + i; const v = t(k); if (v === k) break; l.push(v); } return l; };
+%>
+<div class="page-header">
+    <h1><i class="ph ph-gear"></i> <%= t('config.titulo') %></h1>
+</div>
+<%- include('../configuracoes/_menu', { menuAtivo: 'assinatura' }) %>
+<div class="page-header" style="margin-top: 4px;">
+    <h2 style="margin: 0;"><i class="ph ph-crown-simple"></i> <%= t('assinatura.titulo') %></h2>
+    <p class="muted"><%= t('assinatura.subtitulo') %></p>
+</div>
+
+<% if (ass) { %>
+<section class="card assinatura-atual">
+    <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start;">
+        <div>
+            <span class="muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;"><%= t('assinatura.seu_plano') %></span>
+            <h2 style="margin: 4px 0 6px;"><%= nomePlano(ass.plano_codigo) %></h2>
+            <p class="muted" style="margin: 0;">
+                <% if (st === 'beta') { %>
+                    <%= t('assinatura.estado_beta') %>
+                <% } else if (st === 'trial') { %>
+                    <%= t('assinatura.estado_trial', { dias: ass.dias_restantes }) %>
+                <% } else if (st === 'ativa') { %>
+                    <%= t('assinatura.estado_ativa', { ciclo: ciclos[ass.ciclo] || '', data: formatDate(ass.periodo_fim, 'DD/MM/YYYY'), dias: ass.dias_restantes }) %>
+                <% } else if (st === 'cancelada') { %>
+                    <%= t('assinatura.estado_cancelada') %>
+                <% } else { %>
+                    <%= t('assinatura.estado_vencida') %>
+                <% } %>
+            </p>
+        </div>
+        <span class="badge <%= (st === 'beta' || st === 'trial' || st === 'ativa') ? 'badge-sucesso' : 'badge-pendente' %>"><%= t('assinatura.status.' + st) %></span>
+    </div>
+
+    <% if (ass.solicitado_codigo) { %>
+        <div class="alert alert-aviso" style="margin-top: 14px;">
+            <i class="ph ph-hourglass"></i>
+            <%= t('assinatura.pedido_pendente', { plano: nomePlano(ass.solicitado_codigo), ciclo: ciclos[ass.ciclo_solicitado] || '' }) %>
+        </div>
+    <% } %>
+    <% if (st === 'vencida' || st === 'cancelada') { %>
+        <div class="alert alert-erro" style="margin-top: 14px;"><i class="ph ph-lock-simple"></i> <%= t('assinatura.modo_leitura') %></div>
+    <% } %>
+</section>
+<% } %>
+
+<div class="planos-grid">
+    <% planos.forEach(p => {
+        const atual = ass && ass.plano_codigo === p.codigo && (st === 'beta' || st === 'trial' || st === 'ativa');
+        const gratis = p.preco_mensal === 0;
+        const economia = p.preco_mensal * 12 - p.preco_anual;
+    %>
+        <article class="card plano-card <%= atual ? 'plano-card--atual' : '' %> <%= p.codigo === 'premium' ? 'plano-card--destaque' : '' %>">
+            <% if (atual) { %><span class="plano-card__selo"><%= t('assinatura.plano_atual') %></span><% } else if (p.codigo === 'premium') { %><span class="plano-card__selo plano-card__selo--destaque"><%= t('assinatura.mais_completo') %></span><% } %>
+            <h3><%= nomePlano(p.codigo) %></h3>
+            <% if (gratis) { %>
+                <div class="plano-card__preco"><%= t('assinatura.gratis') %></div>
+                <div class="muted plano-card__sub"><%= t('assinatura.prueba_sub', { dias: negocio.TRIAL_DIAS }) %></div>
+            <% } else { %>
+                <div class="plano-card__preco">Gs. <%= fmt(p.preco_mensal) %><small>/<%= t('assinatura.mes') %></small></div>
+                <div class="muted plano-card__sub"><%= t('assinatura.o_anual', { valor: fmt(p.preco_anual) }) %> · <b><%= t('assinatura.economia', { valor: fmt(economia) }) %></b></div>
+            <% } %>
+
+            <ul class="plano-card__lista">
+                <% itensPlano(p.codigo).forEach(item => { %>
+                    <li><i class="ph-bold ph-check"></i> <span><%= item %></span></li>
+                <% }) %>
+            </ul>
+
+            <% if (!gratis) { %>
+                <form method="post" action="/assinatura/solicitar" class="plano-card__acoes">
+                    <%- csrfCampo %>
+                    <input type="hidden" name="plano" value="<%= p.codigo %>">
+                    <button type="submit" name="ciclo" value="mensal" class="btn <%= p.codigo === 'premium' ? 'btn-primary' : 'btn-outline' %>"><%= t('assinatura.pedir_mensal') %></button>
+                    <button type="submit" name="ciclo" value="anual" class="btn btn-outline"><%= t('assinatura.pedir_anual') %></button>
+                </form>
+            <% } %>
+        </article>
+    <% }) %>
+</div>
+
+<p class="muted" style="font-size: 13px; margin-top: 4px;"><i class="ph ph-info"></i> <%= t('assinatura.como_pagar') %><% if (negocio.EMAIL_SUPORTE) { %> <b><%= negocio.EMAIL_SUPORTE %></b><% } %></p>
+
+<% if (pagamentos && pagamentos.length > 0) { %>
+<section class="card" style="margin-top: 20px;">
+    <h2><%= t('assinatura.historico') %></h2>
+    <div class="tabela-container">
+        <table class="tabela">
+            <thead><tr>
+                <th><%= t('comum.data') %></th><th><%= t('assinatura.plano') %></th><th><%= t('assinatura.ciclo') %></th><th><%= t('comum.valor') %></th><th><%= t('assinatura.metodo') %></th>
+            </tr></thead>
+            <tbody>
+                <% pagamentos.forEach(pg => { %>
+                    <tr>
+                        <td><%= formatDate(pg.pago_em || pg.created_at, 'DD/MM/YYYY') %></td>
+                        <td><%= pg.plano_codigo ? nomePlano(pg.plano_codigo) : '-' %></td>
+                        <td><%= ciclos[pg.ciclo] || '-' %></td>
+                        <td>Gs. <%= fmt(pg.valor) %></td>
+                        <td><%= pg.metodo %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+    </div>
+</section>
+<% } %>

@@ -10,6 +10,29 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="MyFinance">
     <title><%= title ? title + ' - ' + t('app.nome') : t('app.nome') %></title>
+    <script>
+    window.GF_T = {
+        total: <%- JSON.stringify(t('comum.total')) %>,
+        receitas: <%- JSON.stringify(t('comum.receitas')) %>,
+        despesas: <%- JSON.stringify(t('comum.despesas')) %>,
+        saldo: <%- JSON.stringify(t('comum.saldo')) %>,
+        sem_categoria: <%- JSON.stringify(t('comum.sem_categoria')) %>,
+        sel_cat_primeiro: <%- JSON.stringify(t('modal.sel_cat_primeiro')) %>,
+        sem_subcategoria: <%- JSON.stringify(t('js.sem_subcategoria')) %>,
+        categoria_sem_sub: <%- JSON.stringify(t('js.categoria_sem_sub')) %>,
+        dica_sub_html: <%- JSON.stringify(t('js.dica_sub_html')) %>,
+        foi_recebida: <%- JSON.stringify(t('modal.foi_recebida')) %>,
+        foi_pago: <%- JSON.stringify(t('modal.foi_pago')) %>,
+        nao_foi_recebida: <%- JSON.stringify(t('modal.nao_foi_recebida')) %>,
+        nao_foi_pago: <%- JSON.stringify(t('modal.nao_foi_pago')) %>,
+        data_recebimento: <%- JSON.stringify(t('modal.data_recebimento')) %>,
+        data_pagamento: <%- JSON.stringify(t('modal.data_pagamento')) %>,
+        data_vencimento: <%- JSON.stringify(t('modal.data_vencimento')) %>,
+        adicionar_saldo: <%- JSON.stringify(t('contas.adicionar_saldo')) %>,
+        subtrair_saldo: <%- JSON.stringify(t('contas.subtrair_saldo')) %>,
+        erro_acao: <%- JSON.stringify(t('js.erro_acao')) %>
+    };
+    </script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link rel="stylesheet" href="/assets/css/app.css?v=<%= Date.now() %>">
 </head>
@@ -42,6 +65,12 @@
                     <span class="navbar__icon"><i class="ph ph-bank"></i></span>
                     <span class="navbar__label"><%= t('nav.contas') %></span>
                 </a>
+                <% if (typeof ehAdmin !== 'undefined' && ehAdmin) { %>
+                <a href="/admin" title="<%= t('nav.admin') %>" class="navbar__link <%= currentRoute.startsWith('/admin') ? 'is-active' : '' %>">
+                    <span class="navbar__icon"><i class="ph ph-shield-star"></i></span>
+                    <span class="navbar__label"><%= t('nav.admin') %></span>
+                </a>
+                <% } %>
                 <a href="/configuracoes" title="<%= t('nav.configuracoes') %>" class="navbar__link <%= currentRoute.startsWith('/configuracoes') ? 'is-active' : '' %>">
                     <span class="navbar__icon"><i class="ph ph-gear"></i></span>
                     <span class="navbar__label"><%= t('nav.configuracoes') %></span>
@@ -49,7 +78,7 @@
             </nav>
             <div class="navbar__user">
                 <span class="navbar__user-nome" style="font-weight: 600;"><%= usuarioLogado.nome %></span>
-                <button type="button" class="navbar__avatar" id="btn-toggle-menu" aria-label="Menu"><%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %></button>
+                <button type="button" class="navbar__avatar" id="btn-toggle-menu" aria-label="<%= t('nav.menu') %>"><%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %></button>
             </div>
         <% } %>
     </div>
@@ -61,13 +90,28 @@
             let msgText = flash.mensagem || '';
             if (msgText.startsWith('flash.')) {
                 const resText = t(msgText);
-                msgText = resText.startsWith('flash.') ? (flash.tipo === 'sucesso' ? 'Operação realizada com sucesso!' : 'Ocorreu um erro ao processar a solicitação.') : resText;
+                msgText = resText.startsWith('flash.') ? (flash.tipo === 'sucesso' ? t('flash.generico_ok') : t('flash.generico_erro')) : resText;
             }
         %>
         <div class="alert alert-<%= flash.tipo === 'sucesso' ? 'sucesso' : 'erro' %>" style="display: flex; align-items: center; gap: 8px;">
             <i class="ph-bold <%= flash.tipo === 'sucesso' ? 'ph-check-circle' : 'ph-warning-circle' %>" style="font-size: 18px;"></i>
             <span><%= msgText %></span>
         </div>
+    <% } %>
+
+    <% if (typeof assinatura !== 'undefined' && assinatura && usuarioLogado) { %>
+        <% const _st = assinatura.status_efetivo; %>
+        <% if (_st === 'vencida' || _st === 'cancelada') { %>
+            <div class="alert alert-erro faixa-conta"><i class="ph ph-lock-simple"></i> <span><%= t('faixa.somente_leitura') %></span> <a href="/assinatura" class="btn btn-sm btn-primary"><%= t('faixa.ver_planos') %></a></div>
+        <% } else if (_st === 'trial') { %>
+            <div class="alert alert-aviso faixa-conta"><i class="ph ph-gift"></i> <span><%= t('faixa.trial', { dias: assinatura.dias_restantes }) %></span> <a href="/assinatura" class="btn btn-sm btn-outline"><%= t('faixa.ver_planos') %></a></div>
+        <% } else if (_st === 'ativa' && assinatura.dias_restantes <= 5) { %>
+            <div class="alert alert-aviso faixa-conta"><i class="ph ph-clock-countdown"></i> <span><%= t('faixa.renovar', { dias: assinatura.dias_restantes }) %></span> <a href="/assinatura" class="btn btn-sm btn-outline"><%= t('faixa.renovar_botao') %></a></div>
+        <% } %>
+        <% if (emailNaoVerificado) { %>
+            <div class="alert alert-aviso faixa-conta"><i class="ph ph-envelope-simple"></i> <span><%= t('faixa.verificar_email') %></span>
+                <form method="post" action="/verificar-email/reenviar" style="display: inline;"><%- csrfCampo %><button type="submit" class="btn btn-sm btn-outline"><%= t('conta.reenviar') %></button></form></div>
+        <% } %>
     <% } %>
 
     <%- include('partials/saldos_contas') %>
@@ -112,6 +156,16 @@
                 <a href="/contas" class="drawer-link <%= currentRoute === '/contas' ? 'is-active' : '' %>">
                     <i class="ph ph-bank"></i>
                     <span><%= t('nav.contas') %></span>
+                </a>
+                <% if (typeof ehAdmin !== 'undefined' && ehAdmin) { %>
+                <a href="/admin" class="drawer-link <%= currentRoute.startsWith('/admin') ? 'is-active' : '' %>">
+                    <i class="ph ph-shield-star"></i>
+                    <span><%= t('nav.admin') %></span>
+                </a>
+                <% } %>
+                <a href="/assinatura" class="drawer-link <%= currentRoute === '/assinatura' ? 'is-active' : '' %>">
+                    <i class="ph ph-crown-simple"></i>
+                    <span><%= t('config.menu.assinatura') %></span>
                 </a>
                 <a href="/configuracoes" class="drawer-link <%= currentRoute.startsWith('/configuracoes') ? 'is-active' : '' %>">
                     <i class="ph ph-gear"></i>

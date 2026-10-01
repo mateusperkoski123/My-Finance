@@ -103,16 +103,21 @@ function addMonthsYMD(ymd, n) {
 }
 
 // Texto amigavel para lancamentos de sistema (ajuste/transferencia), inclusive os antigos com "#id" e valores no texto.
-function descricaoLancamento(l) {
+function descricaoLancamento(l, t) {
     if (!l) return '';
+    const tr = typeof t === 'function' ? t : (k) => ({
+        'lancamento.ajuste_saida': 'Ajuste de saldo (saída)', 'lancamento.ajuste_entrada': 'Ajuste de saldo (entrada)',
+        'lancamento.transf_recebida': 'Transferência recebida', 'lancamento.transf_enviada': 'Transferência enviada',
+        'lancamento.transf_de': ' de ', 'lancamento.transf_para': ' para '
+    })[k];
     const d = String(l.descricao || '');
-    if (l.tipo === 'ajuste') return parseFloat(l.valor) < 0 ? 'Ajuste de saldo (saída)' : 'Ajuste de saldo (entrada)';
+    if (l.tipo === 'ajuste') return parseFloat(l.valor) < 0 ? tr('lancamento.ajuste_saida') : tr('lancamento.ajuste_entrada');
     if (l.tipo === 'transferencia') {
         const entrada = /recebida/i.test(d) || parseFloat(l.valor) > 0;
         const m = d.match(/\b(?:para|de|da)\s+(.+?)(?:\s+-\s+.*)?$/i);
         let outra = m ? m[1].trim() : '';
         if (/^(conta\s+)?#?\d+$/i.test(outra)) outra = '';
-        return (entrada ? 'Transferência recebida' : 'Transferência enviada') + (outra ? (entrada ? ' de ' : ' para ') + outra : '');
+        return tr(entrada ? 'lancamento.transf_recebida' : 'lancamento.transf_enviada') + (outra ? tr(entrada ? 'lancamento.transf_de' : 'lancamento.transf_para') + outra : '');
     }
     return d;
 }

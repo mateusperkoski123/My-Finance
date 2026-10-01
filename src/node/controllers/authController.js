@@ -14,11 +14,19 @@ const authController = {
         }
 
         const user = await User.findByEmail(email.trim());
+        const infoLog = { email: email.trim(), ip: req.ip, userAgent: req.get('User-Agent') };
         if (!user || !bcrypt.compareSync(senha, user.senha_hash)) {
+            await User.registrarLogin(user ? user.id : null, { ...infoLog, sucesso: false }).catch(() => {});
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.login_invalido') };
             return res.redirect('/login');
         }
+        if (user.status && user.status !== 'ativo') {
+            await User.registrarLogin(user.id, { ...infoLog, sucesso: false }).catch(() => {});
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_suspensa') };
+            return res.redirect('/login');
+        }
 
+        await User.registrarLogin(user.id, infoLog).catch((e) => console.error('Falha ao registrar login:', e.message));
         req.session.user_id = user.id;
         res.redirect('/');
     },
@@ -28,7 +36,7 @@ const authController = {
     },
 
     registerSubmit: async (req, res) => {
-        const { nome, email, senha, confirmar_senha } = req.body;
+        const { nome, email, senha, confirmar_senha, aceitar_termos } = req.body;
         const s = (senha || '').trim();
         const cs = (confirmar_senha || '').trim();
 
@@ -44,6 +52,10 @@ const authController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_curta') };
             return res.redirect('/cadastro');
         }
+        if (!aceitar_termos) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.termos_obrigatorio') };
+            return res.redirect('/cadastro');
+        }
 
         const existing = await User.findByEmail(email.trim());
         if (existing) {
@@ -56,12 +68,21 @@ const authController = {
             nome: nome.trim(),
             email: email.trim(),
             senha_hash: hash,
-            idioma: 'pt-BR',
+            idioma: req.lang || 'pt-BR',
             moeda: 'PYG',
             tema: 'claro'
         });
 
-        req.session.user_id = typeof userId === 'object' ? userId.id : userId;
+        // E-mail de verificacao: se o envio falhar, o cadastro continua (da para reenviar depois).
+        try {
+            const link = `${req.protocol || 'https'}://${req.get('host')}/verificar-email/${userId.tokenVerificacao}`;
+            await require('../core/mailer').sendVerificationEmail(email.trim(), link, req.lang);
+        } catch (err) {
+            console.error('Falha ao enviar e-mail de verificacao:', err.message);
+        }
+        await User.registrarLogin(userId.id, { email: email.trim(), ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
+
+        req.session.user_id = userId.id;
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.cadastro_sucesso') };
         res.redirect('/');
     },
@@ -73,13 +94,13 @@ const authController = {
     },
 
     esqueciSenhaPage: (req, res) => {
-        res.render('auth/esqueci_senha', { title: 'Recuperar Senha' });
+        res.render('auth/esqueci_senha', { title: req.t('auth.recuperar_titulo') });
     },
 
     esqueciSenhaSubmit: async (req, res) => {
         const { email } = req.body;
         if (!email || !email.trim()) {
-            req.session.flash = { tipo: 'erro', mensagem: 'Por favor, informe seu e-mail cadastrado.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.informe_email') };
             return res.redirect('/esqueci-senha');
         }
 
@@ -96,13 +117,13 @@ const authController = {
             const magicLink = `${protocol}://${host}/redefinir-senha/${token}`;
 
             const { sendResetPasswordEmail } = require('../core/mailer');
-            await sendResetPasswordEmail(user.email, magicLink);
+            await sendResetPasswordEmail(user.email, magicLink, user.idioma);
         }
 
         // Always show the same friendly message for security (prevents user enumeration)
         req.session.flash = {
             tipo: 'sucesso',
-            mensagem: 'Se o e-mail informado estiver cadastrado em nosso sistema, você receberá o link de recuperação em alguns instantes.'
+            mensagem: req.t('flash.reset_enviado')
         };
         res.redirect('/login');
     },
@@ -112,11 +133,11 @@ const authController = {
         const user = await User.findByResetToken(token);
 
         if (!user) {
-            req.session.flash = { tipo: 'erro', mensagem: 'O link de recuperação de senha é inválido ou já expirou.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.reset_invalido') };
             return res.redirect('/esqueci-senha');
         }
 
-        res.render('auth/redefinir_senha', { title: 'Redefinir Senha', token });
+        res.render('auth/redefinir_senha', { title: req.t('auth.redefinir_titulo'), token });
     },
 
     redefinirSenhaSubmit: async (req, res) => {
@@ -127,24 +148,24 @@ const authController = {
 
         const user = await User.findByResetToken(token);
         if (!user) {
-            req.session.flash = { tipo: 'erro', mensagem: 'O link de recuperação de senha é inválido ou já expirou.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.reset_invalido') };
             return res.redirect('/esqueci-senha');
         }
 
         if (!s || s !== cs) {
-            req.session.flash = { tipo: 'erro', mensagem: 'As senhas informadas não conferem.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senhas_nao_conferem') };
             return res.redirect(`/redefinir-senha/${token}`);
         }
 
         if (s.length < 6) {
-            req.session.flash = { tipo: 'erro', mensagem: 'A senha deve conter no mínimo 6 caracteres.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_minimo6') };
             return res.redirect(`/redefinir-senha/${token}`);
         }
 
         const hash = bcrypt.hashSync(s, 10);
         await User.redefinirSenhaComToken(user.id, hash);
 
-        req.session.flash = { tipo: 'sucesso', mensagem: 'Sua senha foi redefinida com sucesso! Você já pode fazer login.' };
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.senha_redefinida') };
         res.redirect('/login');
     },
 
@@ -153,7 +174,7 @@ const authController = {
         if (!clientId) {
             req.session.flash = {
                 tipo: 'erro',
-                mensagem: 'Login com Google ainda não configurado (adicione GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET nas variáveis de ambiente da Hostinger).'
+                mensagem: req.t('flash.google_nao_configurado')
             };
             return res.redirect('/login');
         }
@@ -168,7 +189,7 @@ const authController = {
     googleCallback: async (req, res) => {
         const { code, error } = req.query;
         if (error || !code) {
-            req.session.flash = { tipo: 'erro', mensagem: 'Autenticação com o Google cancelada ou indisponível.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.google_cancelado') };
             return res.redirect('/login');
         }
 
@@ -231,12 +252,17 @@ const authController = {
                 email: userinfo.email
             });
 
+            if (user.status && user.status !== 'ativo') {
+                req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_suspensa') };
+                return res.redirect('/login');
+            }
+            await User.registrarLogin(user.id, { email: user.email, ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
             req.session.user_id = user.id;
-            req.session.flash = { tipo: 'sucesso', mensagem: `Bem-vindo(a), ${user.nome}!` };
+            req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.google_bemvindo', { nome: user.nome }) };
             res.redirect('/');
         } catch (err) {
             console.error('Google Auth Callback Error:', err);
-            req.session.flash = { tipo: 'erro', mensagem: 'Erro ao conectar com a conta do Google.' };
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.google_erro') };
             res.redirect('/login');
         }
     }

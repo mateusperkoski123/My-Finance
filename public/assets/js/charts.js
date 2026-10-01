@@ -47,7 +47,7 @@
       ctx.save();
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = css('--muted', '#6b7280'); ctx.font = '600 11px -apple-system, "Segoe UI", Roboto, sans-serif';
-      ctx.fillText(opts.rotulo || 'Total', cx, cy - 12);
+      ctx.fillText(opts.rotulo || (window.GF_T && window.GF_T.total) || 'Total', cx, cy - 12);
       ctx.fillStyle = css('--text', '#16181d'); ctx.font = '800 15px -apple-system, "Segoe UI", Roboto, sans-serif';
       ctx.fillText(opts.texto, cx, cy + 8);
       ctx.restore();
@@ -79,7 +79,7 @@
         layout: { padding: 6 },
         plugins: {
           legend: { display: false },
-          gfCentro: { texto: moeda(total), rotulo: opcoes.rotulo || 'Total' },
+          gfCentro: { texto: moeda(total), rotulo: opcoes.rotulo || (window.GF_T && window.GF_T.total) || 'Total' },
           tooltip: Object.assign(tooltipBase(), {
             callbacks: {
               label: function (c) {
@@ -117,8 +117,8 @@
       data: {
         labels: rot,
         datasets: [
-          { label: 'Receitas', data: dados.map(function (d) { return Number(d.receitas) || 0; }), backgroundColor: corReceita(), borderRadius: 5, borderSkipped: 'bottom', maxBarThickness: 14 },
-          { label: 'Despesas', data: dados.map(function (d) { return Number(d.despesas) || 0; }), backgroundColor: corDespesa(), borderRadius: 5, borderSkipped: 'bottom', maxBarThickness: 14 }
+          { label: (window.GF_T && window.GF_T.receitas) || 'Receitas', data: dados.map(function (d) { return Number(d.receitas) || 0; }), backgroundColor: corReceita(), borderRadius: 5, borderSkipped: 'bottom', maxBarThickness: 14 },
+          { label: (window.GF_T && window.GF_T.despesas) || 'Despesas', data: dados.map(function (d) { return Number(d.despesas) || 0; }), backgroundColor: corDespesa(), borderRadius: 5, borderSkipped: 'bottom', maxBarThickness: 14 }
         ]
       },
       options: {
@@ -150,7 +150,7 @@
       data: {
         labels: rot,
         datasets: [{
-          label: 'Saldo', data: dados.map(function (d) { return Number(d.saldo) || 0; }),
+          label: (window.GF_T && window.GF_T.saldo) || 'Saldo', data: dados.map(function (d) { return Number(d.saldo) || 0; }),
           borderColor: cor, backgroundColor: cor + '1a', fill: true, borderWidth: 2, tension: 0, stepped: 'before',
           pointRadius: dados.map(function (d, i) { return i === ultimo ? 5 : 0; }), pointHoverRadius: 6,
           pointBackgroundColor: cor, pointBorderColor: css('--card', '#ffffff'), pointBorderWidth: 2

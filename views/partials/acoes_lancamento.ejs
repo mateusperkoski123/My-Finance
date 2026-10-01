@@ -1,6 +1,6 @@
 <%
 const _editavel = l.tipo === 'receita' || l.tipo === 'despesa';
-const _rotuloPagar = l.tipo === 'receita' ? 'Receber' : 'Pagar';
+const _rotuloPagar = l.tipo === 'receita' ? t('acao.receber') : t('acao.pagar');
 %>
 <div class="acoes-linha">
     <% if (l.status !== 'pago') { %>
@@ -8,29 +8,29 @@ const _rotuloPagar = l.tipo === 'receita' ? 'Receber' : 'Pagar';
             <%- csrfCampo %>
             <input type="hidden" name="voltar" value="<%= currentUrl %>">
             <input type="hidden" name="status" value="pago">
-            <button type="submit" class="btn-pagar" title="<%= l.tipo === 'receita' ? 'Marcar como recebido' : 'Marcar como pago' %>"><i class="ph ph-check-circle"></i><span><%= _rotuloPagar %></span></button>
+            <button type="submit" class="btn-pagar" title="<%= l.tipo === 'receita' ? t('acao.marcar_recebido') : t('acao.marcar_pago') %>"><i class="ph ph-check-circle"></i><span><%= _rotuloPagar %></span></button>
         </form>
     <% } %>
     <% if (_editavel) { %>
         <details class="menu-acoes">
-            <summary aria-label="Mais ações" title="Mais ações"><i class="ph ph-dots-three-vertical"></i></summary>
+            <summary aria-label="<%= t('acao.mais') %>" title="<%= t('acao.mais') %>"><i class="ph ph-dots-three-vertical"></i></summary>
             <div class="menu-acoes__lista">
-                <button type="button" data-modal-open="modal-editar-<%= l.id %>"><i class="ph ph-pencil-simple"></i> Editar</button>
+                <button type="button" data-modal-open="modal-editar-<%= l.id %>"><i class="ph ph-pencil-simple"></i> <%= t('acao.editar') %></button>
                 <% if (l.status === 'pago') { %>
                     <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" data-ajax>
                         <%- csrfCampo %>
                         <input type="hidden" name="voltar" value="<%= currentUrl %>">
                         <input type="hidden" name="status" value="pendente">
-                        <button type="submit"><i class="ph ph-arrow-counter-clockwise"></i> Desfazer pagamento</button>
+                        <button type="submit"><i class="ph ph-arrow-counter-clockwise"></i> <%= t('acao.desfazer') %></button>
                     </form>
                 <% } %>
                 <% if (l.serie_id && typeof modalSerie !== 'undefined' && modalSerie) { %>
-                    <button type="button" class="perigo" data-modal-open="modal-excluir-<%= l.id %>"><i class="ph ph-trash"></i> Excluir</button>
+                    <button type="button" class="perigo" data-modal-open="modal-excluir-<%= l.id %>"><i class="ph ph-trash"></i> <%= t('acao.excluir') %></button>
                 <% } else { %>
                     <form method="post" action="/lancamentos/<%= l.id %>/excluir" data-ajax data-confirm="<%= t('painel.lancamento.confirmar_exclusao') %>">
                         <%- csrfCampo %>
                         <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                        <button type="submit" class="perigo"><i class="ph ph-trash"></i> Excluir</button>
+                        <button type="submit" class="perigo"><i class="ph ph-trash"></i> <%= t('acao.excluir') %></button>
                     </form>
                 <% } %>
             </div>

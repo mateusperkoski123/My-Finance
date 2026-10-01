@@ -15,7 +15,7 @@
                     <th><%= t('contas.extrato.col.tipo') %></th>
                     <th><%= t('contas.extrato.col.valor') %></th>
                     <th><%= t('contas.extrato.col.status') %></th>
-                    <th>Ações</th>
+                    <th><%= t('tabela.acoes') %></th>
                 </tr>
             </thead>
             <tbody>
@@ -33,13 +33,13 @@
                                     <span class="lancamento-tag" style="margin-left: 6px;"><%= l.categoria_nome %></span>
                                 <% } %>
                             </td>
-                            <td><%= l.tipo %></td>
+                            <td><%= t('lancamento.tipo.' + l.tipo) %></td>
                             <td style="font-weight: 600; color: <%= (l.tipo === 'despesa' || (l.tipo !== 'receita' && parseFloat(l.valor) < 0)) ? 'var(--red)' : 'var(--green)' %>;">
                                 <%= (l.tipo === 'despesa' || (l.tipo !== 'receita' && parseFloat(l.valor) < 0)) ? '-' : '+' %> <%= moeda(Math.abs(parseFloat(l.valor))) %>
                             </td>
                             <td>
                                 <span class="badge <%= l.status === 'pago' ? 'badge-sucesso' : 'badge-alerta' %>">
-                                    <%= l.status === 'pago' ? 'Pago' : 'Pendente' %>
+                                    <%= l.status === 'pago' ? t('lancamento.status.pago') : t('lancamento.status.pendente') %>
                                 </span>
                             </td>
                             <td class="td-acoes"><%- include('../partials/acoes_lancamento', { l: l, modalSerie: false }) %></td>

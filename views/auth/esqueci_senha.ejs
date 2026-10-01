@@ -1,19 +1,19 @@
 <div class="auth-card card">
-    <h1><i class="ph ph-key"></i> Recuperar Senha</h1>
-    <p class="muted">Digite seu e-mail cadastrado. Enviaremos um link mágico para você redefinir sua senha.</p>
+    <h1><i class="ph ph-key"></i> <%= t('auth.recuperar_titulo') %></h1>
+    <p class="muted"><%= t('auth.recuperar_texto') %></p>
 
     <form method="post" action="/esqueci-senha" class="form">
         <%- csrfCampo %>
 
         <div class="form-group">
-            <label for="email">E-mail Cadastrado</label>
+            <label for="email"><%= t('auth.email_cadastrado') %></label>
             <input class="input" type="email" id="email" name="email" placeholder="seu@email.com" required autofocus>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block">Enviar Magic Link de Recuperação</button>
+        <button type="submit" class="btn btn-primary btn-block"><%= t('auth.enviar_link') %></button>
     </form>
 
     <p class="auth-footer" style="text-align: center; margin-top: 16px;">
-        <a href="/login">← Voltar para o Login</a>
+        <a href="/login"><%= t('auth.voltar_login') %></a>
     </p>
 </div>

@@ -18,8 +18,13 @@ const contasController = require('../controllers/contasController');
 const relatoriosController = require('../controllers/relatoriosController');
 const categoriasController = require('../controllers/categoriasController');
 const configuracoesController = require('../controllers/configuracoesController');
+const assinaturaController = require('../controllers/assinaturaController');
+const legalController = require('../controllers/legalController');
+const contaController = require('../controllers/contaController');
+const adminController = require('../controllers/adminController');
 
 const { requireAuth, guestOnly } = require('../middleware/authMiddleware');
+const { exigirRecurso, exigirAdmin, limiteContas } = require('../middleware/contaMiddleware');
 
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } });
@@ -42,6 +47,25 @@ router.get('/auth/google', guestOnly, authController.googleRedirect);
 router.get('/auth/google/callback', guestOnly, authController.googleCallback);
 router.post('/logout', requireAuth, authController.logout);
 
+// Paginas legais (publicas), aceite de termos e verificacao de e-mail
+router.get('/termos', legalController.termos);
+router.get('/privacidade', legalController.privacidade);
+router.get('/aceitar-termos', requireAuth, legalController.aceitarPage);
+router.post('/aceitar-termos', requireAuth, legalController.aceitarSubmit);
+router.get('/verificar-email/:token', contaController.verificarEmail);
+router.post('/verificar-email/reenviar', requireAuth, contaController.reenviarVerificacao);
+
+// Assinatura
+router.get('/assinatura', requireAuth, assinaturaController.index);
+router.post('/assinatura/solicitar', requireAuth, assinaturaController.solicitar);
+
+// Administracao (somente role=admin)
+router.get('/admin', requireAuth, exigirAdmin, adminController.index);
+router.post('/admin/usuarios/:id/pagamento', requireAuth, exigirAdmin, adminController.registrarPagamento);
+router.post('/admin/usuarios/:id/trial', requireAuth, exigirAdmin, adminController.estenderTrial);
+router.post('/admin/usuarios/:id/cancelar', requireAuth, exigirAdmin, adminController.cancelar);
+router.post('/admin/usuarios/:id/status', requireAuth, exigirAdmin, adminController.alterarStatus);
+
 // Dashboard routes
 router.get('/', requireAuth, dashboardController.index);
 router.post('/lancamentos', requireAuth, dashboardController.criarLancamento);
@@ -52,10 +76,10 @@ router.post('/lancamentos/:id/marcar-pago', requireAuth, dashboardController.mar
 
 // Contas Bancarias routes
 router.get('/contas', requireAuth, contasController.index);
-router.post('/contas/criar', requireAuth, contasController.criar);
+router.post('/contas/criar', requireAuth, limiteContas, contasController.criar);
 router.post('/contas/:id/atualizar', requireAuth, contasController.atualizar);
 router.post('/contas/:id/arquivar', requireAuth, contasController.arquivar);
-router.post('/contas/:id/restaurar', requireAuth, contasController.restaurar);
+router.post('/contas/:id/restaurar', requireAuth, limiteContas, contasController.restaurar);
 router.post('/contas/:id/excluir', requireAuth, contasController.excluir);
 router.post('/contas/:id/definir-padrao', requireAuth, contasController.definirPadrao);
 router.post('/contas/:id/ajustar', requireAuth, contasController.ajustarSaldo);
@@ -70,8 +94,10 @@ router.post('/categorias/:id/arquivar', requireAuth, categoriasController.arquiv
 router.post('/categorias/:id/restaurar', requireAuth, categoriasController.restaurar);
 
 // Relatorios routes
-router.get('/relatorios', requireAuth, relatoriosController.index);
-router.get('/relatorios/exportar', requireAuth, relatoriosController.exportar);
+// A aba "Demonstrativo Anual" e um recurso do Premium (e do Plan de Prueba).
+const gateAnual = (req, res, next) => (req.query.aba === 'demonstrativo_anual' ? exigirRecurso('rec_relatorio_anual')(req, res, next) : next());
+router.get('/relatorios', requireAuth, gateAnual, relatoriosController.index);
+router.get('/relatorios/exportar', requireAuth, exigirRecurso('rec_exportar'), relatoriosController.exportar);
 
 // Divisao de Patrimonio route (Fase 5 - Placeholder)
 router.get('/patrimonio', requireAuth, (req, res) => {
@@ -85,7 +111,9 @@ router.get('/configuracoes/perfil', requireAuth, configuracoesController.perfil)
 router.post('/configuracoes/perfil', requireAuth, configuracoesController.salvarPerfil);
 router.post('/configuracoes/perfil/senha', requireAuth, configuracoesController.salvarSenha);
 router.get('/configuracoes/dados', requireAuth, configuracoesController.dados);
-router.get('/configuracoes/dados/exportar', requireAuth, configuracoesController.exportarDados);
-router.post('/configuracoes/dados/importar', requireAuth, upload.single('arquivo'), configuracoesController.importarDados);
+router.get('/configuracoes/dados/exportar', requireAuth, exigirRecurso('rec_backup'), configuracoesController.exportarDados);
+router.post('/configuracoes/dados/importar', requireAuth, exigirRecurso('rec_backup'), upload.single('arquivo'), configuracoesController.importarDados);
+router.get('/configuracoes/conta', requireAuth, contaController.index);
+router.post('/configuracoes/conta/excluir', requireAuth, contaController.excluir);
 
 module.exports = router;

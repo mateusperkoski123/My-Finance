@@ -144,9 +144,9 @@ const ptBR = {
 
     'categorias.nome_label': 'Nome da categoria',
     'categorias.tipo_label': 'Tipo',
-    'categorias.tipo.receita': 'Ingreso',
-    'categorias.tipo.despesa': 'Gasto',
-    'categorias.tipo.ambas': 'Ambos (Gasto e Ingreso)',
+    'categorias.tipo.receita': 'Receita',
+    'categorias.tipo.despesa': 'Despesa',
+    'categorias.tipo.ambas': 'Receita e despesa',
     'categorias.limite_label': 'Limite de gasto (opcional)',
     'categorias.limite_placeholder': 'Sem limite',
 
@@ -321,8 +321,8 @@ const ptBR = {
     'filtro.filtrar': 'Filtrar',
     'filtro.status': 'Status',
 
-    'relatorios.ingresos_pendentes': 'Ingresos Pendentes',
-    'relatorios.egresos_pendentes': 'Egresos Pendentes',
+    'relatorios.ingresos_pendentes': 'Receitas Pendentes',
+    'relatorios.egresos_pendentes': 'Despesas Pendentes',
     'relatorios.receber': 'Receber',
     'relatorios.pagar': 'Pagar',
     'relatorios.registros': '{n} registro(s)',
@@ -784,15 +784,31 @@ const esPY = {
     'flash.lancamento_marcado_pago': '¡Movimiento marcado como pagado/cobrado!'
 };
 
+const extra = Object.assign({}, require('./i18n_extra'), require('./i18n_assinatura'));
+const enUS = require('./i18n_en');
+
+// Mescla as chaves adicionais ([pt, es, en]) nos tres dicionarios.
+Object.keys(extra).forEach((k) => {
+    ptBR[k] = extra[k][0];
+    esPY[k] = extra[k][1];
+    enUS[k] = extra[k][2];
+});
+
+function dicionario(lang) {
+    const l = String(lang || '').toLowerCase();
+    if (l.startsWith('es')) return esPY;
+    if (l.startsWith('en')) return enUS;
+    return ptBR;
+}
+
 function t(key, params = {}, lang = 'pt-BR') {
-    const dict = (lang === 'es-PY' || lang === 'es-ES' || lang === 'es') ? esPY : ptBR;
-    let text = dict[key] || ptBR[key] || key;
+    let text = dicionario(lang)[key] || ptBR[key] || key;
     if (params && typeof params === 'object') {
         for (const [k, v] of Object.entries(params)) {
-            text = text.replace(new RegExp(`{${k}}`, 'g'), v);
+            text = text.replace(new RegExp(`{${k}}`, 'g'), () => String(v));
         }
     }
     return text;
 }
 
-module.exports = { t, ptBR, esPY };
+module.exports = { t, ptBR, esPY, enUS };

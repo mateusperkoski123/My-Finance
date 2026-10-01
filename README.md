@@ -288,3 +288,20 @@ quando (e se) quiser continuar evoluindo o projeto:
 - **Concluir a Fase 5 (Divisão de Patrimônio)**: hoje é só um placeholder
   no menu — decidir o escopo real (patrimônio líquido, ativos/passivos,
   evolução no tempo?) e implementar.
+
+
+## Assinaturas, planos e operação (versão Node)
+
+- **Migrations automáticas:** ao iniciar, `server.js` aplica as migrations pendentes de `database/migrations`
+  (tabela `migrations`, com trava para o pm2 em cluster). São só mudanças aditivas — dados existentes não são alterados.
+  **Faça um backup do banco antes do primeiro deploy.**
+- **Planos** (tabela `planos`, editável direto no banco): *Plan de Prueba* (grátis), *Básico* (Gs. 30.000/mês, até 3 contas)
+  e *Premium* (Gs. 70.000/mês, ilimitado + demonstrativo anual, CSV e backup). Anual = 10 × mensal.
+- **Usuários existentes na data da migration** viram `beta` (Plan de Prueba grátis, sem vencimento). Cadastros novos ganham
+  7 dias de teste (`TRIAL_DIAS` em `src/node/core/negocio.js`). Vencido/cancelado = modo somente leitura.
+- **Pagamento:** sem gateway por enquanto. O usuário solicita o plano em *Configurações > Assinatura* e o admin registra o
+  pagamento em `/admin` (ativa o plano). Um gateway futuro só precisa chamar `Assinatura.ativar()`.
+- **Admin:** defina `ADMIN_EMAILS` (separados por vírgula); esses usuários viram `role = admin` ao iniciar.
+- **E-mails** (verificação, recuperação de senha, pedidos de plano): configure `SMTP_*`; sem isso só aparecem no log.
+- **Termos/Privacidade:** textos modelo em `src/node/core/legal.js` — revisar com advogado. Mudar `TERMOS_VERSAO`
+  obriga todos a aceitar novamente.

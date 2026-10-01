@@ -1,8 +1,8 @@
 <% if (typeof contasSaldos !== 'undefined' && contasSaldos && contasSaldos.length > 0) { %>
-<section class="saldos-contas card" id="saldos-contas" aria-label="Saldo por conta">
+<section class="saldos-contas card" id="saldos-contas" aria-label="<%= t('saldos.titulo') %>">
     <div class="saldos-contas__topo">
-        <span class="saldos-contas__titulo"><i class="ph ph-bank"></i> Saldo por conta</span>
-        <button type="button" class="saldos-contas__olho" id="saldos-olho-todas" title="Ocultar/exibir todos os saldos" aria-label="Ocultar ou exibir todos os saldos"><i class="ph ph-eye"></i></button>
+        <span class="saldos-contas__titulo"><i class="ph ph-bank"></i> <%= t('saldos.titulo') %></span>
+        <button type="button" class="saldos-contas__olho" id="saldos-olho-todas" title="<%= t('saldos.toggle_todos') %>" aria-label="<%= t('saldos.toggle_todos') %>"><i class="ph ph-eye"></i></button>
     </div>
     <div class="saldos-contas__lista">
         <% contasSaldos.forEach(c => { %>
@@ -10,7 +10,7 @@
                 <div class="saldos-contas__nome"><%= c.nome %></div>
                 <div class="saldos-contas__linha">
                     <strong class="saldos-contas__valor" data-texto="<%= moeda(c.saldo_atual) %>" style="color: <%= parseFloat(c.saldo_atual) >= 0 ? 'var(--green)' : 'var(--red)' %>;"><%= moeda(c.saldo_atual) %></strong>
-                    <button type="button" class="saldos-contas__olho saldos-contas__olho--item" title="Ocultar/exibir saldo" aria-label="Ocultar ou exibir saldo de <%= c.nome %>"><i class="ph ph-eye"></i></button>
+                    <button type="button" class="saldos-contas__olho saldos-contas__olho--item" title="<%= t('saldos.toggle_um') %>" aria-label="<%= t('saldos.toggle_conta', { nome: c.nome }) %>"><i class="ph ph-eye"></i></button>
                 </div>
             </div>
         <% }) %>

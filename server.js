@@ -45,6 +45,13 @@ app.use(express.json());
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Em producao a chave de sessao e obrigatoria (nao ha valor padrao no codigo).
+const SESSION_SECRET = process.env.SESSION_SECRET;
+if (!SESSION_SECRET && process.env.NODE_ENV === 'production') {
+    console.error('SESSION_SECRET nao definida: defina a variavel de ambiente antes de iniciar em producao.');
+    process.exit(1);
+}
+
 // MySQL Session Store
 const pool = require('./src/node/config/db');
 const sessionStore = new MySQLStore({
@@ -56,7 +63,7 @@ const sessionStore = new MySQLStore({
 app.use(
     session({
         name: 'gf_session_node',
-        secret: process.env.SESSION_SECRET || 'gf_super_secret_key_2026',
+        secret: SESSION_SECRET || 'chave-apenas-para-desenvolvimento',
         store: sessionStore,
         resave: false,
         saveUninitialized: false,
@@ -104,13 +111,17 @@ app.use(async (req, res, next) => {
 app.use(i18nMiddleware);
 app.use(csrfMiddleware);
 
+// Regras de conta: suspensao, aceite de termos e modo somente leitura (assinatura vencida)
+const { contaMiddleware } = require('./src/node/middleware/contaMiddleware');
+app.use((req, res, next) => contaMiddleware(req, res, next).catch(next));
+
 // Helpers in views
 const { moeda, formatDate, truncarTexto, descricaoLancamento } = require('./src/node/core/helpers');
 app.use((req, res, next) => {
     res.locals.moeda = (val) => moeda(val, res.locals.currency);
     res.locals.formatDate = formatDate;
     res.locals.truncarTexto = truncarTexto;
-    res.locals.descricaoLancamento = descricaoLancamento;
+    res.locals.descricaoLancamento = (l) => descricaoLancamento(l, res.locals.t);
     next();
 });
 
@@ -133,25 +144,42 @@ app.use('/', routes);
 
 // 404 handler
 app.use((req, res) => {
-    res.status(404).render('404', { title: res.locals.t ? res.locals.t('erro404.titulo') : 'Página Não Encontrada' });
+    res.status(404).render('404', { title: res.locals.t ? res.locals.t('erro404.titulo') : 'Página não encontrada' });
 });
 
 // Production Error handler (500)
 app.use((err, req, res, next) => {
     console.error('Unhandled Application Error:', err);
-    res.status(500).render('500', { title: 'Erro no Servidor' });
+    res.status(500).render('500', { title: res.locals.t ? res.locals.t('erro500.titulo') : 'Erro no Servidor' });
 });
 
-// Reparo de sinais (despesa negativa / receita positiva) antes de aceitar requisicoes
-require('./src/node/models/Lancamento').normalizarSinais()
-    .then((r) => { if (r.despesas || r.receitas) console.log(`Sinais corrigidos: ${r.despesas} despesa(s), ${r.receitas} receita(s).`); })
-    .catch((err) => console.error('Falha ao normalizar sinais:', err.message));
+// Inicializacao: aplica migrations pendentes (tolerante e com trava), promove admins por
+// ADMIN_EMAILS, repara sinais e so entao aceita requisicoes.
+const { migrar, promoverAdmins } = require('./src/node/core/migrator');
+(async () => {
+    try {
+        const aplicadas = await migrar();
+        if (aplicadas.length) console.log(`Migrations aplicadas: ${aplicadas.join(', ')}`);
+        const admins = await promoverAdmins();
+        if (admins) console.log(`${admins} usuario(s) promovido(s) a admin via ADMIN_EMAILS.`);
+    } catch (err) {
+        console.error('Falha ao aplicar migrations (servidor nao iniciado):', err.message);
+        process.exit(1);
+    }
 
-// Start Server
-app.listen(PORT, () => {
-    console.log(`====================================================`);
-    console.log(`🚀 Servidor Node.js rodando na porta http://localhost:${PORT}`);
-    console.log(`====================================================`);
-});
+    // Reparo de sinais (despesa negativa / receita positiva) antes de aceitar requisicoes
+    try {
+        const r = await require('./src/node/models/Lancamento').normalizarSinais();
+        if (r.despesas || r.receitas) console.log(`Sinais corrigidos: ${r.despesas} despesa(s), ${r.receitas} receita(s).`);
+    } catch (err) {
+        console.error('Falha ao normalizar sinais:', err.message);
+    }
+
+    app.listen(PORT, () => {
+        console.log(`====================================================`);
+        console.log(`🚀 Servidor Node.js rodando na porta http://localhost:${PORT}`);
+        console.log(`====================================================`);
+    });
+})();
 
 module.exports = app;

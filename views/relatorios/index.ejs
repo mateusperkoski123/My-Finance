@@ -12,7 +12,7 @@
         <a href="/relatorios?aba=graficos&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'graficos' ? 'is-active' : '' %>"><i class="ph ph-chart-pie-slice"></i> <%= t('relatorios.aba_graficos') %></a>
         <a href="/relatorios?aba=pendentes&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'pendentes' ? 'is-active' : '' %>"><i class="ph ph-clock-countdown"></i> <%= t('relatorios.aba_pendentes') %></a>
         <a href="/relatorios?aba=demonstrativo&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'demonstrativo' ? 'is-active' : '' %>"><i class="ph ph-table"></i> <%= t('relatorios.aba_demonstrativo') %></a>
-        <a href="/relatorios?aba=demonstrativo_anual&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'demonstrativo_anual' ? 'is-active' : '' %>"><i class="ph ph-calendar-blank"></i> Demonstrativo Anual</a>
+        <a href="/relatorios?aba=demonstrativo_anual&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'demonstrativo_anual' ? 'is-active' : '' %>"><i class="ph ph-calendar-blank"></i> <%= t('relatorios.aba_demonstrativo_anual') %></a>
     </div>
 </div>
 
@@ -21,12 +21,12 @@
     <input type="hidden" name="aba" value="<%= aba %>">
     <% const _base = '/relatorios?aba=' + aba + '&preset=mes&ordenar=' + ordenar + '&agrupar=' + agrupar; %>
     <div class="mes-nav">
-        <a class="btn btn-outline btn-sm" href="<%= _base %>&mes=<%= periodo.mes_anterior %>&ano=<%= periodo.ano_anterior %>" aria-label="Mês anterior"><i class="ph ph-caret-left"></i></a>
+        <a class="btn btn-outline btn-sm" href="<%= _base %>&mes=<%= periodo.mes_anterior %>&ano=<%= periodo.ano_anterior %>" aria-label="<%= t('painel.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
         <div class="mes-nav__centro">
-            <strong><%= periodo.preset === 'mes' ? t('painel.mes.' + periodo.mes) + ' ' + periodo.ano : 'Período' %></strong>
+            <strong><%= periodo.preset === 'mes' ? t('painel.mes.' + periodo.mes) + ' ' + periodo.ano : t('comum.periodo') %></strong>
             <span class="muted"><%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> – <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></span>
         </div>
-        <a class="btn btn-outline btn-sm" href="<%= _base %>&mes=<%= periodo.mes_proximo %>&ano=<%= periodo.ano_proximo %>" aria-label="Próximo mês"><i class="ph ph-caret-right"></i></a>
+        <a class="btn btn-outline btn-sm" href="<%= _base %>&mes=<%= periodo.mes_proximo %>&ano=<%= periodo.ano_proximo %>" aria-label="<%= t('painel.mes_proximo') %>"><i class="ph ph-caret-right"></i></a>
     </div>
     <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
         
@@ -66,13 +66,13 @@
     <details class="periodo-custom" <%= periodo.preset === 'custom' ? 'open' : '' %>>
         <summary><i class="ph ph-calendar-blank"></i> <%= t('filtro.periodo_personalizado') %></summary>
         <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap;">
-            <input type="date" name="data_inicio" value="<%= periodo.inicio %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;" aria-label="Data inicial">
+            <input type="date" name="data_inicio" value="<%= periodo.inicio %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;" aria-label="<%= t('relatorios.data_inicial') %>">
             <span class="muted" style="font-size: 12px;"><%= t('filtro.ate') %></span>
-            <input type="date" name="data_fim" value="<%= periodo.fim %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;" aria-label="Data final">
+            <input type="date" name="data_fim" value="<%= periodo.fim %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;" aria-label="<%= t('relatorios.data_final') %>">
             <button type="submit" class="btn btn-outline btn-sm" style="border-radius: 8px;"><%= t('filtro.aplicar_datas') %></button>
         </div>
     </details>
-    <a class="exportar-link" href="/relatorios/exportar?data_inicio=<%= periodo.inicio %>&data_fim=<%= periodo.fim %>"><i class="ph ph-download-simple"></i> Exportar CSV do período</a>
+    <a class="exportar-link" href="/relatorios/exportar?data_inicio=<%= periodo.inicio %>&data_fim=<%= periodo.fim %>"><i class="ph ph-download-simple"></i> <%= t('relatorios.exportar_csv') %></a>
 </form>
 
 <% if (aba === 'graficos') { %>
@@ -88,7 +88,7 @@
                     <div style="font-size: 22px; font-weight: 700; margin-top: 6px; color: var(--text);"><%= moeda(resumo.saldo_anterior) %></div>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
-                    <span class="muted">Saldo Final (Anterior + Atual):</span>
+                    <span class="muted"><%= t('relatorios.saldo_final_label') %></span>
                     <strong style="color: <%= saldoAcumuladoTotal >= 0 ? 'var(--green)' : 'var(--red)' %>;">
                         <%= moeda(saldoAcumuladoTotal) %>
                         (<%= saldoAtualNoPeriodo >= 0 ? '+' : '' %><%= moeda(saldoAtualNoPeriodo) %>)
@@ -132,7 +132,7 @@
                 <div class="grafico-card__canvas-wrap"><canvas id="chartDespesas"></canvas></div>
                 <ul class="gf-leg" id="legDespesas"></ul>
             </div>
-            <p class="muted grafico-vazio" id="vazioDespesas" hidden>Sem despesas no período.</p>
+            <p class="muted grafico-vazio" id="vazioDespesas" hidden><%= t('relatorios.sem_despesas_periodo') %></p>
         </div>
 
         <div class="card grafico-card">
@@ -141,22 +141,22 @@
                 <div class="grafico-card__canvas-wrap"><canvas id="chartReceitas"></canvas></div>
                 <ul class="gf-leg" id="legReceitas"></ul>
             </div>
-            <p class="muted grafico-vazio" id="vazioReceitas" hidden>Sem receitas no período.</p>
+            <p class="muted grafico-vazio" id="vazioReceitas" hidden><%= t('relatorios.sem_receitas_periodo') %></p>
         </div>
     </div>
 
     <!-- Evolucao do saldo -->
     <div class="card grafico-card" style="margin-top: 20px;">
-        <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: #2a78d6;"></span>Evolução do saldo no período</h3>
+        <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: #2a78d6;"></span><%= t('relatorios.evolucao_titulo') %></h3>
         <div class="grafico-freq-card__canvas-wrap"><canvas id="chartEvolucao"></canvas></div>
-        <p class="muted grafico-vazio" id="vazioEvolucao" hidden>Sem dados no período.</p>
+        <p class="muted grafico-vazio" id="vazioEvolucao" hidden><%= t('relatorios.sem_dados_curto') %></p>
     </div>
 
     <!-- Grafico de Frequencia Diaria -->
     <div class="card grafico-card" style="margin-top: 20px;">
         <h3 class="grafico-card__titulo"><%= t('relatorios.frequencia_titulo') %></h3>
         <div class="grafico-freq-card__canvas-wrap"><canvas id="chartFrequencia"></canvas></div>
-        <p class="muted grafico-vazio" id="vazioFreq" hidden>Sem movimentações no período.</p>
+        <p class="muted grafico-vazio" id="vazioFreq" hidden><%= t('relatorios.sem_movimentacoes_periodo') %></p>
     </div>
 
     <script src="/assets/js/charts.js?v=<%= Date.now() %>"></script>
@@ -165,12 +165,12 @@
         const catData = <%- JSON.stringify(catData || []) %>;
         const freqData = <%- JSON.stringify(frequencia || []) %>;
         const itens = (tipo) => catData.filter(d => d.tipo === tipo)
-            .map(d => ({ nome: d.nome || 'Sem categoria', cor: d.cor, valor: Math.abs(parseFloat(d.total)) || 0 }));
+            .map(d => ({ nome: d.nome || window.GF_T.sem_categoria, cor: d.cor, valor: Math.abs(parseFloat(d.total)) || 0 }));
 
         [['Despesas', 'despesa'], ['Receitas', 'receita']].forEach(([nome, tipo]) => {
             const lista = itens(tipo);
             if (lista.some(i => i.valor > 0)) {
-                GFCharts.rosca('chart' + nome, 'leg' + nome, lista, { rotulo: 'Total' });
+                GFCharts.rosca('chart' + nome, 'leg' + nome, lista, { rotulo: window.GF_T.total });
             } else {
                 document.getElementById('wrap' + nome).hidden = true;
                 document.getElementById('vazio' + nome).hidden = false;
@@ -213,10 +213,10 @@
                 <table class="tabela tabela-pend">
                     <thead>
                         <tr>
-                            <th>Descrição / Categoria</th>
-                            <th>Data</th>
-                            <th>Valor</th>
-                            <th>Ações</th>
+                            <th><%= t('comum.descricao_categoria') %></th>
+                            <th><%= t('comum.data') %></th>
+                            <th><%= t('comum.valor') %></th>
+                            <th><%= t('tabela.acoes') %></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -243,12 +243,12 @@
                                                 <%- csrfCampo %>
 <input type="hidden" name="voltar" value="<%= currentUrl %>">
                                                 <input type="hidden" name="status" value="pago">
-                                                <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span>Receber</span></button>
+                                                <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span><%= t('acao.receber') %></span></button>
                                             </form>
                                             <form method="post" action="/lancamentos/<%= p.id %>/excluir" data-ajax data-confirm="<%= t('painel.lancamento.confirmar_exclusao') %>" style="display:inline;">
                                                 <%- csrfCampo %>
                                                 <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                <button type="submit" class="icon-btn" title="Excluir" style="color: var(--red);"><i class="ph ph-trash"></i></button>
+                                                <button type="submit" class="icon-btn" title="<%= t('comum.excluir') %>" style="color: var(--red);"><i class="ph ph-trash"></i></button>
                                             </form>
                                         </div>
                                     </td>
@@ -272,10 +272,10 @@
                 <table class="tabela tabela-pend">
                     <thead>
                         <tr>
-                            <th>Descrição / Categoria</th>
-                            <th>Data</th>
-                            <th>Valor</th>
-                            <th>Ações</th>
+                            <th><%= t('comum.descricao_categoria') %></th>
+                            <th><%= t('comum.data') %></th>
+                            <th><%= t('comum.valor') %></th>
+                            <th><%= t('tabela.acoes') %></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -302,12 +302,12 @@
                                                 <%- csrfCampo %>
 <input type="hidden" name="voltar" value="<%= currentUrl %>">
                                                 <input type="hidden" name="status" value="pago">
-                                                <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span>Pagar</span></button>
+                                                <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span><%= t('acao.pagar') %></span></button>
                                             </form>
                                             <form method="post" action="/lancamentos/<%= p.id %>/excluir" data-ajax data-confirm="<%= t('painel.lancamento.confirmar_exclusao') %>" style="display:inline;">
                                                 <%- csrfCampo %>
                                                 <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                <button type="submit" class="icon-btn" title="Excluir" style="color: var(--red);"><i class="ph ph-trash"></i></button>
+                                                <button type="submit" class="icon-btn" title="<%= t('comum.excluir') %>" style="color: var(--red);"><i class="ph ph-trash"></i></button>
                                             </form>
                                         </div>
                                     </td>
@@ -327,8 +327,8 @@
                 <thead>
                     <tr>
                         <th><%= t('relatorios.demonstrativo_categoria_col') %></th>
-                        <th>Subcategoria</th>
-                        <th>Tipo</th>
+                        <th><%= t('comum.subcategoria') %></th>
+                        <th><%= t('comum.tipo') %></th>
                         <th><%= t('relatorios.demonstrativo_total_geral') %></th>
                     </tr>
                 </thead>
@@ -356,22 +356,22 @@
 <% } else if (aba === 'demonstrativo_anual') { %>
     <div class="periodo-nav card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; margin-top: 20px; border-radius: 16px;">
         <a class="btn btn-outline btn-sm" href="/relatorios?aba=demonstrativo_anual&ano_anual=<%= anoAnual - 1 %>">← <%= anoAnual - 1 %></a>
-        <strong>Ano: <%= anoAnual %></strong>
+        <strong><%= t('relatorios.ano_label', { ano: anoAnual }) %></strong>
         <a class="btn btn-outline btn-sm" href="/relatorios?aba=demonstrativo_anual&ano_anual=<%= anoAnual + 1 %>"><%= anoAnual + 1 %> →</a>
     </div>
 
     <div class="card" style="border-radius: 16px; padding: 20px; margin-top: 16px; overflow-x: auto;">
         <%
-        const mesesNomes = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        const mesesNomes = Array.from({ length: 12 }, (_, i) => t('painel.mes_abrev.' + (i + 1)));
         %>
         <table class="tabela tabela-anual" style="min-width: 900px;">
             <thead>
                 <tr>
-                    <th>Categoria</th>
+                    <th><%= t('comum.categoria') %></th>
                     <% mesesNomes.forEach(m => { %>
                         <th style="text-align: right;"><%= m %></th>
                     <% }) %>
-                    <th style="text-align: right;">Total</th>
+                    <th style="text-align: right;"><%= t('comum.total') %></th>
                 </tr>
             </thead>
             <tbody>

@@ -1,3 +1,5 @@
+// Textos traduzidos injetados pelo layout (window.GF_T); fallback vazio evita erro em paginas sem layout.
+var GF_T = window.GF_T || {};
 // Comportamentos globais e leves da interface.
 document.addEventListener('DOMContentLoaded', function () {
   // Some sozinho os alertas de sucesso/erro depois de alguns segundos.
@@ -67,15 +69,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Texto do campo e dica coerentes com o estado (evita "Selecione uma categoria" com categoria já escolhida).
     var temCategoria = !!categoria;
-    placeholder.textContent = !temCategoria ? 'Selecione uma categoria primeiro'
-      : (subcategorias.length ? 'Sem subcategoria' : 'Esta categoria não tem subcategorias');
+    placeholder.textContent = !temCategoria ? GF_T.sel_cat_primeiro
+      : (subcategorias.length ? GF_T.sem_subcategoria : GF_T.categoria_sem_sub);
     var grupo = selectSubcategoria.parentElement;
     var dica = grupo.querySelector('.sub-dica');
     if (temCategoria && subcategorias.length === 0) {
       if (!dica) {
         dica = document.createElement('small');
         dica.className = 'sub-dica';
-        dica.innerHTML = 'Quer detalhar mais? <a href="/categorias">Crie subcategorias em Categorias</a>.';
+        dica.innerHTML = GF_T.dica_sub_html;
         grupo.appendChild(dica);
       }
     } else if (dica) {
@@ -134,16 +136,16 @@ document.addEventListener('DOMContentLoaded', function () {
     var atualizarStatusUI = function () {
       var estaMarcado = toggle.checked; // ON = Foi Recebida / Foi Pago
       if (estaMarcado) {
-        if (titleEl) titleEl.textContent = ehReceita ? 'Foi Recebida' : 'Foi Pago';
-        if (dateLabelEl) dateLabelEl.textContent = ehReceita ? 'Data do Recebimento' : 'Data do Pagamento';
+        if (titleEl) titleEl.textContent = ehReceita ? GF_T.foi_recebida : GF_T.foi_pago;
+        if (dateLabelEl) dateLabelEl.textContent = ehReceita ? GF_T.data_recebimento : GF_T.data_pagamento;
         if (iconBox) iconBox.style.background = 'var(--green-bg)';
         if (iconEl) {
           iconEl.className = 'ph ph-trend-up';
           iconEl.style.color = 'var(--green)';
         }
       } else {
-        if (titleEl) titleEl.textContent = ehReceita ? 'Não Foi Recebida' : 'Não Foi Pago';
-        if (dateLabelEl) dateLabelEl.textContent = 'Data de Vencimento';
+        if (titleEl) titleEl.textContent = ehReceita ? GF_T.nao_foi_recebida : GF_T.nao_foi_pago;
+        if (dateLabelEl) dateLabelEl.textContent = GF_T.data_vencimento;
         if (iconBox) iconBox.style.background = 'var(--red-bg)';
         if (iconEl) {
           iconEl.className = 'ph ph-trend-down';
@@ -317,16 +319,16 @@ document.addEventListener('DOMContentLoaded', function () {
       if (inputTipo && icon) {
         if (inputTipo.value === 'somar') {
           inputTipo.value = 'subtrair';
-          btnSinal.style.background = '#fee2e2';
+          btnSinal.style.background = 'var(--red-bg)';
           icon.className = 'ph ph-minus';
           icon.style.color = 'var(--red)';
-          if (btnSubmit) btnSubmit.textContent = 'Subtrair Saldo';
+          if (btnSubmit) btnSubmit.textContent = GF_T.subtrair_saldo;
         } else {
           inputTipo.value = 'somar';
-          btnSinal.style.background = '#dcfce7';
+          btnSinal.style.background = 'var(--green-bg)';
           icon.className = 'ph ph-plus';
           icon.style.color = 'var(--green)';
-          if (btnSubmit) btnSubmit.textContent = 'Adicionar Saldo';
+          if (btnSubmit) btnSubmit.textContent = GF_T.adicionar_saldo;
         }
       }
     }
@@ -408,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (flash) toast(flash.textContent.trim(), /alert-erro/.test(flash.className) ? 'erro' : 'sucesso');
       }).catch(function () {
         travar(form, false);
-        toast('Não foi possível concluir a ação. Tente novamente.', 'erro');
+        toast(GF_T.erro_acao, 'erro');
       });
       return;
     }
