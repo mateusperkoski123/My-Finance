@@ -30,9 +30,12 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
         <button type="submit" class="btn btn-outline" aria-label="<%= t('categorias.buscar') %>"><i class="ph ph-magnifying-glass"></i></button>
     </form>
 
+    <%- include('_massa', { voltar: 'admin', acoes: ['ia_on', 'ia_off', 'trial', 'suspender', 'reativar', 'arquivar'] }) %>
+
     <div class="tabela-container">
         <table class="tabela">
             <thead><tr>
+                <th class="massa-col"><input type="checkbox" id="massa-todos" aria-label="<%= t('admin.massa.selecionar_todos') %>" title="<%= t('admin.massa.selecionar_todos') %>"></th>
                 <th><%= t('admin.col_usuario') %></th><th><%= t('admin.col_plano') %></th><th><%= t('admin.col_vence') %></th>
                 <th><%= t('admin.col_pedido') %></th><th><%= t('admin.col_acesso') %></th><th><%= t('tabela.acoes') %></th>
             </tr></thead>
@@ -41,6 +44,7 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                 const venc = u.status_efetivo === 'trial' ? u.trial_fim : (u.status_efetivo === 'ativa' ? u.periodo_fim : null);
             %>
                 <tr>
+                    <td class="massa-col"><input type="checkbox" class="massa-sel" name="ids" value="<%= u.id %>" form="form-massa" <%= (u.role === 'admin' || u.id === usuarioLogado.id) ? 'disabled' : '' %> aria-label="<%= u.nome %>"></td>
                     <td>
                         <strong><%= u.nome %></strong>
                         <% if (u.role === 'admin') { %><span class="badge badge-neutro">admin</span><% } %>

@@ -77,6 +77,53 @@ const adminController = {
         redirecionar(res);
     },
 
+    // REVISAR (seguranca): acoes em massa. Cada acao so atinge usuarios compativeis; admins e o proprio admin logado nunca
+    // sao suspensos, arquivados, excluidos nem alterados em massa. Exclusao so vale para contas ja arquivadas.
+    acaoEmMassa: async (req, res) => {
+        const voltar = req.body.voltar === 'arquivados' ? '/admin/arquivados' : '/admin';
+        const bruto = [].concat(req.body.ids || []).flatMap((v) => String(v).split(','));
+        const ids = [...new Set(bruto.map((v) => parseInt(v, 10)).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 200);
+        const acao = String(req.body.acao || '');
+        const dias = Math.min(Math.max(parseInt(req.body.dias, 10) || 7, 1), 365);
+
+        const usuarios = await User.buscarVarios(ids);
+        const comum = (u) => u.role !== 'admin' && u.id !== req.user.id;
+        const regras = {
+            ia_on: (u) => comum(u),
+            ia_off: (u) => comum(u),
+            suspender: (u) => comum(u) && u.status === 'ativo',
+            reativar: (u) => comum(u) && u.status === 'suspenso',
+            arquivar: (u) => comum(u) && u.status !== 'arquivado',
+            trial: (u) => comum(u) && u.status !== 'arquivado',
+            desarquivar: (u) => u.status === 'arquivado',
+            excluir: (u) => comum(u) && u.status === 'arquivado'
+        };
+        const regra = regras[acao];
+        if (!regra) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_massa_nada') };
+            return res.redirect(voltar);
+        }
+        const alvo = usuarios.filter(regra).map((u) => u.id);
+        if (!alvo.length) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_massa_nada') };
+            return res.redirect(voltar);
+        }
+
+        if (acao === 'ia_on' || acao === 'ia_off') await User.definirIaVarios(alvo, acao === 'ia_on');
+        else if (acao === 'suspender') await User.atualizarStatusVarios(alvo, 'suspenso');
+        else if (acao === 'reativar' || acao === 'desarquivar') await User.atualizarStatusVarios(alvo, 'ativo');
+        else if (acao === 'arquivar') await User.atualizarStatusVarios(alvo, 'arquivado');
+        else if (acao === 'trial') { for (const id of alvo) await Assinatura.estenderTrial(id, dias); }
+        else if (acao === 'excluir') { for (const id of alvo) await User.excluir(id); }
+
+        const ignorados = ids.length - alvo.length;
+        req.session.flash = {
+            tipo: 'sucesso',
+            mensagem: ignorados > 0 ? req.t('flash.admin_massa_parcial', { n: alvo.length, ignorados }) : req.t('flash.admin_massa_ok', { n: alvo.length })
+        };
+        res.redirect(voltar);
+    },
+
     // REVISAR (seguranca): arquivar bloqueia o acesso e tira o usuario da lista principal. Nunca vale para admin nem para si mesmo.
     arquivar: async (req, res) => {
         const id = parseInt(req.params.id, 10);

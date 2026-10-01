@@ -1,0 +1,47 @@
+<%# Barra de acoes em massa. Os checkboxes das linhas apontam para este form pelo atributo form="form-massa" (sem formularios aninhados). %>
+<form method="post" action="/admin/usuarios/massa" id="form-massa" class="massa-barra" hidden>
+    <%- csrfCampo %>
+    <input type="hidden" name="voltar" value="<%= voltar %>">
+    <strong id="massa-contador" aria-live="polite"></strong>
+    <select class="input" name="acao" id="massa-acao" required>
+        <option value=""><%= t('admin.massa.escolha') %></option>
+        <% acoes.forEach(a => { %><option value="<%= a %>" <%= a === 'excluir' || a === 'arquivar' || a === 'suspender' ? 'data-perigo=1' : '' %>><%= t('admin.massa.' + a) %></option><% }) %>
+    </select>
+    <input class="input massa-dias" type="number" name="dias" min="1" max="365" value="7" id="massa-dias" hidden aria-label="<%= t('admin.massa.dias') %>">
+    <button type="submit" class="btn btn-primary btn-sm"><%= t('admin.massa.aplicar') %></button>
+    <button type="button" class="btn btn-outline btn-sm" id="massa-limpar"><%= t('admin.massa.limpar') %></button>
+</form>
+<script>
+(function () {
+    var form = document.getElementById('form-massa');
+    if (!form) return;
+    var todos = document.getElementById('massa-todos');
+    var cont = document.getElementById('massa-contador');
+    var acao = document.getElementById('massa-acao');
+    var dias = document.getElementById('massa-dias');
+    function caixas() { return Array.prototype.slice.call(document.querySelectorAll('input.massa-sel:not(:disabled)')); }
+    function atualizar() {
+        var marcadas = caixas().filter(function (c) { return c.checked; });
+        form.hidden = marcadas.length === 0;
+        cont.textContent = <%- JSON.stringify(t('admin.massa.selecionados', { n: '__N__' })) %>.replace('__N__', marcadas.length);
+        if (todos) { todos.checked = marcadas.length > 0 && marcadas.length === caixas().length; todos.indeterminate = marcadas.length > 0 && marcadas.length < caixas().length; }
+    }
+    document.addEventListener('change', function (e) {
+        if (e.target === todos) { caixas().forEach(function (c) { c.checked = todos.checked; }); atualizar(); }
+        else if (e.target.classList && e.target.classList.contains('massa-sel')) atualizar();
+        else if (e.target === acao) dias.hidden = acao.value !== 'trial';
+    });
+    document.getElementById('massa-limpar').addEventListener('click', function () { caixas().forEach(function (c) { c.checked = false; }); atualizar(); });
+    form.addEventListener('submit', function (e) {
+        var n = caixas().filter(function (c) { return c.checked; }).length;
+        if (!n || !acao.value) { e.preventDefault(); return; }
+        var excluir = acao.value === 'excluir';
+        var perigo = excluir || acao.options[acao.selectedIndex].hasAttribute('data-perigo');
+        if (perigo) {
+            var msg = excluir ? <%- JSON.stringify(t('admin.massa.confirmar_excluir', { n: '__N__' })) %> : <%- JSON.stringify(t('admin.massa.confirmar', { n: '__N__' })) %>;
+            if (!window.confirm(msg.replace('__N__', n))) e.preventDefault();
+        }
+    });
+    atualizar();
+})();
+</script>

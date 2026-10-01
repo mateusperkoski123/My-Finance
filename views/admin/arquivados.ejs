@@ -12,12 +12,15 @@
     <% if (!usuarios.length) { %>
         <p class="muted"><%= t('admin.arquivados_vazio') %></p>
     <% } else { %>
+    <%- include('_massa', { voltar: 'arquivados', acoes: ['desarquivar', 'excluir'] }) %>
+
     <div class="tabela-container">
         <table class="tabela">
-            <thead><tr><th><%= t('admin.col_usuario') %></th><th><%= t('admin.col_acesso') %></th><th><%= t('tabela.acoes') %></th></tr></thead>
+            <thead><tr><th class="massa-col"><input type="checkbox" id="massa-todos" aria-label="<%= t('admin.massa.selecionar_todos') %>" title="<%= t('admin.massa.selecionar_todos') %>"></th><th><%= t('admin.col_usuario') %></th><th><%= t('admin.col_acesso') %></th><th><%= t('tabela.acoes') %></th></tr></thead>
             <tbody>
             <% usuarios.forEach(u => { %>
                 <tr>
+                    <td class="massa-col"><input type="checkbox" class="massa-sel" name="ids" value="<%= u.id %>" form="form-massa" <%= u.role === 'admin' ? 'disabled' : '' %> aria-label="<%= u.nome %>"></td>
                     <td><strong><%= u.nome %></strong><div class="muted" style="font-size: 12px;"><%= u.email %></div></td>
                     <td class="muted" style="font-size: 12px;"><%= u.ultimo_login_em ? formatDate(u.ultimo_login_em, 'DD/MM/YYYY') : '-' %></td>
                     <td style="display: flex; gap: 8px; flex-wrap: wrap;">

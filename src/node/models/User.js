@@ -140,6 +140,22 @@ class User {
         await db.query('DELETE FROM users WHERE id = ?', [id]);
     }
 
+    static async buscarVarios(ids) {
+        if (!ids.length) return [];
+        const [rows] = await db.query(`SELECT id, role, status FROM users WHERE id IN (${ids.map(() => '?').join(',')})`, ids);
+        return rows;
+    }
+
+    static async atualizarStatusVarios(ids, status) {
+        if (!ids.length) return;
+        await db.query(`UPDATE users SET status = ? WHERE id IN (${ids.map(() => '?').join(',')})`, [status, ...ids]);
+    }
+
+    static async definirIaVarios(ids, ligar) {
+        if (!ids.length) return;
+        await db.query(`UPDATE users SET ia_habilitada = ? WHERE id IN (${ids.map(() => '?').join(',')})`, [ligar ? 1 : 0, ...ids]);
+    }
+
     static async atualizarStatus(id, status) {
         await db.query('UPDATE users SET status = ? WHERE id = ?', [status, id]);
     }

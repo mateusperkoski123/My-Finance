@@ -61,6 +61,7 @@ router.post('/assinatura/solicitar', requireAuth, assinaturaController.solicitar
 
 // Administracao (somente role=admin)
 router.get('/admin', requireAuth, exigirAdmin, adminController.index);
+router.post('/admin/usuarios/massa', requireAuth, exigirAdmin, adminController.acaoEmMassa);
 router.post('/admin/usuarios/:id/pagamento', requireAuth, exigirAdmin, adminController.registrarPagamento);
 router.post('/admin/usuarios/:id/trial', requireAuth, exigirAdmin, adminController.estenderTrial);
 router.post('/admin/usuarios/:id/cancelar', requireAuth, exigirAdmin, adminController.cancelar);
