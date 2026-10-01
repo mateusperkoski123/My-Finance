@@ -22,6 +22,8 @@ class Lancamento {
 
     static async buscarFiltrados(userId, periodo, filtros = {}, ordenacao = 'data', pagina = 1, porPagina = 30, agrupamento = 'sem_agrupamento') {
         let where = 'WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ?';
+        // Transferencia agendada tem duas pernas; na lista aparece so a de saida (a entrada continua no extrato da conta de destino).
+        where += " AND NOT (l.tipo = 'transferencia' AND l.transferencia_par_id IS NOT NULL AND l.valor > 0)";
         const params = [userId, periodo.inicio, periodo.fim];
 
         const fTipo = cleanParam(filtros.tipo);
