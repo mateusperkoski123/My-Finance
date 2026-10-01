@@ -123,7 +123,6 @@
                     <form method="post" action="/categorias/criar" class="form">
                         <%- csrfCampo %>
                         <input type="hidden" name="categoria_pai_id" value="<%= c.id %>">
-                        <input type="hidden" name="tipo" value="<%= c.tipo %>">
                         <div class="form-group">
                             <label><%= t('categorias.nome_label') %></label>
                             <input class="input" type="text" name="nome" required placeholder="<%= t('categorias.nome_label') %>">
@@ -152,15 +151,6 @@
             <div class="form-group">
                 <label style="display: block; font-weight: 500; margin-bottom: 6px;"><%= t('categorias.nome_label') %></label>
                 <input class="input" type="text" name="nome" required placeholder="<%= t('categorias.nome_label') %>">
-            </div>
-
-            <div class="form-group">
-                <label style="display: block; font-weight: 500; margin-bottom: 6px;"><%= t('categorias.tipo_label') %></label>
-                <select class="input" name="tipo">
-                    <option value="despesa"><%= t('lancamento.tipo.despesa') %></option>
-                    <option value="receita"><%= t('lancamento.tipo.receita') %></option>
-                    <option value="ambas"><%= t('categorias.tipo.ambas') %></option>
-                </select>
             </div>
 
             <div class="form-group">

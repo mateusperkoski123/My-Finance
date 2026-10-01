@@ -35,7 +35,6 @@ const categoriasController = {
 
         await Categoria.criar(userId, {
             nome: b.nome.trim(),
-            tipo: b.tipo || 'ambas',
             cor: b.cor || '#3b82f6',
             categoria_pai_id: b.categoria_pai_id || null,
             limite_gasto: b.limite_gasto ? parseMoeda(b.limite_gasto) : null
@@ -52,7 +51,6 @@ const categoriasController = {
 
         await Categoria.atualizar(id, userId, {
             nome: b.nome.trim(),
-            tipo: b.tipo || undefined,
             cor: b.cor,
             limite_gasto: b.limite_gasto ? parseMoeda(b.limite_gasto) : null
         });

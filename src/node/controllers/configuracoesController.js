@@ -226,7 +226,7 @@ const configuracoesController = {
                     if (cat.id) catMap[cat.id] = existente[0].id;
                     continue;
                 }
-                const tipoCat = ['receita', 'despesa', 'ambas'].includes(cat.tipo) ? cat.tipo : 'despesa';
+                const tipoCat = 'ambas'; // categorias nao tem tipo
                 const [resCat] = await conn.query(
                     `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, limite_gasto, sistema, chave_sistema, status, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, 0, NULL, ?, NOW(), NOW())`,

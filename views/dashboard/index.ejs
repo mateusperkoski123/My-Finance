@@ -595,7 +595,7 @@ function gfAtualizarParam(chave, valor) {
                     <label for="novo-receita-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('comum.categoria') %> *</label>
                     <select class="input" id="novo-receita-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="" required style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
                         <option value=""><%= t('modal.escolha_cat') %></option>
-                        <% (categoriasArvore || []).filter(cat => !cat.sistema && (cat.tipo === 'receita' || cat.tipo === 'ambas')).forEach(cat => { %>
+                        <% (categoriasArvore || []).filter(cat => !cat.sistema).forEach(cat => { %>
                             <option value="<%= cat.id %>"><%= cat.nome %></option>
                         <% }) %>
                     </select>
@@ -752,7 +752,7 @@ function gfAtualizarParam(chave, valor) {
                     <label for="novo-despesa-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('comum.categoria') %> *</label>
                     <select class="input" id="novo-despesa-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="" required style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
                         <option value=""><%= t('modal.escolha_cat') %></option>
-                        <% (categoriasArvore || []).filter(cat => !cat.sistema && (cat.tipo === 'despesa' || cat.tipo === 'ambas')).forEach(cat => { %>
+                        <% (categoriasArvore || []).filter(cat => !cat.sistema).forEach(cat => { %>
                             <option value="<%= cat.id %>"><%= cat.nome %></option>
                         <% }) %>
                     </select>
