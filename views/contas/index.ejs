@@ -5,6 +5,7 @@
     </div>
     <div style="display: flex; gap: 8px;">
         <button type="button" class="btn btn-outline" data-modal-open="modal-transferir" onclick="resetModalTransferir()"><i class="ph ph-arrows-left-right"></i> <%= t('contas.transferir') %></button>
+        <button type="button" class="btn btn-outline" data-modal-open="modal-agendar-transferencia"><i class="ph ph-calendar-plus"></i> <%= t('contas.agendar') %></button>
         <button type="button" class="btn btn-primary" data-modal-open="modal-nova-conta"><%= t('contas.nova') %></button>
     </div>
 </div>
@@ -316,6 +317,85 @@
             <div class="modal__actions">
                 <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
                 <button type="submit" class="btn btn-primary"><%= t('contas.transferir') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal-backdrop" id="modal-agendar-transferencia">
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('contas.modal.agendar_titulo') %></h3>
+            <button type="button" class="modal__close" data-modal-close>&times;</button>
+        </div>
+        <form method="post" action="/contas/agendar-transferencia" class="form">
+            <%- csrfCampo %>
+            <p class="muted" style="font-size: 12.5px; margin-top: 0;"><%= t('agendar.ajuda') %></p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label><%= t('contas.transferir.origem_label') %></label>
+                    <select class="input" name="origem_id" required>
+                        <% (contas || []).filter(c => c.status !== 'arquivada').forEach(c => { %>
+                            <option value="<%= c.id %>"><%= c.nome %></option>
+                        <% }) %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><%= t('contas.transferir.destino_label') %></label>
+                    <select class="input" name="destino_id" required>
+                        <% (contas || []).filter(c => c.status !== 'arquivada').forEach((c, i) => { %>
+                            <option value="<%= c.id %>" <%= i === 1 ? 'selected' : '' %>><%= c.nome %></option>
+                        <% }) %>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label><%= t('contas.transferir.valor_label') %></label>
+                    <input class="input" type="text" name="valor" data-money required placeholder="0,00">
+                </div>
+                <div class="form-group">
+                    <label><%= t('agendar.data') %></label>
+                    <input class="input" type="date" name="data" value="<%= formatDate(new Date()) %>" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label><%= t('contas.transferir.descricao_label') %></label>
+                <input class="input" type="text" name="descricao" maxlength="100" placeholder="<%= t('contas.descricao_placeholder') %>">
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg); margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="ph ph-push-pin" style="font-size: 18px; color: var(--muted);"></i>
+                    <strong style="font-size: 13px;"><%= t('agendar.fixa') %></strong>
+                </div>
+                <label class="toggle" style="margin: 0;">
+                    <input type="checkbox" name="e_fixo" value="1">
+                    <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                </label>
+            </div>
+            <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg); margin-bottom: 10px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="ph ph-arrows-clockwise" style="font-size: 18px; color: var(--muted);"></i>
+                    <strong style="font-size: 13px;"><%= t('modal.repetir') %></strong>
+                </div>
+                <label class="toggle" style="margin: 0;">
+                    <input type="checkbox" name="repetir" value="1" data-gf-toggle-repetir>
+                    <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                </label>
+            </div>
+
+            <div class="form-group" data-gf-repetir-alvo hidden style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg);">
+                <label style="font-size: 12px; font-weight: 600;"><%= t('modal.qtd_repeticoes') %></label>
+                <input class="input" type="number" name="quantidade_repeticoes" min="2" max="60" value="12">
+            </div>
+
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><%= t('agendar.criar') %></button>
             </div>
         </form>
     </div>

@@ -88,6 +88,7 @@ router.post('/contas/:id/excluir', requireAuth, contasController.excluir);
 router.post('/contas/:id/definir-padrao', requireAuth, contasController.definirPadrao);
 router.post('/contas/:id/ajustar', requireAuth, contasController.ajustarSaldo);
 router.post('/contas/transferir', requireAuth, contasController.transferir);
+router.post('/contas/agendar-transferencia', requireAuth, contasController.agendarTransferencia);
 router.get('/contas/:id/extrato', requireAuth, contasController.extrato);
 
 // Categorias routes

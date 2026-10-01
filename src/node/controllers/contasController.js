@@ -1,7 +1,10 @@
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 const db = require('../config/db');
-const { parseMoeda, toLocalYMD } = require('../core/helpers');
+const { parseMoeda, toLocalYMD, addMonthsYMD } = require('../core/helpers');
+const { randomUUID: uuidv4 } = require('crypto');
+
+const MESES_FIXO = 24;
 
 const contasController = {
     index: async (req, res) => {
@@ -218,6 +221,62 @@ const contasController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_transferir') };
         }
         res.redirect('/contas');
+    },
+
+    // Agenda transferencias entre contas: cada ocorrencia vira um par de lancamentos PENDENTES (saida + entrada).
+    // O saldo so se move quando o usuario marca como pago (manual). Mesma logica de Fixo (24 meses) / Repetir (N) / uma vez.
+    agendarTransferencia: async (req, res) => {
+        const userId = req.user.id;
+        const volta = (tipo, chave, extra) => { req.session.flash = { tipo, mensagem: req.t(chave, extra) }; return res.redirect('/contas'); };
+        const conn = await db.getConnection();
+        try {
+            const unico = (v) => Array.isArray(v) ? ([...v].reverse().find(x => x !== '' && x != null) || '') : v;
+            const origemId = unico(req.body.origem_id);
+            const destinoId = unico(req.body.destino_id);
+            const valor = parseMoeda(req.body.valor);
+            const data = String(req.body.data || '');
+            const descricao = String(req.body.descricao || '').trim().slice(0, 100);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) return volta('erro', 'flash.agendar_invalido');
+            if (!origemId || !destinoId || String(origemId) === String(destinoId)) return volta('erro', 'flash.transferencia_contas_iguais');
+            if (!(valor > 0)) return volta('erro', 'flash.transferencia_valor_invalido');
+
+            const origem = await Conta.buscarPorId(origemId, userId);
+            const destino = await Conta.buscarPorId(destinoId, userId);
+            if (!origem || !destino || origem.status !== 'ativa' || destino.status !== 'ativa') return volta('erro', 'flash.conta_invalida');
+
+            // Fixo e Repetir sao excludentes; se vierem os dois, vale o fixo.
+            const eFixo = req.body.e_fixo === '1';
+            const eRepetir = !eFixo && req.body.repetir === '1';
+            const qtd = eFixo ? MESES_FIXO : (eRepetir ? Math.min(Math.max(parseInt(req.body.quantidade_repeticoes, 10) || 1, 1), 60) : 1);
+            const serieId = qtd > 1 ? uuidv4() : null;
+
+            await Categoria.garantirCategoriasSistema(userId);
+            const [catRes] = await db.query("SELECT id FROM categorias WHERE user_id = ? AND chave_sistema = 'transferencia' LIMIT 1", [userId]);
+            const catId = catRes[0] ? catRes[0].id : null;
+            const sufixo = descricao ? ' - ' + descricao : '';
+
+            await conn.beginTransaction();
+            const inserir = (contaId, valorLinha, desc, dataComp) => conn.query(
+                `INSERT INTO lancamentos (user_id, serie_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia, data_pagamento, status, recorrente, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, 'transferencia', ?, ?, ?, NULL, 'pendente', ?, NOW(), NOW())`,
+                [userId, serieId, contaId, catId, desc, valorLinha, dataComp, eFixo ? 1 : 0]
+            );
+            for (let i = 0; i < qtd; i++) {
+                const dataComp = addMonthsYMD(data, i);
+                const [saida] = await inserir(origem.id, -valor, `Transferência enviada para ${destino.nome}${sufixo}`, dataComp);
+                const [entrada] = await inserir(destino.id, valor, `Transferência recebida de ${origem.nome}${sufixo}`, dataComp);
+                await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [entrada.insertId, saida.insertId]);
+                await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [saida.insertId, entrada.insertId]);
+            }
+            await conn.commit();
+            return volta('sucesso', 'flash.transferencia_agendada', { n: qtd });
+        } catch (err) {
+            await conn.rollback().catch(() => {});
+            console.error('Erro em contasController.agendarTransferencia:', err);
+            return volta('erro', 'flash.conta_erro_transferir');
+        } finally {
+            conn.release();
+        }
     },
 
     extrato: async (req, res) => {

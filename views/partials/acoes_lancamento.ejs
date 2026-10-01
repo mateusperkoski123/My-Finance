@@ -1,5 +1,6 @@
 <%
 const _editavel = l.tipo === 'receita' || l.tipo === 'despesa';
+const _agendada = l.tipo === 'transferencia' && !!l.transferencia_par_id; // par de transferencia agendada
 const _rotuloPagar = l.tipo === 'receita' ? t('acao.receber') : t('acao.pagar');
 %>
 <div class="acoes-linha">
@@ -11,11 +12,11 @@ const _rotuloPagar = l.tipo === 'receita' ? t('acao.receber') : t('acao.pagar');
             <button type="submit" class="btn-pagar" title="<%= l.tipo === 'receita' ? t('acao.marcar_recebido') : t('acao.marcar_pago') %>"><i class="ph ph-check-circle"></i><span><%= _rotuloPagar %></span></button>
         </form>
     <% } %>
-    <% if (_editavel) { %>
+    <% if (_editavel || _agendada) { %>
         <details class="menu-acoes">
             <summary aria-label="<%= t('acao.mais') %>" title="<%= t('acao.mais') %>"><i class="ph ph-dots-three-vertical"></i></summary>
             <div class="menu-acoes__lista">
-                <button type="button" data-modal-open="modal-editar-<%= l.id %>"><i class="ph ph-pencil-simple"></i> <%= t('acao.editar') %></button>
+                <% if (_editavel) { %><button type="button" data-modal-open="modal-editar-<%= l.id %>"><i class="ph ph-pencil-simple"></i> <%= t('acao.editar') %></button><% } %>
                 <% if (l.status === 'pago') { %>
                     <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" data-ajax>
                         <%- csrfCampo %>

@@ -299,15 +299,27 @@ class Lancamento {
         } else if (item.serie_id && escopoSerie === 'toda_serie') {
             await db.query('DELETE FROM lancamentos WHERE user_id = ? AND serie_id = ?', [userId, item.serie_id]);
         } else {
-            await db.query('DELETE FROM lancamentos WHERE id = ? AND user_id = ?', [id, userId]);
+            const { ids } = await this.idsDoPar(id, userId);
+            await db.query(`DELETE FROM lancamentos WHERE user_id = ? AND id IN (${ids.map(() => '?').join(',')})`, [userId, ...(ids.length ? ids : [id])]);
         }
+    }
+
+    // Transferencia agendada = duas pernas (saida e entrada) ligadas por transferencia_par_id; as duas andam juntas.
+    static async idsDoPar(id, userId) {
+        const item = await this.buscarPorId(id, userId);
+        if (!item) return { item: null, ids: [] };
+        const ids = [item.id];
+        if (item.tipo === 'transferencia' && item.transferencia_par_id) ids.push(item.transferencia_par_id);
+        return { item, ids };
     }
 
     static async marcarComoPago(id, userId, status = 'pago', dataPagamento = null) {
         const pagDate = status === 'pago' ? (dataPagamento || toLocalYMD(new Date())) : null;
+        const { ids } = await this.idsDoPar(id, userId);
+        if (!ids.length) return;
         await db.query(
-            'UPDATE lancamentos SET status = ?, data_pagamento = ?, updated_at = NOW() WHERE id = ? AND user_id = ?',
-            [status, pagDate, id, userId]
+            `UPDATE lancamentos SET status = ?, data_pagamento = ?, updated_at = NOW() WHERE user_id = ? AND id IN (${ids.map(() => '?').join(',')})`,
+            [status, pagDate, userId, ...ids]
         );
     }
 
@@ -370,7 +382,8 @@ class Lancamento {
     static async pendentesUrgentes(userId, hojeYMD, limite = 5) {
         const base = `FROM lancamentos l
              JOIN contas cb ON cb.id = l.conta_id AND cb.status = 'ativa'
-             WHERE l.user_id = ? AND l.status = 'pendente' AND l.tipo IN ('receita', 'despesa') AND l.data_competencia <= ?`;
+             WHERE l.user_id = ? AND l.status = 'pendente' AND l.data_competencia <= ?
+               AND (l.tipo IN ('receita', 'despesa') OR (l.tipo = 'transferencia' AND l.transferencia_par_id IS NOT NULL AND l.valor < 0))`;
         const [rows] = await db.query(
             `SELECT l.id, l.tipo, l.descricao, l.valor, l.data_competencia, cb.nome AS conta_nome,
                     DATEDIFF(?, l.data_competencia) AS dias_atraso

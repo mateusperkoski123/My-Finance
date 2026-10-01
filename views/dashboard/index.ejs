@@ -437,7 +437,8 @@ function gfAtualizarParam(chave, valor) {
 
 <!-- Modais Editar e Excluir Série -->
 <% if (lancamentos && lancamentos.length > 0) { %>
-    <% lancamentos.filter(l => l.tipo === 'receita' || l.tipo === 'despesa').forEach(l => { %>
+    <% lancamentos.filter(l => l.tipo === 'receita' || l.tipo === 'despesa' || (l.tipo === 'transferencia' && l.transferencia_par_id)).forEach(l => { %>
+        <% if (l.tipo === 'receita' || l.tipo === 'despesa') { %>
         <div class="modal-backdrop" id="modal-editar-<%= l.id %>">
             <div class="modal card">
                 <div class="modal__header">
@@ -518,6 +519,8 @@ function gfAtualizarParam(chave, valor) {
                 </form>
             </div>
         </div>
+
+        <% } %>
 
         <% if (l.serie_id) { %>
             <div class="modal-backdrop" id="modal-excluir-<%= l.id %>">
