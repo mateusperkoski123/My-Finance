@@ -116,8 +116,13 @@ const authController = {
             const host = req.get('host');
             const magicLink = `${protocol}://${host}/redefinir-senha/${token}`;
 
-            const { sendResetPasswordEmail } = require('../core/mailer');
-            await sendResetPasswordEmail(user.email, magicLink, user.idioma);
+            // Se o envio falhar, a resposta continua igual (um erro so para e-mails existentes revelaria quem tem conta).
+            try {
+                const { sendResetPasswordEmail } = require('../core/mailer');
+                await sendResetPasswordEmail(user.email, magicLink, user.idioma);
+            } catch (err) {
+                console.error('Falha ao enviar e-mail de recuperacao de senha:', err.message);
+            }
         }
 
         // Always show the same friendly message for security (prevents user enumeration)
