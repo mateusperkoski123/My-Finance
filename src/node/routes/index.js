@@ -65,6 +65,7 @@ router.post('/admin/usuarios/:id/pagamento', requireAuth, exigirAdmin, adminCont
 router.post('/admin/usuarios/:id/trial', requireAuth, exigirAdmin, adminController.estenderTrial);
 router.post('/admin/usuarios/:id/cancelar', requireAuth, exigirAdmin, adminController.cancelar);
 router.post('/admin/usuarios/:id/status', requireAuth, exigirAdmin, adminController.alterarStatus);
+router.post('/admin/usuarios/:id/ia', requireAuth, exigirAdmin, adminController.alternarIa);
 router.post('/admin/usuarios/:id/arquivar', requireAuth, exigirAdmin, adminController.arquivar);
 router.get('/admin/arquivados', requireAuth, exigirAdmin, adminController.arquivados);
 router.post('/admin/usuarios/:id/desarquivar', requireAuth, exigirAdmin, adminController.desarquivar);
@@ -120,6 +121,8 @@ router.get('/configuracoes/dados', requireAuth, configuracoesController.dados);
 router.get('/configuracoes/dados/exportar', requireAuth, exigirRecurso('rec_backup'), configuracoesController.exportarDados);
 router.post('/configuracoes/dados/importar', requireAuth, exigirRecurso('rec_backup'), upload.single('arquivo'), configuracoesController.importarDados);
 const comunidadeController = require('../controllers/comunidadeController');
+const iaController = require('../controllers/iaController');
+const { exigirIa, limiteMensagens } = require('../middleware/iaMiddleware');
 const { limiteCriarPost, limiteComentar, limiteAcaoRapida } = require('../middleware/comunidadeLimites');
 
 const multerComunidade = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024, files: 4 } });
@@ -158,6 +161,14 @@ router.post('/comunidade/:id/seguir', requireAuth, limiteAcaoRapida, comunidadeC
 router.post('/comunidade/:id/comentarios', requireAuth, limiteComentar, uploadComunidade, comunidadeController.comentar);
 router.post('/comunidade/:id/excluir', requireAuth, comunidadeController.excluir);
 router.post('/comunidade/comentarios/:id/excluir', requireAuth, comunidadeController.excluirComentario);
+
+// Chat IA (desligado por padrao; o admin libera por usuario)
+router.get('/ia', requireAuth, exigirIa, iaController.index);
+router.get('/ia/conversas/:id', requireAuth, exigirIa, iaController.conversa);
+router.post('/ia/mensagem', requireAuth, exigirIa, limiteMensagens, iaController.mensagem);
+router.post('/ia/conversas/:id/excluir', requireAuth, exigirIa, iaController.excluirConversa);
+router.post('/ia/acoes/:id/confirmar', requireAuth, exigirIa, iaController.confirmarAcao);
+router.post('/ia/acoes/:id/cancelar', requireAuth, exigirIa, iaController.cancelarAcao);
 
 // Admin Comunidade
 router.post('/admin/comunidade/:id/estado', requireAuth, exigirAdmin, comunidadeController.alterarEstado);

@@ -1,0 +1,54 @@
+<%
+const _T = {
+    novo: t('ia.novo_chat'), pensando: t('ia.pensando'), confirmar: t('ia.confirmar'), cancelar: t('ia.cancelar'),
+    registrado: t('ia.registrado'), cancelado: t('ia.cancelado'), excluirConfirm: t('ia.confirmar_excluir'),
+    despesa: t('ia.cartao_titulo_despesa'), receita: t('ia.cartao_titulo_receita'),
+    conta: t('ia.cartao_conta'), categoria: t('ia.cartao_categoria'), data: t('ia.cartao_data'),
+    pago: t('ia.cartao_pago'), pendente: t('ia.cartao_pendente'), erro: t('ia.erro_generico'), semConversas: t('ia.sem_conversas')
+};
+const _sugestoes = [t('ia.sugestao_pagar'), t('ia.sugestao_receber'), t('ia.sugestao_resumo'), t('ia.sugestao_saldos')];
+%>
+<div class="ia-app">
+    <aside class="ia-lateral card" id="ia-lateral">
+        <button type="button" class="btn btn-outline ia-novo" id="ia-novo"><i class="ph ph-plus"></i> <%= t('ia.novo_chat') %></button>
+        <div class="ia-recentes-titulo"><%= t('ia.recentes') %></div>
+        <div class="ia-lista" id="ia-lista">
+            <% conversas.forEach(c => { %>
+                <div class="ia-conversa" data-id="<%= c.id %>">
+                    <button type="button" class="ia-conversa__abrir" data-abrir="<%= c.id %>"><%= c.titulo || t('ia.novo_chat') %></button>
+                    <button type="button" class="ia-conversa__excluir" data-excluir="<%= c.id %>" title="<%= t('ia.excluir_conversa') %>" aria-label="<%= t('ia.excluir_conversa') %>"><i class="ph ph-trash"></i></button>
+                </div>
+            <% }) %>
+            <% if (!conversas.length) { %><p class="muted ia-vazio" id="ia-vazio"><%= t('ia.sem_conversas') %></p><% } %>
+        </div>
+    </aside>
+
+    <section class="ia-chat card">
+        <% if (!configurada) { %><div class="alert alert-aviso" style="margin: 0 0 12px;"><i class="ph ph-warning"></i> <%= t('ia.nao_configurada_aviso') %></div><% } %>
+        <div class="ia-mensagens" id="ia-mensagens" aria-live="polite">
+            <div class="ia-boasvindas" id="ia-boasvindas">
+                <i class="ph-fill ph-sparkle" style="font-size: 30px; color: var(--primary);"></i>
+                <p><%= t('ia.boas_vindas') %></p>
+                <div class="ia-sugestoes">
+                    <% _sugestoes.forEach(s => { %><button type="button" class="ia-sugestao" data-sugestao="<%= s %>"><%= s %></button><% }) %>
+                </div>
+            </div>
+        </div>
+
+        <form class="ia-form" id="ia-form" autocomplete="off">
+            <textarea id="ia-texto" rows="2" maxlength="600" placeholder="<%= t('ia.placeholder') %>" aria-label="<%= t('ia.placeholder') %>"></textarea>
+            <div class="ia-form__rodape">
+                <span class="muted" id="ia-contador">0/600</span>
+                <button type="submit" class="btn btn-primary" id="ia-enviar" aria-label="<%= t('ia.enviar') %>"><i class="ph ph-paper-plane-tilt"></i></button>
+            </div>
+        </form>
+        <p class="muted ia-aviso"><%= t('ia.aviso') %>
+            <% if (restantes !== null) { %> · <%= t('ia.restantes', { n: restantes }) %><% } %></p>
+    </section>
+</div>
+
+<script>
+window.IA_T = <%- JSON.stringify(_T).replace(/</g, '\\u003c') %>;
+window.IA_CFG = { moeda: <%- JSON.stringify(currency || 'PYG') %> };
+</script>
+<script src="/assets/js/ia.js?v=<%= Date.now() %>"></script>

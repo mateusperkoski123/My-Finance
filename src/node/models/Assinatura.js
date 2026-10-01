@@ -153,7 +153,7 @@ class Assinatura {
         const like = `%${busca}%`;
         const [rows] = await db.query(
             `SELECT u.id, u.nome, u.email, u.role, u.status AS user_status, u.created_at, u.ultimo_login_em,
-                    u.email_verificado_em, u.origem, u.google_id IS NOT NULL AS via_google,
+                    u.email_verificado_em, u.ia_habilitada, u.origem, u.google_id IS NOT NULL AS via_google,
                     a.status AS ass_status, a.ciclo, a.trial_fim, a.periodo_fim, a.ciclo_solicitado,
                     p.codigo AS plano_codigo, ps.codigo AS solicitado_codigo,
                     TIMESTAMPDIFF(HOUR, NOW(), a.trial_fim) AS horas_trial,

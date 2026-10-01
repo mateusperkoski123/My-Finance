@@ -80,6 +80,12 @@
                     <span class="navbar__label"><%= t('nav.admin') %></span>
                 </a>
                 <% } %>
+                <% if (ehAdmin || (usuarioLogado && usuarioLogado.ia_habilitada)) { %>
+                <a href="/ia" title="<%= t('nav.ia') %>" class="navbar__link <%= currentRoute.startsWith('/ia') ? 'is-active' : '' %>">
+                    <span class="navbar__icon"><i class="ph ph-sparkle"></i></span>
+                    <span class="navbar__label"><%= t('nav.ia') %></span>
+                </a>
+                <% } %>
                 <a href="/comunidade" title="<%= t('nav.comunidad') %>" class="navbar__link <%= currentRoute.startsWith('/comunidade') ? 'is-active' : '' %>">
                     <span class="navbar__icon"><i class="ph ph-users-three"></i></span>
                     <span class="navbar__label"><%= t('nav.comunidad') %></span>
@@ -174,6 +180,12 @@
                 <a href="/admin" class="drawer-link <%= currentRoute.startsWith('/admin') ? 'is-active' : '' %>">
                     <i class="ph ph-shield-star"></i>
                     <span><%= t('nav.admin') %></span>
+                </a>
+                <% } %>
+                <% if (ehAdmin || (usuarioLogado && usuarioLogado.ia_habilitada)) { %>
+                <a href="/ia" class="drawer-link <%= currentRoute.startsWith('/ia') ? 'is-active' : '' %>">
+                    <i class="ph ph-sparkle"></i>
+                    <span><%= t('nav.ia') %></span>
                 </a>
                 <% } %>
                 <a href="/comunidade" class="drawer-link <%= currentRoute.startsWith('/comunidade') ? 'is-active' : '' %>">

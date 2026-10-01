@@ -63,6 +63,20 @@ const adminController = {
         redirecionar(res);
     },
 
+    // Liga/desliga o Chat IA para um usuario (admin sempre tem acesso, entao so vale para os demais).
+    alternarIa: async (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        const ligar = req.body.ia === '1';
+        const alvo = await User.findById(id);
+        if (!alvo) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_usuario_nao_encontrado') };
+            return redirecionar(res);
+        }
+        await require('../models/Ia').definirHabilitada(id, ligar);
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t(ligar ? 'flash.admin_ia_ativada' : 'flash.admin_ia_desativada') };
+        redirecionar(res);
+    },
+
     // REVISAR (seguranca): arquivar bloqueia o acesso e tira o usuario da lista principal. Nunca vale para admin nem para si mesmo.
     arquivar: async (req, res) => {
         const id = parseInt(req.params.id, 10);
