@@ -1690,3 +1690,13 @@ body:has(.modal-backdrop.is-open) .fab-fundo { display: none !important; }
 .comunidade-info-item { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--border); }
 .comunidade-info-item:last-child { border-bottom: none; }
 
+
+/* Comunidade: campos de formulario (mesmo visual do .input) */
+.form-control { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 14px; font-family: inherit; line-height: 1.4; }
+.form-control::placeholder { color: var(--muted); }
+.form-control:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+textarea.form-control { resize: vertical; min-height: 110px; line-height: 1.5; }
+select.form-control { min-height: 44px; }
+.form-label { display: block; margin-bottom: 6px; font-size: 13.5px; font-weight: 600; color: var(--text); }
+.comunidade-modal-post { padding: 24px; }
+.comunidade-modal-post .form-group { margin-bottom: 18px; }

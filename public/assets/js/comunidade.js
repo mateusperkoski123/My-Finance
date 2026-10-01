@@ -151,14 +151,14 @@ function enviarNovaPostagem(event) {
     fetch('/comunidade', {
         method: 'POST',
         headers: {
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         },
         body: formData
     })
     .then(async res => {
         const data = await res.json().catch(() => ({}));
         if (!res.ok || !data.sucesso) {
-            throw new Error(data.erro || data.mensagem || 'Erro ao publicar postagem.');
+            throw new Error(data.erro || data.mensagem || ('Erro ao publicar postagem (HTTP ' + res.status + ').'));
         }
         return data;
     })
@@ -239,7 +239,7 @@ function votarPost(id, btnElement, event) {
     fetch('/comunidade/' + id + '/votar', {
         method: 'POST',
         headers: {
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         }
     })
     .then(res => res.json())
@@ -273,7 +273,7 @@ function selecionarImportancia(id, nivel, btnElement) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         },
         body: 'nivel=' + encodeURIComponent(nivel)
     })
@@ -304,7 +304,7 @@ function alternarSeguir(id, btnElement) {
     fetch('/comunidade/' + id + '/seguir', {
         method: 'POST',
         headers: {
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         }
     })
     .then(res => res.json())
@@ -406,7 +406,7 @@ function enviarComentario(id, event) {
     fetch('/comunidade/' + id + '/comentarios', {
         method: 'POST',
         headers: {
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         },
         body: formData
     })
@@ -447,7 +447,7 @@ function excluirComentario(id, event) {
     fetch('/comunidade/comentarios/' + id + '/excluir', {
         method: 'POST',
         headers: {
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         }
     })
     .then(res => res.json())
@@ -470,7 +470,7 @@ function excluirPostAutor(id) {
     fetch('/comunidade/' + id + '/excluir', {
         method: 'POST',
         headers: {
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         }
     })
     .then(res => res.json())
@@ -495,7 +495,7 @@ function alterarStatusAdmin(id, event) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         },
         body: 'status=' + encodeURIComponent(select.value)
     })
@@ -519,7 +519,7 @@ function alterarCategoriaAdmin(id, event) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         },
         body: 'categoria=' + encodeURIComponent(select.value)
     })
@@ -538,7 +538,7 @@ function alternarOcultoAdmin(id) {
     fetch('/admin/comunidade/' + id + '/ocultar', {
         method: 'POST',
         headers: {
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         }
     })
     .then(res => res.json())
@@ -558,7 +558,7 @@ function excluirPostAdmin(id) {
     fetch('/admin/comunidade/' + id + '/excluir', {
         method: 'POST',
         headers: {
-            'X-CSRF-Token': getCsrfToken()
+            'X-CSRF-Token': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json'
         }
     })
     .then(res => res.json())

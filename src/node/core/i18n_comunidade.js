@@ -48,6 +48,7 @@ module.exports = {
     'comunidade.modal.esperado_label': ['O que você esperava que acontecesse? (opcional)', '¿Qué esperabas que sucediera? (opcional)', 'What did you expect to happen? (optional)'],
     'comunidade.modal.esperado_placeholder': ['Descreva o comportamento esperado...', 'Describí el comportamiento esperado...', 'Describe expected behavior...'],
     'comunidade.modal.imagens_label': ['Anexar imagens', 'Adjuntar imágenes', 'Attach images'],
+    'comunidade.modal.imagens_clique': ['Clique para selecionar imagens (máx 4, até 2MB cada)', 'Hacé clic para seleccionar imágenes (máx 4, hasta 2MB cada una)', 'Click to select images (max 4, up to 2MB each)'],
     'comunidade.modal.imagens_dica': ['Max 2MB por imagem. Formatos: PNG, JPEG, WebP, GIF.', 'Máx 2MB por imagen. Formatos: PNG, JPEG, WebP, GIF.', 'Max 2MB per image. Formats: PNG, JPEG, WebP, GIF.'],
     'comunidade.modal.contexto_aviso': ['Vamos anexar a página e o navegador para ajudar a equipe a reproduzir o erro.', 'Adjuntaremos la página y el navegador para ayudar al equipo a reproducir el error.', 'We will attach the current page and browser info to help the team reproduce the bug.'],
     'comunidade.modal.similares_titulo': ['Postagens parecidas já enviadas:', 'Publicaciones similares ya enviadas:', 'Similar posts already submitted:'],
