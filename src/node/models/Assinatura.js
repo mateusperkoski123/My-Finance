@@ -149,7 +149,7 @@ class Assinatura {
     }
 
     // ---- Admin ----
-    static async listarUsuariosAdmin({ busca = '', limite = 200 } = {}) {
+    static async listarUsuariosAdmin({ busca = '', limite = 200, arquivados = false } = {}) {
         const like = `%${busca}%`;
         const [rows] = await db.query(
             `SELECT u.id, u.nome, u.email, u.role, u.status AS user_status, u.created_at, u.ultimo_login_em,
@@ -162,7 +162,7 @@ class Assinatura {
              LEFT JOIN assinaturas a ON a.user_id = u.id
              LEFT JOIN planos p ON p.id = a.plano_id
              LEFT JOIN planos ps ON ps.id = a.plano_solicitado_id
-             WHERE (u.email LIKE ? OR u.nome LIKE ?)
+             WHERE (u.email LIKE ? OR u.nome LIKE ?) AND u.status ${arquivados ? '=' : '<>'} 'arquivado'
              ORDER BY (a.plano_solicitado_id IS NOT NULL) DESC, u.created_at DESC
              LIMIT ?`, [like, like, limite]);
         return rows.map((r) => {
@@ -176,8 +176,9 @@ class Assinatura {
             `SELECT COUNT(*) total,
                     SUM(created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)) novos_7d,
                     SUM(created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)) novos_30d,
-                    SUM(status <> 'ativo') suspensos
-             FROM users`);
+                    SUM(status = 'suspenso') suspensos
+             FROM users WHERE status <> 'arquivado'`);
+        const [[{ arquivados }]] = await db.query(`SELECT COUNT(*) AS arquivados FROM users WHERE status = 'arquivado'`);
         const [[s]] = await db.query(
             `SELECT SUM(status = 'beta') beta,
                     SUM(status = 'trial' AND trial_fim > NOW()) trial,
@@ -196,7 +197,7 @@ class Assinatura {
         const [[rec]] = await db.query(
             `SELECT COALESCE(SUM(valor), 0) AS total FROM pagamentos
              WHERE status = 'pago' AND pago_em >= DATE_FORMAT(NOW(), '%Y-%m-01')`);
-        return { usuarios: u, assinaturas: s, mrr: Math.round(mrr.mrr), porPlano, receitaMes: Number(rec.total) };
+        return { usuarios: { ...u, arquivados: Number(arquivados) }, assinaturas: s, mrr: Math.round(mrr.mrr), porPlano, receitaMes: Number(rec.total) };
     }
 }
 

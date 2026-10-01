@@ -65,6 +65,10 @@ router.post('/admin/usuarios/:id/pagamento', requireAuth, exigirAdmin, adminCont
 router.post('/admin/usuarios/:id/trial', requireAuth, exigirAdmin, adminController.estenderTrial);
 router.post('/admin/usuarios/:id/cancelar', requireAuth, exigirAdmin, adminController.cancelar);
 router.post('/admin/usuarios/:id/status', requireAuth, exigirAdmin, adminController.alterarStatus);
+router.post('/admin/usuarios/:id/arquivar', requireAuth, exigirAdmin, adminController.arquivar);
+router.get('/admin/arquivados', requireAuth, exigirAdmin, adminController.arquivados);
+router.post('/admin/usuarios/:id/desarquivar', requireAuth, exigirAdmin, adminController.desarquivar);
+router.post('/admin/usuarios/:id/excluir', requireAuth, exigirAdmin, adminController.excluirDefinitivo);
 
 // Dashboard routes
 router.get('/', requireAuth, dashboardController.index);
@@ -113,7 +117,50 @@ router.post('/configuracoes/perfil/senha', requireAuth, configuracoesController.
 router.get('/configuracoes/dados', requireAuth, configuracoesController.dados);
 router.get('/configuracoes/dados/exportar', requireAuth, exigirRecurso('rec_backup'), configuracoesController.exportarDados);
 router.post('/configuracoes/dados/importar', requireAuth, exigirRecurso('rec_backup'), upload.single('arquivo'), configuracoesController.importarDados);
+const comunidadeController = require('../controllers/comunidadeController');
+const { limiteCriarPost, limiteComentar, limiteAcaoRapida } = require('../middleware/comunidadeLimites');
+
+const multerComunidade = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024, files: 4 } });
+const uploadComunidade = (req, res, next) => {
+    multerComunidade.array('imagens', 4)(req, res, (err) => {
+        if (err) {
+            let msgKey = 'flash.comunidade_imagem_invalida';
+            if (err.code === 'LIMIT_FILE_SIZE') {
+                msgKey = 'flash.comunidade_imagem_grande';
+            } else if (err.code === 'LIMIT_UNEXPECTED_FILE' || err.code === 'LIMIT_FILE_COUNT') {
+                msgKey = 'flash.comunidade_limite_imagens';
+            }
+            const msg = req.t(msgKey);
+            if (req.xhr || req.headers.accept?.includes('json')) {
+                return res.status(400).json({ sucesso: false, erro: msg });
+            }
+            req.session.flash = { tipo: 'erro', mensagem: msg };
+            return res.redirect('/comunidade');
+        }
+        next();
+    });
+};
+
 router.get('/configuracoes/conta', requireAuth, contaController.index);
 router.post('/configuracoes/conta/excluir', requireAuth, contaController.excluir);
+
+// Rotas do Módulo Comunidade
+router.get('/comunidade', requireAuth, comunidadeController.index);
+router.get('/comunidade/similares', requireAuth, comunidadeController.similares);
+router.get('/comunidade/anexo/:id', requireAuth, comunidadeController.servirAnexo);
+router.get('/comunidade/:id', requireAuth, comunidadeController.detalhe);
+router.post('/comunidade', requireAuth, limiteCriarPost, uploadComunidade, comunidadeController.criar);
+router.post('/comunidade/:id/votar', requireAuth, limiteAcaoRapida, comunidadeController.votar);
+router.post('/comunidade/:id/importancia', requireAuth, limiteAcaoRapida, comunidadeController.importancia);
+router.post('/comunidade/:id/seguir', requireAuth, limiteAcaoRapida, comunidadeController.seguir);
+router.post('/comunidade/:id/comentarios', requireAuth, limiteComentar, uploadComunidade, comunidadeController.comentar);
+router.post('/comunidade/:id/excluir', requireAuth, comunidadeController.excluir);
+router.post('/comunidade/comentarios/:id/excluir', requireAuth, comunidadeController.excluirComentario);
+
+// Admin Comunidade
+router.post('/admin/comunidade/:id/estado', requireAuth, exigirAdmin, comunidadeController.alterarEstado);
+router.post('/admin/comunidade/:id/categoria', requireAuth, exigirAdmin, comunidadeController.alterarCategoria);
+router.post('/admin/comunidade/:id/ocultar', requireAuth, exigirAdmin, comunidadeController.ocultar);
+router.post('/admin/comunidade/:id/excluir', requireAuth, exigirAdmin, comunidadeController.excluirAdmin);
 
 module.exports = router;

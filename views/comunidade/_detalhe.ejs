@@ -1,0 +1,268 @@
+<div class="comunidade-detalhe-container" data-post-id="<%= post.id %>">
+    <div class="comunidade-detalhe-grid">
+        <!-- Coluna Principal -->
+        <div class="comunidade-detalhe-main">
+            <div class="comunidade-detalhe-header">
+                <div class="comunidade-detalhe-badges">
+                    <span class="comunidade-badge comunidade-badge--<%= post.status %>">
+                        <%= t('comunidade.status.' + post.status) %>
+                    </span>
+                    <span class="comunidade-categoria-tag comunidad-tag--<%= post.categoria %>">
+                        <i class="ph <%= post.categoria === 'bug' ? 'ph-warning-octagon' : 'ph-lightbulb' %>"></i>
+                        <%= t('comunidade.cat.' + post.categoria) %>
+                    </span>
+                    <% if (post.oculto) { %>
+                        <span class="comunidade-badge comunidade-badge--oculto"><%= t('comunidade.detalhe.oculto_badge') %></span>
+                    <% } %>
+                </div>
+
+                <h1 class="comunidade-detalhe-titulo"><%= post.titulo %></h1>
+
+                <div class="comunidade-detalhe-autor-meta">
+                    <div class="comunidade-avatar">
+                        <%= post.autor.iniciais %>
+                    </div>
+                    <div>
+                        <strong>
+                            <% if (post.autor.ehEquipe) { %>
+                                <%= t('comunidade.app_equipe') %>
+                                <span class="comunidade-selo-equipe"><i class="ph-bold ph-shield-check"></i> <%= t('comunidade.equipe') %></span>
+                            <% } else { %>
+                                <%= post.autor.nome %>
+                            <% } %>
+                        </strong>
+                        <div class="text-muted" style="font-size: 12px;"><%= post.tempoRelativo %></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="comunidade-detalhe-descricao">
+                <%- post.descricao.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') %>
+            </div>
+
+            <% if (post.categoria === 'bug' && post.esperado) { %>
+                <div class="comunidade-detalhe-esperado">
+                    <strong><i class="ph ph-target"></i> <%= t('comunidade.detalhe.esperado_titulo') %></strong>
+                    <p><%- post.esperado.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') %></p>
+                </div>
+            <% } %>
+
+            <% if (post.anexos && post.anexos.length > 0) { %>
+                <div class="comunidade-galeria-secao">
+                    <strong><i class="ph ph-image"></i> <%= t('comunidade.modal.imagens_label', { n: post.anexos.length }) %></strong>
+                    <div class="comunidade-galeria">
+                        <% post.anexos.forEach(anexo => { %>
+                            <a href="/comunidade/anexo/<%= anexo.id %>" class="comunidade-galeria__item" onclick="event.preventDefault(); abrirVisualizadorImagem('/comunidade/anexo/<%= anexo.id %>');">
+                                <img src="/comunidade/anexo/<%= anexo.id %>" alt="<%= anexo.nome_original %>" loading="lazy">
+                            </a>
+                        <% }) %>
+                    </div>
+                </div>
+            <% } %>
+
+            <!-- Bloco de Importância -->
+            <div class="comunidade-importancia-box card">
+                <h4><%= t('comunidade.imp.titulo') %></h4>
+                <div class="comunidade-importancia-botoes">
+                    <% [1, 2, 3, 4].forEach(nivel => { %>
+                        <button type="button"
+                                class="btn btn-sm <%= post.nivelImportancia === nivel ? 'btn-primary' : 'btn-outline' %>"
+                                onclick="selecionarImportancia('<%= post.id %>', <%= nivel %>, this)">
+                            <%= t('comunidade.imp.' + nivel) %>
+                        </button>
+                    <% }) %>
+                </div>
+            </div>
+
+            <!-- Abas Comentários / Atividades -->
+            <div class="comunidade-abas-container">
+                <div class="comunidade-abas">
+                    <button type="button" class="comunidade-aba-btn is-active" id="tab-btn-comentarios" onclick="trocarAbaDetalhe('comentarios')">
+                        <i class="ph ph-chat-circle"></i>
+                        <span><%= t('comunidade.detalhe.aba_comentarios', { n: post.comentarios_count }) %></span>
+                    </button>
+                    <button type="button" class="comunidade-aba-btn" id="tab-btn-atividades" onclick="trocarAbaDetalhe('atividades')">
+                        <i class="ph ph-clock-counter-clockwise"></i>
+                        <span><%= t('comunidade.detalhe.aba_atividades') %></span>
+                    </button>
+                </div>
+
+                <!-- Painel Comentários -->
+                <div class="comunidade-aba-painel is-active" id="painel-comentarios">
+                    <form id="form-comentario" class="comunidade-form-comentario" onsubmit="enviarComentario('<%= post.id %>', event)" enctype="multipart/form-data">
+                        <div class="form-group">
+                            <textarea name="corpo" class="form-control" rows="3" placeholder="<%= t('comunidade.detalhe.comentar_placeholder') %>" maxlength="2000" required></textarea>
+                        </div>
+                        <div class="comunidade-form-comentario__footer">
+                            <div class="comunidade-file-input-wrapper">
+                                <label class="btn btn-sm btn-outline" for="input-comentario-imagens">
+                                    <i class="ph ph-paperclip"></i> <%= t('comunidade.modal.imagens_label', { n: 2 }) %>
+                                </label>
+                                <input type="file" id="input-comentario-imagens" name="imagens" multiple accept="image/png,image/jpeg,image/webp,image/gif" style="display: none;" onchange="previewImagensComentario(this)">
+                                <span class="text-muted" id="preview-comentario-count" style="font-size: 12px;"></span>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary" id="btn-enviar-comentario">
+                                <i class="ph ph-paper-plane-tilt"></i> <%= t('comunidade.detalhe.comentar_btn') %>
+                            </button>
+                        </div>
+                        <div id="preview-comentario-thumbs" class="comunidade-thumbs-preview"></div>
+                    </form>
+
+                    <div id="lista-comentarios" class="comunidade-lista-comentarios">
+                        <% if (post.comentarios && post.comentarios.length > 0) { %>
+                            <% post.comentarios.forEach(comentario => { %>
+                                <%- include('_comentario', { comentario, post, ehAdmin, usuarioLogado }) %>
+                            <% }) %>
+                        <% } else { %>
+                            <p class="text-muted text-center" id="empty-comentarios" style="padding: 20px 0;"><%= t('comunidade.detalhe.sem_comentarios') %></p>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Painel Atividades -->
+                <div class="comunidade-aba-painel" id="painel-atividades">
+                    <div class="comunidade-timeline">
+                        <% if (post.atividades && post.atividades.length > 0) { %>
+                            <% post.atividades.forEach(ativ => { %>
+                                <div class="comunidade-timeline-item">
+                                    <div class="comunidade-timeline-dot"></div>
+                                    <div class="comunidade-timeline-content">
+                                        <div class="comunidade-timeline-meta">
+                                            <strong><%= ativ.autor.nome %></strong> • <span><%= ativ.tempoRelativo %></span>
+                                        </div>
+                                        <div class="comunidade-timeline-text">
+                                            <% if (ativ.tipo === 'criado') { %>
+                                                <%= t('comunidade.ativ.criado') %>
+                                            <% } else if (ativ.tipo === 'status') { %>
+                                                <%= t('comunidade.ativ.status', { detalhe: t('comunidade.status.' + ativ.detalhe) }) %>
+                                            <% } else if (ativ.tipo === 'categoria') { %>
+                                                <%= t('comunidade.ativ.categoria', { detalhe: t('comunidade.cat.' + ativ.detalhe) }) %>
+                                            <% } else if (ativ.tipo === 'comentario') { %>
+                                                <%= t('comunidade.ativ.comentario') %>
+                                            <% } else if (ativ.tipo === 'ocultado') { %>
+                                                <%= t('comunidade.ativ.ocultado') %>
+                                            <% } else { %>
+                                                <%= ativ.tipo %>
+                                            <% } %>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }) %>
+                        <% } else { %>
+                            <p class="text-muted text-center" style="padding: 20px 0;"><%= t('comunidade.detalhe.sem_atividades') %></p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Coluna Lateral -->
+        <div class="comunidade-detalhe-sidebar">
+            <!-- Voto + Seguir -->
+            <div class="card comunidade-sidebar-card">
+                <div class="comunidade-voto-bloco">
+                    <button type="button"
+                            class="btn btn-block <%= post.jaVotou ? 'btn-success' : 'btn-outline' %>"
+                            onclick="votarPost('<%= post.id %>', this, event)">
+                        <i class="ph-bold ph-caret-up"></i>
+                        <span><%= post.jaVotou ? t('comunidade.detalhe.votado_btn') : t('comunidade.detalhe.voto_btn') %></span>
+                        (<strong class="votos-count"><%= post.votos %></strong>)
+                    </button>
+                </div>
+
+                <div class="comunidade-seguir-bloco" style="margin-top: 10px;">
+                    <button type="button"
+                            class="btn btn-block <%= post.jaSeguiu ? 'btn-outline' : 'btn-primary' %>"
+                            onclick="alternarSeguir('<%= post.id %>', this)">
+                        <i class="ph <%= post.jaSeguiu ? 'ph-bell-slash' : 'ph-bell' %>"></i>
+                        <span><%= post.jaSeguiu ? t('comunidade.detalhe.seguindo_btn') : t('comunidade.detalhe.seguir_btn') %></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Informações Gerais -->
+            <div class="card comunidade-sidebar-card">
+                <div class="comunidade-info-item">
+                    <span class="text-muted">Status</span>
+                    <span class="comunidade-badge comunidade-badge--<%= post.status %>"><%= t('comunidade.status.' + post.status) %></span>
+                </div>
+                <div class="comunidade-info-item">
+                    <span class="text-muted">Categoria</span>
+                    <strong><%= t('comunidade.cat.' + post.categoria) %></strong>
+                </div>
+                <div class="comunidade-info-item">
+                    <span class="text-muted">Data</span>
+                    <span><%= formatDate(post.created_at, 'DD/MM/YYYY') %></span>
+                </div>
+            </div>
+
+            <!-- Botão de Excluir do Autor -->
+            <% if (usuarioLogado && post.user_id === usuarioLogado.id && !ehAdmin) { %>
+                <div class="comunidade-autor-acoes" style="margin-top: 10px;">
+                    <button type="button" class="btn btn-sm btn-outline btn-block" style="color: var(--red); border-color: var(--red-bg);" onclick="excluirPostAutor('<%= post.id %>')">
+                        <i class="ph ph-trash"></i> <%= t('comunidade.detalhe.excluir_post') %>
+                    </button>
+                </div>
+            <% } %>
+
+            <!-- Painel de Moderação Admin -->
+            <% if (ehAdmin) { %>
+                <div class="card comunidade-sidebar-card comunidade-mod-panel" style="border: 1px solid var(--border); background: color-mix(in srgb, var(--card) 95%, var(--blue));">
+                    <h4 style="display: flex; align-items: center; gap: 6px; font-size: 14px; margin-bottom: 12px;">
+                        <i class="ph-bold ph-shield-star" style="color: var(--blue);"></i>
+                        <%= t('comunidade.detalhe.painel_admin') %>
+                    </h4>
+
+                    <!-- Alterar Status -->
+                    <form onsubmit="alterarStatusAdmin('<%= post.id %>', event)" style="margin-bottom: 10px;">
+                        <div class="form-group">
+                            <label class="form-label" style="font-size: 12px;">Status</label>
+                            <select name="status" id="admin-status-select" class="form-control form-control-sm">
+                                <% ['novo', 'em_analise', 'planejado', 'em_andamento', 'resolvido', 'recusado'].forEach(st => { %>
+                                    <option value="<%= st %>" <%= post.status === st ? 'selected' : '' %>><%= t('comunidade.status.' + st) %></option>
+                                <% }) %>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline btn-block"><%= t('comunidade.detalhe.salvar_status') %></button>
+                    </form>
+
+                    <!-- Alterar Categoria -->
+                    <form onsubmit="alterarCategoriaAdmin('<%= post.id %>', event)" style="margin-bottom: 10px;">
+                        <div class="form-group">
+                            <label class="form-label" style="font-size: 12px;">Categoria</label>
+                            <select name="categoria" id="admin-cat-select" class="form-control form-control-sm">
+                                <option value="sugestao" <%= post.categoria === 'sugestao' ? 'selected' : '' %>><%= t('comunidade.cat.sugestao') %></option>
+                                <option value="bug" <%= post.categoria === 'bug' ? 'selected' : '' %>><%= t('comunidade.cat.bug') %></option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline btn-block"><%= t('comunidade.detalhe.salvar_categoria') %></button>
+                    </form>
+
+                    <!-- Ocultar / Mostrar -->
+                    <button type="button" class="btn btn-sm btn-outline btn-block" style="margin-bottom: 10px;" onclick="alternarOcultoAdmin('<%= post.id %>')">
+                        <i class="ph <%= post.oculto ? 'ph-eye' : 'ph-eye-slash' %>"></i>
+                        <span><%= post.oculto ? t('comunidade.detalhe.desocultar') : t('comunidade.detalhe.ocultar') %></span>
+                    </button>
+
+                    <!-- Excluir Admin -->
+                    <button type="button" class="btn btn-sm btn-block" style="background: var(--red); color: var(--on-accent);" onclick="excluirPostAdmin('<%= post.id %>')">
+                        <i class="ph ph-trash"></i> <%= t('comunidade.detalhe.excluir_post') %>
+                    </button>
+
+                    <!-- Estatísticas de Importância (Apenas Admin) -->
+                    <% if (estatisticasImportancia) { %>
+                        <div style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 10px;">
+                            <strong style="font-size: 12px;"><%= t('comunidade.imp.titulo') %> (Admin)</strong>
+                            <div style="font-size: 11px; margin-top: 5px;">
+                                <div>1: <strong><%= estatisticasImportancia[1] %></strong></div>
+                                <div>2: <strong><%= estatisticasImportancia[2] %></strong></div>
+                                <div>3: <strong><%= estatisticasImportancia[3] %></strong></div>
+                                <div>4: <strong><%= estatisticasImportancia[4] %></strong></div>
+                            </div>
+                        </div>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>

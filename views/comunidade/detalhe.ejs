@@ -1,0 +1,11 @@
+<div class="container-fluid" style="padding-top: 15px;">
+    <div style="margin-bottom: 15px;">
+        <a href="/comunidade" class="btn btn-sm btn-outline">
+            <i class="ph ph-arrow-left"></i> <%= t('comunidade.detalhe.voltar') %>
+        </a>
+    </div>
+
+    <%- include('_detalhe', { post, ehAdmin, estatisticasImportancia }) %>
+</div>
+
+<script src="/assets/js/comunidade.js?v=<%= Date.now() %>"></script>

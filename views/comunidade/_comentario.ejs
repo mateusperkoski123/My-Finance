@@ -1,0 +1,40 @@
+<div class="comunidade-comentario" id="comentario-<%= comentario.id %>">
+    <div class="comunidade-comentario__header">
+        <div class="comunidade-comentario__autor">
+            <div class="comunidade-avatar">
+                <%= comentario.autor.iniciais %>
+            </div>
+            <div>
+                <strong class="comunidade-autor-nome">
+                    <% if (comentario.da_equipe || comentario.autor.ehEquipe) { %>
+                        <%= t('comunidade.app_equipe') %>
+                        <span class="comunidade-selo-equipe"><i class="ph-bold ph-shield-check"></i> <%= t('comunidade.equipe') %></span>
+                    <% } else { %>
+                        <%= comentario.autor.nome %>
+                    <% } %>
+                </strong>
+                <span class="comunidade-comentario__data"><%= comentario.tempoRelativo %></span>
+            </div>
+        </div>
+
+        <% if (usuarioLogado && (ehAdmin || (comentario.user_id && usuarioLogado.id === comentario.user_id))) { %>
+            <button type="button" class="btn-icon btn-icon--danger" title="<%= t('comunidade.detalhe.excluir_comentario') %>" onclick="excluirComentario('<%= comentario.id %>', event)">
+                <i class="ph ph-trash"></i>
+            </button>
+        <% } %>
+    </div>
+
+    <div class="comunidade-comentario__corpo">
+        <%- comentario.corpo.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>') %>
+    </div>
+
+    <% if (comentario.anexos && comentario.anexos.length > 0) { %>
+        <div class="comunidade-galeria">
+            <% comentario.anexos.forEach(anexo => { %>
+                <a href="/comunidade/anexo/<%= anexo.id %>" class="comunidade-galeria__item" onclick="event.preventDefault(); abrirVisualizadorImagem('/comunidade/anexo/<%= anexo.id %>');">
+                    <img src="/comunidade/anexo/<%= anexo.id %>" alt="<%= anexo.nome_original %>" loading="lazy">
+                </a>
+            <% }) %>
+        </div>
+    <% } %>
+</div>

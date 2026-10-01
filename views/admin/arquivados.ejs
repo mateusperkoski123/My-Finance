@@ -1,0 +1,41 @@
+<div class="page-header">
+    <h1><i class="ph ph-archive"></i> <%= t('admin.arquivados_titulo') %></h1>
+    <a class="btn btn-outline btn-sm" href="/admin"><i class="ph ph-arrow-left"></i> <%= t('admin.voltar') %></a>
+</div>
+
+<section class="card" style="margin-top: 16px;">
+    <form method="get" action="/admin/arquivados" class="busca-linha" role="search" style="margin-bottom: 12px;">
+        <input class="input" type="search" name="q" value="<%= busca %>" placeholder="<%= t('admin.buscar') %>">
+        <button type="submit" class="btn btn-outline" aria-label="<%= t('categorias.buscar') %>"><i class="ph ph-magnifying-glass"></i></button>
+    </form>
+
+    <% if (!usuarios.length) { %>
+        <p class="muted"><%= t('admin.arquivados_vazio') %></p>
+    <% } else { %>
+    <div class="tabela-container">
+        <table class="tabela">
+            <thead><tr><th><%= t('admin.col_usuario') %></th><th><%= t('admin.col_acesso') %></th><th><%= t('tabela.acoes') %></th></tr></thead>
+            <tbody>
+            <% usuarios.forEach(u => { %>
+                <tr>
+                    <td><strong><%= u.nome %></strong><div class="muted" style="font-size: 12px;"><%= u.email %></div></td>
+                    <td class="muted" style="font-size: 12px;"><%= u.ultimo_login_em ? formatDate(u.ultimo_login_em, 'DD/MM/YYYY') : '-' %></td>
+                    <td style="display: flex; gap: 8px; flex-wrap: wrap;">
+                        <form method="post" action="/admin/usuarios/<%= u.id %>/desarquivar">
+                            <%- csrfCampo %>
+                            <button type="submit" class="btn btn-outline btn-sm"><i class="ph ph-arrow-counter-clockwise"></i> <%= t('admin.desarquivar') %></button>
+                        </form>
+                        <% if (u.role !== 'admin') { %>
+                        <form method="post" action="/admin/usuarios/<%= u.id %>/excluir" data-confirm="<%= t('admin.confirmar_excluir') %>">
+                            <%- csrfCampo %>
+                            <button type="submit" class="btn btn-outline btn-sm perigo"><i class="ph ph-trash"></i> <%= t('admin.excluir_conta') %></button>
+                        </form>
+                        <% } %>
+                    </td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <% } %>
+</section>

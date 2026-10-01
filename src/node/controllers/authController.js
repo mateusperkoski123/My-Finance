@@ -163,7 +163,7 @@ const authController = {
         }
 
         const hash = bcrypt.hashSync(s, 10);
-        await User.redefinirSenhaComToken(user.id, hash);
+        await User.updateSenha(user.id, hash);
 
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.senha_redefinida') };
         res.redirect('/login');

@@ -53,9 +53,62 @@ const adminController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_nao_pode_si_mesmo') };
             return redirecionar(res);
         }
+        const alvo = await User.findById(id);
+        if (!alvo || alvo.status === 'arquivado') {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_usuario_nao_encontrado') };
+            return redirecionar(res);
+        }
         await User.atualizarStatus(id, status);
         req.session.flash = { tipo: 'sucesso', mensagem: req.t(status === 'suspenso' ? 'flash.admin_usuario_suspenso' : 'flash.admin_usuario_reativado') };
         redirecionar(res);
+    },
+
+    // REVISAR (seguranca): arquivar bloqueia o acesso e tira o usuario da lista principal. Nunca vale para admin nem para si mesmo.
+    arquivar: async (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        const alvo = await User.findById(id);
+        if (id === req.user.id || (alvo && alvo.role === 'admin')) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_nao_pode_si_mesmo') };
+            return redirecionar(res);
+        }
+        if (!alvo) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_usuario_nao_encontrado') };
+            return redirecionar(res);
+        }
+        await User.atualizarStatus(id, 'arquivado');
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.admin_usuario_arquivado') };
+        redirecionar(res);
+    },
+
+    arquivados: async (req, res) => {
+        const busca = String(req.query.q || '').trim().slice(0, 100);
+        const usuarios = await Assinatura.listarUsuariosAdmin({ busca, arquivados: true });
+        res.render('admin/arquivados', { title: req.t('admin.arquivados_titulo'), usuarios, busca });
+    },
+
+    desarquivar: async (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        const alvo = await User.findById(id);
+        if (!alvo || alvo.status !== 'arquivado') {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_usuario_nao_encontrado') };
+            return res.redirect('/admin/arquivados');
+        }
+        await User.atualizarStatus(id, 'ativo');
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.admin_usuario_desarquivado') };
+        res.redirect('/admin/arquivados');
+    },
+
+    // REVISAR (seguranca): exclusao definitiva so para conta ja arquivada, nunca admin nem o proprio usuario.
+    excluirDefinitivo: async (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        const alvo = await User.findById(id);
+        if (!alvo || alvo.status !== 'arquivado' || alvo.role === 'admin' || id === req.user.id) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_exclusao_negada') };
+            return res.redirect('/admin/arquivados');
+        }
+        await User.excluir(id);
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.admin_usuario_excluido') };
+        res.redirect('/admin/arquivados');
     }
 };
 

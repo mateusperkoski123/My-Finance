@@ -1,0 +1,249 @@
+<div class="comunidade-page">
+    <!-- Header -->
+    <div class="comunidade-header">
+        <div>
+            <h1 class="comunidade-titulo"><%= t('comunidade.titulo') %></h1>
+            <p class="comunidade-subtitulo text-muted"><%= t('comunidade.subtitulo') %></p>
+        </div>
+        <div>
+            <button type="button" class="btn btn-primary" onclick="abrirModalNovaPostagem()">
+                <i class="ph-bold ph-plus"></i>
+                <%= t('comunidade.btn_adicionar') %>
+            </button>
+        </div>
+    </div>
+
+    <!-- Layout Grid: Main Content + Sidebar -->
+    <div class="comunidade-layout">
+        <!-- Main Content -->
+        <div class="comunidade-content-main">
+            <!-- Barra de Filtros -->
+            <div class="card comunidade-filtros-card">
+                <div class="comunidade-filtros-top">
+                    <!-- Ordenação -->
+                    <div class="comunidade-orden-group">
+                        <a href="?orden=top<%= filtros.categoria ? '&categoria=' + filtros.categoria : '' %><%= filtros.q ? '&q=' + encodeURIComponent(filtros.q) : '' %><%= filtros.minhas ? '&minhas=1' : '' %>"
+                           class="comunidade-orden-btn <%= filtros.orden === 'top' ? 'is-active' : '' %>">
+                            <i class="ph-bold ph-fire"></i> <%= t('comunidade.orden.top') %>
+                        </a>
+                        <a href="?orden=novo<%= filtros.categoria ? '&categoria=' + filtros.categoria : '' %><%= filtros.q ? '&q=' + encodeURIComponent(filtros.q) : '' %><%= filtros.minhas ? '&minhas=1' : '' %>"
+                           class="comunidade-orden-btn <%= filtros.orden === 'novo' ? 'is-active' : '' %>">
+                            <i class="ph-bold ph-sparkle"></i> <%= t('comunidade.orden.novo') %>
+                        </a>
+                        <a href="?orden=tendencia<%= filtros.categoria ? '&categoria=' + filtros.categoria : '' %><%= filtros.q ? '&q=' + encodeURIComponent(filtros.q) : '' %><%= filtros.minhas ? '&minhas=1' : '' %>"
+                           class="comunidade-orden-btn <%= filtros.orden === 'tendencia' ? 'is-active' : '' %>">
+                            <i class="ph-bold ph-trend-up"></i> <%= t('comunidade.orden.tendencia') %>
+                        </a>
+                    </div>
+
+                    <!-- Minhas Postagens Chip -->
+                    <a href="?minhas=<%= filtros.minhas ? '0' : '1' %><%= filtros.orden ? '&orden=' + filtros.orden : '' %><%= filtros.categoria ? '&categoria=' + filtros.categoria : '' %><%= filtros.q ? '&q=' + encodeURIComponent(filtros.q) : '' %>"
+                       class="comunidade-chip <%= filtros.minhas ? 'is-active' : '' %>">
+                        <i class="ph ph-user"></i> <%= t('comunidade.filtro.minhas') %>
+                    </a>
+                </div>
+
+                <div class="comunidade-filtros-bottom">
+                    <!-- Form de Busca e Categoria -->
+                    <form method="get" action="/comunidade" class="comunidade-busca-form">
+                        <input type="hidden" name="orden" value="<%= filtros.orden %>">
+                        <% if (filtros.minhas) { %><input type="hidden" name="minhas" value="1"><% } %>
+
+                        <div class="comunidade-search-input">
+                            <i class="ph ph-magnifying-glass"></i>
+                            <input type="text" name="q" value="<%= filtros.q %>" placeholder="<%= t('comunidade.buscar_placeholder') %>" class="form-control">
+                        </div>
+
+                        <select name="categoria" class="form-control" onchange="this.form.submit()">
+                            <option value="" <%= !filtros.categoria ? 'selected' : '' %>><%= t('comunidade.filtro.todas') %></option>
+                            <option value="sugestao" <%= filtros.categoria === 'sugestao' ? 'selected' : '' %>><%= t('comunidade.filtro.sugestao') %></option>
+                            <option value="bug" <%= filtros.categoria === 'bug' ? 'selected' : '' %>><%= t('comunidade.filtro.bug') %></option>
+                        </select>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Lista de Posts -->
+            <div class="comunidade-lista-posts">
+                <% if (posts && posts.length > 0) { %>
+                    <% posts.forEach(post => { %>
+                        <%- include('_card', { post }) %>
+                    <% }) %>
+
+                    <!-- Paginação -->
+                    <% if (paginacao.totalPaginas > 1) { %>
+                        <div class="comunidade-paginacao">
+                            <% if (paginacao.pagina > 1) { %>
+                                <a href="?pagina=<%= paginacao.pagina - 1 %>&orden=<%= filtros.orden %><%= filtros.categoria ? '&categoria=' + filtros.categoria : '' %><%= filtros.q ? '&q=' + encodeURIComponent(filtros.q) : '' %><%= filtros.minhas ? '&minhas=1' : '' %>" class="btn btn-sm btn-outline">
+                                    ← Anterior
+                                </a>
+                            <% } %>
+                            <span class="text-muted" style="font-size: 13px;">
+                                Página <%= paginacao.pagina %> de <%= paginacao.totalPaginas %>
+                            </span>
+                            <% if (paginacao.pagina < paginacao.totalPaginas) { %>
+                                <a href="?pagina=<%= paginacao.pagina + 1 %>&orden=<%= filtros.orden %><%= filtros.categoria ? '&categoria=' + filtros.categoria : '' %><%= filtros.q ? '&q=' + encodeURIComponent(filtros.q) : '' %><%= filtros.minhas ? '&minhas=1' : '' %>" class="btn btn-sm btn-outline">
+                                    Próxima →
+                                </a>
+                            <% } %>
+                        </div>
+                    <% } %>
+                <% } else { %>
+                    <div class="card comunidade-empty-state">
+                        <i class="ph ph-chats-teardrop" style="font-size: 48px; color: var(--muted);"></i>
+                        <p><%= t('comunidade.vazio_lista') %></p>
+                        <button type="button" class="btn btn-sm btn-primary" onclick="abrirModalNovaPostagem()">
+                            <%= t('comunidade.btn_adicionar') %>
+                        </button>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Sidebar (Desktop) -->
+        <div class="comunidade-sidebar">
+            <!-- Suas Postagens -->
+            <div class="card comunidade-sidebar-card">
+                <h3 class="comunidade-sidebar-titulo"><%= t('comunidade.detalhe.suas_postagens') %></h3>
+                <% if (minhasPostagens && minhasPostagens.length > 0) { %>
+                    <div class="comunidade-minhas-lista">
+                        <% minhasPostagens.forEach(p => { %>
+                            <a href="/comunidade/<%= p.id %>" class="comunidade-minha-item" onclick="event.preventDefault(); abrirModalDetalhe('<%= p.id %>');">
+                                <span class="comunidade-minha-titulo"><%= p.titulo %></span>
+                                <span class="comunidade-badge comunidade-badge--<%= p.status %>"><%= t('comunidade.status.' + p.status) %></span>
+                            </a>
+                        <% }) %>
+                    </div>
+                <% } else { %>
+                    <p class="text-muted" style="font-size: 13px; margin: 0;"><%= t('comunidade.detalhe.sem_postagens') %></p>
+                <% } %>
+            </div>
+
+            <!-- Categorias -->
+            <div class="card comunidade-sidebar-card">
+                <h3 class="comunidade-sidebar-titulo"><%= t('comunidade.detalhe.categorias_titulo') %></h3>
+                <div class="comunidade-cat-list">
+                    <a href="/comunidade?categoria=sugestao" class="comunidade-cat-item">
+                        <span><i class="ph ph-lightbulb"></i> <%= t('comunidade.filtro.sugestao') %></span>
+                        <span class="badge"><%= contagemCategorias.sugestao || 0 %></span>
+                    </a>
+                    <a href="/comunidade?categoria=bug" class="comunidade-cat-item">
+                        <span><i class="ph ph-warning-octagon"></i> <%= t('comunidade.filtro.bug') %></span>
+                        <span class="badge"><%= contagemCategorias.bug || 0 %></span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Nova Postagem -->
+<div class="modal-backdrop" id="modal-nova-postagem" style="display: none;" onclick="fecharModalNovaPostagem()">
+    <div class="modal card comunidade-modal-post" onclick="event.stopPropagation()">
+        <div class="modal__header">
+            <h3><%= t('comunidade.modal.nova_titulo') %></h3>
+            <button type="button" class="modal__close" onclick="fecharModalNovaPostagem()">&times;</button>
+        </div>
+
+        <div class="modal__body">
+            <!-- Passo 1: Seleção de Categoria -->
+            <div id="step-categoria" class="comunidade-step-categoria">
+                <h4><%= t('comunidade.modal.passo1_titulo') %></h4>
+                <div class="comunidade-cat-options">
+                    <div class="comunidade-cat-card" onclick="selecionarCategoriaNova('sugestao')">
+                        <i class="ph-bold ph-lightbulb" style="color: var(--blue);"></i>
+                        <div>
+                            <strong><%= t('comunidade.cat.sugestao') %></strong>
+                            <p><%= t('comunidade.cat.sugestao_desc') %></p>
+                        </div>
+                    </div>
+
+                    <div class="comunidade-cat-card" onclick="selecionarCategoriaNova('bug')">
+                        <i class="ph-bold ph-warning-octagon" style="color: var(--red);"></i>
+                        <div>
+                            <strong><%= t('comunidade.cat.bug') %></strong>
+                            <p><%= t('comunidade.cat.bug_desc') %></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Passo 2: Formulário -->
+            <form id="form-nova-postagem" style="display: none;" onsubmit="enviarNovaPostagem(event)" enctype="multipart/form-data">
+                <%- csrfCampo %>
+                <input type="hidden" name="categoria" id="input-nova-categoria" value="sugestao">
+                <input type="hidden" name="contexto_url" id="input-contexto-url" value="">
+                <input type="hidden" name="contexto_ua" id="input-contexto-ua" value="">
+
+                <div class="form-group">
+                    <label class="form-label" for="input-nova-titulo"><%= t('comunidade.modal.titulo_label') %></label>
+                    <input type="text" name="titulo" id="input-nova-titulo" class="form-control" placeholder="<%= t('comunidade.modal.titulo_placeholder') %>" minlength="5" maxlength="120" required oninput="aoDigitarTituloSimilares(this.value)">
+                </div>
+
+                <!-- Container de Postagens Parecidas -->
+                <div id="container-similares" class="comunidade-similares-box" style="display: none;">
+                    <strong><%= t('comunidade.modal.similares_titulo') %></strong>
+                    <ul id="lista-similares"></ul>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="input-nova-descricao"><%= t('comunidade.modal.descricao_label') %></label>
+                    <textarea name="descricao" id="input-nova-descricao" class="form-control" rows="4" placeholder="<%= t('comunidade.modal.descricao_placeholder') %>" minlength="10" maxlength="5000" required></textarea>
+                </div>
+
+                <!-- Campo Adicional para Bug -->
+                <div class="form-group" id="group-esperado" style="display: none;">
+                    <label class="form-label" for="input-nova-esperado"><%= t('comunidade.modal.esperado_label') %></label>
+                    <textarea name="esperado" id="input-nova-esperado" class="form-control" rows="2" placeholder="<%= t('comunidade.modal.esperado_placeholder') %>" maxlength="1000"></textarea>
+                    <div class="alert alert-aviso" style="margin-top: 8px; font-size: 12px;">
+                        <i class="ph ph-info"></i> <%= t('comunidade.modal.contexto_aviso') %>
+                    </div>
+                </div>
+
+                <!-- Anexo de Imagens -->
+                <div class="form-group">
+                    <label class="form-label"><%= t('comunidade.modal.imagens_label', { n: 4 }) %></label>
+                    <p class="text-muted" style="font-size: 11px; margin-top: -4px;"><%= t('comunidade.modal.imagens_dica') %></p>
+
+                    <div class="comunidade-upload-area" onclick="document.getElementById('input-nova-imagens').click()">
+                        <i class="ph ph-upload-simple" style="font-size: 24px;"></i>
+                        <span>Clique para selecionar imagens (máx 4, até 2MB cada)</span>
+                        <input type="file" id="input-nova-imagens" name="imagens" multiple accept="image/png,image/jpeg,image/webp,image/gif" style="display: none;" onchange="previewImagensNovaPostagem(this)">
+                    </div>
+
+                    <div id="preview-nova-thumbs" class="comunidade-thumbs-preview" style="margin-top: 10px;"></div>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                    <button type="button" class="btn btn-outline" onclick="voltarPassoCategoria()"><%= t('modal.cancelar') %></button>
+                    <button type="submit" class="btn btn-primary" id="btn-submit-postagem">
+                        <i class="ph ph-paper-plane-tilt"></i> <%= t('comunidade.modal.enviar') %>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Detalhe Dinâmico (AJAX) -->
+<div class="modal-backdrop" id="modal-detalhe-post" style="display: none;" onclick="fecharModalDetalhe()">
+    <div class="modal card comunidade-modal-detalhe" onclick="event.stopPropagation()">
+        <div class="modal__header">
+            <h3><%= t('comunidade.titulo') %></h3>
+            <button type="button" class="modal__close" onclick="fecharModalDetalhe()">&times;</button>
+        </div>
+        <div class="modal__body" id="modal-detalhe-body" style="padding: 0;">
+            <div style="text-align: center; padding: 40px;"><i class="ph ph-spinner spinner" style="font-size: 32px;"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Visualizador de Imagem Ampliada (Lightbox Modal) -->
+<div class="modal-backdrop" id="modal-lightbox" style="display: none; background: rgba(0,0,0,0.85); z-index: 9999;" onclick="fecharVisualizadorImagem()">
+    <div style="position: relative; max-width: 90vw; max-height: 90vh; margin: auto; display: flex; align-items: center; justify-content: center; height: 100vh;">
+        <img id="lightbox-img" src="" alt="Imagem ampliada" style="max-width: 100%; max-height: 90vh; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <button type="button" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: #fff; font-size: 32px; cursor: pointer;" onclick="fecharVisualizadorImagem()">&times;</button>
+    </div>
+</div>
+
+<script src="/assets/js/comunidade.js?v=<%= Date.now() %>"></script>

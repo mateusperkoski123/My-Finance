@@ -9,6 +9,7 @@
     <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="MyFinance">
+    <meta name="csrf-token" content="<%= csrfToken %>">
     <title><%= title ? title + ' - ' + t('app.nome') : t('app.nome') %></title>
     <script>
     window.GF_T = {
@@ -71,6 +72,10 @@
                     <span class="navbar__label"><%= t('nav.admin') %></span>
                 </a>
                 <% } %>
+                <a href="/comunidade" title="<%= t('nav.comunidad') %>" class="navbar__link <%= currentRoute.startsWith('/comunidade') ? 'is-active' : '' %>">
+                    <span class="navbar__icon"><i class="ph ph-users-three"></i></span>
+                    <span class="navbar__label"><%= t('nav.comunidad') %></span>
+                </a>
                 <a href="/configuracoes" title="<%= t('nav.configuracoes') %>" class="navbar__link <%= currentRoute.startsWith('/configuracoes') ? 'is-active' : '' %>">
                     <span class="navbar__icon"><i class="ph ph-gear"></i></span>
                     <span class="navbar__label"><%= t('nav.configuracoes') %></span>
@@ -163,6 +168,10 @@
                     <span><%= t('nav.admin') %></span>
                 </a>
                 <% } %>
+                <a href="/comunidade" class="drawer-link <%= currentRoute.startsWith('/comunidade') ? 'is-active' : '' %>">
+                    <i class="ph ph-users-three"></i>
+                    <span><%= t('nav.comunidad') %></span>
+                </a>
                 <a href="/assinatura" class="drawer-link <%= currentRoute === '/assinatura' ? 'is-active' : '' %>">
                     <i class="ph ph-crown-simple"></i>
                     <span><%= t('config.menu.assinatura') %></span>

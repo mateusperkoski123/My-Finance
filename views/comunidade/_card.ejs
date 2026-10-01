@@ -1,0 +1,49 @@
+<div class="card comunidade-card" data-post-id="<%= post.id %>" data-post-url="/comunidade/<%= post.id %>">
+    <div class="comunidade-card__main">
+        <div class="comunidade-card__header">
+            <span class="comunidade-badge comunidade-badge--<%= post.status %>">
+                <%= t('comunidade.status.' + post.status) %>
+            </span>
+            <span class="comunidade-categoria-tag comunidad-tag--<%= post.categoria %>">
+                <i class="ph <%= post.categoria === 'bug' ? 'ph-warning-octagon' : 'ph-lightbulb' %>"></i>
+                <%= t('comunidade.cat.' + post.categoria) %>
+            </span>
+            <% if (post.oculto) { %>
+                <span class="comunidade-badge comunidade-badge--oculto"><%= t('comunidade.detalhe.oculto_badge') %></span>
+            <% } %>
+        </div>
+
+        <h3 class="comunidade-card__titulo">
+            <a href="/comunidade/<%= post.id %>" class="comunidade-link-detalhe" onclick="event.preventDefault(); abrirModalDetalhe('<%= post.id %>');"><%= post.titulo %></a>
+        </h3>
+
+        <p class="comunidade-card__resumo"><%= truncarTexto(post.descricao, 180) %></p>
+
+        <div class="comunidade-card__meta">
+            <span class="comunidade-card__autor">
+                <% if (post.autor.ehEquipe) { %>
+                    <span class="comunidade-selo-equipe"><i class="ph-bold ph-shield-check"></i> <%= t('comunidade.equipe') %></span>
+                <% } else { %>
+                    <%= post.autor.nome %>
+                <% } %>
+            </span>
+            <span class="comunidade-card__dot">•</span>
+            <span class="comunidade-card__tempo"><%= post.tempoRelativo %></span>
+            <span class="comunidade-card__dot">•</span>
+            <span class="comunidade-card__comentarios">
+                <i class="ph ph-chat-circle"></i> <%= post.comentarios %>
+            </span>
+        </div>
+    </div>
+
+    <div class="comunidade-card__voto">
+        <button type="button"
+                class="comunidade-voto-btn <%= post.jaVotou ? 'is-votado' : '' %>"
+                data-post-id="<%= post.id %>"
+                aria-label="<%= post.jaVotou ? t('comunidade.detalhe.votado_btn') : t('comunidade.detalhe.voto_btn') %>"
+                onclick="votarPost('<%= post.id %>', this, event)">
+            <i class="ph-bold ph-caret-up"></i>
+            <span class="votos-count"><%= post.votos %></span>
+        </button>
+    </div>
+</div>
