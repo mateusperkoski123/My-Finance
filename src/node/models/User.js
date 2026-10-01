@@ -156,6 +156,11 @@ class User {
         await db.query(`UPDATE users SET ia_habilitada = ? WHERE id IN (${ids.map(() => '?').join(',')})`, [ligar ? 1 : 0, ...ids]);
     }
 
+    static async definirIaNivelVarios(ids, nivel) {
+        if (!ids.length) return;
+        await db.query(`UPDATE users SET ia_nivel = ? WHERE id IN (${ids.map(() => '?').join(',')})`, [nivel === 2 ? 2 : 1, ...ids]);
+    }
+
     static async atualizarStatus(id, status) {
         await db.query('UPDATE users SET status = ? WHERE id = ?', [status, id]);
     }

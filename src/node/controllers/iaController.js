@@ -1,9 +1,13 @@
 const Ia = require('../models/Ia');
 const Lancamento = require('../models/Lancamento');
 const iaCore = require('../core/ia');
+const { executarPlano } = require('../core/ia_plano');
 
 const LIMITE_MES = parseInt(process.env.IA_LIMITE_MENSAGENS_MES || '300', 10);
 const MAX_TEXTO = 600;
+
+// Admin sempre usa o Nivel 2 (para poder testar); os demais usam o nivel definido pelo admin (padrao 1).
+const nivelDe = (req) => (req.ehAdmin || Number(req.user.ia_nivel) === 2 ? 2 : 1);
 
 const iaController = {
     index: async (req, res) => {
@@ -54,7 +58,7 @@ const iaController = {
 
         let r;
         try {
-            r = await iaCore.responder({ usuario: req.user, conversaId, historico });
+            r = await iaCore.responder({ usuario: req.user, conversaId, historico, nivel: nivelDe(req) });
         } catch (err) {
             if (err.codigo === 'ia_nao_configurada') {
                 return res.status(503).json({ sucesso: false, conversa_id: conversaId, erro: req.t('ia.erro_nao_configurada') });
@@ -100,6 +104,20 @@ const iaController = {
         }
         try {
             const p = JSON.parse(acao.payload);
+            if (p.kind === 'plano') {
+                // Plano do Nivel 2: so executa se o usuario ainda estiver no Nivel 2.
+                if (nivelDe(req) !== 2) {
+                    await Ia.liberarAcao(id, userId);
+                    return res.status(403).json({ sucesso: false, erro: req.t('ia.erro_indisponivel') });
+                }
+                const resultados = await executarPlano(userId, p.operacoes);
+                if (!resultados.some((r) => r.ok)) {
+                    await Ia.liberarAcao(id, userId);
+                    return res.status(400).json({ sucesso: false, erro: resultados.map((r) => r.erro).filter(Boolean).slice(0, 3).join(' | ') || req.t('ia.erro_generico') });
+                }
+                await Ia.salvarPayload(id, userId, { ...p, resultados });
+                return res.json({ sucesso: true, cartao: Ia.cartao(await Ia.buscarAcao(id, userId)) });
+            }
             const ids = await Lancamento.criar(userId, {
                 conta_id: p.conta_id, categoria_id: p.categoria_id, subcategoria_id: null,
                 tipo: p.tipo, descricao: p.descricao, valor: p.valor,

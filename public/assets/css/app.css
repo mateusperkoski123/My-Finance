@@ -1783,3 +1783,23 @@ select.form-control { min-height: 44px; }
 .massa-barra[hidden] { display: none; }
 .massa-barra select { width: auto; min-width: 210px; }
 .massa-dias { width: 90px !important; }
+
+/* Chat IA nivel 2: cartao de plano */
+.ia-plano { border-left-color: var(--primary); width: min(560px, 94%); }
+.ia-plano__lista { list-style: none; margin: 8px 0 12px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.ia-op { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
+.ia-op.is-falha { border-color: var(--red); }
+.ia-plano__n { flex-shrink: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--primary); color: var(--primary-text); display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+.ia-op > i { flex-shrink: 0; font-size: 22px; }
+.ia-op__corpo { min-width: 0; flex: 1; font-size: 13px; }
+.ia-op__titulo { font-weight: 600; display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.ia-op__det { color: var(--muted); margin-top: 2px; word-break: break-word; }
+.ia-op__itens { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.ia-op__itens li { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
+.ia-plano__campo { color: var(--muted); min-width: 74px; display: inline-block; }
+.ia-de { text-decoration: line-through; color: var(--muted); }
+.ia-op__escopo { margin-top: 6px; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.ia-op__erro { margin-top: 4px; color: var(--red); font-size: 12px; }
+.ia-falha { color: var(--red); }
+.ia-cartao__estado.ia-parcial { color: var(--pendente, #d97706); font-weight: 600; }
+.ia-op .ia-ok { color: var(--green); }

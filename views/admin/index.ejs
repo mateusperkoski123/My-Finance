@@ -30,7 +30,7 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
         <button type="submit" class="btn btn-outline" aria-label="<%= t('categorias.buscar') %>"><i class="ph ph-magnifying-glass"></i></button>
     </form>
 
-    <%- include('_massa', { voltar: 'admin', acoes: ['ia_on', 'ia_off', 'trial', 'suspender', 'reativar', 'arquivar'] }) %>
+    <%- include('_massa', { voltar: 'admin', acoes: ['ia_on', 'ia_off', 'ia_nivel_1', 'ia_nivel_2', 'trial', 'suspender', 'reativar', 'arquivar'] }) %>
 
     <div class="tabela-container">
         <table class="tabela">
@@ -48,7 +48,7 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                     <td>
                         <strong><%= u.nome %></strong>
                         <% if (u.role === 'admin') { %><span class="badge badge-neutro">admin</span><% } %>
-                        <% if (u.ia_habilitada) { %><span class="badge badge-sucesso"><i class="ph ph-sparkle"></i> IA</span><% } %>
+                        <% if (u.ia_habilitada) { %><span class="badge badge-sucesso"><i class="ph ph-sparkle"></i> IA<%= u.ia_nivel === 2 ? ' 2' : '' %></span><% } %>
                         <% if (u.user_status !== 'ativo') { %><span class="badge badge-pendente"><%= t('admin.suspenso') %></span><% } %>
                         <div class="muted" style="font-size: 12px;"><%= u.email %> <% if (!u.email_verificado_em) { %>· <%= t('admin.sem_verificar') %><% } %></div>
                     </td>
@@ -101,6 +101,13 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                                     <input type="hidden" name="ia" value="<%= u.ia_habilitada ? '0' : '1' %>">
                                     <button type="submit"><i class="ph ph-sparkle"></i> <%= t(u.ia_habilitada ? 'admin.ia_desativar' : 'admin.ia_ativar') %></button>
                                 </form>
+                                <% if (u.ia_habilitada) { %>
+                                <form method="post" action="/admin/usuarios/<%= u.id %>/ia-nivel" class="admin-form">
+                                    <%- csrfCampo %>
+                                    <input type="hidden" name="nivel" value="<%= u.ia_nivel === 2 ? '1' : '2' %>">
+                                    <button type="submit"><i class="ph ph-sliders-horizontal"></i> <%= t(u.ia_nivel === 2 ? 'admin.ia_nivel_p1' : 'admin.ia_nivel_p2') %></button>
+                                </form>
+                                <% } %>
                                 <form method="post" action="/admin/usuarios/<%= u.id %>/arquivar" data-confirm="<%= t('admin.confirmar_arquivar') %>" class="admin-form">
                                     <%- csrfCampo %>
                                     <button type="submit" class="perigo"><i class="ph ph-archive"></i> <%= t('admin.arquivar') %></button>

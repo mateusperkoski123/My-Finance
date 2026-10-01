@@ -87,8 +87,67 @@
   }
   function dataBr(ymd) { var p = String(ymd || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
 
+  // ---- Plano do Nivel 2: um cartao com o panorama de tudo que vai mudar ----
+  function linhaDePara(rotulo, de, para, fmt) {
+    var f = fmt || function (x) { return x; };
+    return '<li><span class="ia-plano__campo">' + esc(rotulo) + '</span> <span class="ia-de">' + esc(f(de)) + '</span> <i class="ph ph-arrow-right"></i> <strong>' + esc(f(para)) + '</strong></li>';
+  }
+  function opHtml(op) {
+    var h = '';
+    var t = T;
+    if (op.op === 'lancamento') {
+      var rec = op.tipo === 'receita';
+      h = '<div class="ia-op__titulo">' + esc(rec ? t.opLancReceita : t.opLancDespesa) + ' <strong>' + (rec ? '+' : '-') + ' ' + esc(dinheiro(op.valor)) + '</strong></div>' +
+        '<div class="ia-op__det">' + esc(op.descricao) + ' · ' + esc(op.conta_nome) + ' · ' + esc(op.categoria_nome) + ' · ' + esc(dataBr(op.data_competencia)) + ' · ' + esc(op.status === 'pago' ? t.pago : t.pendente) + '</div>';
+    } else if (op.op === 'status') {
+      h = '<div class="ia-op__titulo">' + esc(op.status === 'pago' ? t.opStatusPago : t.opStatusPendente) + ' (' + op.itens.length + ')' +
+        (op.status === 'pago' && op.data_pagamento ? ' · ' + esc(dataBr(op.data_pagamento)) : '') + '</div><ul class="ia-op__itens">' +
+        op.itens.map(function (i) { return '<li>' + esc(i.descricao) + ' <span class="muted">' + esc(i.conta_nome) + ' · ' + esc(dataBr(i.data)) + '</span> <strong>' + esc(dinheiro(i.valor)) + '</strong></li>'; }).join('') + '</ul>';
+    } else if (op.op === 'editar') {
+      var m = op.mudancas || {};
+      h = '<div class="ia-op__titulo">' + esc(t.opEditar) + ': ' + esc(op.descricao_atual) + '</div><ul class="ia-op__itens">';
+      if (m.descricao) h += linhaDePara(t.cDescricao, m.descricao.de, m.descricao.para);
+      if (m.valor) h += linhaDePara(t.cValor, m.valor.de, m.valor.para, dinheiro);
+      if (m.data) h += linhaDePara(t.cData, m.data.de, m.data.para, dataBr);
+      if (m.categoria) h += linhaDePara(t.cCategoria, m.categoria.de, m.categoria.para);
+      if (m.conta) h += linhaDePara(t.cConta, m.conta.de, m.conta.para);
+      h += '</ul>';
+      if (op.serie) h += '<div class="ia-op__escopo"><i class="ph ph-repeat"></i> ' + esc(op.escopo === 'toda_serie' ? t.escToda : (op.escopo === 'esta_e_proximas' ? t.escProximas : t.escApenas)) + '</div>';
+    } else if (op.op === 'categoria_criar') {
+      h = '<div class="ia-op__titulo">' + esc(op.pai_id ? t.opSubCriar : t.opCatCriar) + ': <strong>' + esc(op.nome) + '</strong>' +
+        (op.pai_nome ? ' <span class="muted">' + esc(t.emPai.replace('__P__', op.pai_nome)) + '</span>' : '') + '</div>';
+    } else if (op.op === 'categoria_renomear') {
+      h = '<div class="ia-op__titulo">' + esc(op.eh_sub ? t.opSubRenomear : t.opCatRenomear) + ': <span class="ia-de">' + esc(op.de) + '</span> <i class="ph ph-arrow-right"></i> <strong>' + esc(op.para) + '</strong></div>';
+    } else if (op.op === 'transferencia') {
+      var rep = op.repeticao === 'fixa' ? ' · ' + t.repFixa : (op.repeticao === 'repetir' ? ' · ' + t.repRepetir.replace('__N__', op.quantidade) : '');
+      h = '<div class="ia-op__titulo">' + esc(op.agendada ? t.opTransfAgendada : t.opTransf) + ' <strong>' + esc(dinheiro(op.valor)) + '</strong></div>' +
+        '<div class="ia-op__det">' + esc(t.paraConta.replace('__A__', op.origem_nome).replace('__B__', op.destino_nome)) + ' · ' + esc(dataBr(op.data)) + esc(rep) + (op.descricao ? ' · ' + esc(op.descricao) : '') + '</div>';
+    }
+    return h;
+  }
+  function planoHtml(c) {
+    var res = c.resultados;
+    var falhou = res && res.some(function (r) { return !r.ok; });
+    var itens = c.operacoes.map(function (op, i) {
+      var r = res ? res[i] : null;
+      var marca = r ? (r.ok ? '<i class="ph-fill ph-check-circle ia-ok"></i>' : '<i class="ph-fill ph-warning-circle ia-falha"></i>') : '<span class="ia-plano__n">' + (i + 1) + '</span>';
+      return '<li class="ia-op' + (r && !r.ok ? ' is-falha' : '') + '">' + marca + '<div class="ia-op__corpo">' + opHtml(op) + (r && !r.ok ? '<div class="ia-op__erro">' + esc(r.erro) + '</div>' : '') + '</div></li>';
+    }).join('');
+    var rodape;
+    if (c.status === 'pendente') {
+      rodape = '<div class="ia-cartao__acoes"><button type="button" class="btn btn-outline btn-sm" data-acao="cancelar" data-id="' + c.id + '">' + esc(T.cancelar) + '</button>' +
+        '<button type="button" class="btn btn-primary btn-sm" data-acao="confirmar" data-id="' + c.id + '"><i class="ph ph-check"></i> ' + esc(T.confirmarTudo) + '</button></div>';
+    } else if (c.status === 'confirmada') {
+      rodape = '<div class="ia-cartao__estado ' + (falhou ? 'ia-parcial' : 'ia-ok') + '"><i class="ph-fill ' + (falhou ? 'ph-warning' : 'ph-check-circle') + '"></i> ' + esc(falhou ? T.resParcial : T.resOk) + '</div>';
+    } else {
+      rodape = '<div class="ia-cartao__estado"><i class="ph ph-x-circle"></i> ' + esc(T.cancelado) + '</div>';
+    }
+    return '<div class="ia-cartao ia-plano" data-cartao="' + c.id + '"><div class="ia-cartao__topo"><span>' + esc(T.plano) + '</span><strong>' + c.operacoes.length + '</strong></div><ol class="ia-plano__lista">' + itens + '</ol>' + rodape + '</div>';
+  }
+
   // ---- Cartao de confirmacao ----
   function cartaoHtml(c) {
+    if (c.plano) return planoHtml(c);
     var receita = c.tipo === 'receita';
     var rodape;
     if (c.status === 'pendente') {

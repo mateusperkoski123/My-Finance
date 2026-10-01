@@ -98,6 +98,9 @@ class Ia {
     static cartao(acao) {
         let p = {};
         try { p = JSON.parse(acao.payload); } catch (e) { p = {}; }
+        if (p.kind === 'plano') {
+            return { id: acao.id, status: acao.status, plano: true, operacoes: p.operacoes || [], resultados: p.resultados || null };
+        }
         return {
             id: acao.id,
             status: acao.status,
@@ -123,6 +126,14 @@ class Ia {
              ON DUPLICATE KEY UPDATE mensagens = mensagens + 1, tokens_in = tokens_in + VALUES(tokens_in), tokens_out = tokens_out + VALUES(tokens_out)`,
             [userId, mesAtual(), tokensIn, tokensOut]
         );
+    }
+
+    static async definirNivel(userId, nivel) {
+        await db.query('UPDATE users SET ia_nivel = ? WHERE id = ?', [nivel === 2 ? 2 : 1, userId]);
+    }
+
+    static async salvarPayload(id, userId, payload) {
+        await db.query('UPDATE ia_acoes SET payload = ? WHERE id = ? AND user_id = ?', [JSON.stringify(payload), id, userId]);
     }
 
     static async definirHabilitada(userId, habilitada) {

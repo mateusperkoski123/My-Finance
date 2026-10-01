@@ -77,6 +77,19 @@ const adminController = {
         redirecionar(res);
     },
 
+    alternarIaNivel: async (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        const nivel = req.body.nivel === '2' ? 2 : 1;
+        const alvo = await User.findById(id);
+        if (!alvo) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_usuario_nao_encontrado') };
+            return redirecionar(res);
+        }
+        await require('../models/Ia').definirNivel(id, nivel);
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t(nivel === 2 ? 'flash.admin_ia_nivel2' : 'flash.admin_ia_nivel1') };
+        redirecionar(res);
+    },
+
     // REVISAR (seguranca): acoes em massa. Cada acao so atinge usuarios compativeis; admins e o proprio admin logado nunca
     // sao suspensos, arquivados, excluidos nem alterados em massa. Exclusao so vale para contas ja arquivadas.
     acaoEmMassa: async (req, res) => {
@@ -91,6 +104,8 @@ const adminController = {
         const regras = {
             ia_on: (u) => comum(u),
             ia_off: (u) => comum(u),
+            ia_nivel_1: (u) => comum(u),
+            ia_nivel_2: (u) => comum(u),
             suspender: (u) => comum(u) && u.status === 'ativo',
             reativar: (u) => comum(u) && u.status === 'suspenso',
             arquivar: (u) => comum(u) && u.status !== 'arquivado',
@@ -110,6 +125,7 @@ const adminController = {
         }
 
         if (acao === 'ia_on' || acao === 'ia_off') await User.definirIaVarios(alvo, acao === 'ia_on');
+        else if (acao === 'ia_nivel_1' || acao === 'ia_nivel_2') await User.definirIaNivelVarios(alvo, acao === 'ia_nivel_2' ? 2 : 1);
         else if (acao === 'suspender') await User.atualizarStatusVarios(alvo, 'suspenso');
         else if (acao === 'reativar' || acao === 'desarquivar') await User.atualizarStatusVarios(alvo, 'ativo');
         else if (acao === 'arquivar') await User.atualizarStatusVarios(alvo, 'arquivado');

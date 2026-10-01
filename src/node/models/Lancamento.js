@@ -234,6 +234,41 @@ class Lancamento {
         }
     }
 
+    // Transferencia entre contas: par de lancamentos (saida + entrada) ligados por transferencia_par_id.
+    // Imediata = os dois ja pagos na data; agendada = os dois pendentes (o saldo so move ao marcar como pago).
+    static async criarTransferencia({ userId, origem, destino, valor, data, descricao = '', agendada = false, eFixo = false, quantidade = 1 }) {
+        const Categoria = require('./Categoria');
+        await Categoria.garantirCategoriasSistema(userId);
+        const [cat] = await db.query("SELECT id FROM categorias WHERE user_id = ? AND chave_sistema = 'transferencia' LIMIT 1", [userId]);
+        const catId = cat[0] ? cat[0].id : null;
+        const total = Math.max(1, quantidade);
+        const serieId = total > 1 ? uuidv4() : null;
+        const sufixo = descricao ? ' - ' + descricao : '';
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            const inserir = (contaId, valorLinha, desc, dataComp) => conn.query(
+                `INSERT INTO lancamentos (user_id, serie_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia, data_pagamento, status, recorrente, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, 'transferencia', ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                [userId, serieId, contaId, catId, desc, valorLinha, dataComp, agendada ? null : dataComp, agendada ? 'pendente' : 'pago', eFixo ? 1 : 0]
+            );
+            for (let i = 0; i < total; i++) {
+                const dataComp = addMonthsYMD(data, i);
+                const [saida] = await inserir(origem.id, -valor, `Transferência enviada para ${destino.nome}${sufixo}`, dataComp);
+                const [entrada] = await inserir(destino.id, valor, `Transferência recebida de ${origem.nome}${sufixo}`, dataComp);
+                await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [entrada.insertId, saida.insertId]);
+                await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [saida.insertId, entrada.insertId]);
+            }
+            await conn.commit();
+            return total;
+        } catch (err) {
+            await conn.rollback();
+            throw err;
+        } finally {
+            conn.release();
+        }
+    }
+
     static async atualizar(id, userId, data, escopoSerie = 'apenas_esta') {
         const itemAtual = await this.buscarPorId(id, userId);
         if (!itemAtual) return false;

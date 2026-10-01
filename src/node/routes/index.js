@@ -66,6 +66,7 @@ router.post('/admin/usuarios/:id/pagamento', requireAuth, exigirAdmin, adminCont
 router.post('/admin/usuarios/:id/trial', requireAuth, exigirAdmin, adminController.estenderTrial);
 router.post('/admin/usuarios/:id/cancelar', requireAuth, exigirAdmin, adminController.cancelar);
 router.post('/admin/usuarios/:id/status', requireAuth, exigirAdmin, adminController.alterarStatus);
+router.post('/admin/usuarios/:id/ia-nivel', requireAuth, exigirAdmin, adminController.alternarIaNivel);
 router.post('/admin/usuarios/:id/ia', requireAuth, exigirAdmin, adminController.alternarIa);
 router.post('/admin/usuarios/:id/arquivar', requireAuth, exigirAdmin, adminController.arquivar);
 router.get('/admin/arquivados', requireAuth, exigirAdmin, adminController.arquivados);
