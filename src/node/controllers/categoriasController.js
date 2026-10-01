@@ -44,6 +44,22 @@ const categoriasController = {
         res.redirect('/categorias');
     },
 
+    // Criacao rapida (JSON) a partir dos modais de lancamento: categoria ou, com categoria_pai_id, subcategoria.
+    criarRapida: async (req, res) => {
+        const nome = String(req.body.nome || '').trim().slice(0, 100);
+        if (!nome) return res.status(400).json({ sucesso: false, erro: req.t('flash.categoria_nome_obrigatorio') });
+        const paiId = req.body.categoria_pai_id ? parseInt(req.body.categoria_pai_id, 10) : null;
+        if (paiId) {
+            const pai = await Categoria.buscarPorId(paiId, req.user.id);
+            if (!pai || pai.parent_id || pai.sistema || pai.status !== 'ativa') {
+                return res.status(400).json({ sucesso: false, erro: req.t('cat_rapida.erro') });
+            }
+        }
+        const id = await Categoria.criar(req.user.id, { nome, categoria_pai_id: paiId });
+        const cat = await Categoria.buscarPorId(id, req.user.id);
+        return res.json({ sucesso: true, categoria: { id: cat.id, nome: cat.nome, parent_id: cat.parent_id } });
+    },
+
     atualizar: async (req, res) => {
         const userId = req.user.id;
         const id = req.params.id;

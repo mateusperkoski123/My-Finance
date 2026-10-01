@@ -1700,3 +1700,10 @@ select.form-control { min-height: 44px; }
 .form-label { display: block; margin-bottom: 6px; font-size: 13.5px; font-weight: 600; color: var(--text); }
 .comunidade-modal-post { padding: 24px; }
 .comunidade-modal-post .form-group { margin-bottom: 18px; }
+
+/* Criacao rapida de categoria/subcategoria nos modais de lancamento */
+.cat-rapida-btn { margin-left: 8px; padding: 0; border: 0; background: none; color: var(--primary); font-size: 12px; font-weight: 700; cursor: pointer; }
+.cat-rapida-btn:hover { text-decoration: underline; }
+.cat-rapida-form { display: flex; gap: 6px; margin-top: 8px; }
+.cat-rapida-form .input { flex: 1; min-width: 0; }
+.cat-rapida-erro { display: block; color: var(--red); margin-top: 4px; }

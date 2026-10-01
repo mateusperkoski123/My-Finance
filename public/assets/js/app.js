@@ -104,6 +104,93 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // Criar categoria/subcategoria sem sair do modal de lançamento (botão "+" ao lado de cada select).
+  function gfCsrf() { var m = document.querySelector('meta[name="csrf-token"]'); return m ? m.getAttribute('content') : ''; }
+  function gfSelectsCategoria() { return document.querySelectorAll('[data-gf-categoria-select]'); }
+  function gfCriarRapido(nome, paiId) {
+    var corpo = new URLSearchParams({ nome: nome });
+    if (paiId) corpo.set('categoria_pai_id', paiId);
+    return fetch('/categorias/rapida', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': gfCsrf(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: corpo
+    }).then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (d) { if (!d.sucesso) throw new Error(d.erro || GF_T.cat_erro); return d.categoria; });
+  }
+  function gfAdicionarBotaoNovo(select, rotulo, aoCriar) {
+    var grupo = select.parentElement;
+    var label = grupo.querySelector('label');
+    if (!label || label.querySelector('.cat-rapida-btn')) return;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'cat-rapida-btn';
+    btn.textContent = '+ ' + rotulo;
+    label.appendChild(btn);
+
+    btn.addEventListener('click', function () {
+      if (grupo.querySelector('.cat-rapida-form')) return;
+      var form = document.createElement('div');
+      form.className = 'cat-rapida-form';
+      var input = document.createElement('input');
+      input.type = 'text'; input.className = 'input'; input.maxLength = 100; input.placeholder = GF_T.cat_nome_ph;
+      var ok = document.createElement('button');
+      ok.type = 'button'; ok.className = 'btn btn-primary btn-sm'; ok.textContent = GF_T.cat_salvar;
+      var cancelar = document.createElement('button');
+      cancelar.type = 'button'; cancelar.className = 'btn btn-outline btn-sm'; cancelar.textContent = GF_T.cat_cancelar;
+      var erro = document.createElement('small');
+      erro.className = 'cat-rapida-erro';
+      form.appendChild(input); form.appendChild(ok); form.appendChild(cancelar);
+      grupo.appendChild(form); grupo.appendChild(erro);
+      input.focus();
+
+      function fechar() { form.remove(); erro.remove(); }
+      function salvar() {
+        var nome = input.value.trim();
+        if (!nome) { input.focus(); return; }
+        ok.disabled = true;
+        aoCriar(nome).then(fechar).catch(function (e) { erro.textContent = e.message || GF_T.cat_erro; ok.disabled = false; });
+      }
+      ok.addEventListener('click', salvar);
+      cancelar.addEventListener('click', fechar);
+      input.addEventListener('keydown', function (ev) {
+        if (ev.key === 'Enter') { ev.preventDefault(); salvar(); }
+        else if (ev.key === 'Escape') { ev.stopPropagation(); fechar(); }
+      });
+    });
+  }
+  gfBinders.push(function (root) {
+    root.querySelectorAll('[data-gf-categoria-select]').forEach(function (selectCategoria) {
+      if (selectCategoria.getAttribute('data-gf-novo-bound') === '1') return;
+      selectCategoria.setAttribute('data-gf-novo-bound', '1');
+      var linha = selectCategoria.closest('.form-row') || selectCategoria.closest('.form');
+      var selectSub = linha ? linha.querySelector('[data-gf-subcategoria-select]') : null;
+
+      gfAdicionarBotaoNovo(selectCategoria, GF_T.cat_nova, function (nome) {
+        return gfCriarRapido(nome, null).then(function (cat) {
+          categoriasArvore.push({ id: cat.id, nome: cat.nome, parent_id: null, subcategorias: [] });
+          gfSelectsCategoria().forEach(function (s) {
+            var o = document.createElement('option'); o.value = cat.id; o.textContent = cat.nome; s.appendChild(o);
+          });
+          selectCategoria.value = cat.id;
+          selectCategoria.dispatchEvent(new Event('change'));
+        });
+      });
+
+      if (selectSub) {
+        gfAdicionarBotaoNovo(selectSub, GF_T.sub_nova, function (nome) {
+          var paiId = parseInt(selectCategoria.value, 10);
+          if (!paiId) return Promise.reject(new Error(GF_T.cat_escolha));
+          return gfCriarRapido(nome, paiId).then(function (sub) {
+            var pai = categoriasArvore.find(function (c) { return c.id === paiId; });
+            if (pai) pai.subcategorias.push({ id: sub.id, nome: sub.nome, parent_id: paiId });
+            gfPopularSubcategorias(selectCategoria, selectSub, sub.id);
+            selectSub.value = sub.id;
+          });
+        });
+      }
+    });
+  });
+
   // Toggle "Repetir Transação": mostra/esconde o campo de quantidade.
   gfBinders.push(function (root) {
     root.querySelectorAll('[data-gf-toggle-repetir]').forEach(function (toggle) {

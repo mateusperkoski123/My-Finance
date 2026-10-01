@@ -93,6 +93,7 @@ router.get('/contas/:id/extrato', requireAuth, contasController.extrato);
 // Categorias routes
 router.get('/categorias', requireAuth, categoriasController.index);
 router.post('/categorias/criar', requireAuth, categoriasController.criar);
+router.post('/categorias/rapida', requireAuth, categoriasController.criarRapida);
 router.post('/categorias/:id/atualizar', requireAuth, categoriasController.atualizar);
 router.post('/categorias/:id/arquivar', requireAuth, categoriasController.arquivar);
 router.post('/categorias/:id/restaurar', requireAuth, categoriasController.restaurar);

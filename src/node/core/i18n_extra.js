@@ -112,6 +112,13 @@ module.exports = {
     'flash.lanc_categoria_obrigatoria': ['Por favor, selecione uma categoria para a transação.', 'Por favor, seleccione una categoría para la transacción.', 'Please select a category for the transaction.'],
     'flash.lanc_conta_categoria_invalida': ['Conta ou categoria inválida.', 'Cuenta o categoría inválida.', 'Invalid account or category.'],
     'flash.pagamento_desfeito': ['Pagamento desfeito: o lançamento voltou para pendente.', 'Pago deshecho: el lanzamiento volvió a pendiente.', 'Payment undone: the entry is pending again.'],
+    'cat_rapida.nova_categoria': ['Nova categoria', 'Nueva categoría', 'New category'],
+    'cat_rapida.nova_subcategoria': ['Nova subcategoria', 'Nueva subcategoría', 'New subcategory'],
+    'cat_rapida.nome_ph': ['Nome', 'Nombre', 'Name'],
+    'cat_rapida.salvar': ['Criar', 'Crear', 'Create'],
+    'cat_rapida.cancelar': ['Cancelar', 'Cancelar', 'Cancel'],
+    'cat_rapida.escolha_categoria': ['Escolha primeiro a categoria.', 'Elegí primero la categoría.', 'Choose the category first.'],
+    'cat_rapida.erro': ['Não foi possível criar.', 'No se pudo crear.', 'Could not create.'],
     'flash.csrf_falhou': ['Validação CSRF falhou. Tente novamente.', 'La validación CSRF falló. Inténtelo de nuevo.', 'CSRF validation failed. Please try again.'],
 
     'lancamento.ajuste_saida': ['Ajuste de saldo (saída)', 'Ajuste de saldo (salida)', 'Balance adjustment (outflow)'],
