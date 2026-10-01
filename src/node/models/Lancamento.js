@@ -2,8 +2,8 @@ const db = require('../config/db');
 const { randomUUID: uuidv4 } = require('crypto');
 const { toLocalYMD, formatDate, addMonthsYMD } = require('../core/helpers');
 
-// Lancamento marcado como fixo (receita/despesa recorrente) gera pelo menos 24 meses, a atual incluida.
-const MESES_FIXO_MINIMO = 24;
+// Lancamento marcado como fixo (receita/despesa recorrente) gera 24 meses, a atual incluida.
+const MESES_FIXO = 24;
 
 const cleanParam = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '' && v !== 'sem_agrupamento') ? String(v).trim() : null;
 
@@ -177,11 +177,12 @@ class Lancamento {
         try {
             await conn.beginTransaction();
 
-            const eRepetir = data.repetir === '1' || data.repetir === 1 || data.repetir === true;
             const eFixo = data.e_fixo === '1' || data.e_fixo === 1 || data.e_fixo === true || data.recorrente === 1;
-            // Repetir: cria a quantidade pedida (a atual + as proximas). Fixo: no minimo 24 meses a frente.
+            // Fixo e Repetir sao excludentes (a tela ja impede); se vierem os dois, vale o fixo.
+            const eRepetir = !eFixo && (data.repetir === '1' || data.repetir === 1 || data.repetir === true);
+            // Repetir: cria a quantidade pedida (a atual + as proximas). Fixo: 24 meses (a atual + 23).
             const qtdPedida = eRepetir ? Math.min(Math.max(parseInt(data.quantidade_repeticoes, 10) || 1, 1), 60) : 1;
-            const totalOcorrencias = eFixo ? Math.max(qtdPedida, MESES_FIXO_MINIMO) : qtdPedida;
+            const totalOcorrencias = eFixo ? MESES_FIXO : qtdPedida;
             const serieId = totalOcorrencias > 1 ? uuidv4() : null;
 
             const dataBase = data.data_competencia || toLocalYMD(new Date());

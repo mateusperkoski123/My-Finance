@@ -233,6 +233,22 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // "Fixa" e "Repetir" são excludentes: ligar um desliga o outro.
+  gfBinders.push(function (root) {
+    root.querySelectorAll('form').forEach(function (form) {
+      var fixo = form.querySelector('input[name="e_fixo"]');
+      var repetir = form.querySelector('input[name="repetir"]');
+      if (!fixo || !repetir || form.getAttribute('data-gf-excl') === '1') return;
+      form.setAttribute('data-gf-excl', '1');
+      fixo.addEventListener('change', function () {
+        if (fixo.checked && repetir.checked) { repetir.checked = false; repetir.dispatchEvent(new Event('change')); }
+      });
+      repetir.addEventListener('change', function () {
+        if (repetir.checked && fixo.checked) { fixo.checked = false; }
+      });
+    });
+  });
+
   // Toggle dinâmico de Status (Não Foi Recebida/Foi Recebida e Não Foi Pago/Foi Pago)
   gfBinders.push(function (root) {
     root.querySelectorAll('[data-gf-status-toggle]').forEach(function (toggle) {
