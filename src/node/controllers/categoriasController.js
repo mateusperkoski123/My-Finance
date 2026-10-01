@@ -55,7 +55,8 @@ const categoriasController = {
                 return res.status(400).json({ sucesso: false, erro: req.t('cat_rapida.erro') });
             }
         }
-        const id = await Categoria.criar(req.user.id, { nome, categoria_pai_id: paiId });
+        const cor = /^#[0-9a-fA-F]{6}$/.test(String(req.body.cor || '')) ? req.body.cor : undefined;
+        const id = await Categoria.criar(req.user.id, { nome, cor, categoria_pai_id: paiId });
         const cat = await Categoria.buscarPorId(id, req.user.id);
         return res.json({ sucesso: true, categoria: { id: cat.id, nome: cat.nome, parent_id: cat.parent_id } });
     },

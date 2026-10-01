@@ -118,6 +118,7 @@ module.exports = {
     'cat_rapida.salvar': ['Criar', 'Crear', 'Create'],
     'cat_rapida.cancelar': ['Cancelar', 'Cancelar', 'Cancel'],
     'cat_rapida.escolha_categoria': ['Escolha primeiro a categoria.', 'Elegí primero la categoría.', 'Choose the category first.'],
+    'cat_rapida.cor': ['Cor personalizada', 'Color personalizado', 'Custom color'],
     'cat_rapida.erro': ['Não foi possível criar.', 'No se pudo crear.', 'Could not create.'],
     'flash.csrf_falhou': ['Validação CSRF falhou. Tente novamente.', 'La validación CSRF falló. Inténtelo de nuevo.', 'CSRF validation failed. Please try again.'],
 

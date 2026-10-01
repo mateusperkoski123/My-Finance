@@ -1702,8 +1702,13 @@ select.form-control { min-height: 44px; }
 .comunidade-modal-post .form-group { margin-bottom: 18px; }
 
 /* Criacao rapida de categoria/subcategoria nos modais de lancamento */
-.cat-rapida-btn { margin-left: 8px; padding: 0; border: 0; background: none; color: var(--primary); font-size: 12px; font-weight: 700; cursor: pointer; }
-.cat-rapida-btn:hover { text-decoration: underline; }
-.cat-rapida-form { display: flex; gap: 6px; margin-top: 8px; }
-.cat-rapida-form .input { flex: 1; min-width: 0; }
-.cat-rapida-erro { display: block; color: var(--red); margin-top: 4px; }
+.cat-rapida-btn { display: inline-flex; align-items: center; gap: 4px; margin-left: 10px; padding: 3px 10px; border: 1px solid var(--border); border-radius: 999px; background: var(--bg); color: var(--primary); font-size: 12px; font-weight: 700; cursor: pointer; transition: border-color .15s, background .15s; }
+.cat-rapida-btn:hover { border-color: var(--primary); }
+.cat-rapida-form { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg); }
+.cat-rapida-cores { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cat-rapida-cor { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--card); box-shadow: 0 0 0 1px var(--border); cursor: pointer; padding: 0; }
+.cat-rapida-cor.is-active { box-shadow: 0 0 0 2px var(--text); }
+.cat-rapida-picker { width: 34px; height: 30px; padding: 0; border: 1px solid var(--border); border-radius: 8px; background: none; cursor: pointer; }
+.cat-rapida-acoes { display: flex; justify-content: flex-end; gap: 8px; }
+.cat-rapida-erro { display: block; color: var(--red); }
+.cat-rapida-erro:empty { display: none; }

@@ -107,8 +107,10 @@ document.addEventListener('DOMContentLoaded', function () {
   // Criar categoria/subcategoria sem sair do modal de lançamento (botão "+" ao lado de cada select).
   function gfCsrf() { var m = document.querySelector('meta[name="csrf-token"]'); return m ? m.getAttribute('content') : ''; }
   function gfSelectsCategoria() { return document.querySelectorAll('[data-gf-categoria-select]'); }
-  function gfCriarRapido(nome, paiId) {
+  var GF_CORES = ['#EF4444', '#F97316', '#F59E0B', '#10B981', '#06B6D4', '#3B82F6', '#6366F1', '#8B5CF6', '#EC4899', '#64748B'];
+  function gfCriarRapido(nome, paiId, cor) {
     var corpo = new URLSearchParams({ nome: nome });
+    if (cor) corpo.set('cor', cor);
     if (paiId) corpo.set('categoria_pai_id', paiId);
     return fetch('/categorias/rapida', {
       method: 'POST',
@@ -124,7 +126,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'cat-rapida-btn';
-    btn.textContent = '+ ' + rotulo;
+    btn.innerHTML = '<i class="ph-bold ph-plus"></i> ';
+    btn.appendChild(document.createTextNode(rotulo));
     label.appendChild(btn);
 
     btn.addEventListener('click', function () {
@@ -133,22 +136,46 @@ document.addEventListener('DOMContentLoaded', function () {
       form.className = 'cat-rapida-form';
       var input = document.createElement('input');
       input.type = 'text'; input.className = 'input'; input.maxLength = 100; input.placeholder = GF_T.cat_nome_ph;
+
+      // Seletor de cor: paleta rapida + cor personalizada.
+      var cor = GF_CORES[Math.floor(Math.random() * GF_CORES.length)];
+      var cores = document.createElement('div');
+      cores.className = 'cat-rapida-cores';
+      var picker = document.createElement('input');
+      picker.type = 'color'; picker.className = 'cat-rapida-picker'; picker.value = cor; picker.title = GF_T.cat_cor;
+      function marcarCor(c) {
+        cor = c; picker.value = c;
+        cores.querySelectorAll('.cat-rapida-cor').forEach(function (b) { b.classList.toggle('is-active', b.dataset.cor.toLowerCase() === c.toLowerCase()); });
+      }
+      GF_CORES.forEach(function (c) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'cat-rapida-cor'; b.dataset.cor = c; b.style.background = c; b.setAttribute('aria-label', c);
+        b.addEventListener('click', function () { marcarCor(c); });
+        cores.appendChild(b);
+      });
+      picker.addEventListener('input', function () { marcarCor(picker.value); });
+      cores.appendChild(picker);
+
+      var acoes = document.createElement('div');
+      acoes.className = 'cat-rapida-acoes';
       var ok = document.createElement('button');
       ok.type = 'button'; ok.className = 'btn btn-primary btn-sm'; ok.textContent = GF_T.cat_salvar;
       var cancelar = document.createElement('button');
       cancelar.type = 'button'; cancelar.className = 'btn btn-outline btn-sm'; cancelar.textContent = GF_T.cat_cancelar;
+      acoes.appendChild(cancelar); acoes.appendChild(ok);
       var erro = document.createElement('small');
       erro.className = 'cat-rapida-erro';
-      form.appendChild(input); form.appendChild(ok); form.appendChild(cancelar);
-      grupo.appendChild(form); grupo.appendChild(erro);
+      form.appendChild(input); form.appendChild(cores); form.appendChild(acoes); form.appendChild(erro);
+      grupo.appendChild(form);
+      marcarCor(cor);
       input.focus();
 
-      function fechar() { form.remove(); erro.remove(); }
+      function fechar() { form.remove(); }
       function salvar() {
         var nome = input.value.trim();
         if (!nome) { input.focus(); return; }
         ok.disabled = true;
-        aoCriar(nome).then(fechar).catch(function (e) { erro.textContent = e.message || GF_T.cat_erro; ok.disabled = false; });
+        aoCriar(nome, cor).then(fechar).catch(function (e) { erro.textContent = e.message || GF_T.cat_erro; ok.disabled = false; });
       }
       ok.addEventListener('click', salvar);
       cancelar.addEventListener('click', fechar);
@@ -165,8 +192,8 @@ document.addEventListener('DOMContentLoaded', function () {
       var linha = selectCategoria.closest('.form-row') || selectCategoria.closest('.form');
       var selectSub = linha ? linha.querySelector('[data-gf-subcategoria-select]') : null;
 
-      gfAdicionarBotaoNovo(selectCategoria, GF_T.cat_nova, function (nome) {
-        return gfCriarRapido(nome, null).then(function (cat) {
+      gfAdicionarBotaoNovo(selectCategoria, GF_T.cat_nova, function (nome, cor) {
+        return gfCriarRapido(nome, null, cor).then(function (cat) {
           categoriasArvore.push({ id: cat.id, nome: cat.nome, parent_id: null, subcategorias: [] });
           gfSelectsCategoria().forEach(function (s) {
             var o = document.createElement('option'); o.value = cat.id; o.textContent = cat.nome; s.appendChild(o);
@@ -177,10 +204,10 @@ document.addEventListener('DOMContentLoaded', function () {
       });
 
       if (selectSub) {
-        gfAdicionarBotaoNovo(selectSub, GF_T.sub_nova, function (nome) {
+        gfAdicionarBotaoNovo(selectSub, GF_T.sub_nova, function (nome, cor) {
           var paiId = parseInt(selectCategoria.value, 10);
           if (!paiId) return Promise.reject(new Error(GF_T.cat_escolha));
-          return gfCriarRapido(nome, paiId).then(function (sub) {
+          return gfCriarRapido(nome, paiId, cor).then(function (sub) {
             var pai = categoriasArvore.find(function (c) { return c.id === paiId; });
             if (pai) pai.subcategorias.push({ id: sub.id, nome: sub.nome, parent_id: paiId });
             gfPopularSubcategorias(selectCategoria, selectSub, sub.id);

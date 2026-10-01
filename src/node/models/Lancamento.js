@@ -2,6 +2,9 @@ const db = require('../config/db');
 const { randomUUID: uuidv4 } = require('crypto');
 const { toLocalYMD, formatDate, addMonthsYMD } = require('../core/helpers');
 
+// Lancamento marcado como fixo (receita/despesa recorrente) gera pelo menos 24 meses, a atual incluida.
+const MESES_FIXO_MINIMO = 24;
+
 const cleanParam = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '' && v !== 'sem_agrupamento') ? String(v).trim() : null;
 
 class Lancamento {
@@ -175,8 +178,11 @@ class Lancamento {
             await conn.beginTransaction();
 
             const eRepetir = data.repetir === '1' || data.repetir === 1 || data.repetir === true;
-            const qtdRepeticoes = parseInt(data.quantidade_repeticoes || '1', 10);
-            const serieId = eRepetir && qtdRepeticoes > 1 ? uuidv4() : null;
+            const eFixo = data.e_fixo === '1' || data.e_fixo === 1 || data.e_fixo === true || data.recorrente === 1;
+            // Repetir: cria a quantidade pedida (a atual + as proximas). Fixo: no minimo 24 meses a frente.
+            const qtdPedida = eRepetir ? Math.min(Math.max(parseInt(data.quantidade_repeticoes, 10) || 1, 1), 60) : 1;
+            const totalOcorrencias = eFixo ? Math.max(qtdPedida, MESES_FIXO_MINIMO) : qtdPedida;
+            const serieId = totalOcorrencias > 1 ? uuidv4() : null;
 
             const dataBase = data.data_competencia || toLocalYMD(new Date());
             const pagDate = data.status === 'pago' ? (data.data_pagamento || dataBase) : null;
@@ -186,10 +192,11 @@ class Lancamento {
 
             const lancamentosCriados = [];
 
-            const maxLoops = eRepetir ? qtdRepeticoes : 1;
-            for (let i = 0; i < maxLoops; i++) {
+            for (let i = 0; i < totalOcorrencias; i++) {
                 const dateCompStr = addMonthsYMD(dataBase, i);
-                const datePagStr = pagDate ? addMonthsYMD(pagDate, i) : null;
+                // So a primeira ocorrencia herda o status escolhido; as futuras ficam pendentes (a pagar/receber).
+                const statusOcorrencia = i === 0 ? (data.status || 'pendente') : 'pendente';
+                const datePagStr = i === 0 && pagDate ? pagDate : null;
 
                 const [res] = await conn.query(
                     `INSERT INTO lancamentos 
@@ -206,8 +213,8 @@ class Lancamento {
                         finalValor,
                         dateCompStr,
                         datePagStr,
-                        data.status || 'pendente',
-                        data.e_fixo || data.recorrente ? 1 : 0,
+                        statusOcorrencia,
+                        eFixo ? 1 : 0,
                         data.observacoes || null
                     ]
                 );
