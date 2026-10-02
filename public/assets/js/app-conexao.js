@@ -17,6 +17,7 @@
         if (document.body) document.body.classList.toggle('sem-internet', !online);
         marcarLinks();
         if (mudou) window.dispatchEvent(new CustomEvent('gf-conexao', { detail: { online } }));
+        avisoOffline(online);
         const badge = document.getElementById('pwa-status-badge');
         const texto = document.getElementById('pwa-status-text');
         if (badge && texto) {
@@ -24,6 +25,18 @@
             badge.classList.toggle('is-online', online);
             texto.textContent = online ? tr('conectado', 'Conectado') : tr('sem_conexao', 'Sem conexão');
         }
+    }
+
+    // Aviso "voce esta sem internet": aparece uma vez por periodo offline, pode ser fechado e o app segue funcionando.
+    function avisoOffline(online) {
+        try {
+            if (online) { sessionStorage.removeItem('gf_aviso_offline'); return; }
+            if (!window.GF_USER_ID || sessionStorage.getItem('gf_aviso_offline') === '1') return;
+            const m = document.getElementById('modal-offline-aviso');
+            if (!m) return;
+            sessionStorage.setItem('gf_aviso_offline', '1');
+            m.classList.add('is-open');
+        } catch (e) { /* sem sessionStorage: mostra sempre que mudar de estado */ }
     }
 
     async function verificar() {

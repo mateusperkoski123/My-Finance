@@ -302,6 +302,17 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 <% if (usuarioLogado) { %>
+<div class="modal-backdrop" id="modal-offline-aviso" data-modal>
+    <div class="modal card" style="max-width: 440px; border-radius: 20px; padding: 24px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+            <span style="width: 44px; height: 44px; border-radius: 50%; background: var(--red-bg); color: var(--red); display: inline-flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;"><i class="ph ph-wifi-slash"></i></span>
+            <h2 style="font-size: 18px; font-weight: 700; margin: 0;"><%= t('off.aviso_titulo') %></h2>
+        </div>
+        <p style="font-size: 14px; margin: 0 0 10px;"><%= t('off.aviso_pode') %></p>
+        <p class="muted" style="font-size: 13px; margin: 0 0 18px;"><%= t('off.aviso_nao_pode') %></p>
+        <button type="button" id="offline-aviso-ok" class="btn btn-primary" style="width: 100%;" data-modal-close><%= t('off.aviso_continuar') %></button>
+    </div>
+</div>
 <div class="modal-backdrop" id="modal-foto" data-modal>
     <div class="modal card" style="max-width: 420px; border-radius: 20px; padding: 24px; text-align: center;">
         <div class="modal__header">
@@ -349,7 +360,7 @@ window.GF_OFF_T = {
     "sem_conexao": <%- JSON.stringify(t('pwa.offline')) %>,
     "modulo_requer": <%- JSON.stringify(t('off.modulo_requer')) %>,
     "acao_requer": <%- JSON.stringify(t('off.acao_requer')) %>,
-<% ['confirmar_sair','historico','serie_fixo','serie_repetir','tipo_agendar','tipo_categoria','salvo','serie','invalido','falha_guardar','vazia','descartar','confirmar_descartar','enviadas','enviando','aguardando_internet','aguardando_servidor','conflito','tipo_despesa','tipo_receita','tipo_transferencia','tipo_pagar','tipo_desfazer','tipo_generico','erro_generico','erro_somente_leitura','erro_conta_invalida','erro_categoria_invalida','erro_nao_encontrado','erro_valor_invalido','erro_data_invalida','erro_contas_iguais','erro_quantidade_invalida','erro_nome_obrigatorio','erro_cor_invalida'].forEach(function (k) { %>    <%- JSON.stringify(k) %>: <%- JSON.stringify(t('off.' + k)) %>,
+<% ['st_pago','st_recebido','st_pendente','aguardando_envio','confirmar_sair','historico','serie_fixo','serie_repetir','tipo_agendar','tipo_categoria','salvo','serie','invalido','falha_guardar','vazia','descartar','confirmar_descartar','enviadas','enviando','aguardando_internet','aguardando_servidor','conflito','tipo_despesa','tipo_receita','tipo_transferencia','tipo_pagar','tipo_desfazer','tipo_generico','erro_generico','erro_somente_leitura','erro_conta_invalida','erro_categoria_invalida','erro_nao_encontrado','erro_valor_invalido','erro_data_invalida','erro_contas_iguais','erro_quantidade_invalida','erro_nome_obrigatorio','erro_cor_invalida'].forEach(function (k) { %>    <%- JSON.stringify(k) %>: <%- JSON.stringify(t('off.' + k)) %>,
 <% }) %>};
 </script>
 <script src="/assets/js/app-conexao.js"></script>
@@ -357,6 +368,7 @@ window.GF_OFF_T = {
 <script src="/assets/js/app-regras.js"></script>
 <script src="/assets/js/app-sync.js"></script>
 <script src="/assets/js/app-offline.js"></script>
+<script src="/assets/js/app-provisorios.js"></script>
 <script src="/assets/js/app-foto.js"></script>
 <script src="/assets/js/app.js"></script>
 <script>

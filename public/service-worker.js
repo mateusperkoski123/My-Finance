@@ -21,6 +21,7 @@ const SHELL_OPCIONAL = [
     '/assets/js/app-conexao.js',
     '/assets/js/app-instalar.js',
     '/assets/js/app-foto.js',
+    '/assets/js/app-provisorios.js',
     '/assets/js/app-db.js',
     '/assets/js/app-regras.js',
     '/assets/js/app-sync.js',
@@ -137,7 +138,8 @@ async function navegacao(req) {
         }
         return resp;
     } catch (e) {
-        const guardada = await caches.match(req, { cacheName: CACHE_PAGINAS });
+        // Mesma pagina com outros parametros (ex.: o atalho do app abre "/?source=pwa" e o guardado e "/") tambem serve.
+        const guardada = (await caches.match(req, { cacheName: CACHE_PAGINAS })) || (await caches.match(req, { cacheName: CACHE_PAGINAS, ignoreSearch: true }));
         if (guardada) return guardada;
         const offline = await caches.match('/offline', { cacheName: CACHE_SHELL });
         if (offline) return offline;

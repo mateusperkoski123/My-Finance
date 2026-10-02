@@ -188,6 +188,8 @@
         return (v < 0 ? '- ' : '') + simbolo + ' ' + t;
     }
 
+    window.GfFormatarValor = formatarValor;
+
     function rotuloEstado(item) {
         if (item.status === 'rejected') return tr('erro_' + item.erro, tr('erro_generico'));
         if (item.status === 'conflict') return tr('conflito');

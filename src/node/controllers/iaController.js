@@ -110,7 +110,7 @@ const iaController = {
 
         // Texto que a Claude recebe (e que fica no historico). As fotos nao entram no historico, so um marcador.
         const partes = [];
-        if (imagens.length) partes.push('📷'.repeat(imagens.length));
+        if (imagens.length) partes.push(`[${imagens.length > 1 ? imagens.length + ' fotos enviadas' : 'foto enviada'}]`);
         if (textoDigitado) partes.push(textoDigitado);
         if (transcricao) partes.push(`[${req.t('ia.transcricao_rotulo')}] ${transcricao}`);
         let texto = partes.join(' ');

@@ -1970,3 +1970,8 @@ a.requer-internet-bloqueado::after { content: ''; }
 .foto-erro { color: var(--red); font-size: 13px; margin: 0 0 10px; }
 .foto-erro[hidden] { display: none; }
 @media (max-width: 768px) { .menu-perfil { right: -4px; min-width: 240px; } }
+
+/* ---- Lancamentos feitos sem internet que aguardam envio ---- */
+tr.gf-prov-row { background: rgba(245, 158, 11, .08); }
+tr.gf-prov-row td { border-bottom: 1px dashed var(--border); }
+.gf-prov-etiqueta { font-size: 10px; margin-left: 6px; white-space: nowrap; }
