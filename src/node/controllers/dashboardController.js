@@ -10,6 +10,12 @@ const destinoRetorno = (req) => {
     return req.get('Referrer') || '/';
 };
 
+// Formularios abertos fora do Painel (ex.: Relatorios > Pendentes) enviam "voltar"; sem ele o destino e o Painel.
+const voltarOuInicio = (req) => {
+    const v = req.body && req.body.voltar;
+    return (typeof v === 'string' && v.startsWith('/') && !v.startsWith('//')) ? v : '/';
+};
+
 const cleanVal = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '' && v !== 'sem_agrupamento') ? String(v).trim() : null;
 
 const dashboardController = {
@@ -109,19 +115,19 @@ const dashboardController = {
 
         if (!b.descricao || !b.descricao.trim()) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_descricao_obrigatoria') };
-            return res.redirect('/');
+            return res.redirect(voltarOuInicio(req));
         }
         if (val <= 0) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_valor_invalido') };
-            return res.redirect('/');
+            return res.redirect(voltarOuInicio(req));
         }
         if (!b.categoria_id) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_categoria_obrigatoria') };
-            return res.redirect('/');
+            return res.redirect(voltarOuInicio(req));
         }
         if (!b.conta_id) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lancamento_conta_invalida') };
-            return res.redirect('/');
+            return res.redirect(voltarOuInicio(req));
         }
 
         const payload = {
@@ -157,7 +163,7 @@ const dashboardController = {
             req.session.flash = { tipo: 'sucesso', mensagem: payload.tipo === 'receita' ? req.t('flash.receita_criada') : req.t('flash.despesa_criada') };
         }
 
-        res.redirect('/');
+        res.redirect(voltarOuInicio(req));
     },
 
     atualizarLancamento: async (req, res) => {

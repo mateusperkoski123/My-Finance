@@ -2,6 +2,8 @@ const db = require('../config/db');
 const Lancamento = require('../models/Lancamento');
 const { toLocalYMD, hojeLocal } = require('../core/helpers');
 const { CONTA_ATIVA } = require('../models/Lancamento');
+const Conta = require('../models/Conta');
+const Categoria = require('../models/Categoria');
 
 const relatoriosController = {
     index: async (req, res) => {
@@ -164,7 +166,17 @@ const relatoriosController = {
             }
         }
 
+        // Aba Pendentes tem os botoes de novo ingreso/gasto: precisa das contas e categorias dos formularios.
+        let contas = [], categoriasArvore = [];
+        if (aba === 'pendentes') {
+            contas = await Conta.buscarPorUsuario(userId, false);
+            await Categoria.garantirCategoriasBasicas(userId);
+            categoriasArvore = await Categoria.buscarArvore(userId, false);
+        }
+
         res.render('relatorios/index', {
+            contas,
+            categoriasArvore,
             title: req.t('pages.relatorios.titulo'),
             periodo,
             aba,

@@ -203,6 +203,16 @@
         const pendentesEgresos = (pendentes || []).filter(p => p.tipo === 'despesa' || p.tipo === 'gasto');
     %>
     <p class="muted" style="font-size: 13px; margin-top: 16px; margin-bottom: 16px;"><%= t('relatorios.pendentes_ajuda') %></p>
+
+    <% if (typeof contas !== 'undefined' && contas && contas.length > 0) { %>
+    <!-- Adicionar ingreso / gasto sem sair desta tela (mesmos formularios do Painel) -->
+    <div class="myfinance-action-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+        <button type="button" class="btn btn-primary" data-modal-open="modal-novo-receita" style="background: var(--green); border: none; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 14px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="ph ph-plus-circle" style="font-size: 20px;"></i> <%= t('painel.nova_receita') %></button>
+        <button type="button" class="btn btn-primary" data-modal-open="modal-novo-despesa" style="background: var(--red); border: none; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 14px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="ph ph-minus-circle" style="font-size: 20px;"></i> <%= t('painel.nova_despesa') %></button>
+    </div>
+    <% const dataHoje = formatDate(hojeLocal()); %>
+    <%- include('../partials/modais_lancamento', { dataHoje, voltar: currentUrl }) %>
+    <% } %>
     
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px;">
         <!-- Coluna Esquerda: Ingresos (Receitas) -->
