@@ -39,10 +39,12 @@
 
     // Envia a fila em ordem. Para na primeira falha de rede (preserva a ordem); recusas de validacao nao travam as demais.
     async function enviarFila(token) {
+        let enviadas = 0;
+        const avisar = () => { try { window.dispatchEvent(new CustomEvent('gf-fila-mudou', { detail: { enviadas } })); } catch (e) { /* sem DOM */ } };
         const headers = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token };
         for (;;) {
             const pendentes = (await window.AppDb.buscarOutboxPendentes()).slice(0, LOTE_PUSH);
-            if (!pendentes.length) return true;
+            if (!pendentes.length) { avisar(); return true; }
             atualizarIndicador('Sync: ' + pendentes.length);
             for (const item of pendentes) {
                 await window.AppDb.atualizarOutboxItem(item.id, { status: 'syncing', tentativas: (item.tentativas || 0) + 1 });
@@ -61,6 +63,7 @@
                 });
             } catch (e) {
                 await voltarParaPendente();
+                avisar();
                 return false; // sem rede: tenta depois
             }
             if (resp.status === 401) {
@@ -78,8 +81,9 @@
                 const r = porId.get(item.client_id);
                 if (!r) { await window.AppDb.atualizarOutboxItem(item.id, { status: 'pending' }); continue; }
                 if (r.estado === 'ok') {
-                    await window.AppDb.removerOutboxItem(item.id);
+                    await window.AppDb.concluirOutbox(item);
                     andou = true;
+                    enviadas++;
                 } else if (r.estado === 'conflito') {
                     await window.AppDb.atualizarOutboxItem(item.id, { status: 'conflict', erro: 'conflito', servidor: r.servidor || null });
                     andou = true;
@@ -90,8 +94,8 @@
                     await window.AppDb.atualizarOutboxItem(item.id, { status: 'pending', erro: r.erro || null }); // ocupada / erro temporario
                 }
             }
-            if (!andou) return false; // nada avancou: evita laco infinito
-            if (pendentes.length < LOTE_PUSH) return true;
+            if (!andou) { avisar(); return false; } // nada avancou: evita laco infinito
+            if (pendentes.length < LOTE_PUSH) { avisar(); return true; }
         }
     }
 
@@ -126,6 +130,7 @@
             await baixarMudancas(token);
             const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             await window.AppDb.salvarMeta('ultima_sincronizacao_em', hora);
+            try { window.dispatchEvent(new CustomEvent('gf-fila-mudou', { detail: { sincronizou: true } })); } catch (e) { /* sem DOM */ }
             const problemas = await window.AppDb.buscarOutboxComProblema();
             atualizarIndicador(problemas.length ? '!' + problemas.length : hora);
         } catch (err) {

@@ -125,45 +125,99 @@
         });
     }
 
+    // Copias provisorias que o aparelho mostra ate o servidor confirmar (valor ja com sinal, como no servidor).
+    function provisorios(op, clientId) {
+        const d = op.dados || {};
+        const num = (v) => Number(v);
+        if (op.tabela === 'lancamentos' && op.acao === 'create') {
+            const v = Math.abs(num(d.valor));
+            return [{
+                client_id: clientId, client_or_id: clientId, conta_id: num(d.conta_id), categoria_id: d.categoria_id ? num(d.categoria_id) : null,
+                tipo: d.tipo, descricao: d.descricao, valor: d.tipo === 'despesa' ? -v : v, status: d.status, data_competencia: d.data_competencia,
+                data_pagamento: d.status === 'pago' ? (d.data_pagamento || d.data_competencia) : null, observacoes: d.observacoes || null, pendente_sync: true
+            }];
+        }
+        if (op.tabela === 'lancamentos' && op.acao === 'transferir') {
+            const v = Math.abs(num(d.valor));
+            const base = { tipo: 'transferencia', status: 'pago', data_competencia: d.data, data_pagamento: d.data, pendente_sync: true, categoria_id: null };
+            return [
+                Object.assign({ client_id: clientId, client_or_id: clientId, conta_id: num(d.conta_origem_id), descricao: d.descricao || 'Transferência', valor: -v }, base),
+                Object.assign({ client_or_id: clientId + ':in', conta_id: num(d.conta_destino_id), descricao: d.descricao || 'Transferência', valor: v }, base)
+            ];
+        }
+        return [];
+    }
+
+    // Enfileira uma operacao feita sem internet e grava a copia provisoria na mesma transacao.
+    // acoes: create | pagar | transferir (tabela "lancamentos")
     function adicionarOutbox(op) {
         const clientId = op.client_id || gerarUUID();
-        const itemOutbox = {
+        const item = {
             id: op.id || `out_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-            client_id: clientId,
-            tabela: op.tabela,
-            acao: op.acao,
-            dados: op.dados || {},
-            status: 'pending',
-            tentativas: 0,
-            criado_em: new Date().toISOString(),
-            erro: null
+            client_id: clientId, tabela: op.tabela, acao: op.acao, dados: op.dados || {},
+            resumo: op.resumo || null, status: 'pending', tentativas: 0, criado_em: new Date().toISOString(), erro: null, desfazer: null
         };
-
-        return abrir().then((db) => {
-            return new Promise((resolve, reject) => {
-                const storesToLock = ['outbox'];
-                if (['lancamentos', 'contas', 'categorias'].includes(op.tabela)) {
-                    storesToLock.push(op.tabela);
-                }
-                const tx = db.transaction(storesToLock, 'readwrite');
-                const outStore = tx.objectStore('outbox');
-                outStore.put(itemOutbox);
-
-                if (storesToLock.length > 1) {
-                    const targetStore = tx.objectStore(op.tabela);
-                    const itemLocal = Object.assign({}, op.dados, { client_id: clientId, client_or_id: clientId });
-                    if (op.acao === 'delete') {
-                        targetStore.delete(clientId);
-                        if (op.dados.id) targetStore.delete(`id_${op.dados.id}`);
-                    } else {
-                        targetStore.put(itemLocal);
+        return abrir().then((db) => new Promise((resolve, reject) => {
+            const tx = db.transaction(['outbox', 'lancamentos'], 'readwrite');
+            const lanc = tx.objectStore('lancamentos');
+            provisorios(op, clientId).forEach((p) => lanc.put(p));
+            if (op.tabela === 'lancamentos' && op.acao === 'pagar') {
+                const chave = `id_${Number(item.dados.id)}`;
+                const get = lanc.get(chave);
+                get.onsuccess = () => {
+                    const atual = get.result;
+                    if (atual) {
+                        item.desfazer = { chave, status: atual.status, data_pagamento: atual.data_pagamento || null, pendente_sync: !!atual.pendente_sync };
+                        const pago = item.dados.status !== 'pendente';
+                        lanc.put(Object.assign({}, atual, { status: pago ? 'pago' : 'pendente', data_pagamento: pago ? (item.dados.data_pagamento || null) : null, pendente_sync: true }));
                     }
-                }
+                    tx.objectStore('outbox').put(item);
+                };
+            } else {
+                tx.objectStore('outbox').put(item);
+            }
+            tx.oncomplete = () => resolve(item);
+            tx.onerror = (err) => reject(err.target.error);
+        }));
+    }
 
-                tx.oncomplete = () => resolve(itemOutbox);
-                tx.onerror = (err) => reject(err.target.error);
-            });
-        });
+    // Remove o item da fila e as copias provisorias que sobraram (a perna "entrada" da transferencia nao volta no pull com a mesma chave).
+    function concluirOutbox(item) {
+        return abrir().then((db) => new Promise((resolve, reject) => {
+            const tx = db.transaction(['outbox', 'lancamentos'], 'readwrite');
+            tx.objectStore('outbox').delete(item.id);
+            if (item.acao === 'transferir') tx.objectStore('lancamentos').delete(item.client_id + ':in');
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = (err) => reject(err.target.error);
+        }));
+    }
+
+    // O usuario desistiu da operacao: tira da fila e desfaz a copia provisoria.
+    function descartarOutbox(item) {
+        return abrir().then((db) => new Promise((resolve, reject) => {
+            const tx = db.transaction(['outbox', 'lancamentos'], 'readwrite');
+            const lanc = tx.objectStore('lancamentos');
+            tx.objectStore('outbox').delete(item.id);
+            if (item.acao === 'create') lanc.delete(item.client_id);
+            if (item.acao === 'transferir') { lanc.delete(item.client_id); lanc.delete(item.client_id + ':in'); }
+            if (item.acao === 'pagar' && item.desfazer) {
+                const get = lanc.get(item.desfazer.chave);
+                get.onsuccess = () => {
+                    if (get.result) lanc.put(Object.assign({}, get.result, { status: item.desfazer.status, data_pagamento: item.desfazer.data_pagamento, pendente_sync: item.desfazer.pendente_sync }));
+                };
+            }
+            tx.oncomplete = () => resolve(true);
+            tx.onerror = (err) => reject(err.target.error);
+        }));
+    }
+
+    // Toda a fila (para a tela "Aguardando envio"), da mais antiga para a mais nova.
+    function listarOutbox() {
+        return abrir().then((db) => new Promise((resolve, reject) => {
+            const req = db.transaction('outbox', 'readonly').objectStore('outbox').getAll();
+            req.onsuccess = () => resolve((req.result || []).sort((a, b) => new Date(a.criado_em) - new Date(b.criado_em)));
+            req.onerror = (err) => reject(err.target.error);
+        }));
     }
 
     function buscarOutboxPendentes() {
@@ -263,6 +317,9 @@
     exports.atualizarOutboxItem = atualizarOutboxItem;
     exports.removerOutboxItem = removerOutboxItem;
     exports.limparTudo = limparTudo;
+    exports.concluirOutbox = concluirOutbox;
+    exports.descartarOutbox = descartarOutbox;
+    exports.listarOutbox = listarOutbox;
     exports.buscarOutboxComProblema = buscarOutboxComProblema;
     exports.removerExcluidos = removerExcluidos;
 

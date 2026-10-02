@@ -98,6 +98,38 @@
         });
     }
 
+    /**
+     * Converte o texto digitado ("1.500.000", "1.500,50", "Gs. 25.000", "10,5") em numero.
+     * Copia exata de parseMoeda do servidor (src/node/core/helpers.js): o app offline e o site tem que ler o valor igual.
+     */
+    function parseMoeda(str) {
+        if (typeof str === 'number') return str;
+        if (!str) return 0;
+        let s = String(str).trim();
+        s = s.replace(/(Gs\.|R\$|\$|€|Gs)/gi, '').trim();
+        if (s.includes('.') && !s.includes(',')) {
+            const parts = s.split('.');
+            const lastPart = parts[parts.length - 1];
+            if (parts.length > 2 || lastPart.length === 3) {
+                s = parts.join('');
+            }
+        } else if (s.includes(',') && !s.includes('.')) {
+            s = s.replace(',', '.');
+        } else if (s.includes(',') && s.includes('.')) {
+            s = s.replace(/\./g, '').replace(',', '.');
+        }
+        s = s.replace(/[^0-9.-]/g, '');
+        return parseFloat(s) || 0;
+    }
+
+    /** Data local de hoje como YYYY-MM-DD (a data de competencia e a que o usuario ve no celular). */
+    function hojeYMD(d) {
+        const x = d || new Date();
+        return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
+    }
+
+    exports.parseMoeda = parseMoeda;
+    exports.hojeYMD = hojeYMD;
     exports.calcularSaldoConta = calcularSaldoConta;
     exports.calcularResumoMes = calcularResumoMes;
     exports.filtrarLancamentos = filtrarLancamentos;

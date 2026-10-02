@@ -64,6 +64,9 @@
                 <span class="pwa-status-dot"></span>
                 <span id="pwa-status-text" class="pwa-status-text"><%= t('pwa.online') %></span>
             </div>
+            <button type="button" id="pwa-fila-btn" class="pwa-fila-btn" hidden aria-label="<%= t('off.fila_aria') %>" title="<%= t('off.fila_titulo') %>">
+                <i class="ph ph-clock-counter-clockwise"></i><span id="pwa-fila-n">0</span>
+            </button>
         </div>
 
         <% if (usuarioLogado) { %>
@@ -289,9 +292,29 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
+<% if (usuarioLogado) { %>
+<div class="modal-backdrop" id="modal-fila" data-modal>
+    <div class="modal card" style="max-width: 520px; border-radius: 20px; padding: 24px;">
+        <div class="modal__header">
+            <h2 style="font-size: 18px; font-weight: 700; margin: 0;"><%= t('off.fila_titulo') %></h2>
+            <button type="button" data-modal-close aria-label="<%= t('comum.fechar') %>" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
+        </div>
+        <p class="muted" style="font-size: 13px; margin: 0 0 14px;"><%= t('off.fila_ajuda') %></p>
+        <div id="fila-lista"></div>
+        <button type="button" id="fila-enviar" class="btn btn-primary" style="width: 100%; margin-top: 14px;"><%= t('off.enviar_agora') %></button>
+    </div>
+</div>
+<% } %>
+<script>
+window.GF_OFF = { moeda: <%- JSON.stringify(currency || '') %>, lang: <%- JSON.stringify(lang) %> };
+window.GF_OFF_T = {
+<% ['salvo','serie','invalido','falha_guardar','vazia','descartar','confirmar_descartar','enviadas','enviando','aguardando_internet','aguardando_servidor','conflito','tipo_despesa','tipo_receita','tipo_transferencia','tipo_pagar','tipo_desfazer','tipo_generico','erro_generico','erro_somente_leitura','erro_conta_invalida','erro_categoria_invalida','erro_nao_encontrado','erro_valor_invalido','erro_data_invalida','erro_contas_iguais'].forEach(function (k) { %>    <%- JSON.stringify(k) %>: <%- JSON.stringify(t('off.' + k)) %>,
+<% }) %>};
+</script>
 <script src="/assets/js/app-db.js"></script>
 <script src="/assets/js/app-regras.js"></script>
 <script src="/assets/js/app-sync.js"></script>
+<script src="/assets/js/app-offline.js"></script>
 <script src="/assets/js/app.js"></script>
 <script>
 // PWA Service Worker Registration & Installation Handler

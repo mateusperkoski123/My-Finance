@@ -1921,3 +1921,15 @@ select.form-control { min-height: 44px; }
     box-shadow: var(--shadow);
 }
 
+
+/* ---- Uso sem internet: contador e lista de alteracoes aguardando envio ---- */
+.pwa-fila-btn { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700; cursor: pointer;
+  background: var(--card); color: var(--text); border: 1px solid var(--border); min-height: 28px; }
+.pwa-fila-btn[hidden] { display: none; }
+.pwa-fila-btn.tem-problema { border-color: var(--red); color: var(--red); }
+.fila-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.fila-item:last-child { border-bottom: 0; }
+.fila-item__info { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 13px; }
+.fila-item__info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fila-item--erro .fila-item__info span { color: var(--red); }
+.gf-pendente-envio { opacity: .55; }

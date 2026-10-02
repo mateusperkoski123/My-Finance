@@ -21,6 +21,7 @@ const SHELL_OPCIONAL = [
     '/assets/js/app-db.js',
     '/assets/js/app-regras.js',
     '/assets/js/app-sync.js',
+    '/assets/js/app-offline.js',
     '/assets/icons/icon-192-maskable.png',
     '/assets/icons/icon-512-maskable.png'
 ];
