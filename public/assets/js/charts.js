@@ -23,7 +23,7 @@
   }
   function compacto(v) {
     var n = Math.abs(v), s = v < 0 ? '-' : '';
-    if (n >= 1e6) return s + (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace('.', ',') + ' mi';
+    if (n >= 1e6) return s + (n / 1e6).toFixed(n >= 1e8 ? 0 : 1).replace('.', ',').replace(/,0$/, '') + ' mi';
     if (n >= 1e3) return s + Math.round(n / 1e3) + ' mil';
     return s + n;
   }

@@ -3,24 +3,25 @@
    Tema controlado via [data-tema="claro"|"escuro"] no <html>.
    ========================================================================== */
 
+/* Cores de texto do tema claro ajustadas para contraste minimo de 4,5:1 (WCAG AA) sobre branco e sobre o fundo cinza */
 :root[data-tema="claro"] {
   --bg: #f5f6f8;
   --card: #ffffff;
   --text: #16181d;
-  --muted: #6b7280;
+  --muted: #5b6370;
   --border: #e5e7eb;
   --nav-bg: #0b0d12;
   --nav-text: #e8eaed;
   --nav-text-muted: #9aa0aa;
   --primary: #111827;
   --primary-text: #ffffff;
-  --green: #16a34a;
+  --green: #15803d;
   --green-bg: #e7f7ee;
-  --red: #dc2626;
+  --red: #c81e1e;
   --red-bg: #fdecec;
   --on-accent: #ffffff;
   --blue: #2563eb;
-  --pendente: #d97706;
+  --pendente: #b45309;
   color-scheme: light;
   /* Sombra em 2 camadas (contato + ambiente) - da mais "elevacao"/profundidade
      aos .card do que uma sombra unica e apertada, sem ficar pesada. */
@@ -1773,7 +1774,7 @@ select.form-control { min-height: 44px; }
 @media (max-width: 800px) {
   .ia-app { grid-template-columns: 1fr; height: auto; }
   .ia-lateral { max-height: 180px; }
-  .ia-chat { height: calc(100vh - 340px); min-height: 420px; }
+  .ia-chat { height: calc(100vh - 340px); min-height: 600px; }
 }
 
 /* Admin: acoes em massa */
@@ -1846,3 +1847,25 @@ select.form-control { min-height: 44px; }
 .ia-miniaturas img { width: 84px; height: 84px; object-fit: cover; border-radius: 10px; }
 .ia-chip-audio { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 4px; opacity: .9; }
 .ia-transcricao { margin: 8px 0 0; font-size: 12.5px; opacity: .85; display: flex; gap: 6px; align-items: flex-start; }
+
+/* ---- Ajustes de celular (auditoria) ---- */
+.tabs--grade { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.page-header__botoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.tabela-dica { display: none; font-size: 12px; margin: 10px 0 0; align-items: center; gap: 6px; }
+@media (max-width: 768px) {
+  /* As 4 abas dos Informes ficam sempre visiveis, em grade 2x2 */
+  .tabs.tabs--grade { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px !important; overflow: visible; }
+  .tabs--grade .tabs__item { white-space: normal; text-align: center; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 46px; padding: 8px 10px; line-height: 1.2; border: 1px solid var(--border); border-radius: 12px; }
+  .tabs--grade .tabs__item.is-active { border-color: var(--primary); }
+  .page-header__botoes { width: 100%; }
+  .page-header__botoes .btn { flex: 1 1 auto; justify-content: center; text-align: center; }
+  /* Botoes de icone com area de toque confortavel */
+  .icon-btn, .btn-olho-toggle { min-width: 40px; min-height: 40px; }
+  .navbar__links.tem-mais { -webkit-mask-image: linear-gradient(to right, #000 82%, transparent); mask-image: linear-gradient(to right, #000 82%, transparent); }
+  /* Demonstrativo anual: nome da categoria fixo enquanto os meses rolam */
+  .tabela-dica { display: flex; }
+  .tabela-anual th:first-child, .tabela-anual td:first-child { position: sticky; left: 0; z-index: 1; background: var(--card); }
+}
+
+.tabela tfoot td { border-top: 1px solid var(--border); padding-top: 10px; padding-bottom: 10px; }
+.tabela tfoot .demonstrativo-resultado td { border-top: 2px solid var(--border); font-size: 15px; }

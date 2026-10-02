@@ -175,6 +175,7 @@ module.exports = {
     'comunidade.js.conf_coment': ['Tem certeza que deseja excluir este comentário?', '¿Seguro que querés eliminar este comentario?', 'Are you sure you want to delete this comment?'],
     'comunidade.js.conf_post': ['Tem certeza que deseja excluir sua postagem?', '¿Seguro que querés eliminar tu publicación?', 'Are you sure you want to delete your post?'],
     'comunidade.js.conf_admin': ['Tem certeza que deseja excluir definitivamente esta postagem como admin?', '¿Seguro que querés eliminar definitivamente esta publicación como admin?', 'Are you sure you want to permanently delete this post as admin?'],
+    'relatorios.deslize': ['Deslize a tabela para o lado para ver todos os meses.', 'Deslizá la tabla hacia el costado para ver todos los meses.', 'Swipe the table sideways to see all months.'],
     'flash.csrf_falhou': ['Validação CSRF falhou. Tente novamente.', 'La validación CSRF falló. Inténtelo de nuevo.', 'CSRF validation failed. Please try again.'],
 
     'lancamento.ajuste_saida': ['Ajuste de saldo (saída)', 'Ajuste de saldo (salida)', 'Balance adjustment (outflow)'],

@@ -249,6 +249,14 @@ function fecharMenuMobile() {
     }
 }
 document.addEventListener('DOMContentLoaded', () => {
+    // Faixa de icones do topo (celular): mostra o item ativo e indica com um degrade quando ha mais itens rolando.
+    const faixa = document.querySelector('.navbar__links');
+    if (faixa) {
+        const ativo = faixa.querySelector('.is-active');
+        if (ativo && faixa.scrollWidth > faixa.clientWidth) faixa.scrollLeft = Math.max(0, ativo.offsetLeft - (faixa.clientWidth - ativo.offsetWidth) / 2);
+        const marcar = () => faixa.classList.toggle('tem-mais', faixa.scrollWidth - faixa.clientWidth - faixa.scrollLeft > 4);
+        marcar(); faixa.addEventListener('scroll', marcar, { passive: true }); window.addEventListener('resize', marcar);
+    }
     const toggleBtn = document.getElementById('btn-toggle-menu');
     if (toggleBtn) {
         toggleBtn.addEventListener('click', (e) => {

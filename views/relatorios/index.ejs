@@ -8,7 +8,7 @@
 </div>
 
 <div class="contas-toolbar">
-    <div class="tabs" style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+    <div class="tabs tabs--grade">
         <a href="/relatorios?aba=graficos&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'graficos' ? 'is-active' : '' %>"><i class="ph ph-chart-pie-slice"></i> <%= t('relatorios.aba_graficos') %></a>
         <a href="/relatorios?aba=pendentes&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'pendentes' ? 'is-active' : '' %>"><i class="ph ph-clock-countdown"></i> <%= t('relatorios.aba_pendentes') %></a>
         <a href="/relatorios?aba=demonstrativo&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'demonstrativo' ? 'is-active' : '' %>"><i class="ph ph-table"></i> <%= t('relatorios.aba_demonstrativo') %></a>
@@ -342,7 +342,7 @@
                             <tr>
                                 <td><strong><%= d.categoria || t('relatorios.sem_categoria') %></strong></td>
                                 <td><%= d.subcategoria || '—' %></td>
-                                <td><%= d.tipo %></td>
+                                <td><%= t('lancamento.tipo.' + d.tipo) %></td>
                                 <td style="font-weight: 600; color: <%= d.tipo === 'receita' ? 'var(--green)' : 'var(--red)' %>;">
                                     <%= moeda(d.total) %>
                                 </td>
@@ -350,6 +350,16 @@
                         <% }) %>
                     <% } %>
                 </tbody>
+                <% if (demonstrativoLinhas && demonstrativoLinhas.length) {
+                    const _soma = (tp) => demonstrativoLinhas.filter(d => d.tipo === tp).reduce((acc, d) => acc + Number(d.total || 0), 0);
+                    const _rec = _soma('receita'); const _des = _soma('despesa'); const _res = _rec - _des;
+                %>
+                <tfoot>
+                    <tr><td colspan="3"><strong><%= t('relatorios.demonstrativo_total_receitas') %></strong></td><td style="font-weight: 700; color: var(--green);"><%= moeda(_rec) %></td></tr>
+                    <tr><td colspan="3"><strong><%= t('relatorios.demonstrativo_total_despesas') %></strong></td><td style="font-weight: 700; color: var(--red);"><%= moeda(_des) %></td></tr>
+                    <tr class="demonstrativo-resultado"><td colspan="3"><strong><%= t('relatorios.demonstrativo_resultado') %></strong></td><td style="font-weight: 800; color: <%= _res >= 0 ? 'var(--green)' : 'var(--red)' %>;"><%= (_res < 0 ? '-' : '') + moeda(Math.abs(_res)) %></td></tr>
+                </tfoot>
+                <% } %>
             </table>
         </div>
     </div>
@@ -360,7 +370,8 @@
         <a class="btn btn-outline btn-sm" href="/relatorios?aba=demonstrativo_anual&ano_anual=<%= anoAnual + 1 %>"><%= anoAnual + 1 %> →</a>
     </div>
 
-    <div class="card" style="border-radius: 16px; padding: 20px; margin-top: 16px; overflow-x: auto;">
+    <p class="muted tabela-dica"><i class="ph ph-arrows-left-right"></i> <%= t('relatorios.deslize') %></p>
+    <div class="card tabela-anual-wrap" style="border-radius: 16px; padding: 20px; margin-top: 8px; overflow-x: auto;">
         <%
         const mesesNomes = Array.from({ length: 12 }, (_, i) => t('painel.mes_abrev.' + (i + 1)));
         %>

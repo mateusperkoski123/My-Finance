@@ -3,7 +3,7 @@
         <h1><i class="ph ph-bank"></i> <%= t('contas.titulo') %></h1>
         <p class="muted"><%= t('contas.subtitulo') %></p>
     </div>
-    <div style="display: flex; gap: 8px;">
+    <div class="page-header__botoes">
         <button type="button" class="btn btn-outline" data-modal-open="modal-transferir" onclick="resetModalTransferir()"><i class="ph ph-arrows-left-right"></i> <%= t('contas.transferir') %></button>
         <button type="button" class="btn btn-outline" data-modal-open="modal-agendar-transferencia"><i class="ph ph-calendar-plus"></i> <%= t('contas.agendar') %></button>
         <button type="button" class="btn btn-primary" data-modal-open="modal-nova-conta"><%= t('contas.nova') %></button>
