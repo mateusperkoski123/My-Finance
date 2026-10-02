@@ -9,6 +9,15 @@
         <h2><%= t('config.perfil.titulo') %></h2>
         <p class="muted"><%= t('config.perfil.subtitulo') %></p>
 
+        <div class="perfil-foto">
+            <span class="perfil-foto__img js-avatar" data-inicial="<%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %>"><%- include('../partials/avatar') %></span>
+            <div>
+                <strong><%= t('foto.titulo') %></strong>
+                <p class="muted" style="margin: 2px 0 8px; font-size: 13px;"><%= t('foto.dica') %></p>
+                <button type="button" class="btn btn-outline btn-sm" data-abrir-foto><i class="ph ph-camera"></i> <span data-rotulo-foto><%= usuarioLogado.foto_em ? t('foto.alterar') : t('foto.adicionar') %></span></button>
+            </div>
+        </div>
+
         <form method="post" action="/configuracoes/perfil" class="form">
             <%- csrfCampo %>
 

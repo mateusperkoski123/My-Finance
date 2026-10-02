@@ -1,0 +1,3 @@
+<%# Conteudo de um avatar: foto de perfil (se houver) ou a inicial do nome. O JS troca por js-avatar quando a foto muda. %>
+<% const _ini = usuarioLogado && usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U'; %>
+<% if (usuarioLogado && usuarioLogado.foto_em) { %><img src="/perfil/foto?v=<%= new Date(usuarioLogado.foto_em).getTime() %>" alt="" onerror="this.replaceWith(document.createTextNode(this.parentNode.dataset.inicial || ''))"><% } else { %><%= _ini %><% } %>

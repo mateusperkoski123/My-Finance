@@ -1948,3 +1948,25 @@ a.requer-internet-bloqueado::after { content: ''; }
 }
 .fila-historico__titulo { font-size: 13px; font-weight: 700; margin: 18px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
 .fila-historico__item { font-size: 12.5px; padding: 4px 0; color: var(--muted); }
+
+/* ---- Foto de perfil e menu do icone da direita ---- */
+.navbar__perfil { position: relative; display: inline-flex; }
+.navbar__avatar { overflow: hidden; }
+.navbar__avatar img, .menu-perfil__avatar img, .drawer-user-avatar img, .perfil-foto__img img, .foto-previa img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block; }
+.menu-perfil { position: absolute; top: calc(100% + 8px); right: 0; z-index: 120; min-width: 250px; background: var(--card); color: var(--text); border: 1px solid var(--border);
+  border-radius: 14px; box-shadow: 0 12px 32px rgba(0,0,0,.28); padding: 8px; }
+.menu-perfil[hidden] { display: none; }
+.menu-perfil__topo { display: flex; align-items: center; gap: 10px; padding: 8px 8px 12px; border-bottom: 1px solid var(--border); margin-bottom: 6px; }
+.menu-perfil__avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--green); color: var(--on-accent); font-weight: 700; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.menu-perfil__dados { display: flex; flex-direction: column; min-width: 0; font-size: 13px; }
+.menu-perfil__dados strong, .menu-perfil__dados span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-perfil__dados span { color: var(--muted); font-size: 12px; }
+.menu-perfil__item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 10px; min-height: 44px; border: 0; border-radius: 10px; background: none; color: var(--text); font-size: 14px; cursor: pointer; text-decoration: none; text-align: left; }
+.menu-perfil__item:hover, .menu-perfil__item:focus-visible { background: var(--bg-soft, rgba(127,127,127,.12)); }
+.drawer-user-avatar { overflow: hidden; }
+.perfil-foto { display: flex; align-items: center; gap: 16px; margin: 16px 0 20px; }
+.perfil-foto__img { width: 72px; height: 72px; border-radius: 50%; background: var(--green); color: var(--on-accent); font-size: 28px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; }
+.foto-previa { width: 160px; height: 160px; border-radius: 50%; margin: 6px auto 0; background: var(--green); color: var(--on-accent); font-size: 64px; font-weight: 700; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.foto-erro { color: var(--red); font-size: 13px; margin: 0 0 10px; }
+.foto-erro[hidden] { display: none; }
+@media (max-width: 768px) { .menu-perfil { right: -4px; min-width: 240px; } }

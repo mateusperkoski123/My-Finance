@@ -114,7 +114,17 @@
             </nav>
             <div class="navbar__user">
                 <span class="navbar__user-nome" style="font-weight: 600;"><%= usuarioLogado.nome %></span>
-                <button type="button" class="navbar__avatar" id="btn-toggle-menu" aria-label="<%= t('nav.menu') %>"><%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %></button>
+                <div class="navbar__perfil">
+                    <button type="button" class="navbar__avatar js-avatar" id="btn-toggle-menu" aria-haspopup="menu" aria-expanded="false" aria-label="<%= t('foto.menu_aria') %>" data-inicial="<%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %>"><%- include('partials/avatar') %></button>
+                    <div class="menu-perfil" id="menu-perfil" role="menu" hidden>
+                        <div class="menu-perfil__topo">
+                            <span class="menu-perfil__avatar js-avatar" data-inicial="<%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %>"><%- include('partials/avatar') %></span>
+                            <div class="menu-perfil__dados"><strong><%= usuarioLogado.nome %></strong><span><%= usuarioLogado.email || '' %></span></div>
+                        </div>
+                        <button type="button" role="menuitem" class="menu-perfil__item" data-abrir-foto><i class="ph ph-camera"></i> <span data-rotulo-foto><%= usuarioLogado.foto_em ? t('foto.alterar') : t('foto.adicionar') %></span></button>
+                        <a role="menuitem" class="menu-perfil__item" href="/configuracoes/perfil"><i class="ph ph-user"></i> <%= t('config.menu.perfil') %></a>
+                    </div>
+                </div>
             </div>
         <% } %>
     </div>
@@ -188,7 +198,7 @@
             </div>
             
             <div class="drawer-user-info">
-                <div class="drawer-user-avatar"><%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %></div>
+                <div class="drawer-user-avatar js-avatar" data-inicial="<%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %>"><%- include('partials/avatar') %></div>
                 <div style="min-width: 0; flex: 1;">
                     <div style="font-weight: 700; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= usuarioLogado.nome %></div>
                     <div style="font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= usuarioLogado.email || '' %></div>
@@ -289,16 +299,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     const hamb = document.getElementById('btn-hamburguer');
     if (hamb) hamb.addEventListener('click', (e) => { e.stopPropagation(); abrirMenuMobile(); });
-    const toggleBtn = document.getElementById('btn-toggle-menu');
-    if (toggleBtn) {
-        toggleBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            abrirMenuMobile();
-        });
-    }
 });
 </script>
 <% if (usuarioLogado) { %>
+<div class="modal-backdrop" id="modal-foto" data-modal>
+    <div class="modal card" style="max-width: 420px; border-radius: 20px; padding: 24px; text-align: center;">
+        <div class="modal__header">
+            <h2 style="font-size: 18px; font-weight: 700; margin: 0;"><%= t('foto.titulo') %></h2>
+            <button type="button" data-modal-close aria-label="<%= t('comum.fechar') %>" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
+        </div>
+        <div id="foto-previa" class="foto-previa" data-inicial="<%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %>"></div>
+        <p class="muted" style="font-size: 13px; margin: 12px 0;"><%= t('foto.dica') %></p>
+        <p id="foto-erro" class="foto-erro" role="alert" hidden></p>
+        <input type="file" id="foto-arquivo" accept="image/*" hidden>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button type="button" id="foto-escolher" class="btn btn-outline"><i class="ph ph-image"></i> <%= t('foto.escolher') %></button>
+            <button type="button" id="foto-salvar" class="btn btn-primary" disabled><%= t('foto.salvar') %></button>
+            <button type="button" id="foto-remover" class="btn btn-outline" style="color: var(--red); border-color: var(--red);" hidden><i class="ph ph-trash"></i> <%= t('foto.remover') %></button>
+        </div>
+    </div>
+</div>
 <div class="modal-backdrop" id="modal-fila" data-modal>
     <div class="modal card" style="max-width: 520px; border-radius: 20px; padding: 24px;">
         <div class="modal__header">
@@ -313,6 +333,12 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 <% } %>
 <script>
+window.GF_TEM_FOTO = <%- usuarioLogado && usuarioLogado.foto_em ? 'true' : 'false' %>;
+window.GF_FOTO_T = {
+    alterar: <%- JSON.stringify(t('foto.alterar')) %>, adicionar: <%- JSON.stringify(t('foto.adicionar')) %>, salva: <%- JSON.stringify(t('foto.salva')) %>,
+    removida: <%- JSON.stringify(t('foto.removida')) %>, erro_tipo: <%- JSON.stringify(t('foto.erro_tipo')) %>, erro_grande: <%- JSON.stringify(t('foto.erro_grande')) %>,
+    erro_salvar: <%- JSON.stringify(t('foto.erro_salvar')) %>, sem_internet: <%- JSON.stringify(t('off.acao_requer')) %>
+};
 window.GF_INSTALAR_T = {
     pergunta: <%- JSON.stringify(t('pwa.pergunta_instalar')) %>, sim: <%- JSON.stringify(t('pwa.sim')) %>, nao: <%- JSON.stringify(t('pwa.nao')) %>,
     dica_ios: <%- JSON.stringify(t('pwa.instalar_dica_ios')) %>, entendi: <%- JSON.stringify(t('pwa.entendi')) %>, instalado_toast: <%- JSON.stringify(t('pwa.instalado_toast')) %>
@@ -331,6 +357,7 @@ window.GF_OFF_T = {
 <script src="/assets/js/app-regras.js"></script>
 <script src="/assets/js/app-sync.js"></script>
 <script src="/assets/js/app-offline.js"></script>
+<script src="/assets/js/app-foto.js"></script>
 <script src="/assets/js/app.js"></script>
 <script>
 // PWA Service Worker Registration & Installation Handler

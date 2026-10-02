@@ -152,6 +152,17 @@ router.post('/configuracoes/perfil/senha', requireAuth, configuracoesController.
 router.get('/configuracoes/dados', requireAuth, configuracoesController.dados);
 router.get('/configuracoes/dados/exportar', requireAuth, exigirRecurso('rec_backup'), configuracoesController.exportarDados);
 router.post('/configuracoes/dados/importar', requireAuth, exigirRecurso('rec_backup'), upload.single('arquivo'), configuracoesController.importarDados);
+// Foto de perfil (cada usuario so enxerga e altera a propria)
+const fotoController = require('../controllers/fotoController');
+const uploadFoto = (req, res, next) => {
+    multer({ storage: multer.memoryStorage(), limits: { fileSize: 600 * 1024, files: 1 } }).single('foto')(req, res, (err) => {
+        if (err) return res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 400).json({ sucesso: false, erro: err.code === 'LIMIT_FILE_SIZE' ? 'foto_grande' : 'foto_invalida' });
+        next();
+    });
+};
+router.get('/perfil/foto', requireAuth, fotoController.ver);
+router.post('/perfil/foto', requireAuth, uploadFoto, fotoController.salvar);
+router.post('/perfil/foto/remover', requireAuth, fotoController.remover);
 router.get('/configuracoes/dispositivos', requireAuth, configuracoesController.dispositivos);
 router.post('/configuracoes/dispositivos/:id/revogar', requireAuth, configuracoesController.revogarDispositivo);
 

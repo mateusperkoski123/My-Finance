@@ -20,6 +20,7 @@ const SHELL_OPCIONAL = [
     '/assets/js/charts.js',
     '/assets/js/app-conexao.js',
     '/assets/js/app-instalar.js',
+    '/assets/js/app-foto.js',
     '/assets/js/app-db.js',
     '/assets/js/app-regras.js',
     '/assets/js/app-sync.js',
