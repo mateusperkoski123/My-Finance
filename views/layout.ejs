@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="MyFinance">
     <meta name="csrf-token" content="<%= csrfToken %>">
+    <script src="/assets/js/app-instalar.js"></script>
     <title><%= title ? title + ' - ' + t('app.nome') : t('app.nome') %></title>
     <script>
     window.GF_T = {
@@ -129,14 +130,14 @@
         <button type="button" id="btn-pwa-update" class="btn btn-sm btn-primary"><%= t('pwa.atualizar') %></button>
     </div>
 
-    <div id="pwa-install-banner" class="alert alert-aviso pwa-banner" style="display: none; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px;">
+    <div id="pwa-install-banner" class="alert alert-aviso pwa-banner" role="dialog" aria-live="polite" style="display: none; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
             <i class="ph ph-download-simple" style="font-size: 20px;"></i>
-            <span id="pwa-install-text"><%= t('pwa.instalar_app') %></span>
+            <span id="pwa-install-text"><%= t('pwa.pergunta_instalar') %></span>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-            <button type="button" id="btn-pwa-install" class="btn btn-sm btn-primary"><%= t('pwa.instalar_app') %></button>
-            <button type="button" id="btn-pwa-dismiss" class="btn btn-sm btn-outline" aria-label="<%= t('pwa.dispensar') %>">&times;</button>
+            <button type="button" id="btn-pwa-sim" class="btn btn-sm btn-primary"><%= t('pwa.sim') %></button>
+            <button type="button" id="btn-pwa-nao" class="btn btn-sm btn-outline"><%= t('pwa.nao') %></button>
         </div>
     </div>
     <% if (flash) { %>
@@ -312,6 +313,10 @@ document.addEventListener('DOMContentLoaded', () => {
 </div>
 <% } %>
 <script>
+window.GF_INSTALAR_T = {
+    pergunta: <%- JSON.stringify(t('pwa.pergunta_instalar')) %>, sim: <%- JSON.stringify(t('pwa.sim')) %>, nao: <%- JSON.stringify(t('pwa.nao')) %>,
+    dica_ios: <%- JSON.stringify(t('pwa.instalar_dica_ios')) %>, entendi: <%- JSON.stringify(t('pwa.entendi')) %>, instalado_toast: <%- JSON.stringify(t('pwa.instalado_toast')) %>
+};
 window.GF_OFF = { moeda: <%- JSON.stringify(currency || '') %>, lang: <%- JSON.stringify(lang) %> };
 window.GF_OFF_T = {
     "conectado": <%- JSON.stringify(t('pwa.online')) %>,
@@ -408,62 +413,6 @@ window.GF_OFF_T = {
             }
         });
     }
-
-    let deferredPrompt = null;
-    let isDismissed = false;
-    try {
-        isDismissed = localStorage.getItem('pwa_install_dismissed') === '1';
-    } catch(e) {}
-
-    window.addEventListener('beforeinstallprompt', function(e) {
-        e.preventDefault();
-        deferredPrompt = e;
-        if (!isDismissed) {
-            const banner = document.getElementById('pwa-install-banner');
-            if (banner) banner.style.display = 'flex';
-        }
-    });
-
-    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
-    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
-    if (isIOS && !isStandalone && !isDismissed) {
-        document.addEventListener('DOMContentLoaded', function() {
-            const banner = document.getElementById('pwa-install-banner');
-            const installText = document.getElementById('pwa-install-text');
-            const btnInstall = document.getElementById('btn-pwa-install');
-            if (banner && installText) {
-                installText.textContent = GF_PWA_T.instalar_dica_ios;
-                if (btnInstall) btnInstall.style.display = 'none';
-                banner.style.display = 'flex';
-            }
-        });
-    }
-
-    document.addEventListener('DOMContentLoaded', function() {
-        const btnInstall = document.getElementById('btn-pwa-install');
-        const btnDismiss = document.getElementById('btn-pwa-dismiss');
-        const banner = document.getElementById('pwa-install-banner');
-
-        if (btnInstall) {
-            btnInstall.addEventListener('click', function() {
-                if (deferredPrompt) {
-                    deferredPrompt.prompt();
-                    deferredPrompt.userChoice.then(function() {
-                        deferredPrompt = null;
-                        if (banner) banner.style.display = 'none';
-                    });
-                }
-            });
-        }
-        if (btnDismiss) {
-            btnDismiss.addEventListener('click', function() {
-                if (banner) banner.style.display = 'none';
-                try {
-                    localStorage.setItem('pwa_install_dismissed', '1');
-                } catch(e) {}
-            });
-        }
-    });
 })();
 </script>
 </body>

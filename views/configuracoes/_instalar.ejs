@@ -1,0 +1,31 @@
+<section class="card settings-content" id="gf-instalar-card" style="margin-top: 16px;">
+    <h2><i class="ph ph-device-mobile"></i> <%= t('pwa.config_titulo') %></h2>
+    <p class="muted"><%= t('pwa.config_texto') %></p>
+    <p id="gf-instalar-msg" style="font-weight: 600; margin: 12px 0;"></p>
+    <button type="button" id="gf-instalar-btn" class="btn btn-primary" hidden><i class="ph ph-download-simple"></i> <%= t('pwa.instalar_app') %></button>
+</section>
+<script>
+(function () {
+    var MSG = {
+        instalado: <%- JSON.stringify(t('pwa.ja_instalado')) %>,
+        disponivel: <%- JSON.stringify(t('pwa.config_disponivel')) %>,
+        ios: <%- JSON.stringify(t('pwa.instalar_dica_ios')) %>,
+        indisponivel: <%- JSON.stringify(t('pwa.config_indisponivel')) %>
+    };
+    var msg = document.getElementById('gf-instalar-msg'), btn = document.getElementById('gf-instalar-btn');
+    function desenhar() {
+        var e = window.GfInstalar ? window.GfInstalar.estado() : 'indisponivel';
+        msg.textContent = MSG[e];
+        msg.setAttribute('data-estado', e);
+        btn.hidden = e !== 'disponivel';
+    }
+    btn.addEventListener('click', function () {
+        window.GfInstalar.instalar().then(function (r) {
+            if (r === 'aceito' && window.gfToast) window.gfToast(<%- JSON.stringify(t('pwa.instalado_toast')) %>, 'sucesso');
+            desenhar();
+        });
+    });
+    window.addEventListener('gf-instalar-estado', desenhar);
+    document.addEventListener('DOMContentLoaded', desenhar);
+})();
+</script>

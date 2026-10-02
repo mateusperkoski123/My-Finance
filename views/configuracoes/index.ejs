@@ -53,3 +53,5 @@
         </form>
     </section>
 </div>
+
+<% if (typeof usuarioLogado !== 'undefined' && usuarioLogado) { %><div class="settings-layout" style="display:block;"><%- include('_instalar') %></div><% } %>
