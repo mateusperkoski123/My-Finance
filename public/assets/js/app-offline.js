@@ -11,6 +11,7 @@
 
     // Tem servidor de verdade? (navigator.onLine so diz que ha uma rede, nao que o servidor responde.)
     async function servidorAlcancavel() {
+        if (window.GfConexao && window.GfConexao.verificar) return window.GfConexao.verificar();
         if (!navigator.onLine) return false;
         const ctl = new AbortController();
         const t = setTimeout(() => ctl.abort(), 3000);
@@ -200,5 +201,6 @@
     });
     window.addEventListener('online', atualizar);
     window.addEventListener('offline', atualizar);
+    window.addEventListener('gf-conexao', atualizar);
     document.addEventListener('DOMContentLoaded', atualizar);
 })();

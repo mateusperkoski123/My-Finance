@@ -2,7 +2,7 @@
     <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--muted-bg, rgba(255, 255, 255, 0.05)); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto;">
         <i class="ph ph-wifi-slash" style="font-size: 36px; color: var(--muted, #8a8d93);"></i>
     </div>
-    <h2 style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: var(--text);"><%= t('offline.titulo') %></h2>
+    <h2 id="offline-titulo" style="font-size: 22px; font-weight: 700; margin-bottom: 12px; color: var(--text);"><%= t('offline.titulo') %></h2>
     <p style="color: var(--muted, #8a8d93); font-size: 14px; line-height: 1.6; margin-bottom: 24px;">
         <%= t('offline.mensagem') %>
     </p>
@@ -22,3 +22,11 @@
         <span><%= t('offline.tentar_novamente') %></span>
     </button>
 </div>
+<script>
+// A tela offline e servida na URL que o usuario tentou abrir: se for um modulo que so funciona com internet, diz isso.
+(function () {
+    if (/^\/(ia|comunidade|admin|assinatura)(\/|$)/.test(location.pathname)) {
+        document.getElementById('offline-titulo').textContent = <%- JSON.stringify(t('off.modulo_requer')) %>;
+    }
+})();
+</script>

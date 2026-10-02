@@ -308,9 +308,14 @@ document.addEventListener('DOMContentLoaded', () => {
 <script>
 window.GF_OFF = { moeda: <%- JSON.stringify(currency || '') %>, lang: <%- JSON.stringify(lang) %> };
 window.GF_OFF_T = {
+    "conectado": <%- JSON.stringify(t('pwa.online')) %>,
+    "sem_conexao": <%- JSON.stringify(t('pwa.offline')) %>,
+    "modulo_requer": <%- JSON.stringify(t('off.modulo_requer')) %>,
+    "acao_requer": <%- JSON.stringify(t('off.acao_requer')) %>,
 <% ['salvo','serie','invalido','falha_guardar','vazia','descartar','confirmar_descartar','enviadas','enviando','aguardando_internet','aguardando_servidor','conflito','tipo_despesa','tipo_receita','tipo_transferencia','tipo_pagar','tipo_desfazer','tipo_generico','erro_generico','erro_somente_leitura','erro_conta_invalida','erro_categoria_invalida','erro_nao_encontrado','erro_valor_invalido','erro_data_invalida','erro_contas_iguais'].forEach(function (k) { %>    <%- JSON.stringify(k) %>: <%- JSON.stringify(t('off.' + k)) %>,
 <% }) %>};
 </script>
+<script src="/assets/js/app-conexao.js"></script>
 <script src="/assets/js/app-db.js"></script>
 <script src="/assets/js/app-regras.js"></script>
 <script src="/assets/js/app-sync.js"></script>
@@ -325,24 +330,7 @@ window.GF_OFF_T = {
         instalar_dica_ios: <%- JSON.stringify(t('pwa.instalar_dica_ios')) %>
     };
 
-    function updateOnlineStatus() {
-        const badge = document.getElementById('pwa-status-badge');
-        const text = document.getElementById('pwa-status-text');
-        if (!badge || !text) return;
-        if (navigator.onLine) {
-            badge.classList.remove('is-offline');
-            badge.classList.add('is-online');
-            text.textContent = GF_PWA_T.online;
-        } else {
-            badge.classList.remove('is-online');
-            badge.classList.add('is-offline');
-            text.textContent = GF_PWA_T.offline;
-        }
-    }
-
-    window.addEventListener('online', updateOnlineStatus);
-    window.addEventListener('offline', updateOnlineStatus);
-    document.addEventListener('DOMContentLoaded', updateOnlineStatus);
+    // O indicador de conexao e atualizado por app-conexao.js (consulta o servidor de verdade).
 
     const GF_USER_ID = <%- usuarioLogado ? Number(usuarioLogado.id) : 'null' %>;
     window.GF_USER_ID = GF_USER_ID;

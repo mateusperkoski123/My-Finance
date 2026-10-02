@@ -18,6 +18,7 @@ const SHELL_OBRIGATORIO = [
 // Itens complementares (falha nao impede a instalacao).
 const SHELL_OPCIONAL = [
     '/assets/js/charts.js',
+    '/assets/js/app-conexao.js',
     '/assets/js/app-db.js',
     '/assets/js/app-regras.js',
     '/assets/js/app-sync.js',
@@ -29,7 +30,7 @@ const SHELL_OPCIONAL = [
 // Rotas que nunca passam pelo cache (autenticacao, admin, IA, pagamentos, API).
 const NUNCA_CACHEAR = [
     /^\/login/, /^\/logout/, /^\/cadastro/, /^\/esqueci-senha/, /^\/redefinir-senha/, /^\/auth\//,
-    /^\/admin/, /^\/ia(\/|$)/, /^\/assinatura/, /^\/api\//, /^\/service-worker\.js$/, /^\/verificar-email/, /^\/aceitar-termos/
+    /^\/admin/, /^\/ia(\/|$)/, /^\/assinatura/, /^\/comunidade/, /^\/api\//, /^\/service-worker\.js$/, /^\/verificar-email/, /^\/aceitar-termos/
 ];
 
 function deveIgnorar(pathname) {

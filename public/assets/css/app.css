@@ -1933,3 +1933,7 @@ select.form-control { min-height: 44px; }
 .fila-item__info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fila-item--erro .fila-item__info span { color: var(--red); }
 .gf-pendente-envio { opacity: .55; }
+
+/* ---- Sem conexao: modulos que precisam de internet ficam esmaecidos ---- */
+a.requer-internet-bloqueado { opacity: .45; cursor: not-allowed; }
+a.requer-internet-bloqueado::after { content: ''; }

@@ -246,6 +246,8 @@ module.exports = {
     'pwa.atalho_receita': ['Nova receita', 'Nuevo ingreso', 'New income'],
     'pwa.atalho_receita_curto': ['Receita', 'Ingreso', 'Income'],
     'pwa.atalho_contas': ['Contas', 'Cuentas', 'Accounts'],
+    'off.modulo_requer': ['Este módulo precisa de internet', 'Este módulo necesita internet', 'This module needs internet'],
+    'off.acao_requer': ['Esta ação precisa de internet', 'Esta acción necesita internet', 'This action needs internet'],
     'off.salvo': ["Salvo neste aparelho. Será enviado quando a internet voltar.", "Guardado en este dispositivo. Se enviará cuando vuelva internet.", "Saved on this device. It will be sent when the internet is back."],
     'off.serie': ["Gasto ou receita fixo/repetido só pode ser criado com internet.", "Un gasto o ingreso fijo/repetido solo se puede crear con internet.", "A fixed or repeating entry can only be created online."],
     'off.invalido': ["Confira descrição, valor, categoria e conta.", "Revisá descripción, monto, categoría y cuenta.", "Check the description, amount, category and account."],
