@@ -1,6 +1,0 @@
-RewriteEngine On
-
-# Encaminha tudo que nao for arquivo/pasta existente para o front controller.
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteRule ^ index.php [QSA,L]

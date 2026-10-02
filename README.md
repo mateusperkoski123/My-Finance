@@ -1,99 +1,91 @@
 # Gestão Financeira
 
-Sistema pessoal de gestão financeira (PHP + MySQL), inspirado na lógica de
-visualização de um app de referência (painel mensal, contas, categorias e
-subcategorias, relatórios), **sem nenhuma integração com terceiros** (sem
-Open Finance, sem bancos conectados, sem IA). Construído em etapas — veja a
-lista de fases mais abaixo.
+Sistema de gestão financeira multiusuário (Node.js + MySQL), com painel mensal,
+contas, categorias e subcategorias, relatórios, assinaturas/planos, Chat IA,
+Comunidade e app instalável (PWA/Capacitor) com modo offline e sincronização.
+Sem integração com bancos (Open Finance).
 
 ## Stack
 
-- PHP 8.1+ (sem framework), PDO + MySQL/MariaDB
-- Autoload PSR-4 via Composer (`App\` → `src/`)
-- Frontend server-rendered (views PHP) + CSS próprio com suporte a tema
-  claro/escuro + Chart.js (a partir da Fase 4, para os relatórios, via CDN)
-- Sem JS framework: um `app.js` simples (modais, toggles) + i18n próprio
-  (pt-BR/es-PY/en-US) via `t()` e `lang/*.php`
+- Node.js + Express 4, views server-rendered em EJS (`express-ejs-layouts`)
+- MySQL/MariaDB via `mysql2`, sessões em MySQL (`express-session` +
+  `express-mysql-session`)
+- Segurança: `helmet`, `express-rate-limit`, CSRF próprio, `bcryptjs`
+- Chat IA: Anthropic Claude (`@anthropic-ai/sdk`); transcrição de áudio via
+  Gemini (`@google/genai`) ou OpenAI
+- E-mails com `nodemailer` (SMTP)
+- Frontend: CSS próprio (tema claro/escuro), Chart.js, JS simples em
+  `public/assets/js/` (offline, sync, PWA) e service worker
+- i18n próprio (pt-BR / es-PY / en-US) em `src/node/core/i18n*.js`
+- Produção: pm2 em cluster (`ecosystem.config.js`)
 
-## Rodando localmente (XAMPP)
+## Rodando localmente
 
-1. Inicie **Apache** e **MySQL** pelo painel do XAMPP.
-   - Nesta máquina de desenvolvimento o MySQL do XAMPP expõe a porta
-     `3307` (não a `3306` padrão) — por isso existe `config/config.local.php`
-     sobrescrevendo só a porta. Se o seu MySQL estiver na porta padrão,
-     apague esse arquivo (ou ajuste-o) e nada mais muda.
-2. Instale as dependências (gera a pasta `vendor/` e o autoload):
+Requisitos: Node.js 18+ e um MySQL/MariaDB acessível.
+
+1. Instale as dependências:
    ```
-   composer install
+   npm install
    ```
-3. Rode as migrations (cria o banco `gestao_financeira` automaticamente e
-   aplica as tabelas — idempotente, seguro rodar de novo a qualquer momento
-   para conferir que não há migration pendente):
+2. Copie `.env.example` para `.env` e ajuste as variáveis (veja a seção
+   abaixo). O banco informado em `DB_NAME` precisa existir.
+3. Inicie o servidor:
    ```
-   php database/migrate.php
+   npm start        # produção
+   npm run dev      # desenvolvimento, reinicia ao salvar (node --watch)
    ```
-4. Sirva a aplicação. Duas opções:
-   - **Servidor embutido do PHP** (mais rápido para desenvolvimento/testes):
-     ```
-     php -S localhost:8000 -t public
-     ```
-   - **Apache do XAMPP**: aponte o *virtual host* (ou o document root
-     padrão) para a pasta `public/` deste projeto. O `public/.htaccess`
-     já reescreve toda requisição que não for um arquivo/pasta existente
-     para `index.php` (front controller); confirme que o `mod_rewrite`
-     está habilitado no Apache.
-5. Acesse `http://localhost:8000` (ou o host configurado no Apache), crie
-   sua conta e faça login.
+   Ao iniciar, as migrations pendentes de `database/migrations/` são aplicadas
+   automaticamente (não há comando separado).
+4. Acesse `http://localhost:3000`, crie sua conta e faça login.
 
-Credenciais do banco: editar `config/config.php` (valores versionados, os
-mesmos para todo mundo que clonar o projeto) ou criar
-`config/config.local.php` (ignorado pelo git) para sobrescrever só o que
-for diferente no seu ambiente — host/porta/usuário/senha do MySQL, sem
-tocar no arquivo principal.
+### Variáveis de ambiente (`.env`)
 
-## Deploy futuro (Hostinger)
+Todas estão documentadas em `.env.example`. As principais:
 
-Ainda não foi feito deploy em produção — isto é só um roteiro de alto
-nível para quando o usuário decidir publicar o projeto. Nenhum destes
-passos foi executado ou automatizado por este projeto:
+- `PORT`, `NODE_ENV`, `SESSION_SECRET`
+- `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+- `ADMIN_EMAILS`: e-mails que viram administradores ao iniciar
+- `SMTP_*`: envio de e-mails (sem isso, aparecem só no log)
+- `ANTHROPIC_API_KEY`, `IA_MODELO`, `IA_LIMITE_MENSAGENS_MES`: Chat IA
+- `GEMINI_API_KEY` / `OPENAI_API_KEY`: transcrição de áudio do Chat IA
 
-1. No painel da Hostinger (hPanel), criar um banco de dados MySQL e anotar
-   host/nome do banco/usuário/senha gerados.
-2. Subir os arquivos do projeto para o servidor (Git deploy, FTP/SFTP, ou
-   o gerenciador de arquivos do hPanel) — **exceto** `config/config.local.php`
-   (que é só local) e, idealmente, sem a pasta `vendor/` se for possível
-   rodar Composer no servidor.
-3. Apontar o *document root* do domínio/subdomínio para a pasta `public/`
-   do projeto (nunca para a raiz do projeto — os outros diretórios,
-   como `src/` e `config/`, não devem ficar acessíveis publicamente).
-4. Garantir o autoload do Composer no servidor: rodar
-   `composer install --no-dev --optimize-autoloader` por SSH, se disponível
-   no plano de hospedagem, **ou** subir a pasta `vendor/` já gerada
-   localmente junto com o restante dos arquivos (a aplicação não funciona
-   sem ela, já que todo o autoload de classes depende dela).
-5. Criar `config/config.local.php` no servidor com as credenciais de
-   produção do banco (host/porta/usuário/senha da Hostinger) e, se for o
-   caso, `'ambiente' => 'production'` em `config/config.php` (ou via
-   override) para desligar a exibição detalhada de erros.
-6. Rodar `php database/migrate.php` uma vez no servidor (via SSH ou cron
-   job avulso do hPanel) para criar as tabelas em produção.
-7. Testar login/cadastro, HTTPS (a Hostinger oferece SSL grátis — habilitar
-   no hPanel) e o fluxo ponta a ponta antes de divulgar o link.
+## Deploy (Hostinger, Node.js)
+
+1. No hPanel, crie o banco MySQL e anote host/nome/usuário/senha. No servidor
+   o app deve conectar em `127.0.0.1:3306`.
+2. Envie o projeto (Git ou upload), sem `node_modules/` e sem `.env`.
+3. Configure as variáveis de ambiente do `.env.example` no painel do app Node.js
+   (`NODE_ENV=production`, credenciais do banco, `SESSION_SECRET` forte etc.).
+4. Rode `npm install --omit=dev` e inicie com `server.js` (ou
+   `pm2 start ecosystem.config.js --env production`).
+5. **Faça backup do banco antes do primeiro deploy**: as migrations rodam
+   sozinhas na inicialização (só mudanças aditivas, com trava para o pm2 em
+   cluster).
+6. Ative o SSL no hPanel e teste cadastro/login e o fluxo ponta a ponta.
 
 ## Estrutura
 
 ```
-public/        # document root (front controller + assets)
-src/Core/      # infraestrutura (DB, Router, Auth, View, Csrf, Flash, I18n, Money, Periodo)
-src/Controllers/
-src/Models/
-views/         # templates PHP
-lang/          # traducoes pt-BR / es-PY / en-US
-database/      # migrations + script de execucao (migrate.php)
-config/        # configuracao da aplicacao
+server.js            # entrada: Express, sessão, migrations, PWA (manifest)
+ecosystem.config.js  # pm2 (cluster)
+src/node/
+  config/            # conexão MySQL
+  controllers/       # regras de cada módulo (auth, contas, IA, admin, API do app...)
+  core/              # helpers, i18n, IA, e-mail, migrator, regras de negócio
+  middleware/        # auth, CSRF, i18n, conta ativa, limites
+  models/            # acesso ao banco
+  routes/index.js    # todas as rotas
+views/               # templates EJS
+public/              # CSS, JS (offline/sync/PWA), ícones e service worker
+database/migrations/ # migrations SQL (aplicadas automaticamente)
+docs/                # prompts e especificações de módulos
 ```
 
 ## Etapas do projeto
+
+> Histórico das fases iniciais, escrito quando o sistema era PHP. Nomes como
+> `App\Core\*`, `Lancamento::...` e `views/*.php` referem-se a essa versão
+> antiga, já removida; a lógica equivalente hoje está em `src/node/`.
 
 - [x] Fase 0 — Fundação: estrutura, login/cadastro, layout com as 6 abas,
       Configurações → Preferência (idioma, moeda, tema claro/escuro), sistema
@@ -271,8 +263,7 @@ das Partes B–E:
 Não implementados — apenas ideias para o usuário avaliar e priorizar
 quando (e se) quiser continuar evoluindo o projeto:
 
-- **Deploy em produção**: seguir o roteiro da seção "Deploy futuro
-  (Hostinger)" acima e colocar o app no ar de verdade.
+- **Deploy em produção**: seguir a seção "Deploy (Hostinger, Node.js)" acima.
 - **Recorrência mais robusta**: "Repetir Transação" já gera N lançamentos
   mensais de uma vez na criação, mas cada um fica independente (editar/
   excluir um não afeta os demais, e não há como "estender" a série depois
