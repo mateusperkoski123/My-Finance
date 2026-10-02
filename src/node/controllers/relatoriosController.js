@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const Lancamento = require('../models/Lancamento');
 const { toLocalYMD, hojeLocal } = require('../core/helpers');
+const { CONTA_ATIVA } = require('../models/Lancamento');
 
 const relatoriosController = {
     index: async (req, res) => {
@@ -26,9 +27,17 @@ const relatoriosController = {
             inicio = hoje;
             fim = hoje;
         } else if (preset === '7dias') {
-            const d = hojeLocal(); d.setDate(d.getDate() - 7);
-            inicio = toLocalYMD(d);
-            fim = hoje;
+            const d = hojeLocal();
+            if (query.aba === 'pendentes') {
+                // Pendentes olha para frente: de hoje ate daqui a 7 dias (as atrasadas entram porque o periodo contem hoje).
+                inicio = hoje;
+                d.setDate(d.getDate() + 7);
+                fim = toLocalYMD(d);
+            } else {
+                d.setDate(d.getDate() - 7);
+                inicio = toLocalYMD(d);
+                fim = hoje;
+            }
         } else if (preset === '30dias') {
             const d = hojeLocal(); d.setDate(d.getDate() - 30);
             inicio = toLocalYMD(d);
@@ -88,7 +97,7 @@ const relatoriosController = {
              FROM lancamentos l
              LEFT JOIN categorias c ON l.categoria_id = c.id
              LEFT JOIN categorias p ON c.parent_id = p.id
-             WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND l.tipo IN ('receita', 'despesa')
+             WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
              GROUP BY COALESCE(p.id, c.id), COALESCE(p.nome, c.nome), COALESCE(p.cor, c.cor), l.tipo`,
             [userId, inicio, fim]
         );
@@ -105,7 +114,7 @@ const relatoriosController = {
              FROM lancamentos l
              LEFT JOIN categorias c ON l.categoria_id = c.id
              LEFT JOIN contas cb ON l.conta_id = cb.id
-             WHERE l.user_id = ? AND l.status = 'pendente'
+             WHERE l.user_id = ? AND l.status = 'pendente' AND ${CONTA_ATIVA}
                AND (l.data_competencia BETWEEN ? AND ? OR (? AND l.data_competencia < ?))
              ORDER BY ${pendentesOrderSql}`,
             [userId, inicio, fim, inicio <= hoje && fim >= hoje ? 1 : 0, hoje]
@@ -120,7 +129,7 @@ const relatoriosController = {
                 SUM(ABS(l.valor)) as total
              FROM lancamentos l
              LEFT JOIN categorias c ON l.categoria_id = c.id
-             WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND l.tipo IN ('receita', 'despesa')
+             WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
              GROUP BY c.parent_id, l.categoria_id, l.tipo
              ORDER BY ${orderSql}`,
             [userId, inicio, fim]

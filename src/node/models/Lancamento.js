@@ -7,6 +7,9 @@ const MESES_FIXO = 24;
 
 const cleanParam = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '' && v !== 'sem_agrupamento') ? String(v).trim() : null;
 
+// Mesmo criterio do resumo e dos saldos: so contas ativas entram em listas, graficos e totais.
+const CONTA_ATIVA = "l.conta_id IN (SELECT id FROM contas WHERE user_id = l.user_id AND status = 'ativa')";
+
 class Lancamento {
     static async buscarPorId(id, userId) {
         const [rows] = await db.query(
@@ -21,7 +24,7 @@ class Lancamento {
     }
 
     static async buscarFiltrados(userId, periodo, filtros = {}, ordenacao = 'data', pagina = 1, porPagina = 30, agrupamento = 'sem_agrupamento') {
-        let where = 'WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ?';
+        let where = 'WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND ' + CONTA_ATIVA;
         // Transferencia agendada tem duas pernas; na lista aparece so a de saida (a entrada continua no extrato da conta de destino).
         where += " AND NOT (l.tipo = 'transferencia' AND l.transferencia_par_id IS NOT NULL AND l.valor > 0)";
         const params = [userId, periodo.inicio, periodo.fim];
@@ -31,9 +34,11 @@ class Lancamento {
         const fCat = cleanParam(filtros.categoria_id);
         const fBusca = cleanParam(filtros.busca);
 
-        if (fTipo && fTipo !== 'todas') {
+        // So tipos conhecidos filtram; qualquer outro valor equivale a "todas" (antes virava "receitas" sem querer).
+        const tipoFiltro = { despesas: 'despesa', despesa: 'despesa', receitas: 'receita', receita: 'receita', transferencias: 'transferencia', transferencia: 'transferencia' }[fTipo];
+        if (tipoFiltro) {
             where += ' AND l.tipo = ?';
-            params.push((fTipo === 'despesas' || fTipo === 'despesa') ? 'despesa' : 'receita');
+            params.push(tipoFiltro);
         }
 
         if (fSub) {
@@ -447,7 +452,7 @@ class Lancamento {
              FROM lancamentos l
              LEFT JOIN categorias c ON l.categoria_id = c.id
              LEFT JOIN categorias p ON c.parent_id = p.id
-             WHERE l.user_id = ? AND l.tipo = ? AND l.data_competencia BETWEEN ? AND ?
+             WHERE l.user_id = ? AND l.tipo = ? AND l.data_competencia BETWEEN ? AND ? AND ${CONTA_ATIVA}
              GROUP BY COALESCE(p.id, c.id), COALESCE(p.nome, c.nome, 'Sem categoria'), COALESCE(p.cor, c.cor)
              ORDER BY total DESC`,
             [userId, tipo, periodo.inicio, periodo.fim]
@@ -457,16 +462,16 @@ class Lancamento {
 
     static async totalDespesasMes(userId, mes, ano) {
         const [rows] = await db.query(
-            `SELECT SUM(ABS(valor)) as total FROM lancamentos 
-             WHERE user_id = ? AND tipo = 'despesa' AND status = 'pago' 
-               AND MONTH(data_competencia) = ? AND YEAR(data_competencia) = ?`,
+            `SELECT SUM(ABS(l.valor)) as total FROM lancamentos l
+             WHERE l.user_id = ? AND l.tipo = 'despesa' AND l.status = 'pago' AND ${CONTA_ATIVA}
+               AND MONTH(l.data_competencia) = ? AND YEAR(l.data_competencia) = ?`,
             [userId, mes, ano]
         );
         return parseFloat(rows[0]?.total) || 0;
     }
 
     static async relatorioPendentes(userId, periodo = null, filtros = {}, ordenacao = 'vencimento') {
-        let where = "WHERE l.user_id = ? AND l.status = 'pendente'";
+        let where = "WHERE l.user_id = ? AND l.status = 'pendente' AND " + CONTA_ATIVA;
         const params = [userId];
 
         if (periodo && periodo.inicio && periodo.fim) {
@@ -508,7 +513,7 @@ class Lancamento {
     }
 
     static async frequenciaDiaria(userId, dataInicio, dataFim, filtros = {}) {
-        let where = "WHERE l.user_id = ? AND l.tipo IN ('receita', 'despesa') AND l.data_competencia BETWEEN ? AND ?";
+        let where = "WHERE l.user_id = ? AND l.tipo IN ('receita', 'despesa') AND l.data_competencia BETWEEN ? AND ? AND " + CONTA_ATIVA;
         const params = [userId, dataInicio, dataFim];
 
         if (filtros.subcategoria_id) {
@@ -534,7 +539,7 @@ class Lancamento {
     }
 
     static async resumoCategorias(userId, periodo, filtros = {}) {
-        let where = "WHERE l.user_id = ? AND l.status = 'pago' AND l.data_competencia BETWEEN ? AND ?";
+        let where = "WHERE l.user_id = ? AND l.status = 'pago' AND l.data_competencia BETWEEN ? AND ? AND " + CONTA_ATIVA;
         const params = [userId, periodo.inicio, periodo.fim];
 
         if (filtros.subcategoria_id) {
@@ -562,7 +567,7 @@ class Lancamento {
                     MONTH(l.data_competencia) AS mes, SUM(ABS(l.valor)) AS total
              FROM lancamentos l
              LEFT JOIN categorias cat ON cat.id = l.categoria_id
-             WHERE l.user_id = ? AND l.tipo IN ('receita', 'despesa') AND YEAR(l.data_competencia) = ?
+             WHERE l.user_id = ? AND l.tipo IN ('receita', 'despesa') AND YEAR(l.data_competencia) = ? AND ${CONTA_ATIVA}
              GROUP BY l.categoria_id, cat.nome, cat.cor, cat.parent_id, l.tipo, MONTH(l.data_competencia)`,
             [userId, ano]
         );
@@ -643,3 +648,4 @@ class Lancamento {
 }
 
 module.exports = Lancamento;
+module.exports.CONTA_ATIVA = CONTA_ATIVA;
