@@ -80,15 +80,32 @@ class Lembrete {
         await db.query('UPDATE push_inscricoes SET ultimo_envio_em = NOW() WHERE id = ?', [id]);
     }
 
-    // Despesas pendentes (contas ativas) com vencimento na data. Transferencias ficam de fora.
-    static async despesasDoDia(userId, dataYMD) {
-        const [rows] = await db.query(
-            `SELECT l.id, l.descricao, ABS(l.valor) AS valor, cb.nome AS conta_nome
-             FROM lancamentos l
+    // Parte comum: pendentes de contas ativas. Transferencia conta uma vez (lado de saida); ajustes ficam de fora.
+    static get _pendentes() {
+        return `FROM lancamentos l
              JOIN contas cb ON cb.id = l.conta_id AND cb.status = 'ativa'
-             WHERE l.user_id = ? AND l.tipo = 'despesa' AND l.status = 'pendente' AND l.data_competencia = ?
+             WHERE l.user_id = ? AND l.status = 'pendente'
+               AND (l.tipo IN ('receita', 'despesa') OR (l.tipo = 'transferencia' AND l.transferencia_par_id IS NOT NULL AND l.valor < 0))`;
+    }
+
+    // Pendencias com vencimento na data: despesas (a pagar), receitas (a receber) e transferencias programadas.
+    static async pendentesDoDia(userId, dataYMD) {
+        const [rows] = await db.query(
+            `SELECT l.id, l.tipo, l.descricao, l.valor, ABS(l.valor) AS valor_abs, l.data_competencia, cb.nome AS conta_nome
+             ${this._pendentes} AND l.data_competencia = ?
              ORDER BY ABS(l.valor) DESC, l.id ASC`,
             [userId, dataYMD]
+        );
+        return rows;
+    }
+
+    // Despesas pendentes que venceram antes de hoje, as mais antigas primeiro.
+    static async despesasAtrasadas(userId, hojeYMD) {
+        const [rows] = await db.query(
+            `SELECT l.id, l.tipo, l.descricao, l.valor, ABS(l.valor) AS valor_abs, l.data_competencia, cb.nome AS conta_nome
+             ${this._pendentes} AND l.tipo = 'despesa' AND l.data_competencia < ?
+             ORDER BY l.data_competencia ASC, l.id ASC`,
+            [userId, hojeYMD]
         );
         return rows;
     }

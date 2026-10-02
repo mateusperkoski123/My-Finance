@@ -2,7 +2,7 @@
 const Lembrete = require('../models/Lembrete');
 const push = require('./push');
 const { t } = require('./i18n');
-const { moeda } = require('./helpers');
+const { moeda, descricaoLancamento } = require('./helpers');
 
 const FUSO_PADRAO = process.env.IA_TIMEZONE || 'America/Asuncion';
 const MAX_ITENS_NA_NOTIFICACAO = 4;
@@ -65,16 +65,41 @@ function somarDias(ymd, dias) {
     return `${x.getUTCFullYear()}-${String(x.getUTCMonth() + 1).padStart(2, '0')}-${String(x.getUTCDate()).padStart(2, '0')}`;
 }
 
-// Monta a notificacao de uma data (ou null se nao ha despesas). Nome e valor de cada despesa, e o total ao final.
-function montarNotificacao(despesas, dataYMD, deslocamentoDias, { idioma, moeda: cod }) {
-    if (!despesas.length) return null;
-    const n = despesas.length;
-    const total = despesas.reduce((s, d) => s + Number(d.valor), 0);
-    const prefixo = deslocamentoDias === 0 ? 'lembrete.titulo_hoje' : 'lembrete.titulo_amanha';
-    const titulo = t(n === 1 ? `${prefixo}_um` : `${prefixo}_n`, { n }, idioma);
-    const linhas = despesas.slice(0, MAX_ITENS_NA_NOTIFICACAO).map((d) => `${d.descricao}: ${moeda(d.valor, cod)}`);
-    if (n > MAX_ITENS_NA_NOTIFICACAO) linhas.push(t('lembrete.mais', { n: n - MAX_ITENS_NA_NOTIFICACAO }, idioma));
-    linhas.push(t('lembrete.total', { valor: moeda(total, cod) }, idioma));
+// Separa as pendencias de um dia em a pagar (despesas), a receber (receitas) e transferencias.
+function agrupar(itens) {
+    return {
+        pagar: itens.filter((i) => i.tipo === 'despesa'),
+        receber: itens.filter((i) => i.tipo === 'receita'),
+        transf: itens.filter((i) => i.tipo === 'transferencia')
+    };
+}
+
+const soma = (lista) => lista.reduce((s, i) => s + Number(i.valor_abs), 0);
+
+// Monta a notificacao de uma data (ou null se nao ha nada). Cada item mostra nome e valor; ao final, os totais.
+// "atrasadas" (despesas vencidas e ainda pendentes) entram so na notificacao que as carrega.
+function montarNotificacao(itens, atrasadas, dataYMD, deslocamentoDias, { idioma, moeda: cod }) {
+    const g = agrupar(itens);
+    if (!itens.length && !atrasadas.length) return null;
+    const tr = (k, p) => t(k, p, idioma);
+    const partes = [];
+    if (g.pagar.length) partes.push(tr('lembrete.parte_pagar', { n: g.pagar.length }));
+    if (g.receber.length) partes.push(tr('lembrete.parte_receber', { n: g.receber.length }));
+    if (g.transf.length) partes.push(tr('lembrete.parte_transf', { n: g.transf.length }));
+    if (atrasadas.length) partes.push(tr('lembrete.parte_atrasadas', { n: atrasadas.length }));
+    const titulo = tr(deslocamentoDias === 0 ? 'lembrete.t_hoje' : 'lembrete.t_amanha', { partes: partes.join(', ') });
+
+    const linhas = [];
+    const todos = [
+        ...g.pagar.map((i) => [tr('lembrete.rot_pagar'), i.descricao, i.valor_abs]),
+        ...g.receber.map((i) => [tr('lembrete.rot_receber'), i.descricao, i.valor_abs]),
+        ...g.transf.map((i) => [tr('lembrete.rot_transf'), descricaoLancamento(i, (k) => tr(k)), i.valor_abs])
+    ];
+    todos.slice(0, MAX_ITENS_NA_NOTIFICACAO).forEach(([rot, nome, valor]) => linhas.push(`${rot} ${nome}: ${moeda(valor, cod)}`));
+    if (todos.length > MAX_ITENS_NA_NOTIFICACAO) linhas.push(tr('lembrete.mais', { n: todos.length - MAX_ITENS_NA_NOTIFICACAO }));
+    if (g.pagar.length) linhas.push(tr('lembrete.total', { valor: moeda(soma(g.pagar), cod) }));
+    if (g.receber.length) linhas.push(tr('lembrete.total_receber', { valor: moeda(soma(g.receber), cod) }));
+    if (atrasadas.length) linhas.push(tr('lembrete.atrasadas', { n: atrasadas.length, valor: moeda(soma(atrasadas), cod) }));
     return { title: titulo, body: linhas.join('\n'), url: `/lembretes/vencimentos?data=${dataYMD}`, tag: `vencimentos-${dataYMD}` };
 }
 
@@ -94,16 +119,18 @@ async function enviarParaUsuario(userId, payload) {
 }
 
 // Envia os avisos configurados (hoje e/ou amanha) de um usuario. Retorna quantas notificacoes foram geradas.
+// As despesas atrasadas vao junto do aviso de hoje; se o usuario so quer "1 dia antes", vao em um aviso proprio.
 async function enviarAvisos(cfg, agoraMs) {
     const hoje = dataLocalYMD(agoraMs, cfg.fuso);
+    const atrasadas = await Lembrete.despesasAtrasadas(cfg.user_id, hoje);
     const dias = [];
-    if (cfg.aviso_dia) dias.push(0);
+    if (cfg.aviso_dia || atrasadas.length) dias.push(0);
     if (cfg.aviso_antes) dias.push(1);
     let gerados = 0;
     for (const dd of dias) {
         const data = somarDias(hoje, dd);
-        const despesas = await Lembrete.despesasDoDia(cfg.user_id, data);
-        const payload = montarNotificacao(despesas, data, dd, cfg);
+        const itens = dd === 0 && !cfg.aviso_dia ? [] : await Lembrete.pendentesDoDia(cfg.user_id, data);
+        const payload = montarNotificacao(itens, dd === 0 ? atrasadas : [], data, dd, cfg);
         if (!payload) continue;
         gerados++;
         await enviarParaUsuario(cfg.user_id, payload);

@@ -90,12 +90,24 @@ const lembretesController = {
         const hoje = lembretes.dataLocalYMD(Date.now(), fuso);
         const pedida = String(req.query.data || '');
         const data = /^\d{4}-\d{2}-\d{2}$/.test(pedida) ? pedida : hoje;
-        const despesas = await Lembrete.despesasDoDia(req.user.id, data);
-        const total = despesas.reduce((s, d) => s + Number(d.valor), 0);
+        const itens = await Lembrete.pendentesDoDia(req.user.id, data);
+        const atrasadas = data === hoje ? await Lembrete.despesasAtrasadas(req.user.id, hoje) : [];
+        const soma = (lista) => lista.reduce((s, i) => s + Number(i.valor_abs), 0);
+        const pagar = itens.filter((i) => i.tipo === 'despesa');
+        const receber = itens.filter((i) => i.tipo === 'receita');
+        const transf = itens.filter((i) => i.tipo === 'transferencia');
         let titulo = req.t('lembrete.venc_data', { data: res.locals.formatDate(data, 'DD/MM/YYYY') });
         if (data === hoje) titulo = req.t('lembrete.venc_hoje');
         else if (data === lembretes.somarDias(hoje, 1)) titulo = req.t('lembrete.venc_amanha');
-        res.render('lembretes/vencimentos', { title: req.t('lembrete.venc_titulo'), cabecalho: titulo, data, despesas, total });
+        res.render('lembretes/vencimentos', {
+            title: req.t('lembrete.venc_titulo'), cabecalho: titulo, data,
+            grupos: [
+                { chave: 'pagar', titulo: req.t('lembrete.sec_pagar'), itens: pagar, total: soma(pagar), rotuloTotal: req.t('lembrete.venc_total'), acao: req.t('lembrete.venc_pagar') },
+                { chave: 'receber', titulo: req.t('lembrete.sec_receber'), itens: receber, total: soma(receber), rotuloTotal: req.t('lembrete.venc_total_receber'), acao: req.t('lembrete.venc_receber') },
+                { chave: 'transf', titulo: req.t('lembrete.sec_transf'), itens: transf, total: 0, rotuloTotal: null, acao: req.t('lembrete.venc_pagar') },
+                { chave: 'atrasadas', titulo: req.t('lembrete.sec_atrasadas'), itens: atrasadas, total: soma(atrasadas), rotuloTotal: req.t('lembrete.venc_total_atrasadas'), acao: req.t('lembrete.venc_pagar'), mostrarData: true }
+            ].filter((g) => g.itens.length)
+        });
     },
 
     // Chamado pelo cron externo a cada 30 minutos. Autenticado por CRON_TOKEN (header x-cron-token ou ?token=).

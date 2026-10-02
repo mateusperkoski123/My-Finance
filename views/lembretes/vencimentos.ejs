@@ -2,30 +2,38 @@
     <h1><i class="ph ph-bell-ringing"></i> <%= cabecalho %></h1>
 </div>
 
-<section class="card" style="max-width: 640px;">
-    <% if (!despesas.length) { %>
+<% if (!grupos.length) { %>
+    <section class="card" style="max-width: 640px;">
         <p class="muted" style="margin: 0;"><%= t('lembrete.venc_vazio') %></p>
-    <% } else { %>
-        <ul style="list-style: none; margin: 0; padding: 0;">
-            <% despesas.forEach(d => { %>
-                <li style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border, rgba(128,128,128,.25));">
-                    <div style="flex: 1; min-width: 0;">
-                        <strong style="display: block; overflow-wrap: anywhere;"><%= d.descricao %></strong>
-                        <span class="muted" style="font-size: 12.5px;"><%= d.conta_nome %></span>
-                    </div>
-                    <strong style="white-space: nowrap;"><%= moeda(d.valor) %></strong>
-                    <form method="post" action="/lancamentos/<%= d.id %>/marcar-pago" style="margin: 0;">
-                        <%- csrfCampo %>
-                        <input type="hidden" name="voltar" value="/lembretes/vencimentos?data=<%= data %>">
-                        <button type="submit" class="btn" title="<%= t('lembrete.venc_pagar') %>" aria-label="<%= t('lembrete.venc_pagar') %>"><i class="ph ph-check-circle"></i></button>
-                    </form>
-                </li>
-            <% }) %>
-        </ul>
-        <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 16px; font-size: 17px;">
-            <span><%= t('lembrete.venc_total') %></span>
-            <strong><%= moeda(total) %></strong>
-        </div>
+    </section>
+<% } %>
+
+<% grupos.forEach(g => { %>
+<section class="card" style="max-width: 640px; margin-bottom: 16px;">
+    <h2 style="margin: 0 0 4px; font-size: 16px;"><%= g.titulo %></h2>
+    <ul style="list-style: none; margin: 0; padding: 0;">
+        <% g.itens.forEach(d => { %>
+            <li style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border, rgba(128,128,128,.25));">
+                <div style="flex: 1; min-width: 0;">
+                    <strong style="display: block; overflow-wrap: anywhere;"><%= descricaoLancamento(d) %></strong>
+                    <span class="muted" style="font-size: 12.5px;"><%= d.conta_nome %><% if (g.mostrarData) { %> · <%= formatDate(d.data_competencia, 'DD/MM/YYYY') %><% } %></span>
+                </div>
+                <strong style="white-space: nowrap;"><%= moeda(d.valor_abs) %></strong>
+                <form method="post" action="/lancamentos/<%= d.id %>/marcar-pago" style="margin: 0;">
+                    <%- csrfCampo %>
+                    <input type="hidden" name="voltar" value="/lembretes/vencimentos?data=<%= data %>">
+                    <button type="submit" class="btn" title="<%= g.acao %>" aria-label="<%= g.acao %>"><i class="ph ph-check-circle"></i></button>
+                </form>
+            </li>
+        <% }) %>
+    </ul>
+    <% if (g.rotuloTotal) { %>
+    <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 14px; font-size: 16px;">
+        <span><%= g.rotuloTotal %></span>
+        <strong><%= moeda(g.total) %></strong>
+    </div>
     <% } %>
-    <p style="margin: 20px 0 0;"><a href="/relatorios?aba=pendentes" class="muted" style="font-weight: 600;"><%= t('lembrete.venc_ver_todas') %></a></p>
 </section>
+<% }) %>
+
+<p style="margin: 8px 0 0;"><a href="/relatorios?aba=pendentes" class="muted" style="font-weight: 600;"><%= t('lembrete.venc_ver_todas') %></a></p>
