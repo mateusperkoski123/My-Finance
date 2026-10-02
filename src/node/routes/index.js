@@ -40,6 +40,13 @@ const apiLoginLimiter = rateLimit({
     legacyHeaders: false
 });
 
+const cronLimiter = rateLimit({
+    windowMs: 10 * 60 * 1000,
+    max: 30,
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
 const { requireAuth, guestOnly } = require('../middleware/authMiddleware');
 const { exigirRecurso, exigirAdmin, limiteContas } = require('../middleware/contaMiddleware');
 
@@ -164,6 +171,15 @@ const uploadFoto = (req, res, next) => {
 router.get('/perfil/foto', requireAuth, fotoController.ver);
 router.post('/perfil/foto', requireAuth, uploadFoto, fotoController.salvar);
 router.post('/perfil/foto/remover', requireAuth, fotoController.remover);
+// Lembretes de vencimento (push). O cron externo chama /cron/lembretes a cada 30 min com o CRON_TOKEN.
+const lembretesController = require('../controllers/lembretesController');
+router.get('/configuracoes/lembretes', requireAuth, lembretesController.index);
+router.post('/configuracoes/lembretes', requireAuth, lembretesController.salvar);
+router.post('/configuracoes/lembretes/inscrever', requireAuth, lembretesController.inscrever);
+router.post('/configuracoes/lembretes/desinscrever', requireAuth, lembretesController.desinscrever);
+router.post('/configuracoes/lembretes/testar', requireAuth, lembretesController.testar);
+router.get('/lembretes/vencimentos', requireAuth, lembretesController.vencimentos);
+router.all('/cron/lembretes', cronLimiter, lembretesController.cron);
 router.get('/configuracoes/dispositivos', requireAuth, configuracoesController.dispositivos);
 router.post('/configuracoes/dispositivos/:id/revogar', requireAuth, configuracoesController.revogarDispositivo);
 

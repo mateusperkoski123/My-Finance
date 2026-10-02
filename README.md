@@ -296,3 +296,15 @@ quando (e se) quiser continuar evoluindo o projeto:
 - **E-mails** (verificação, recuperação de senha, pedidos de plano): configure `SMTP_*`; sem isso só aparecem no log.
 - **Termos/Privacidade:** textos modelo em `src/node/core/legal.js` — revisar com advogado. Mudar `TERMOS_VERSAO`
   obriga todos a aceitar novamente.
+
+## Lembretes de vencimento (notificacao push)
+
+Avisa, mesmo com o app fechado, as despesas que vencem no dia (e/ou 1 dia antes), com nome, valor e total a pagar.
+Cada usuario ativa em **Configuracoes > Lembretes** (por aparelho), escolhe o horario (de 30 em 30 min) e quando avisar.
+
+1. Defina no `.env` do servidor: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (gere com `npx web-push generate-vapid-keys`, uma unica vez) e `CRON_TOKEN` (segredo qualquer).
+2. Crie um cron (hPanel da Hostinger ou cron-job.org) **a cada 30 minutos** (`*/30 * * * *`):
+   `curl -fsS -H "x-cron-token: SEU_CRON_TOKEN" https://SEU-DOMINIO/cron/lembretes`
+3. A rota e leve: so processa quem tem `proximo_envio` vencido e reserva o envio antes de mandar (sem avisos duplicados, mesmo com varias instancias).
+
+No iPhone o push so funciona com o app instalado na tela inicial (iOS 16.4+).

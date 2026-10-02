@@ -1,0 +1,136 @@
+<div class="page-header">
+    <h1><i class="ph ph-gear"></i> <%= t('config.titulo') %></h1>
+</div>
+
+<div class="settings-layout">
+    <%- include('_menu', { menuAtivo: 'lembretes' }) %>
+
+    <section class="settings-content">
+        <div class="card">
+            <h2><i class="ph ph-bell-ringing"></i> <%= t('lembrete.titulo') %></h2>
+            <p class="muted" style="margin-bottom: 16px;"><%= t('lembrete.subtitulo') %></p>
+
+            <% if (!pushDisponivel) { %>
+                <div class="alert alert-aviso"><%= t('lembrete.indisponivel') %></div>
+            <% } else { %>
+                <p id="gf-push-msg" style="font-weight: 600; margin: 0 0 12px;"></p>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button type="button" id="gf-push-ativar" class="btn btn-primary" hidden><i class="ph ph-bell-ringing"></i> <%= t('lembrete.ativar_aparelho') %></button>
+                    <button type="button" id="gf-push-desativar" class="btn" hidden><i class="ph ph-bell-slash"></i> <%= t('lembrete.desativar_aparelho') %></button>
+                    <button type="button" id="gf-push-testar" class="btn" hidden><i class="ph ph-paper-plane-tilt"></i> <%= t('lembrete.enviar_teste') %></button>
+                </div>
+                <% if (config.ativo && totalAparelhos === 0) { %>
+                    <div class="alert alert-aviso" style="margin-top: 12px;"><%= t('lembrete.sem_aparelho_aviso') %></div>
+                <% } else if (totalAparelhos > 0) { %>
+                    <p class="muted" style="margin: 12px 0 0; font-size: 13px;"><%= t('lembrete.aparelhos', { n: totalAparelhos }) %></p>
+                <% } %>
+            <% } %>
+        </div>
+
+        <% if (pushDisponivel) { %>
+        <div class="card" style="margin-top: 16px;">
+            <form method="post" action="/configuracoes/lembretes" class="form">
+                <%- csrfCampo %>
+                <input type="hidden" name="fuso" id="gf-fuso" value="<%= config.fuso %>">
+
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" name="ativo" value="1" <%= config.ativo ? 'checked' : '' %>>
+                        <strong><%= t('lembrete.receber') %></strong>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="gf-hora"><%= t('lembrete.horario') %></label>
+                    <select class="input" id="gf-hora" name="hora">
+                        <% horarios.forEach(h => { %>
+                            <option value="<%= h %>" <%= config.hora === h ? 'selected' : '' %>><%= h %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label><%= t('lembrete.quando') %></label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-bottom: 6px;">
+                        <input type="checkbox" name="aviso_dia" value="1" <%= config.aviso_dia ? 'checked' : '' %>>
+                        <%= t('lembrete.no_dia') %>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                        <input type="checkbox" name="aviso_antes" value="1" <%= config.aviso_antes ? 'checked' : '' %>>
+                        <%= t('lembrete.um_dia_antes') %>
+                    </label>
+                </div>
+
+                <p class="muted" style="font-size: 13px; margin-bottom: 16px;">
+                    <%= t('lembrete.fuso') %>: <strong id="gf-fuso-texto"><%= config.fuso %></strong><br>
+                    <%= t('lembrete.dica_fuso') %>
+                </p>
+
+                <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('config.salvar') %></button>
+            </form>
+        </div>
+        <% } %>
+    </section>
+</div>
+
+<% if (pushDisponivel) { %>
+<script src="/assets/js/app-push.js"></script>
+<script>
+(function () {
+    var CSRF = <%- JSON.stringify(csrfToken) %>;
+    var CHAVE = <%- JSON.stringify(chavePublica) %>;
+    var MSG = {
+        ativo: <%- JSON.stringify(t('lembrete.estado_ativo')) %>,
+        inativo: <%- JSON.stringify(t('lembrete.estado_inativo')) %>,
+        bloqueado: <%- JSON.stringify(t('lembrete.bloqueado')) %>,
+        nao_suportado: <%- JSON.stringify(t('lembrete.nao_suportado')) %>,
+        teste_ok: <%- JSON.stringify(t('lembrete.teste_enviado')) %>,
+        teste_sem: <%- JSON.stringify(t('lembrete.teste_sem_aparelho')) %>
+    };
+    var msg = document.getElementById('gf-push-msg');
+    var bAtivar = document.getElementById('gf-push-ativar');
+    var bDesativar = document.getElementById('gf-push-desativar');
+    var bTestar = document.getElementById('gf-push-testar');
+
+    // Fuso do navegador: e nele que o horario escolhido vale.
+    try {
+        var fuso = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (fuso) {
+            document.getElementById('gf-fuso').value = fuso;
+            document.getElementById('gf-fuso-texto').textContent = fuso;
+        }
+    } catch (e) { /* mantem o fuso salvo */ }
+
+    function desenhar(estado) {
+        msg.textContent = MSG[estado] || '';
+        bAtivar.hidden = estado !== 'inativo';
+        bDesativar.hidden = estado !== 'ativo';
+        bTestar.hidden = estado !== 'ativo';
+    }
+    function aviso(texto, tipo) {
+        if (window.gfToast) window.gfToast(texto, tipo); else alert(texto);
+    }
+
+    bAtivar.addEventListener('click', function () {
+        bAtivar.disabled = true;
+        window.GfPush.ativar(CHAVE, CSRF).then(function (e) { desenhar(e); if (e === 'ativo') location.reload(); })
+            .catch(function () { desenhar('inativo'); })
+            .then(function () { bAtivar.disabled = false; });
+    });
+    bDesativar.addEventListener('click', function () {
+        window.GfPush.desativar(CSRF).then(function (e) { desenhar(e); });
+    });
+    bTestar.addEventListener('click', function () {
+        bTestar.disabled = true;
+        window.GfPush.testar(CSRF).then(function (r) {
+            aviso(r.sucesso ? MSG.teste_ok : MSG.teste_sem, r.sucesso ? 'sucesso' : 'erro');
+        }).then(function () { bTestar.disabled = false; });
+    });
+
+    window.GfPush.estado().then(function (e) {
+        desenhar(e);
+        if (e === 'ativo') window.GfPush.sincronizar(CSRF);
+    });
+})();
+</script>
+<% } %>

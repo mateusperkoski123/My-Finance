@@ -10,6 +10,11 @@ function csrfProtection(req, res, next) {
         return next();
     }
 
+    // Cron externo dos lembretes: autenticado por CRON_TOKEN, sem sessao.
+    if (req.path === '/cron/lembretes') {
+        return next();
+    }
+
     if (!req.session.csrfToken) {
         req.session.csrfToken = crypto.randomBytes(32).toString('hex');
     }

@@ -33,7 +33,7 @@ const SHELL_OPCIONAL = [
 // Rotas que nunca passam pelo cache (autenticacao, admin, IA, pagamentos, API).
 const NUNCA_CACHEAR = [
     /^\/login/, /^\/logout/, /^\/cadastro/, /^\/esqueci-senha/, /^\/redefinir-senha/, /^\/auth\//,
-    /^\/admin/, /^\/ia(\/|$)/, /^\/assinatura/, /^\/comunidade/, /^\/api\//, /^\/service-worker\.js$/, /^\/verificar-email/, /^\/aceitar-termos/
+    /^\/admin/, /^\/ia(\/|$)/, /^\/assinatura/, /^\/comunidade/, /^\/api\//, /^\/lembretes/, /^\/cron\//, /^\/service-worker\.js$/, /^\/verificar-email/, /^\/aceitar-termos/
 ];
 
 function deveIgnorar(pathname) {
@@ -183,4 +183,34 @@ self.addEventListener('fetch', (event) => {
     if (req.mode === 'navigate') {
         event.respondWith(navegacao(req));
     }
+});
+
+// ---- Notificacoes push (lembretes de vencimento) ----
+self.addEventListener('push', (event) => {
+    let dados = {};
+    try { dados = event.data ? event.data.json() : {}; } catch (e) { dados = {}; }
+    event.waitUntil(self.registration.showNotification(dados.title || 'MyFinance', {
+        body: dados.body || '',
+        icon: '/assets/icons/icon-192.png',
+        badge: '/assets/icons/icon-192.png',
+        tag: dados.tag || 'myfinance',
+        renotify: true,
+        data: { url: dados.url || '/' }
+    }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    const destino = new URL((event.notification.data && event.notification.data.url) || '/', self.location.origin).href;
+    event.waitUntil((async () => {
+        const abas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+        for (const aba of abas) {
+            if (new URL(aba.url).origin === self.location.origin && 'focus' in aba) {
+                await aba.focus();
+                if ('navigate' in aba) await aba.navigate(destino).catch(() => {});
+                return;
+            }
+        }
+        await self.clients.openWindow(destino);
+    })());
 });
