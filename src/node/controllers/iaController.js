@@ -156,6 +156,14 @@ const iaController = {
                 return res.status(503).json({ sucesso: false, conversa_id: conversaId, erro: req.t('ia.erro_nao_configurada') });
             }
             console.error('Chat IA: erro ao chamar a API:', err.status || '', err.message);
+            // O que ja foi gasto antes da falha (voltas da Claude e/ou transcricao do audio) tambem conta no limite e no custo.
+            const parcial = err.uso || {};
+            if (parcial.chamadas > 0 || stt) {
+                try {
+                    await Ia.registrarUso(userId, (parcial.entrada || 0) + (parcial.cacheLeitura || 0) + (parcial.cacheEscrita || 0), parcial.saida || 0);
+                    await registrarConsumo(userId, parcial, { imagens: imagens.length, stt, modelo: err.modelo || iaCore.MODELO });
+                } catch (e) { console.error('Chat IA: falha ao registrar consumo parcial:', e.message); }
+            }
             const ocupada = err.status === 429 || err.status === 529 || err.status >= 500;
             return res.status(502).json({ sucesso: false, conversa_id: conversaId, erro: req.t(ocupada ? 'ia.erro_ocupada' : 'ia.erro_generico') });
         }
@@ -196,7 +204,7 @@ const iaController = {
         try {
             const p = JSON.parse(acao.payload);
             const plano = p.kind === 'plano';
-            const falhas = await desfazerTudo(userId, plano ? (p.desfazer || []) : (p.desfazer || []));
+            const falhas = await desfazerTudo(userId, p.desfazer || []);
             const resumo = (plano ? (p.operacoes || []).map(nomeDaOp) : [p.descricao]).filter(Boolean).join('; ').slice(0, 240);
             let texto = req.t('ia.revertido_msg', { resumo });
             if (falhas) texto += '\n\n' + req.t('ia.revertido_parcial', { n: falhas });

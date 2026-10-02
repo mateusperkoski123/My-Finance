@@ -1,8 +1,9 @@
 // Precos para estimar o custo do Chat IA (USD por milhao de tokens). Sao ESTIMATIVAS: o valor oficial esta no console da Anthropic / do provedor de transcricao.
 // "micro" = milionesimos de dolar (token x preco por milhao = micro-USD exatos), para somar sem erro de ponto flutuante.
 const CLAUDE = {
-    'claude-sonnet-5-5': { entrada: 2, saida: 10, cacheLeitura: 0.2, cacheEscrita: 2.5 },
-    'claude-sonnet-5': { entrada: 2, saida: 10, cacheLeitura: 0.2, cacheEscrita: 2.5 },
+    // Sonnet calibrado com o Console (2/out/2026): 169.977 tokens de entrada + 6.991 de saida = US$ 0,20 => US$ 1 / US$ 5 por milhao.
+    'claude-sonnet-5-5': { entrada: 1, saida: 5, cacheLeitura: 0.1, cacheEscrita: 1.25 },
+    'claude-sonnet-5': { entrada: 1, saida: 5, cacheLeitura: 0.1, cacheEscrita: 1.25 },
     'claude-opus-5-5': { entrada: 4, saida: 20, cacheLeitura: 0.2, cacheEscrita: 5 },
     'claude-opus-5': { entrada: 5, saida: 25, cacheLeitura: 0.5, cacheEscrita: 6.25 },
     'claude-haiku-4-5': { entrada: 1, saida: 5, cacheLeitura: 0.1, cacheEscrita: 1.25 }

@@ -63,6 +63,7 @@ module.exports = {
     'assinatura.cobrado_mes': ['cobrado todo mês', 'cobrado todos los meses', 'billed monthly'],
     'assinatura.cobrado_ano': ['Gs. {valor} por ano · economize Gs. {economia}', 'Gs. {valor} por año · ahorre Gs. {economia}', 'Gs. {valor} per year · save Gs. {economia}'],
     'assinatura.quero_plano': ['Quero este plano', 'Quiero este plan', 'I want this plan'],
+    'assinatura.mais_vendido': ['Melhor custo-benefício', 'La mejor relación calidad-precio', 'Best value'],
     'assinatura.mais_completo': ['Mais completo', 'Más completo', 'Most complete'],
     'assinatura.gratis': ['Grátis', 'Gratis', 'Free'],
     'assinatura.prueba_sub': ['{dias} dias de teste para novas contas', '{dias} días de prueba para cuentas nuevas', '{dias}-day trial for new accounts'],

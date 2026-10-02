@@ -1,6 +1,7 @@
 const db = require('../config/db');
 
-const mesAtual = () => new Date().toISOString().slice(0, 7);
+// Mes de uso no mesmo fuso do consumo diario (hojeUso), para o limite mensal reiniciar na virada local.
+const mesAtual = () => require('../core/ia_precos').hojeUso().slice(0, 7);
 
 // Toda consulta filtra por user_id: um usuario nunca enxerga conversas, rascunhos ou uso de outro.
 class Ia {

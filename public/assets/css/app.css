@@ -2037,3 +2037,33 @@ tr.gf-prov-row td { border-bottom: 1px dashed var(--border); }
   .planos-grid .plano-card { display: none; }
   .planos-grid .plano-card.is-sel { display: flex; }
 }
+
+/* ---- Destaques: Premium (mais vendido) e Pro (mais completo, dourado neon) ---- */
+.plano-card { overflow: visible; }
+.plano-card__faixa { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: .03em; white-space: nowrap; z-index: 1; }
+.plano-card__faixa--vendido { background: linear-gradient(135deg, #3b82f6, #2563eb); color: #fff; box-shadow: 0 4px 14px rgba(37, 99, 235, .45); }
+.plano-card__faixa--ouro { background: linear-gradient(135deg, #fff1b8, #f5c542 45%, #d99a1e); color: #3a2800; box-shadow: 0 0 16px rgba(245, 197, 66, .65); }
+.plano-card__selo--atual { right: 16px; }
+.plano-card--atual .plano-card__faixa { top: -14px; }
+
+.plano-card--destaque { border: 2px solid var(--blue); background: linear-gradient(180deg, color-mix(in srgb, var(--blue) 12%, var(--card)), var(--card) 42%); box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 18%, transparent), 0 14px 38px color-mix(in srgb, var(--blue) 30%, transparent); }
+.plano-card--destaque .plano-card__preco { color: var(--blue); }
+
+.plano-card--pro { position: relative; border: 2px solid transparent; background: linear-gradient(var(--nav-bg), var(--nav-bg)) padding-box, linear-gradient(135deg, #fff1b8, #f5c542 30%, #b8801a 60%, #ffe28a) border-box; box-shadow: 0 0 14px rgba(245, 197, 66, .5), 0 0 46px rgba(245, 197, 66, .22); }
+.plano-card--pro h3 { color: #f8dd8a; }
+.plano-card--pro .plano-card__preco { background: linear-gradient(135deg, #fff1b8, #f5c542 55%, #e0a21e); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.plano-card--pro .plano-card__preco small { -webkit-text-fill-color: var(--nav-text-muted); }
+.plano-card--pro .btn-pro { background: linear-gradient(135deg, #fff1b8, #f5c542 50%, #d99a1e); border-color: #f5c542; color: #2f2000; font-weight: 800; box-shadow: 0 0 16px rgba(245, 197, 66, .45); }
+.plano-card--pro .plano-card__lista li:not(.is-off) i { color: #f5c542; }
+
+@media (min-width: 900px) {
+  .plano-card--destaque { transform: translateY(-8px); }
+  .plano-card--pro { transform: translateY(-4px); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .plano-card--pro { animation: planoOuro 3.2s ease-in-out infinite; }
+  @keyframes planoOuro {
+    0%, 100% { box-shadow: 0 0 12px rgba(245, 197, 66, .4), 0 0 38px rgba(245, 197, 66, .16); }
+    50% { box-shadow: 0 0 20px rgba(245, 197, 66, .7), 0 0 60px rgba(245, 197, 66, .3); }
+  }
+}

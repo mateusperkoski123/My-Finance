@@ -552,51 +552,58 @@ async function responder({ usuario, conversaId, historico, cliente, nivel = 1, i
     const uso = { entrada: 0, cacheLeitura: 0, cacheEscrita: 0, saida: 0, tokImagem: 0, chamadas: 0 };
     let texto = '';
 
-    for (let volta = 0; volta < MAX_VOLTAS; volta++) {
-        const resp = await api.messages.create({
-            model: modelo,
-            max_tokens: 2048,
-            system,
-            tools: ferramentas,
-            messages: mensagens,
-            cache_control: { type: 'ephemeral' },
-            ...(aceitaEffort(modelo) ? { output_config: { effort: 'medium' } } : {})
-        });
-        const u = resp.usage || {};
-        const entradaRodada = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
-        tokensIn += entradaRodada;
-        tokensOut += u.output_tokens || 0;
-        uso.entrada += u.input_tokens || 0;
-        uso.cacheLeitura += u.cache_read_input_tokens || 0;
-        uso.cacheEscrita += u.cache_creation_input_tokens || 0;
-        uso.saida += u.output_tokens || 0;
-        uso.chamadas += 1;
-        // As fotos seguem na conversa durante as voltas de ferramentas, entao contam em cada chamada (nunca mais que a entrada da chamada).
-        uso.tokImagem += Math.min(tokensImagens, entradaRodada);
+    // Se uma chamada falhar no meio, o que ja foi consumido (e pago) segue junto no erro para ser registrado.
+    try {
+        for (let volta = 0; volta < MAX_VOLTAS; volta++) {
+            const resp = await api.messages.create({
+                model: modelo,
+                max_tokens: 2048,
+                system,
+                tools: ferramentas,
+                messages: mensagens,
+                cache_control: { type: 'ephemeral' },
+                ...(aceitaEffort(modelo) ? { output_config: { effort: 'medium' } } : {})
+            });
+            const u = resp.usage || {};
+            const entradaRodada = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+            tokensIn += entradaRodada;
+            tokensOut += u.output_tokens || 0;
+            uso.entrada += u.input_tokens || 0;
+            uso.cacheLeitura += u.cache_read_input_tokens || 0;
+            uso.cacheEscrita += u.cache_creation_input_tokens || 0;
+            uso.saida += u.output_tokens || 0;
+            uso.chamadas += 1;
+            // As fotos seguem na conversa durante as voltas de ferramentas, entao contam em cada chamada (nunca mais que a entrada da chamada).
+            uso.tokImagem += Math.min(tokensImagens, entradaRodada);
 
-        if (resp.stop_reason === 'tool_use') {
-            // Devolve o conteudo do assistente sem alteracoes (inclui blocos de raciocinio) e todos os resultados numa unica mensagem.
-            mensagens.push({ role: 'assistant', content: resp.content });
-            const resultados = [];
-            for (const bloco of resp.content.filter((b) => b.type === 'tool_use')) {
-                try {
-                    const exec = EXECUTORES[bloco.name];
-                    // So executa ferramentas oferecidas neste nivel (um Nivel 1 nunca roda ferramentas do Nivel 2).
-                    if (!exec || !ferramentas.some((f) => f.name === bloco.name)) throw new Error('Ferramenta desconhecida.');
-                    const saida = await exec(bloco.input || {}, ctx);
-                    resultados.push({ type: 'tool_result', tool_use_id: bloco.id, content: JSON.stringify(saida) });
-                } catch (err) {
-                    resultados.push({ type: 'tool_result', tool_use_id: bloco.id, content: String(err.message || 'Erro').slice(0, 300), is_error: true });
+            if (resp.stop_reason === 'tool_use') {
+                // Devolve o conteudo do assistente sem alteracoes (inclui blocos de raciocinio) e todos os resultados numa unica mensagem.
+                mensagens.push({ role: 'assistant', content: resp.content });
+                const resultados = [];
+                for (const bloco of resp.content.filter((b) => b.type === 'tool_use')) {
+                    try {
+                        const exec = EXECUTORES[bloco.name];
+                        // So executa ferramentas oferecidas neste nivel (um Nivel 1 nunca roda ferramentas do Nivel 2).
+                        if (!exec || !ferramentas.some((f) => f.name === bloco.name)) throw new Error('Ferramenta desconhecida.');
+                        const saida = await exec(bloco.input || {}, ctx);
+                        resultados.push({ type: 'tool_result', tool_use_id: bloco.id, content: JSON.stringify(saida) });
+                    } catch (err) {
+                        resultados.push({ type: 'tool_result', tool_use_id: bloco.id, content: String(err.message || 'Erro').slice(0, 300), is_error: true });
+                    }
                 }
+                mensagens.push({ role: 'user', content: resultados });
+                continue;
             }
-            mensagens.push({ role: 'user', content: resultados });
-            continue;
-        }
 
-        if (resp.stop_reason === 'refusal') { texto = '__refusal__'; break; }
-        texto = textoDe(resp);
-        if (resp.stop_reason === 'max_tokens' && !texto) texto = '__max_tokens__';
-        break;
+            if (resp.stop_reason === 'refusal') { texto = '__refusal__'; break; }
+            texto = textoDe(resp);
+            if (resp.stop_reason === 'max_tokens' && !texto) texto = '__max_tokens__';
+            break;
+        }
+    } catch (err) {
+        err.uso = uso;
+        err.modelo = modelo;
+        throw err;
     }
     if (!texto) texto = '__sem_resposta__';
 

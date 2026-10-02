@@ -77,7 +77,8 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
         const linhaAnual = t('assinatura.cobrado_ano', { valor: fmt(p.preco_anual), economia: fmt(economia) });
     %>
         <article class="card plano-card <%= atual ? 'plano-card--atual' : '' %> <%= p.codigo === 'premium' ? 'plano-card--destaque' : '' %> <%= p.codigo === 'pro' ? 'plano-card--pro' : '' %> <%= p.codigo === selecionado ? 'is-sel' : '' %>" data-plano="<%= p.codigo %>">
-            <% if (atual) { %><span class="plano-card__selo"><%= t('assinatura.plano_atual') %></span><% } else if (p.codigo === 'premium') { %><span class="plano-card__selo plano-card__selo--destaque"><%= t('assinatura.mais_completo') %></span><% } %>
+            <% if (p.codigo === 'premium') { %><span class="plano-card__faixa plano-card__faixa--vendido"><i class="ph-bold ph-star" aria-hidden="true"></i> <%= t('assinatura.mais_vendido') %></span><% } else if (p.codigo === 'pro') { %><span class="plano-card__faixa plano-card__faixa--ouro"><i class="ph-bold ph-crown-simple" aria-hidden="true"></i> <%= t('assinatura.mais_completo') %></span><% } %>
+            <% if (atual) { %><span class="plano-card__selo plano-card__selo--atual"><%= t('assinatura.plano_atual') %></span><% } %>
             <h3><%= nomePlano(p.codigo) %></h3>
             <div class="muted plano-card__sub"><%= t('plano.' + p.codigo + '.sub') %></div>
             <div class="plano-card__preco">Gs. <span data-preco data-mensal="<%= txtMensal %>" data-anual="<%= txtAnual %>"><%= txtMensal %></span><small>/<%= t('assinatura.mes') %></small></div>
