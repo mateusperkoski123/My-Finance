@@ -1,0 +1,22 @@
+<%
+// Grafico de barras diario (SVG, sem biblioteca). Parametros: titulo, serie [{d:'YYYY-MM-DD', n}], cor, formato (funcao opcional).
+const _fmt = typeof formato === 'function' ? formato : (v) => Number(v).toLocaleString(lang);
+const _max = Math.max(1, ...serie.map((p) => p.n));
+const _total = serie.reduce((s, p) => s + p.n, 0);
+const _W = 300, _H = 84, _passo = _W / serie.length;
+const _dm = (d) => d.slice(8, 10) + '/' + d.slice(5, 7);
+%>
+<div class="card adm-grafico">
+    <div class="adm-grafico__topo">
+        <strong><%= titulo %></strong>
+        <span class="muted"><%= t('adm.total_30d') %>: <b><%= _fmt(_total) %></b></span>
+    </div>
+    <svg viewBox="0 0 <%= _W %> <%= _H + 14 %>" role="img" aria-label="<%= titulo %>: <%= _fmt(_total) %> (<%= t('adm.ultimos_30') %>)" preserveAspectRatio="none" class="adm-grafico__svg">
+        <% serie.forEach((p, i) => { const h = p.n ? Math.max(2, (p.n / _max) * _H) : 1; %>
+            <rect x="<%= (i * _passo + 1).toFixed(2) %>" y="<%= (_H - h).toFixed(2) %>" width="<%= (_passo - 2).toFixed(2) %>" height="<%= h.toFixed(2) %>" rx="1.5" fill="<%= cor %>" opacity="<%= p.n ? 1 : 0.25 %>"><title><%= _dm(p.d) %>: <%= _fmt(p.n) %></title></rect>
+        <% }) %>
+        <text x="0" y="<%= _H + 11 %>" font-size="8" fill="currentColor" opacity=".6"><%= _dm(serie[0].d) %></text>
+        <text x="<%= _W %>" y="<%= _H + 11 %>" font-size="8" fill="currentColor" opacity=".6" text-anchor="end"><%= _dm(serie[serie.length - 1].d) %></text>
+    </svg>
+    <div class="adm-grafico__pico muted"><%= t('adm.pico') %>: <%= _fmt(_max) %></div>
+</div>

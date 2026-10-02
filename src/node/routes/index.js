@@ -87,7 +87,8 @@ router.get('/assinatura', requireAuth, assinaturaController.index);
 router.post('/assinatura/solicitar', requireAuth, assinaturaController.solicitar);
 
 // Administracao (somente role=admin)
-router.get('/admin', requireAuth, exigirAdmin, adminController.index);
+router.get('/admin', requireAuth, exigirAdmin, adminController.painel);
+router.get('/admin/usuarios', requireAuth, exigirAdmin, adminController.index);
 router.get('/admin/ia', requireAuth, exigirAdmin, adminController.iaConsumo);
 router.post('/admin/ia/creditos', requireAuth, exigirAdmin, adminController.adicionarCredito);
 router.post('/admin/ia/creditos/:id/excluir', requireAuth, exigirAdmin, adminController.excluirCredito);

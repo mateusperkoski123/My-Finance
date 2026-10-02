@@ -2,7 +2,7 @@ const Assinatura = require('../models/Assinatura');
 const User = require('../models/User');
 const { fmt } = require('../core/legal');
 
-const redirecionar = (res) => res.redirect('/admin');
+const redirecionar = (res) => res.redirect('/admin/usuarios');
 const Ia = require('../models/Ia');
 const { hojeUso } = require('../core/ia_precos');
 
@@ -12,7 +12,16 @@ const somarDias = (ymd, n) => {
     return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
 };
 
+const Estatisticas = require('../models/Estatisticas');
+
 const adminController = {
+    // Painel (visao geral): uso do sistema, usuarios, assinaturas, receita e IA, por dia/semana/mes.
+    painel: async (req, res) => {
+        const [stats, metricas] = await Promise.all([Estatisticas.painel({ forcar: req.query.atualizar === '1' }), Assinatura.metricas()]);
+        res.render('admin/painel', { title: req.t('admin.titulo'), s: stats, m: metricas, fmt, aba: 'painel' });
+    },
+
+    // Lista de usuarios (gestao de planos, IA, suspensao, arquivamento)
     index: async (req, res) => {
         const busca = String(req.query.q || '').trim().slice(0, 100);
         // Filtro por dias restantes do teste/plano: '' (todos), 1, 3, 7, 15, 'vencido' ou 'sem' (sem vencimento).
@@ -22,7 +31,7 @@ const adminController = {
             Assinatura.listarUsuariosAdmin({ busca, vence }),
             Assinatura.listarPlanos()
         ]);
-        res.render('admin/index', { title: req.t('admin.titulo'), metricas, usuarios, planos, busca, fmt, vence });
+        res.render('admin/index', { title: req.t('admin.titulo'), metricas, usuarios, planos, busca, fmt, vence, aba: 'usuarios' });
     },
 
     // Consumo da IA: tokens (texto / fotos / audios), custo estimado por dia e saldo de creditos (informado manualmente).
@@ -155,7 +164,7 @@ const adminController = {
     // REVISAR (seguranca): acoes em massa. Cada acao so atinge usuarios compativeis; admins e o proprio admin logado nunca
     // sao suspensos, arquivados, excluidos nem alterados em massa. Exclusao so vale para contas ja arquivadas.
     acaoEmMassa: async (req, res) => {
-        const voltar = req.body.voltar === 'arquivados' ? '/admin/arquivados' : '/admin';
+        const voltar = req.body.voltar === 'arquivados' ? '/admin/arquivados' : '/admin/usuarios';
         const bruto = [].concat(req.body.ids || []).flatMap((v) => String(v).split(','));
         const ids = [...new Set(bruto.map((v) => parseInt(v, 10)).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 200);
         const acao = String(req.body.acao || '');

@@ -14,6 +14,7 @@ const maxTok = Math.max(1, ...serie.map(r => Number(r[cfg.tok] || 0)));
 const topo = usuarios.slice().sort((a, b) => Number(b[cfg.tok] || 0) - Number(a[cfg.tok] || 0)).filter(u => Number(u[cfg.tok] || 0) > 0).slice(0, 10);
 const kpis = [['iac.hoje', totais.hoje], ['iac.sete', totais.d7], ['iac.trinta', totais.d30], ['iac.mes', totais.mes], ['iac.total', totais.total]];
 %>
+<%- include('_abas', { abaAdmin: 'ia' }) %>
 <div class="page-header">
     <h1><i class="ph ph-chart-bar"></i> <%= t('iac.titulo') %></h1>
     <p class="muted"><%= t('iac.subtitulo') %></p>

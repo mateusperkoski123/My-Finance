@@ -1,0 +1,6 @@
+<nav class="tabs admin-abas" aria-label="<%= t('admin.titulo') %>">
+    <a href="/admin" class="tabs__item <%= abaAdmin === 'painel' ? 'is-active' : '' %>"><i class="ph ph-chart-line-up"></i> <%= t('adm.aba_painel') %></a>
+    <a href="/admin/usuarios" class="tabs__item <%= abaAdmin === 'usuarios' ? 'is-active' : '' %>"><i class="ph ph-users"></i> <%= t('adm.aba_usuarios') %></a>
+    <a href="/admin/ia" class="tabs__item <%= abaAdmin === 'ia' ? 'is-active' : '' %>"><i class="ph ph-sparkle"></i> <%= t('adm.aba_ia') %></a>
+    <a href="/admin/arquivados" class="tabs__item <%= abaAdmin === 'arquivados' ? 'is-active' : '' %>"><i class="ph ph-archive"></i> <%= t('adm.aba_arquivados') %></a>
+</nav>

@@ -1975,3 +1975,33 @@ a.requer-internet-bloqueado::after { content: ''; }
 tr.gf-prov-row { background: rgba(245, 158, 11, .08); }
 tr.gf-prov-row td { border-bottom: 1px dashed var(--border); }
 .gf-prov-etiqueta { font-size: 10px; margin-left: 6px; white-space: nowrap; }
+
+/* ---- Painel do admin ---- */
+.admin-abas { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.admin-abas .tabs__item { display: inline-flex; align-items: center; gap: 6px; }
+.adm-atualizado { font-size: 12px; display: inline-flex; align-items: center; gap: 6px; }
+.adm-secao { margin-top: 16px; padding: 18px; border-radius: 16px; }
+.adm-secao__titulo { font-size: 15px; font-weight: 700; margin: 0 0 12px; display: flex; align-items: center; gap: 8px; }
+.adm-nota { font-size: 12px; margin: 10px 0 0; }
+.adm-tabela td.num, .adm-tabela th.num { text-align: right; white-space: nowrap; }
+.adm-tabela td:first-child { white-space: nowrap; }
+.adm-tabela td:first-child i { color: var(--muted); margin-right: 6px; }
+.adm-delta { display: block; font-size: 10.5px; font-weight: 700; }
+.adm-delta--up { color: var(--green); } .adm-delta--down { color: var(--red); } .adm-delta--eq { color: var(--muted); }
+.kpi-card--alerta { border-color: var(--orange, #f59e0b); }
+.kpi-card__label i { margin-right: 4px; }
+.admin-kpis { grid-template-columns: repeat(3, 1fr); }
+.adm-graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.adm-grafico { padding: 14px 16px; border-radius: 16px; }
+.adm-grafico__topo { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; font-size: 13px; }
+.adm-grafico__svg { width: 100%; height: 110px; color: var(--text); display: block; }
+.adm-grafico__pico { font-size: 11px; text-align: right; margin-top: 2px; }
+.adm-duas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.adm-duas--2 { grid-template-columns: 1fr 1fr; }
+.adm-lista { list-style: none; margin: 0 0 12px; padding: 0; font-size: 13px; }
+.adm-lista li { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.adm-lista li:last-child { border-bottom: 0; }
+.adm-lista__sub { padding-left: 14px !important; color: var(--muted); font-size: 12.5px; }
+.adm-previa__lista { display: grid; gap: 8px; margin-top: 10px; }
+.adm-previa__msg { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--green-bg, rgba(16,185,129,.1)); font-size: 14px; font-weight: 600; }
+@media (max-width: 900px) { .adm-duas, .adm-duas--2, .adm-graficos { grid-template-columns: 1fr; } .admin-kpis { grid-template-columns: 1fr 1fr; } }

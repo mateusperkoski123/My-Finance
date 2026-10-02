@@ -3,10 +3,10 @@ const m = metricas;
 const nomePlano = (c) => t('plano.' + c + '.nome');
 const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge-sucesso', vencida: 'badge-pendente', cancelada: 'badge-pendente', sem: 'badge-neutro' };
 %>
+<%- include('_abas', { abaAdmin: 'usuarios' }) %>
 <div class="page-header">
     <h1><i class="ph ph-shield-star"></i> <%= t('admin.titulo') %></h1>
     <p class="muted"><%= t('admin.subtitulo') %></p>
-    <a class="btn btn-outline btn-sm" href="/admin/ia"><i class="ph ph-chart-bar"></i> <%= t('admin.ia_consumo_link') %></a>
     <a class="btn btn-outline btn-sm" href="/admin/arquivados"><i class="ph ph-archive"></i> <%= t('admin.ver_arquivados') %> (<%= m.usuarios.arquivados %>)</a>
 </div>
 
@@ -26,7 +26,7 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
 <% } %>
 
 <section class="card" style="margin-top: 16px;">
-    <form method="get" action="/admin" class="busca-linha" role="search" style="margin-bottom: 12px;">
+    <form method="get" action="/admin/usuarios" class="busca-linha" role="search" style="margin-bottom: 12px;">
         <input class="input" type="search" name="q" value="<%= busca %>" placeholder="<%= t('admin.buscar') %>">
         <select class="input" name="vence" aria-label="<%= t('admin.vence.rotulo') %>" title="<%= t('admin.vence.rotulo') %>" onchange="this.form.submit()" style="max-width: 250px;">
             <option value=""><%= t('admin.vence.todos') %></option>
@@ -36,7 +36,7 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
     </form>
 
     <p class="muted" style="font-size: 12px; margin: 0 0 10px;"><i class="ph ph-info"></i> <%= t('admin.legenda_planos') %></p>
-    <%- include('_massa', { voltar: 'admin', acoes: ['ia_on', 'ia_off', 'ia_nivel_1', 'ia_nivel_2', 'trial', 'suspender', 'reativar', 'arquivar'] }) %>
+    <%- include('_massa', { voltar: 'usuarios', acoes: ['ia_on', 'ia_off', 'ia_nivel_1', 'ia_nivel_2', 'trial', 'suspender', 'reativar', 'arquivar'] }) %>
 
     <div class="tabela-container">
         <table class="tabela">

@@ -1,0 +1,148 @@
+<%
+const nf = (v) => Number(v || 0).toLocaleString(lang);
+const gs = (v) => 'Gs. ' + nf(Math.round(Number(v || 0)));
+const usd = (micro) => { const v = Number(micro || 0) / 1e6; return 'US$ ' + v.toLocaleString(lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+const r = s.resumo;
+const hora = formatDateTime(s.geradoEm);
+// Variacao em % contra o periodo anterior (null quando nao ha base de comparacao)
+const delta = (atual, ant) => {
+    if (!ant) return atual ? { txt: t('adm.novo'), cls: 'up' } : null;
+    const p = Math.round(((atual - ant) / ant) * 100);
+    return { txt: (p > 0 ? '▲ +' : p < 0 ? '▼ ' : '= ') + p + '%', cls: p > 0 ? 'up' : p < 0 ? 'down' : 'eq' };
+};
+const COLS = [['hoje', 'ontem', 'adm.col_hoje'], ['ontem', null, 'adm.col_ontem'], ['sem', 'semAnt', 'adm.col_7d'], ['semAnt', null, 'adm.col_7d_ant'], ['mes', 'mesAnt', 'adm.col_mes'], ['mesAnt', null, 'adm.col_mes_ant']];
+const LINHAS = [
+    ['transacoes', 'adm.l_transacoes', nf, 'ph-receipt'],
+    ['novosUsuarios', 'adm.l_novos_usuarios', nf, 'ph-user-plus'],
+    ['novosPagantes', 'adm.l_novos_pagantes', nf, 'ph-crown-simple'],
+    ['pagamentos', 'adm.l_pagamentos', nf, 'ph-credit-card'],
+    ['receita', 'adm.l_receita', gs, 'ph-coins'],
+    ['iaMensagens', 'adm.l_ia_mensagens', nf, 'ph-chat-circle-text'],
+    ['iaFotos', 'adm.l_ia_fotos', nf, 'ph-camera'],
+    ['iaAudios', 'adm.l_ia_audios', nf, 'ph-microphone'],
+    ['iaCusto', 'adm.l_ia_custo', usd, 'ph-currency-dollar']
+];
+const nomePlano = (c) => t('plano.' + c + '.nome');
+const conv = s.conversao30d;
+const convPct = conv.novos ? Math.round((conv.pagaram / conv.novos) * 100) : 0;
+const mesIa = r.iaCusto.mes;
+%>
+<%- include('_abas', { abaAdmin: 'painel' }) %>
+
+<div class="page-header">
+    <h1><i class="ph ph-shield-star"></i> <%= t('admin.titulo') %></h1>
+    <p class="muted"><%= t('adm.subtitulo') %></p>
+    <span class="muted adm-atualizado"><i class="ph ph-clock"></i> <%= t('adm.atualizado', { hora: hora, fuso: s.fuso }) %> · <a href="/admin?atualizar=1"><%= t('adm.atualizar') %></a></span>
+</div>
+
+<div class="kpi-grid admin-kpis">
+    <div class="card kpi-card"><span class="kpi-card__label"><i class="ph ph-receipt"></i> <%= t('adm.k_transacoes_hoje') %></span><strong class="kpi-card__valor"><%= nf(r.transacoes.hoje) %></strong>
+        <span class="kpi-card__sub"><%= t('adm.k_transacoes_det', { mes: nf(r.transacoes.mes), total: nf(s.totais.transacoes) }) %></span></div>
+    <div class="card kpi-card"><span class="kpi-card__label"><i class="ph ph-users"></i> <%= t('admin.kpi_usuarios') %></span><strong class="kpi-card__valor"><%= nf(m.usuarios.total) %></strong>
+        <span class="kpi-card__sub"><%= t('adm.k_ativos', { hoje: nf(s.ativos.hoje), sem: nf(s.ativos.sem) }) %></span></div>
+    <div class="card kpi-card"><span class="kpi-card__label"><i class="ph ph-chat-circle-text"></i> <%= t('adm.k_ia_hoje') %></span><strong class="kpi-card__valor"><%= nf(r.iaMensagens.hoje) %></strong>
+        <span class="kpi-card__sub"><%= t('adm.k_ia_det', { fotos: nf(r.iaFotos.hoje), audios: nf(r.iaAudios.hoje) }) %></span></div>
+    <div class="card kpi-card"><span class="kpi-card__label"><i class="ph ph-crown-simple"></i> <%= t('admin.kpi_pagantes') %></span><strong class="kpi-card__valor"><%= nf(m.assinaturas.ativas || 0) %></strong>
+        <span class="kpi-card__sub"><%= t('adm.k_mrr', { mrr: nf(m.mrr) }) %></span></div>
+    <div class="card kpi-card"><span class="kpi-card__label"><i class="ph ph-coins"></i> <%= t('adm.k_receita_mes') %></span><strong class="kpi-card__valor"><%= gs(r.receita.mes) %></strong>
+        <span class="kpi-card__sub"><%= t('adm.k_receita_hoje', { hoje: gs(r.receita.hoje) }) %></span></div>
+    <div class="card kpi-card <%= s.trialsVencendo3d ? 'kpi-card--alerta' : '' %>"><span class="kpi-card__label"><i class="ph ph-hourglass"></i> <%= t('adm.k_trials') %></span><strong class="kpi-card__valor"><%= nf(s.trialsVencendo3d) %></strong>
+        <span class="kpi-card__sub"><%= t('adm.k_pedidos', { n: nf(m.assinaturas.solicitacoes || 0) }) %></span></div>
+</div>
+
+<section class="card adm-secao">
+    <h2 class="adm-secao__titulo"><i class="ph ph-table"></i> <%= t('adm.comparativo') %></h2>
+    <div class="tabela-container">
+        <table class="tabela adm-tabela">
+            <thead><tr><th><%= t('adm.metrica') %></th>
+                <% COLS.forEach(([k, , rot]) => { %><th class="num"><%= t(rot) %></th><% }) %></tr></thead>
+            <tbody>
+            <% LINHAS.forEach(([chave, rot, f, icone]) => { %>
+                <tr>
+                    <td><i class="ph <%= icone %>"></i> <%= t(rot) %></td>
+                    <% COLS.forEach(([k, ant]) => { const d = ant ? delta(r[chave][k], r[chave][ant]) : null; %>
+                        <td class="num"><strong><%= f(r[chave][k]) %></strong><% if (d) { %><small class="adm-delta adm-delta--<%= d.cls %>"><%= d.txt %></small><% } %></td>
+                    <% }) %>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <p class="muted adm-nota"><%= t('adm.nota_periodos') %></p>
+</section>
+
+<div class="adm-graficos">
+    <%- include('_grafico', { titulo: t('adm.g_transacoes'), serie: s.series.transacoes, cor: '#10b981' }) %>
+    <%- include('_grafico', { titulo: t('adm.g_novos'), serie: s.series.novosUsuarios, cor: '#3b82f6' }) %>
+    <%- include('_grafico', { titulo: t('adm.g_ia'), serie: s.series.iaMensagens, cor: '#8b5cf6' }) %>
+    <%- include('_grafico', { titulo: t('adm.g_receita'), serie: s.series.receita, cor: '#f59e0b', formato: gs }) %>
+</div>
+
+<div class="adm-duas">
+    <section class="card adm-secao">
+        <h2 class="adm-secao__titulo"><i class="ph ph-crown-simple"></i> <%= t('adm.assinaturas') %></h2>
+        <ul class="adm-lista">
+            <li><span><%= t('adm.s_teste_beta') %></span><b><%= nf(m.assinaturas.beta || 0) %></b></li>
+            <li><span><%= t('adm.s_em_teste') %></span><b><%= nf(m.assinaturas.trial || 0) %></b></li>
+            <li><span><%= t('adm.s_pagantes') %></span><b><%= nf(m.assinaturas.ativas || 0) %></b></li>
+            <% m.porPlano.forEach((p) => { %><li class="adm-lista__sub"><span><%= nomePlano(p.codigo) %></span><b><%= nf(p.total) %></b></li><% }) %>
+            <li><span><%= t('adm.s_vencidas') %></span><b><%= nf(m.assinaturas.vencidas || 0) %></b></li>
+            <li><span><%= t('adm.s_canceladas') %></span><b><%= nf(m.assinaturas.canceladas || 0) %></b></li>
+            <li><span><%= t('adm.s_conversao') %></span><b><%= convPct %>%</b><small class="muted"><%= t('adm.s_conversao_det', { pagaram: conv.pagaram, novos: conv.novos }) %></small></li>
+        </ul>
+    </section>
+    <section class="card adm-secao">
+        <h2 class="adm-secao__titulo"><i class="ph ph-sparkle"></i> <%= t('adm.ia') %></h2>
+        <ul class="adm-lista">
+            <li><span><%= t('adm.ia_mensagens_total') %></span><b><%= nf(s.totais.iaMensagens) %></b></li>
+            <li><span><%= t('adm.ia_fotos_total') %></span><b><%= nf(s.totais.iaFotos) %></b></li>
+            <li><span><%= t('adm.ia_audios_total') %></span><b><%= nf(s.totais.iaAudios) %></b></li>
+            <li><span><%= t('adm.ia_usuarios_hoje') %></span><b><%= nf(r.iaUsuarios.hoje) %></b></li>
+            <li><span><%= t('adm.ia_custo_mes') %></span><b><%= usd(mesIa) %></b></li>
+            <li><span><%= t('adm.ia_custo_hoje') %></span><b><%= usd(r.iaCusto.hoje) %></b></li>
+        </ul>
+        <a class="btn btn-outline btn-sm" href="/admin/ia"><i class="ph ph-chart-bar"></i> <%= t('admin.ia_consumo_link') %></a>
+    </section>
+    <section class="card adm-secao">
+        <h2 class="adm-secao__titulo"><i class="ph ph-users"></i> <%= t('adm.usuarios') %></h2>
+        <ul class="adm-lista">
+            <li><span><%= t('adm.u_ativos_hoje') %></span><b><%= nf(s.ativos.hoje) %></b></li>
+            <li><span><%= t('adm.u_ativos_7d') %></span><b><%= nf(s.ativos.sem) %></b></li>
+            <li><span><%= t('adm.u_ativos_30d') %></span><b><%= nf(s.ativos.mes) %></b></li>
+            <li><span><%= t('adm.u_suspensos') %></span><b><%= nf(m.usuarios.suspensos || 0) %></b></li>
+            <li><span><%= t('adm.u_arquivados') %></span><b><%= nf(m.usuarios.arquivados || 0) %></b></li>
+            <% s.idiomas.forEach((i) => { %><li class="adm-lista__sub"><span><%= i.idioma || '—' %></span><b><%= nf(i.n) %></b></li><% }) %>
+        </ul>
+    </section>
+</div>
+
+<div class="adm-duas adm-duas--2">
+    <section class="card adm-secao">
+        <h2 class="adm-secao__titulo"><i class="ph ph-user-plus"></i> <%= t('adm.recentes_cadastros') %></h2>
+        <ul class="adm-lista">
+            <% s.recentesUsuarios.forEach((u) => { %>
+                <li><span><%= u.nome %> <small class="muted"><%= u.email %></small></span><small class="muted"><%= formatDateTime(u.created_at) %> · <%= u.idioma || '—' %></small></li>
+            <% }) %>
+        </ul>
+    </section>
+    <section class="card adm-secao">
+        <h2 class="adm-secao__titulo"><i class="ph ph-credit-card"></i> <%= t('adm.recentes_pagamentos') %></h2>
+        <% if (!s.recentesPagamentos.length) { %><p class="muted"><%= t('adm.sem_pagamentos') %></p><% } %>
+        <ul class="adm-lista">
+            <% s.recentesPagamentos.forEach((p) => { %>
+                <li><span><%= p.usuario || '—' %> <small class="muted"><%= p.plano ? nomePlano(p.plano) : '' %><%= p.ciclo ? ' · ' + t('assinatura.ciclo_' + p.ciclo) : '' %></small></span><b><%= gs(p.valor) %></b><small class="muted"><%= formatDateTime(p.pago_em) %></small></li>
+            <% }) %>
+        </ul>
+    </section>
+</div>
+
+<section class="card adm-secao adm-previa">
+    <h2 class="adm-secao__titulo"><i class="ph ph-megaphone"></i> <%= t('adm.previa_titulo') %></h2>
+    <p class="muted"><%= t('adm.previa_texto') %></p>
+    <div class="adm-previa__lista">
+        <div class="adm-previa__msg"><i class="ph ph-bell-ringing"></i> <%= t('adm.aviso_hoje', { n: nf(r.transacoes.hoje) }) %></div>
+        <div class="adm-previa__msg"><i class="ph ph-bell-ringing"></i> <%= t('adm.aviso_semana', { n: nf(r.transacoes.sem) }) %></div>
+        <div class="adm-previa__msg"><i class="ph ph-bell-ringing"></i> <%= t('adm.aviso_mes', { n: nf(r.transacoes.mes) }) %></div>
+        <div class="adm-previa__msg"><i class="ph ph-bell-ringing"></i> <%= t('adm.aviso_total', { n: nf(s.totais.transacoes) }) %></div>
+    </div>
+</section>
