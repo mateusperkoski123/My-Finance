@@ -149,10 +149,12 @@ class Assinatura {
     }
 
     // ---- Admin ----
-    static async listarUsuariosAdmin({ busca = '', limite = 200, arquivados = false } = {}) {
+    static async listarUsuariosAdmin({ busca = '', limite = 200, arquivados = false, vence = '' } = {}) {
         const like = `%${busca}%`;
         const [rows] = await db.query(
             `SELECT u.id, u.nome, u.email, u.role, u.status AS user_status, u.created_at, u.ultimo_login_em,
+                    CASE WHEN u.ultimo_login_em IS NULL AND u.ultimo_acesso_em IS NULL THEN NULL
+                         ELSE GREATEST(COALESCE(u.ultimo_login_em, '1970-01-01 00:00:00'), COALESCE(u.ultimo_acesso_em, '1970-01-01 00:00:00')) END AS ultimo_acesso,
                     u.email_verificado_em, u.ia_habilitada, u.ia_nivel, u.origem, u.google_id IS NOT NULL AS via_google,
                     a.status AS ass_status, a.ciclo, a.trial_fim, a.periodo_fim, a.ciclo_solicitado,
                     p.codigo AS plano_codigo, ps.codigo AS solicitado_codigo,
@@ -165,10 +167,18 @@ class Assinatura {
              WHERE (u.email LIKE ? OR u.nome LIKE ?) AND u.status ${arquivados ? '=' : '<>'} 'arquivado'
              ORDER BY (a.plano_solicitado_id IS NOT NULL) DESC, u.created_at DESC
              LIMIT ?`, [like, like, limite]);
-        return rows.map((r) => {
+        const lista = rows.map((r) => {
             const e = calcularEstado({ status: r.ass_status, horas_trial: r.horas_trial, dias_periodo: r.dias_periodo });
-            return { ...r, status_efetivo: e ? e.status_efetivo : 'sem' };
+            return { ...r, status_efetivo: e ? e.status_efetivo : 'sem', dias_restantes: e ? e.dias_restantes : null };
         });
+        // Filtro por vencimento: "ate N dias" (teste/plano pago que vence em N dias ou menos), "vencido" ou "sem vencimento".
+        const n = parseInt(vence, 10);
+        if (n > 0) {
+            return lista.filter((u) => u.dias_restantes !== null && u.dias_restantes <= n).sort((a, b) => a.dias_restantes - b.dias_restantes);
+        }
+        if (vence === 'vencido') return lista.filter((u) => u.status_efetivo === 'vencida');
+        if (vence === 'sem') return lista.filter((u) => ['beta', 'sem'].includes(u.status_efetivo));
+        return lista;
     }
 
     static async metricas() {

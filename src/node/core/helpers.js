@@ -74,6 +74,21 @@ function formatDate(dateStr, formatStr = 'YYYY-MM-DD') {
     return `${year}-${month}-${day}`;
 }
 
+// 'DD/MM/YYYY HH:mm' no fuso do negocio (o servidor da hospedagem costuma rodar em UTC).
+function formatDateTime(valor, tz) {
+    if (!valor) return '';
+    const d = new Date(valor);
+    if (isNaN(d.getTime())) return '';
+    const zona = tz || process.env.IA_TIMEZONE || 'America/Asuncion';
+    try {
+        const p = new Intl.DateTimeFormat('en-GB', { timeZone: zona, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d)
+            .reduce((o, x) => { o[x.type] = x.value; return o; }, {});
+        return `${p.day}/${p.month}/${p.year} ${p.hour === '24' ? '00' : p.hour}:${p.minute}`;
+    } catch (e) {
+        return d.toISOString().slice(0, 16).replace('T', ' ');
+    }
+}
+
 function truncarTexto(str, max = 45) {
     if (!str) return '';
     const s = String(str).trim();
@@ -128,6 +143,7 @@ module.exports = {
     moeda,
     parseMoeda,
     formatDate,
+    formatDateTime,
     truncarTexto,
     toLocalYMD
 };

@@ -101,6 +101,10 @@ class User {
         return this.findById(result.insertId);
     }
 
+    static async registrarAcesso(userId) {
+        await db.query('UPDATE users SET ultimo_acesso_em = NOW() WHERE id = ?', [userId]);
+    }
+
     static async registrarLogin(userId, { email = null, ip = null, userAgent = null, sucesso = true } = {}) {
         await db.query(
             'INSERT INTO login_logs (user_id, email, ip, user_agent, sucesso) VALUES (?, ?, ?, ?, ?)',

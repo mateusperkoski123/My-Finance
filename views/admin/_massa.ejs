@@ -15,21 +15,24 @@
 (function () {
     var form = document.getElementById('form-massa');
     if (!form) return;
-    var todos = document.getElementById('massa-todos');
     var cont = document.getElementById('massa-contador');
     var acao = document.getElementById('massa-acao');
     var dias = document.getElementById('massa-dias');
+    // Este bloco vem ANTES da tabela na pagina, entao os checkboxes sao consultados sempre na hora do uso (nunca guardados antes).
+    function todos() { return document.getElementById('massa-todos'); }
     function caixas() { return Array.prototype.slice.call(document.querySelectorAll('input.massa-sel:not(:disabled)')); }
     function atualizar() {
         var marcadas = caixas().filter(function (c) { return c.checked; });
         form.hidden = marcadas.length === 0;
         cont.textContent = <%- JSON.stringify(t('admin.massa.selecionados', { n: '__N__' })) %>.replace('__N__', marcadas.length);
-        if (todos) { todos.checked = marcadas.length > 0 && marcadas.length === caixas().length; todos.indeterminate = marcadas.length > 0 && marcadas.length < caixas().length; }
+        var t = todos();
+        if (t) { t.checked = marcadas.length > 0 && marcadas.length === caixas().length; t.indeterminate = marcadas.length > 0 && marcadas.length < caixas().length; }
     }
     document.addEventListener('change', function (e) {
-        if (e.target === todos) { caixas().forEach(function (c) { c.checked = todos.checked; }); atualizar(); }
-        else if (e.target.classList && e.target.classList.contains('massa-sel')) atualizar();
-        else if (e.target === acao) dias.hidden = acao.value !== 'trial';
+        var alvo = e.target;
+        if (alvo.id === 'massa-todos') { caixas().forEach(function (c) { c.checked = alvo.checked; }); atualizar(); }
+        else if (alvo.classList && alvo.classList.contains('massa-sel')) atualizar();
+        else if (alvo === acao) dias.hidden = acao.value !== 'trial';
     });
     document.getElementById('massa-limpar').addEventListener('click', function () { caixas().forEach(function (c) { c.checked = false; }); atualizar(); });
     form.addEventListener('submit', function (e) {

@@ -106,7 +106,7 @@ module.exports = {
     'admin.col_usuario': ['Usuário', 'Usuario', 'User'],
     'admin.col_plano': ['Plano', 'Plan', 'Plan'],
     'admin.col_vence': ['Vence', 'Vence', 'Expires'],
-    'admin.col_pedido': ['Pedido', 'Pedido', 'Request'],
+    'admin.col_pedido': ['Plano solicitado', 'Plan solicitado', 'Plan requested'],
     'admin.col_acesso': ['Último acesso', 'Último acceso', 'Last access'],
     'admin.suspenso': ['suspenso', 'suspendido', 'suspended'],
     'admin.sem_verificar': ['e-mail sem verificar', 'correo sin verificar', 'unverified e-mail'],

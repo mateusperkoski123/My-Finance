@@ -15,17 +15,14 @@ const somarDias = (ymd, n) => {
 const adminController = {
     index: async (req, res) => {
         const busca = String(req.query.q || '').trim().slice(0, 100);
-        // Consumo da IA por usuario: este mes (padrao), ultimos 30 dias ou tudo.
-        const periodo = ['mes', '30d', 'total'].includes(req.query.periodo) ? req.query.periodo : 'mes';
-        const hoje = hojeUso();
-        const desde = periodo === 'mes' ? hoje.slice(0, 8) + '01' : (periodo === '30d' ? somarDias(hoje, -29) : null);
-        const [metricas, usuarios, planos, consumo] = await Promise.all([
+        // Filtro por dias restantes do teste/plano: '' (todos), 1, 3, 7, 15, 'vencido' ou 'sem' (sem vencimento).
+        const vence = ['1', '3', '7', '15', 'vencido', 'sem'].includes(req.query.vence) ? req.query.vence : '';
+        const [metricas, usuarios, planos] = await Promise.all([
             Assinatura.metricas(),
-            Assinatura.listarUsuariosAdmin({ busca }),
-            Assinatura.listarPlanos(),
-            Ia.consumoPorUsuario(desde)
+            Assinatura.listarUsuariosAdmin({ busca, vence }),
+            Assinatura.listarPlanos()
         ]);
-        res.render('admin/index', { title: req.t('admin.titulo'), metricas, usuarios, planos, busca, fmt, consumo, periodo });
+        res.render('admin/index', { title: req.t('admin.titulo'), metricas, usuarios, planos, busca, fmt, vence });
     },
 
     // Consumo da IA: tokens (texto / fotos / audios), custo estimado por dia e saldo de creditos (informado manualmente).

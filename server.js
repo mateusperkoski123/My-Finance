@@ -99,6 +99,10 @@ app.use(async (req, res, next) => {
             if (user) {
                 req.user = user;
                 res.locals.usuarioLogado = user;
+                // Ultimo acesso: grava no maximo uma vez a cada ACESSO_INTERVALO_HORAS (padrao 12) por usuario, sem esperar a gravacao.
+                const intervalo = (Number(process.env.ACESSO_INTERVALO_HORAS) || 12) * 3600 * 1000;
+                const ultimo = user.ultimo_acesso_em ? new Date(user.ultimo_acesso_em).getTime() : 0;
+                if (Date.now() - ultimo > intervalo) User.registrarAcesso(user.id).catch(() => {});
             }
         } catch (err) {
             console.error('Session user fetch error:', err);
@@ -116,10 +120,11 @@ const { contaMiddleware } = require('./src/node/middleware/contaMiddleware');
 app.use((req, res, next) => contaMiddleware(req, res, next).catch(next));
 
 // Helpers in views
-const { moeda, formatDate, truncarTexto, descricaoLancamento } = require('./src/node/core/helpers');
+const { moeda, formatDate, formatDateTime, truncarTexto, descricaoLancamento } = require('./src/node/core/helpers');
 app.use((req, res, next) => {
     res.locals.moeda = (val) => moeda(val, res.locals.currency);
     res.locals.formatDate = formatDate;
+    res.locals.formatDateTime = formatDateTime;
     res.locals.truncarTexto = truncarTexto;
     res.locals.descricaoLancamento = (l) => descricaoLancamento(l, res.locals.t);
     next();
