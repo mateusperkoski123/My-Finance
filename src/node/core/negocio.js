@@ -2,6 +2,8 @@
 module.exports = {
     NOME_APP: process.env.APP_NAME || 'MyFinance',
     TRIAL_DIAS: 7,
+    // Limite mensal de mensagens do Chat IA quando o plano nao define um (planos.ia_limite_mes).
+    IA_LIMITE_PADRAO: parseInt(process.env.IA_LIMITE_MENSAGENS_MES || '300', 10),
     // Mudar este valor obriga todos os usuarios a aceitar os termos novamente.
     TERMOS_VERSAO: '1.0',
     EMAIL_SUPORTE: process.env.SUPPORT_EMAIL || '',

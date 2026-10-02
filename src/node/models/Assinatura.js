@@ -4,6 +4,7 @@ const { TRIAL_DIAS, CICLOS } = require('../core/negocio');
 const SELECT_BASE = `
     SELECT a.*, p.codigo AS plano_codigo, p.nome AS plano_nome, p.preco_mensal, p.preco_anual,
            p.moeda AS plano_moeda, p.max_contas, p.rec_relatorio_anual, p.rec_exportar, p.rec_backup,
+           p.rec_ia, p.rec_ia_midia, p.rec_ia_nivel2, p.rec_offline, p.ia_limite_mes,
            TIMESTAMPDIFF(HOUR, NOW(), a.trial_fim) AS horas_trial,
            DATEDIFF(a.periodo_fim, CURDATE()) AS dias_periodo,
            ps.codigo AS solicitado_codigo
@@ -31,7 +32,9 @@ function calcularEstado(a) {
         somente_leitura: somenteLeitura,
         plano: {
             codigo: a.plano_codigo, nome: a.plano_nome, max_contas: a.max_contas,
-            rec_relatorio_anual: !!a.rec_relatorio_anual, rec_exportar: !!a.rec_exportar, rec_backup: !!a.rec_backup
+            rec_relatorio_anual: !!a.rec_relatorio_anual, rec_exportar: !!a.rec_exportar, rec_backup: !!a.rec_backup,
+            rec_ia: !!a.rec_ia, rec_ia_midia: !!a.rec_ia_midia, rec_ia_nivel2: !!a.rec_ia_nivel2, rec_offline: !!a.rec_offline,
+            ia_limite_mes: a.ia_limite_mes
         }
     };
 }

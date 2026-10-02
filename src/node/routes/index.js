@@ -134,10 +134,10 @@ router.post('/categorias/:id/arquivar', requireAuth, categoriasController.arquiv
 router.post('/categorias/:id/restaurar', requireAuth, categoriasController.restaurar);
 
 // Relatorios routes
-// A aba "Demonstrativo Anual" e um recurso do Premium (e do Plan de Prueba).
+// A aba "Demonstrativo Anual" e um recurso do Premium e do Pro (e do Plan de Prueba).
 const gateAnual = (req, res, next) => (req.query.aba === 'demonstrativo_anual' ? exigirRecurso('rec_relatorio_anual')(req, res, next) : next());
 router.get('/relatorios', requireAuth, gateAnual, relatoriosController.index);
-router.get('/relatorios/exportar', requireAuth, exigirRecurso('rec_exportar'), relatoriosController.exportar);
+router.get('/relatorios/exportar', requireAuth, exigirRecurso('rec_exportar', 'flash.recurso_pro'), relatoriosController.exportar);
 
 // Divisao de Patrimonio route (Fase 5 - Placeholder)
 router.get('/patrimonio', requireAuth, (req, res) => {
@@ -151,8 +151,8 @@ router.get('/configuracoes/perfil', requireAuth, configuracoesController.perfil)
 router.post('/configuracoes/perfil', requireAuth, configuracoesController.salvarPerfil);
 router.post('/configuracoes/perfil/senha', requireAuth, configuracoesController.salvarSenha);
 router.get('/configuracoes/dados', requireAuth, configuracoesController.dados);
-router.get('/configuracoes/dados/exportar', requireAuth, exigirRecurso('rec_backup'), configuracoesController.exportarDados);
-router.post('/configuracoes/dados/importar', requireAuth, exigirRecurso('rec_backup'), upload.single('arquivo'), configuracoesController.importarDados);
+router.get('/configuracoes/dados/exportar', requireAuth, exigirRecurso('rec_backup', 'flash.recurso_pro'), configuracoesController.exportarDados);
+router.post('/configuracoes/dados/importar', requireAuth, exigirRecurso('rec_backup', 'flash.recurso_pro'), upload.single('arquivo'), configuracoesController.importarDados);
 // Foto de perfil (cada usuario so enxerga e altera a propria)
 const fotoController = require('../controllers/fotoController');
 const uploadFoto = (req, res, next) => {
@@ -172,8 +172,14 @@ router.post('/api/app/login', apiLoginLimiter, apiAppController.login);
 // O navegador logado no site pede o token do proprio aparelho (sessao + CSRF); depois sincroniza como o app.
 router.post('/app/dispositivo', apiLoginLimiter, requireAuth, apiAppController.registrarDispositivoWeb);
 router.post('/api/app/logout', exigirToken, apiAppController.logout);
-router.get('/api/app/sync', apiSyncLimiter, exigirToken, apiAppController.sync);
-router.post('/api/app/sync/push', apiSyncLimiter, exigirToken, apiAppController.push);
+// Registro offline e sincronizacao sao recursos do Premium e do Pro (planos.rec_offline).
+const exigirOffline = (req, res, next) => {
+    if (req.user && req.user.role === 'admin') return next();
+    if (req.assinatura && req.assinatura.plano && req.assinatura.plano.rec_offline) return next();
+    return res.status(403).json({ sucesso: false, erro: 'plano_sem_offline' });
+};
+router.get('/api/app/sync', apiSyncLimiter, exigirToken, exigirOffline, apiAppController.sync);
+router.post('/api/app/sync/push', apiSyncLimiter, exigirToken, exigirOffline, apiAppController.push);
 const comunidadeController = require('../controllers/comunidadeController');
 const iaController = require('../controllers/iaController');
 const { exigirIa, limiteMensagens } = require('../middleware/iaMiddleware');
@@ -228,8 +234,7 @@ const uploadIa = (req, res, next) => {
 };
 router.post('/ia/mensagem', requireAuth, exigirIa, limiteMensagens, uploadIa, iaController.mensagem);
 router.post('/ia/conversas/:id/excluir', requireAuth, exigirIa, iaController.excluirConversa);
-router.post('/ia/acoes/:id/confirmar', requireAuth, exigirIa, iaController.confirmarAcao);
-router.post('/ia/acoes/:id/cancelar', requireAuth, exigirIa, iaController.cancelarAcao);
+router.post('/ia/acoes/:id/reverter', requireAuth, exigirIa, iaController.reverterAcao);
 
 // Admin Comunidade
 router.post('/admin/comunidade/:id/estado', requireAuth, exigirAdmin, comunidadeController.alterarEstado);

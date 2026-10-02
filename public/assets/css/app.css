@@ -2005,3 +2005,35 @@ tr.gf-prov-row td { border-bottom: 1px dashed var(--border); }
 .adm-previa__lista { display: grid; gap: 8px; margin-top: 10px; }
 .adm-previa__msg { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--green-bg, rgba(16,185,129,.1)); font-size: 14px; font-weight: 600; }
 @media (max-width: 900px) { .adm-duas, .adm-duas--2, .adm-graficos { grid-template-columns: 1fr; } .admin-kpis { grid-template-columns: 1fr 1fr; } }
+
+/* ---- Comparativo de planos (Basico / Premium / Pro) ---- */
+.planos__topo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.planos__topo h2 { margin: 0; }
+.planos__topo p { margin: 0; font-size: 13px; }
+.planos__ciclo { display: inline-flex; align-self: flex-start; margin-top: 8px; background: var(--card); border: 1px solid var(--border); border-radius: 999px; padding: 3px; gap: 2px; }
+.planos__ciclo button { font: inherit; font-size: 14px; font-weight: 600; border: 0; background: none; color: var(--muted); padding: 8px 16px; border-radius: 999px; cursor: pointer; min-height: 40px; }
+.planos__ciclo button small { font-weight: 700; color: var(--green); margin-left: 4px; }
+.planos__ciclo button.is-ativo { background: var(--primary); color: var(--primary-text); }
+.planos__ciclo button.is-ativo small { color: inherit; opacity: .85; }
+.planos__abas { display: none; gap: 6px; margin-bottom: 14px; }
+.planos__abas button { flex: 1; font: inherit; font-weight: 600; padding: 10px 4px; border-radius: 10px; border: 1px solid var(--border); background: var(--card); color: var(--muted); cursor: pointer; min-height: 44px; }
+.planos__abas button.is-ativo { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
+.planos-grid { grid-template-columns: 1fr; align-items: start; }
+.plano-card { gap: 10px; }
+.plano-card__cobranca { min-height: 18px; margin-top: -6px; }
+.plano-card__grupo { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 6px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; font-weight: 700; color: var(--muted); }
+.plano-card__na { text-transform: none; letter-spacing: 0; padding: 2px 9px; border-radius: 999px; background: var(--red-bg); color: var(--red); }
+.plano-card__lista { margin: 0; flex: none; }
+.plano-card__lista li.is-off { color: var(--muted); }
+.plano-card__lista li.is-off i { color: var(--red); }
+.plano-card__acoes .btn { width: 100%; justify-content: center; }
+.plano-card--pro { background: var(--nav-bg); color: var(--nav-text); border-color: var(--nav-bg); --muted: var(--nav-text-muted); --border: #2a2e37; }
+.btn-pro { background: #e7e9ee; color: #14161b; border: 1px solid #e7e9ee; }
+.btn-pro:hover { opacity: .9; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+@media (min-width: 900px) { .planos-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; } }
+@media (max-width: 899px) {
+  .planos__abas { display: flex; }
+  .planos-grid .plano-card { display: none; }
+  .planos-grid .plano-card.is-sel { display: flex; }
+}

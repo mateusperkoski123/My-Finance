@@ -56,7 +56,7 @@ class Ia {
         const mapa = {};
         if (ids.length) {
             const [acoes] = await db.query(
-                `SELECT id, payload, status FROM ia_acoes WHERE user_id = ? AND id IN (${ids.map(() => '?').join(',')})`,
+                `SELECT id, payload, status, TIMESTAMPDIFF(MICROSECOND, aplicada_em, NOW()) AS idade_us FROM ia_acoes WHERE user_id = ? AND id IN (${ids.map(() => '?').join(',')})`,
                 [userId, ...ids]
             );
             acoes.forEach((a) => { mapa[a.id] = this.cartao(a); });
@@ -77,33 +77,52 @@ class Ia {
     }
 
     static async buscarAcao(id, userId) {
-        const [rows] = await db.query('SELECT * FROM ia_acoes WHERE id = ? AND user_id = ? LIMIT 1', [id, userId]);
+        const [rows] = await db.query('SELECT *, TIMESTAMPDIFF(MICROSECOND, aplicada_em, NOW()) AS idade_us FROM ia_acoes WHERE id = ? AND user_id = ? LIMIT 1', [id, userId]);
         return rows[0] || null;
     }
 
-    // Reserva atomica: so uma requisicao consegue passar de 'pendente' para o novo status (evita registro duplicado).
-    static async reservarAcao(id, userId, novoStatus) {
-        const [res] = await db.query("UPDATE ia_acoes SET status = ? WHERE id = ? AND user_id = ? AND status = 'pendente'", [novoStatus, id, userId]);
+    // Acao ja aplicada: a janela de reversao conta a partir daqui.
+    static async criarAcaoAplicada({ userId, conversaId, payload }) {
+        const [res] = await db.query(
+            "INSERT INTO ia_acoes (user_id, conversa_id, payload, status, aplicada_em) VALUES (?, ?, ?, 'confirmada', NOW())",
+            [userId, conversaId, JSON.stringify(payload)]
+        );
+        return res.insertId;
+    }
+
+    // Reserva atomica: so uma requisicao reverte (e so dentro da janela, com folga para a latencia da rede).
+    static async reservarReversao(id, userId, janelaSeg) {
+        const [res] = await db.query(
+            "UPDATE ia_acoes SET status = 'revertida' WHERE id = ? AND user_id = ? AND status = 'confirmada' AND aplicada_em >= NOW() - INTERVAL ? SECOND",
+            [id, userId, janelaSeg]
+        );
         return res.affectedRows === 1;
     }
 
-    static async liberarAcao(id, userId) {
-        await db.query("UPDATE ia_acoes SET status = 'pendente' WHERE id = ? AND user_id = ?", [id, userId]);
+    // Se desfazer falhar por completo, a acao volta a valer (o usuario pode tentar de novo dentro da janela).
+    static async liberarReversao(id, userId) {
+        await db.query("UPDATE ia_acoes SET status = 'confirmada' WHERE id = ? AND user_id = ? AND status = 'revertida'", [id, userId]);
     }
 
-    static async vincularLancamento(id, userId, lancamentoId) {
-        await db.query('UPDATE ia_acoes SET lancamento_id = ? WHERE id = ? AND user_id = ?', [lancamentoId, id, userId]);
+    // Segundos que ainda restam para reverter (0 = fora da janela).
+    static restante(acao, janelaSeg) {
+        if (acao.status !== 'confirmada' || acao.idade_us == null) return 0;
+        const dec = janelaSeg - Number(acao.idade_us) / 1e6;
+        return dec > 0 ? Math.ceil(dec) : 0;
     }
 
     static cartao(acao) {
+        const { JANELA_REVERTER_SEG } = require('../core/ia_plano');
         let p = {};
         try { p = JSON.parse(acao.payload); } catch (e) { p = {}; }
+        const restante = this.restante(acao, JANELA_REVERTER_SEG);
         if (p.kind === 'plano') {
-            return { id: acao.id, status: acao.status, plano: true, operacoes: p.operacoes || [], resultados: p.resultados || null };
+            return { id: acao.id, status: acao.status, restante, plano: true, operacoes: p.operacoes || [], resultados: p.resultados || null };
         }
         return {
             id: acao.id,
             status: acao.status,
+            restante,
             tipo: p.tipo,
             descricao: p.descricao,
             valor: p.valor,

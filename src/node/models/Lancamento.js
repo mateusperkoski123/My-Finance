@@ -237,12 +237,13 @@ class Lancamento {
 
     // Transferencia entre contas: par de lancamentos (saida + entrada) ligados por transferencia_par_id.
     // Imediata = os dois ja pagos na data; agendada = os dois pendentes (o saldo so move ao marcar como pago).
-    static async criarTransferencia({ userId, origem, destino, valor, data, descricao = '', agendada = false, eFixo = false, quantidade = 1, clientId = null }) {
+    static async criarTransferencia({ userId, origem, destino, valor, data, descricao = '', agendada = false, eFixo = false, quantidade = 1, clientId = null, idsCriados = null }) {
         const Categoria = require('./Categoria');
         const catId = await Categoria.idSistema(userId, 'transferencia');
         const total = Math.max(1, quantidade);
         const serieId = total > 1 ? uuidv4() : null;
         const sufixo = descricao ? ' - ' + descricao : '';
+        const novosIds = [];
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
@@ -258,8 +259,10 @@ class Lancamento {
                 const [entrada] = await inserir(destino.id, valor, `Transferência recebida de ${origem.nome}${sufixo}`, dataComp);
                 await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [entrada.insertId, saida.insertId]);
                 await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [saida.insertId, entrada.insertId]);
+                novosIds.push(saida.insertId, entrada.insertId);
             }
             await conn.commit();
+            if (idsCriados) idsCriados.push(...novosIds);
             return total;
         } catch (err) {
             await conn.rollback();

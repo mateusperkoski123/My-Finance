@@ -1,5 +1,6 @@
 const Assinatura = require('../models/Assinatura');
 const { fmt } = require('../core/legal');
+const { recursosDoPlano } = require('../core/planos_recursos');
 const { sendPlanRequestNotice } = require('../core/mailer');
 
 const assinaturaController = {
@@ -13,7 +14,8 @@ const assinaturaController = {
             menuAtivo: 'assinatura',
             planos,
             pagamentos,
-            fmt
+            fmt,
+            recursosDoPlano
         });
     },
 

@@ -3,7 +3,6 @@ const ass = assinatura;
 const st = ass ? ass.status_efetivo : null;
 const ciclos = { mensal: t('assinatura.ciclo_mensal'), anual: t('assinatura.ciclo_anual') };
 const nomePlano = (c) => t('plano.' + c + '.nome');
-const itensPlano = (c) => { const l = []; for (let i = 1; i <= 8; i++) { const k = 'plano.' + c + '.item.' + i; const v = t(k); if (v === k) break; l.push(v); } return l; };
 %>
 <div class="page-header">
     <h1><i class="ph ph-gear"></i> <%= t('config.titulo') %></h1>
@@ -49,40 +48,88 @@ const itensPlano = (c) => { const l = []; for (let i = 1; i <= 8; i++) { const k
 </section>
 <% } %>
 
+<%
+const comprar = planos.filter(p => p.codigo !== 'prueba');
+const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (comprar[0] ? comprar[0].codigo : '');
+%>
+<section class="planos">
+    <div class="planos__topo">
+        <h2><%= t('assinatura.escolha') %></h2>
+        <p class="muted"><%= t('assinatura.prueba_sub', { dias: negocio.TRIAL_DIAS }) %></p>
+        <div class="planos__ciclo" role="group" aria-label="<%= t('assinatura.ciclo') %>">
+            <button type="button" class="is-ativo" data-ciclo="mensal"><%= t('assinatura.ciclo_mensal') %></button>
+            <button type="button" data-ciclo="anual"><%= t('assinatura.ciclo_anual') %> <small><%= t('assinatura.dois_gratis') %></small></button>
+        </div>
+    </div>
+    <div class="planos__abas" role="group">
+        <% comprar.forEach(p => { %>
+            <button type="button" data-aba="<%= p.codigo %>" class="<%= p.codigo === selecionado ? 'is-ativo' : '' %>"><%= t('plano.' + p.codigo + '.curto') %></button>
+        <% }) %>
+    </div>
+
 <div class="planos-grid">
-    <% planos.forEach(p => {
+    <% comprar.forEach(p => {
         const atual = ass && ass.plano_codigo === p.codigo && (st === 'beta' || st === 'trial' || st === 'ativa');
-        const gratis = p.preco_mensal === 0;
         const economia = p.preco_mensal * 12 - p.preco_anual;
+        const txtMensal = fmt(p.preco_mensal);
+        const txtAnual = fmt(Math.round(p.preco_anual / 12));
+        const linhaMensal = t('assinatura.cobrado_mes');
+        const linhaAnual = t('assinatura.cobrado_ano', { valor: fmt(p.preco_anual), economia: fmt(economia) });
     %>
-        <article class="card plano-card <%= atual ? 'plano-card--atual' : '' %> <%= p.codigo === 'premium' ? 'plano-card--destaque' : '' %>">
+        <article class="card plano-card <%= atual ? 'plano-card--atual' : '' %> <%= p.codigo === 'premium' ? 'plano-card--destaque' : '' %> <%= p.codigo === 'pro' ? 'plano-card--pro' : '' %> <%= p.codigo === selecionado ? 'is-sel' : '' %>" data-plano="<%= p.codigo %>">
             <% if (atual) { %><span class="plano-card__selo"><%= t('assinatura.plano_atual') %></span><% } else if (p.codigo === 'premium') { %><span class="plano-card__selo plano-card__selo--destaque"><%= t('assinatura.mais_completo') %></span><% } %>
             <h3><%= nomePlano(p.codigo) %></h3>
-            <% if (gratis) { %>
-                <div class="plano-card__preco"><%= t('assinatura.gratis') %></div>
-                <div class="muted plano-card__sub"><%= t('assinatura.prueba_sub', { dias: negocio.TRIAL_DIAS }) %></div>
-            <% } else { %>
-                <div class="plano-card__preco">Gs. <%= fmt(p.preco_mensal) %><small>/<%= t('assinatura.mes') %></small></div>
-                <div class="muted plano-card__sub"><%= t('assinatura.o_anual', { valor: fmt(p.preco_anual) }) %> · <b><%= t('assinatura.economia', { valor: fmt(economia) }) %></b></div>
-            <% } %>
+            <div class="muted plano-card__sub"><%= t('plano.' + p.codigo + '.sub') %></div>
+            <div class="plano-card__preco">Gs. <span data-preco data-mensal="<%= txtMensal %>" data-anual="<%= txtAnual %>"><%= txtMensal %></span><small>/<%= t('assinatura.mes') %></small></div>
+            <div class="muted plano-card__sub plano-card__cobranca" data-cobranca data-mensal="<%= linhaMensal %>" data-anual="<%= linhaAnual %>"><%= linhaMensal %></div>
 
-            <ul class="plano-card__lista">
-                <% itensPlano(p.codigo).forEach(item => { %>
-                    <li><i class="ph-bold ph-check"></i> <span><%= item %></span></li>
-                <% }) %>
-            </ul>
+            <form method="post" action="/assinatura/solicitar" class="plano-card__acoes">
+                <%- csrfCampo %>
+                <input type="hidden" name="plano" value="<%= p.codigo %>">
+                <input type="hidden" name="ciclo" value="mensal" data-ciclo-campo>
+                <button type="submit" class="btn <%= p.codigo === 'pro' ? 'btn-pro' : (p.codigo === 'premium' ? 'btn-primary' : 'btn-outline') %>"><%= t('assinatura.quero_plano') %></button>
+            </form>
 
-            <% if (!gratis) { %>
-                <form method="post" action="/assinatura/solicitar" class="plano-card__acoes">
-                    <%- csrfCampo %>
-                    <input type="hidden" name="plano" value="<%= p.codigo %>">
-                    <button type="submit" name="ciclo" value="mensal" class="btn <%= p.codigo === 'premium' ? 'btn-primary' : 'btn-outline' %>"><%= t('assinatura.pedir_mensal') %></button>
-                    <button type="submit" name="ciclo" value="anual" class="btn btn-outline"><%= t('assinatura.pedir_anual') %></button>
-                </form>
-            <% } %>
+            <% recursosDoPlano(p).forEach(g => { %>
+                <div class="plano-card__grupo">
+                    <span><%= t('pr.grupo.' + g.chave) %></span>
+                    <% if (g.nenhum) { %><span class="plano-card__na"><%= t('pr.nao_incluida') %></span><% } %>
+                </div>
+                <ul class="plano-card__lista">
+                    <% g.itens.forEach(i => { %>
+                        <li class="<%= i.on ? '' : 'is-off' %>">
+                            <i class="ph-bold <%= i.on ? 'ph-check' : 'ph-x' %>" aria-hidden="true"></i>
+                            <span><span class="sr-only"><%= t(i.on ? 'pr.incluso' : 'pr.nao_incluso') %>: </span><%= t('pr.item.' + i.k) %><% if (i.val) { %>: <b><%= t(i.val.key, { n: i.val.n }) %></b><% } %></span>
+                        </li>
+                    <% }) %>
+                </ul>
+            <% }) %>
         </article>
     <% }) %>
 </div>
+</section>
+
+<script>
+(function () {
+    var secao = document.querySelector('.planos');
+    if (!secao) return;
+    secao.querySelectorAll('[data-ciclo]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var c = btn.getAttribute('data-ciclo');
+            secao.querySelectorAll('[data-ciclo]').forEach(function (b) { b.classList.toggle('is-ativo', b === btn); });
+            secao.querySelectorAll('[data-preco],[data-cobranca]').forEach(function (el) { el.textContent = el.getAttribute('data-' + c); });
+            secao.querySelectorAll('[data-ciclo-campo]').forEach(function (i) { i.value = c; });
+        });
+    });
+    secao.querySelectorAll('[data-aba]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var cod = btn.getAttribute('data-aba');
+            secao.querySelectorAll('[data-aba]').forEach(function (b) { b.classList.toggle('is-ativo', b === btn); });
+            secao.querySelectorAll('.plano-card').forEach(function (c) { c.classList.toggle('is-sel', c.getAttribute('data-plano') === cod); });
+        });
+    });
+})();
+</script>
 
 <p class="muted" style="font-size: 13px; margin-top: 4px;"><i class="ph ph-info"></i> <%= t('assinatura.como_pagar') %><% if (negocio.EMAIL_SUPORTE) { %> <b><%= negocio.EMAIL_SUPORTE %></b><% } %></p>
 

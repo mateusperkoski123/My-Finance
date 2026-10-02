@@ -1,4 +1,4 @@
-// Chat IA: conversa, historico por usuario e cartoes de confirmacao de lancamentos.
+// Chat IA: conversa, historico por usuario e cartoes do que a IA registrou (com botao Reverter por alguns segundos).
 (function () {
   'use strict';
   var T = window.IA_T || {};
@@ -134,11 +134,10 @@
       return '<li class="ia-op' + (r && !r.ok ? ' is-falha' : '') + '">' + marca + '<div class="ia-op__corpo">' + opHtml(op) + (r && !r.ok ? '<div class="ia-op__erro">' + esc(r.erro) + '</div>' : '') + '</div></li>';
     }).join('');
     var rodape;
-    if (c.status === 'pendente') {
-      rodape = '<div class="ia-cartao__acoes"><button type="button" class="btn btn-outline btn-sm" data-acao="cancelar" data-id="' + c.id + '">' + esc(T.cancelar) + '</button>' +
-        '<button type="button" class="btn btn-primary btn-sm" data-acao="confirmar" data-id="' + c.id + '"><i class="ph ph-check"></i> ' + esc(T.confirmarTudo) + '</button></div>';
-    } else if (c.status === 'confirmada') {
-      rodape = '<div class="ia-cartao__estado ' + (falhou ? 'ia-parcial' : 'ia-ok') + '"><i class="ph-fill ' + (falhou ? 'ph-warning' : 'ph-check-circle') + '"></i> ' + esc(falhou ? T.resParcial : T.resOk) + '</div>';
+    if (c.status === 'confirmada') {
+      rodape = '<div class="ia-cartao__estado ' + (falhou ? 'ia-parcial' : 'ia-ok') + '"><i class="ph-fill ' + (falhou ? 'ph-warning' : 'ph-check-circle') + '"></i> ' + esc(falhou ? T.resParcial : T.resOk) + '</div>' + botaoReverter(c);
+    } else if (c.status === 'revertida') {
+      rodape = '<div class="ia-cartao__estado"><i class="ph ph-arrow-u-up-left"></i> ' + esc(T.revertido) + '</div>';
     } else {
       rodape = '<div class="ia-cartao__estado"><i class="ph ph-x-circle"></i> ' + esc(T.cancelado) + '</div>';
     }
@@ -249,9 +248,11 @@
         stream.getTracks().forEach(function (t) { t.stop(); });
         var seg = Math.round((Date.now() - inicio) / 1000);
         var blob = new Blob(pedacos, { type: mr.mimeType || mime || 'audio/webm' });
+        var enviarAoParar = gravacao.enviarAoParar;
         gravacao = null;
         marcarGravando(false);
         if (seg >= 1 && blob.size > 0) { anexos.audio = { blob: blob, url: URL.createObjectURL(blob), seg: Math.min(seg, MAX_SEG_AUDIO) }; renderAnexos(); }
+        if (enviarAoParar) enviar(elTexto.value);
       };
       mr.start();
       marcarGravando(true);
@@ -277,16 +278,29 @@
     if (a && anexos.audio) { URL.revokeObjectURL(anexos.audio.url); anexos.audio = null; renderAnexos(); }
   });
 
-  // ---- Cartao de confirmacao ----
+  // ---- Cartao do que a IA registrou: botao Reverter com contagem regressiva ----
+  function botaoReverter(c) {
+    if (!(c.restante > 0)) return '';
+    return '<div class="ia-cartao__acoes"><button type="button" class="btn btn-outline btn-sm" data-acao="reverter" data-id="' + c.id + '" data-fim="' + (Date.now() + c.restante * 1000) + '">' +
+      '<i class="ph ph-arrow-u-up-left"></i> ' + esc(T.reverter) + ' (<span data-contagem>' + c.restante + '</span>s)</button></div>';
+  }
+  setInterval(function () {
+    document.querySelectorAll('[data-acao="reverter"][data-fim]').forEach(function (b) {
+      var s = Math.ceil((Number(b.getAttribute('data-fim')) - Date.now()) / 1000);
+      if (s <= 0) { var box = b.closest('.ia-cartao__acoes'); if (box) box.remove(); return; }
+      var el = b.querySelector('[data-contagem]');
+      if (el) el.textContent = s;
+    });
+  }, 250);
+
   function cartaoHtml(c) {
     if (c.plano) return planoHtml(c);
     var receita = c.tipo === 'receita';
     var rodape;
-    if (c.status === 'pendente') {
-      rodape = '<div class="ia-cartao__acoes"><button type="button" class="btn btn-outline btn-sm" data-acao="cancelar" data-id="' + c.id + '">' + esc(T.cancelar) + '</button>' +
-        '<button type="button" class="btn btn-primary btn-sm" data-acao="confirmar" data-id="' + c.id + '"><i class="ph ph-check"></i> ' + esc(T.confirmar) + '</button></div>';
-    } else if (c.status === 'confirmada') {
-      rodape = '<div class="ia-cartao__estado ia-ok"><i class="ph-fill ph-check-circle"></i> ' + esc(T.registrado) + '</div>';
+    if (c.status === 'confirmada') {
+      rodape = '<div class="ia-cartao__estado ia-ok"><i class="ph-fill ph-check-circle"></i> ' + esc(T.registrado) + '</div>' + botaoReverter(c);
+    } else if (c.status === 'revertida') {
+      rodape = '<div class="ia-cartao__estado"><i class="ph ph-arrow-u-up-left"></i> ' + esc(T.revertido) + '</div>';
     } else {
       rodape = '<div class="ia-cartao__estado"><i class="ph ph-x-circle"></i> ' + esc(T.cancelado) + '</div>';
     }
@@ -366,9 +380,10 @@
 
   function enviar(texto) {
     texto = String(texto || '').trim();
+    if (enviando) return;
+    if (gravacao) { gravacao.enviarAoParar = true; pararGravacao(); return; } // envia assim que a gravacao terminar
     var temAnexo = anexos.fotos.length > 0 || !!anexos.audio;
-    if ((!texto && !temAnexo) || enviando) return;
-    if (gravacao) pararGravacao();
+    if (!texto && !temAnexo) return;
     enviando = true;
     elBtn.disabled = true;
 
@@ -419,14 +434,14 @@
 
   function tratarAcao(btn) {
     var id = btn.getAttribute('data-id');
-    var acao = btn.getAttribute('data-acao');
     var cartao = btn.closest('.ia-cartao');
     cartao.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
-    api('/ia/acoes/' + id + '/' + (acao === 'confirmar' ? 'confirmar' : 'cancelar')).then(function (d) {
+    api('/ia/acoes/' + id + '/reverter').then(function (d) {
       var novo = d.cartao;
       if (novo) { var tmp = document.createElement('div'); tmp.innerHTML = cartaoHtml(novo); cartao.replaceWith(tmp.firstChild); }
       else { cartao.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); }
       if (!d.sucesso && d.erro) window.alert(d.erro);
+      if (d.sucesso && d.mensagem) { addMsg('assistant', d.mensagem.texto); elTexto.focus(); }
     }).catch(function () { cartao.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); window.alert(T.erro); });
   }
 

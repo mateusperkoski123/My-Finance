@@ -1,24 +1,40 @@
 const Ia = require('../models/Ia');
-const Lancamento = require('../models/Lancamento');
 const iaCore = require('../core/ia');
 const midia = require('../core/ia_midia');
 const { validarImagem } = require('../core/uploads');
 const { custoClaudeMicro, custoAudioMicro } = require('../core/ia_precos');
-const { executarPlano } = require('../core/ia_plano');
+const { desfazerTudo, JANELA_REVERTER_SEG } = require('../core/ia_plano');
+const { IA_LIMITE_PADRAO } = require('../core/negocio');
 
-const LIMITE_MES = parseInt(process.env.IA_LIMITE_MENSAGENS_MES || '300', 10);
 const MAX_TEXTO = 600;
 
-// Admin sempre usa o Nivel 2 (para poder testar); os demais usam o nivel definido pelo admin (padrao 1).
-const nivelDe = (req) => (req.ehAdmin || Number(req.user.ia_nivel) === 2 ? 2 : 1);
+// Nome curto de uma operacao do plano, para o aviso de reversao.
+function nomeDaOp(op) {
+    switch (op.op) {
+        case 'lancamento': return op.descricao;
+        case 'status': return (op.itens || []).map((i) => i.descricao).join(', ');
+        case 'editar': return op.descricao_atual;
+        case 'categoria_criar': return op.nome;
+        case 'categoria_renomear': return op.para;
+        case 'transferencia': return op.descricao || `${op.origem_nome} > ${op.destino_nome}`;
+        default: return '';
+    }
+}
+
+const planoDe = (req) => (req.assinatura && req.assinatura.plano) || {};
+// Limite mensal de mensagens: o do plano (planos.ia_limite_mes) ou o padrao do sistema.
+const limiteMesDe = (req) => planoDe(req).ia_limite_mes || IA_LIMITE_PADRAO;
+// Admin sempre usa o Nivel 2 (para poder testar); os demais usam o nivel definido pelo admin (padrao 1),
+// desde que o plano inclua a IA avancada.
+const nivelDe = (req) => (req.ehAdmin || (Number(req.user.ia_nivel) === 2 && planoDe(req).rec_ia_nivel2) ? 2 : 1);
 
 // Grava o consumo do dia: tokens de texto, de imagem e de audio, e o custo estimado de cada parte.
-async function registrarConsumo(userId, uso, { imagens = 0, stt = null }) {
+async function registrarConsumo(userId, uso, { imagens = 0, stt = null, modelo = iaCore.MODELO }) {
     const u = uso || {};
     const totalEntrada = (u.entrada || 0) + (u.cacheLeitura || 0) + (u.cacheEscrita || 0);
-    const custoClaude = custoClaudeMicro({ entrada: u.entrada, cacheLeitura: u.cacheLeitura, cacheEscrita: u.cacheEscrita, saida: u.saida }, iaCore.MODELO);
+    const custoClaude = custoClaudeMicro({ entrada: u.entrada, cacheLeitura: u.cacheLeitura, cacheEscrita: u.cacheEscrita, saida: u.saida }, modelo);
     // O custo das imagens e a fatia da entrada que elas ocuparam (proporcional aos tokens).
-    const custoEntrada = custoClaude - custoClaudeMicro({ saida: u.saida }, iaCore.MODELO);
+    const custoEntrada = custoClaude - custoClaudeMicro({ saida: u.saida }, modelo);
     const custoImagem = totalEntrada > 0 ? Math.round(custoEntrada * Math.min(1, (u.tokImagem || 0) / totalEntrada)) : 0;
     await Ia.registrarUsoDetalhado(userId, {
         entrada: u.entrada, cacheLeitura: u.cacheLeitura, cacheEscrita: u.cacheEscrita, saida: u.saida,
@@ -35,7 +51,7 @@ const iaController = {
         res.render('ia/index', {
             title: req.t('ia.titulo'),
             conversas,
-            restantes: req.ehAdmin ? null : Math.max(0, LIMITE_MES - uso.mensagens),
+            restantes: req.ehAdmin ? null : Math.max(0, limiteMesDe(req) - uso.mensagens),
             configurada: Boolean(iaCore.obterCliente())
         });
     },
@@ -62,6 +78,9 @@ const iaController = {
         }
         if (!textoDigitado && !fotos.length && !audioArq) {
             return res.status(400).json({ sucesso: false, erro: req.t('ia.erro_vazio') });
+        }
+        if ((fotos.length || audioArq) && !req.ehAdmin && !planoDe(req).rec_ia_midia) {
+            return res.status(403).json({ sucesso: false, erro: req.t('ia.erro_plano_midia') });
         }
         if (fotos.length > midia.MAX_IMAGENS) {
             return res.status(400).json({ sucesso: false, erro: req.t('ia.erro_foto_max', { n: midia.MAX_IMAGENS }) });
@@ -90,7 +109,7 @@ const iaController = {
         }
         if (!req.ehAdmin) {
             const uso = await Ia.uso(userId);
-            if (uso.mensagens >= LIMITE_MES) return res.status(429).json({ sucesso: false, erro: req.t('ia.erro_limite_mes') });
+            if (uso.mensagens >= limiteMesDe(req)) return res.status(429).json({ sucesso: false, erro: req.t('ia.erro_limite_mes') });
         }
 
         // Audio -> texto (a API da Claude nao recebe audio).
@@ -131,7 +150,7 @@ const iaController = {
 
         let r;
         try {
-            r = await iaCore.responder({ usuario: req.user, conversaId, historico, nivel: nivelDe(req), imagens });
+            r = await iaCore.responder({ usuario: req.user, conversaId, historico, nivel: nivelDe(req), imagens, somenteLeitura: Boolean(req.assinatura && req.assinatura.somente_leitura && !req.ehAdmin) });
         } catch (err) {
             if (err.codigo === 'ia_nao_configurada') {
                 return res.status(503).json({ sucesso: false, conversa_id: conversaId, erro: req.t('ia.erro_nao_configurada') });
@@ -148,7 +167,7 @@ const iaController = {
             acoesIds: r.rascunhos, tokensIn: r.tokensIn, tokensOut: r.tokensOut
         });
         await Ia.registrarUso(userId, r.tokensIn, r.tokensOut);
-        await registrarConsumo(userId, r.uso, { imagens: imagens.length, stt });
+        await registrarConsumo(userId, r.uso, { imagens: imagens.length, stt, modelo: r.modelo });
         await Ia.tocarConversa(conversaId, userId);
 
         const acoes = [];
@@ -164,58 +183,31 @@ const iaController = {
         res.json({ sucesso: true });
     },
 
-    // O lancamento so e criado aqui, depois do clique do usuario.
-    confirmarAcao: async (req, res) => {
+    // Reverte o que a IA acabou de aplicar (so dentro da janela) e pergunta o que ajustar.
+    reverterAcao: async (req, res) => {
         const userId = req.user.id;
         const id = parseInt(req.params.id, 10);
-        if (req.assinatura && req.assinatura.somente_leitura && !req.ehAdmin) {
-            return res.status(403).json({ sucesso: false, erro: req.t('flash.somente_leitura') });
-        }
         const acao = await Ia.buscarAcao(id, userId);
         if (!acao) return res.status(404).json({ sucesso: false, erro: req.t('ia.erro_acao') });
-        if (!(await Ia.reservarAcao(id, userId, 'confirmada'))) {
-            return res.status(409).json({ sucesso: false, erro: req.t('ia.erro_acao_ja_tratada'), cartao: Ia.cartao(await Ia.buscarAcao(id, userId)) });
+        // O servidor aceita alguns segundos a mais que o contador da tela, por causa da latencia da rede.
+        if (!(await Ia.reservarReversao(id, userId, JANELA_REVERTER_SEG + 5))) {
+            return res.status(409).json({ sucesso: false, erro: req.t('ia.erro_reverter_fora'), cartao: Ia.cartao(await Ia.buscarAcao(id, userId)) });
         }
         try {
             const p = JSON.parse(acao.payload);
-            if (p.kind === 'plano') {
-                // Plano do Nivel 2: so executa se o usuario ainda estiver no Nivel 2.
-                if (nivelDe(req) !== 2) {
-                    await Ia.liberarAcao(id, userId);
-                    return res.status(403).json({ sucesso: false, erro: req.t('ia.erro_indisponivel') });
-                }
-                const resultados = await executarPlano(userId, p.operacoes);
-                if (!resultados.some((r) => r.ok)) {
-                    await Ia.liberarAcao(id, userId);
-                    return res.status(400).json({ sucesso: false, erro: resultados.map((r) => r.erro).filter(Boolean).slice(0, 3).join(' | ') || req.t('ia.erro_generico') });
-                }
-                await Ia.salvarPayload(id, userId, { ...p, resultados });
-                return res.json({ sucesso: true, cartao: Ia.cartao(await Ia.buscarAcao(id, userId)) });
-            }
-            const ids = await Lancamento.criar(userId, {
-                conta_id: p.conta_id, categoria_id: p.categoria_id, subcategoria_id: null,
-                tipo: p.tipo, descricao: p.descricao, valor: p.valor,
-                data_competencia: p.data_competencia, status: p.status, data_pagamento: p.data_pagamento,
-                observacoes: 'Registrado pelo Chat IA'
-            });
-            await Ia.vincularLancamento(id, userId, ids[0]);
-            res.json({ sucesso: true, cartao: Ia.cartao(await Ia.buscarAcao(id, userId)) });
+            const plano = p.kind === 'plano';
+            const falhas = await desfazerTudo(userId, plano ? (p.desfazer || []) : (p.desfazer || []));
+            const resumo = (plano ? (p.operacoes || []).map(nomeDaOp) : [p.descricao]).filter(Boolean).join('; ').slice(0, 240);
+            let texto = req.t('ia.revertido_msg', { resumo });
+            if (falhas) texto += '\n\n' + req.t('ia.revertido_parcial', { n: falhas });
+            await Ia.adicionarMensagem({ conversaId: acao.conversa_id, userId, papel: 'assistant', conteudo: texto });
+            await Ia.tocarConversa(acao.conversa_id, userId);
+            res.json({ sucesso: true, cartao: Ia.cartao(await Ia.buscarAcao(id, userId)), mensagem: { papel: 'assistant', texto } });
         } catch (err) {
-            await Ia.liberarAcao(id, userId);
-            console.error('Chat IA: falha ao confirmar lancamento:', err.message);
-            res.status(400).json({ sucesso: false, erro: req.t(err.codigo ? 'flash.lanc_conta_categoria_invalida' : 'ia.erro_generico') });
+            await Ia.liberarReversao(id, userId);
+            console.error('Chat IA: falha ao reverter:', err.message);
+            res.status(500).json({ sucesso: false, erro: req.t('ia.erro_reverter') });
         }
-    },
-
-    cancelarAcao: async (req, res) => {
-        const userId = req.user.id;
-        const id = parseInt(req.params.id, 10);
-        const acao = await Ia.buscarAcao(id, userId);
-        if (!acao) return res.status(404).json({ sucesso: false, erro: req.t('ia.erro_acao') });
-        if (!(await Ia.reservarAcao(id, userId, 'cancelada'))) {
-            return res.status(409).json({ sucesso: false, erro: req.t('ia.erro_acao_ja_tratada'), cartao: Ia.cartao(await Ia.buscarAcao(id, userId)) });
-        }
-        res.json({ sucesso: true, cartao: Ia.cartao(await Ia.buscarAcao(id, userId)) });
     }
 };
 

@@ -97,7 +97,7 @@
                     <span class="navbar__label"><%= t('nav.admin') %></span>
                 </a>
                 <% } %>
-                <% if (ehAdmin || (usuarioLogado && usuarioLogado.ia_habilitada)) { %>
+                <% if (ehAdmin || (usuarioLogado && usuarioLogado.ia_habilitada && assinatura && assinatura.plano && assinatura.plano.rec_ia)) { %>
                 <a href="/ia" title="<%= t('nav.ia') %>" class="navbar__link <%= currentRoute.startsWith('/ia') ? 'is-active' : '' %>">
                     <span class="navbar__icon"><i class="ph ph-sparkle"></i></span>
                     <span class="navbar__label"><%= t('nav.ia') %></span>
@@ -228,7 +228,7 @@
                     <span><%= t('nav.admin') %></span>
                 </a>
                 <% } %>
-                <% if (ehAdmin || (usuarioLogado && usuarioLogado.ia_habilitada)) { %>
+                <% if (ehAdmin || (usuarioLogado && usuarioLogado.ia_habilitada && assinatura && assinatura.plano && assinatura.plano.rec_ia)) { %>
                 <a href="/ia" class="drawer-link <%= currentRoute.startsWith('/ia') ? 'is-active' : '' %>">
                     <i class="ph ph-sparkle"></i>
                     <span><%= t('nav.ia') %></span>
