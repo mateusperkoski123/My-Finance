@@ -1,0 +1,62 @@
+<div class="page-header">
+    <h1><i class="ph ph-gear"></i> <%= t('config.titulo') %></h1>
+</div>
+
+<div class="settings-layout">
+    <%- include('_menu', { menuAtivo: 'dispositivos' }) %>
+
+    <section class="settings-content">
+        <div class="card">
+            <h2><i class="ph ph-device-mobile"></i> <%= t('config.dispositivos.titulo') %></h2>
+            <p class="muted" style="margin-bottom: 20px;"><%= t('config.dispositivos.subtitulo') %></p>
+
+            <% if (!dispositivos || dispositivos.length === 0) { %>
+                <div class="alert alert-aviso">
+                    <%= t('config.dispositivos.nenhum') %>
+                </div>
+            <% } else { %>
+                <div class="tabela-container">
+                    <table class="tabela">
+                        <thead>
+                            <tr>
+                                <th><%= t('config.dispositivos.col_nome') %></th>
+                                <th><%= t('config.dispositivos.col_plataforma') %></th>
+                                <th><%= t('config.dispositivos.col_ultimo_uso') %></th>
+                                <th><%= t('config.dispositivos.col_status') %></th>
+                                <th style="text-align: right;"><%= t('tabela.acoes') %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% dispositivos.forEach(d => { %>
+                                <tr>
+                                    <td>
+                                        <strong><%= d.nome %></strong>
+                                    </td>
+                                    <td><span class="badge" style="background: rgba(255,255,255,0.05);"><%= d.plataforma %></span></td>
+                                    <td><%= d.ultimo_uso_em ? formatDateTime(d.ultimo_uso_em) : '-' %></td>
+                                    <td>
+                                        <% if (d.revogado_em) { %>
+                                            <span class="badge badge-erro"><%= t('config.dispositivos.revogado') %></span>
+                                        <% } else { %>
+                                            <span class="badge badge-sucesso"><%= t('config.dispositivos.ativo') %></span>
+                                        <% } %>
+                                    </td>
+                                    <td style="text-align: right;">
+                                        <% if (!d.revogado_em) { %>
+                                            <form method="post" action="/configuracoes/dispositivos/<%= d.id %>/revogar?_csrf=<%= csrfToken %>" style="display: inline;">
+                                                <%- csrfCampo %>
+                                                <button type="submit" class="btn btn-sm btn-outline" style="color: var(--red); border-color: rgba(239, 68, 68, 0.3);">
+                                                    <i class="ph ph-prohibit"></i> <%= t('config.dispositivos.revogar_btn') %>
+                                                </button>
+                                            </form>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        </tbody>
+                    </table>
+                </div>
+            <% } %>
+        </div>
+    </section>
+</div>

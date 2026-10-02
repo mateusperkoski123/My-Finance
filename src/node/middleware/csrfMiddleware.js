@@ -5,6 +5,11 @@ function csrfProtection(req, res, next) {
         return next();
     }
 
+    // API do app: autenticada por token Bearer (nao por cookie), logo nao e vulneravel a CSRF.
+    if (req.path.startsWith('/api/app/')) {
+        return next();
+    }
+
     if (!req.session.csrfToken) {
         req.session.csrfToken = crypto.randomBytes(32).toString('hex');
     }

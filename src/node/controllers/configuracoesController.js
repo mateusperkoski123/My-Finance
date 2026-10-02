@@ -285,6 +285,26 @@ const configuracoesController = {
         }
 
         res.redirect('/configuracoes/dados');
+    },
+
+    dispositivos: async (req, res) => {
+        const userId = req.user.id;
+        const Dispositivo = require('../models/Dispositivo');
+        const lista = await Dispositivo.listarPorUsuario(userId);
+        res.render('configuracoes/dispositivos', {
+            title: req.t('config.dispositivos.titulo'),
+            menuAtivo: 'dispositivos',
+            dispositivos: lista
+        });
+    },
+
+    revogarDispositivo: async (req, res) => {
+        const userId = req.user.id;
+        const dispId = req.params.id;
+        const Dispositivo = require('../models/Dispositivo');
+        await Dispositivo.revogar(dispId, userId);
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.dispositivo_revogado') };
+        res.redirect('/configuracoes/dispositivos');
     }
 };
 

@@ -120,7 +120,7 @@ class Categoria {
                 const [ex] = await db.query('SELECT id, status, tipo FROM categorias WHERE user_id = ? AND nome = ? AND parent_id IS NULL AND sistema = 0 LIMIT 1', [userId, nome]);
                 if (ex.length) {
                     // mesma categoria ja existe (arquivada): reativa em vez de duplicar
-                    await db.query("UPDATE categorias SET status = 'ativa', tipo = 'ambas', updated_at = NOW() WHERE id = ?", [ex[0].id]);
+                    await db.query("UPDATE categorias SET status = 'ativa', tipo = 'ambas', updated_at = NOW(3) WHERE id = ?", [ex[0].id]);
                 } else {
                     await db.query(
                         `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, sistema, status, created_at, updated_at)
@@ -132,7 +132,7 @@ class Categoria {
         }
     }
 
-    static async criar(userId, { parent_id, categoria_pai_id, nome, cor, limite_gasto }) {
+    static async criar(userId, { parent_id, categoria_pai_id, nome, cor, limite_gasto, client_id = null }) {
         // Cor padrao do formulario (azul) vira uma cor distinta da paleta, para os graficos nao ficarem todos iguais.
         if (!cor || String(cor).toLowerCase() === '#3b82f6') {
             const paleta = ['#F97316', '#EF4444', '#10B981', '#8B5CF6', '#06B6D4', '#EC4899', '#F59E0B', '#6366F1', '#64748B', '#16A34A'];
@@ -145,27 +145,27 @@ class Categoria {
             if (!pai || pai.parent_id) parent_id = null; // pai invalido/de outro usuario ou ja e sub (so 1 nivel)
         }
         const [res] = await db.query(
-            `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, limite_gasto, sistema, status, created_at, updated_at) 
-             VALUES (?, ?, ?, ?, ?, ?, 0, 'ativa', NOW(), NOW())`,
-            [userId, parent_id || null, nome, cor || '#3b82f6', 'ambas', limite_gasto ? parseFloat(limite_gasto) : null]
+            `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, limite_gasto, sistema, status, client_id, created_at, updated_at) 
+             VALUES (?, ?, ?, ?, ?, ?, 0, 'ativa', ?, NOW(3), NOW(3))`,
+            [userId, parent_id || null, nome, cor || '#3b82f6', 'ambas', limite_gasto ? parseFloat(limite_gasto) : null, client_id]
         );
         return res.insertId;
     }
 
     static async atualizar(id, userId, { nome, cor, limite_gasto }) {
         await db.query(
-            `UPDATE categorias SET nome = ?, cor = ?, limite_gasto = ?, updated_at = NOW()
+            `UPDATE categorias SET nome = ?, cor = ?, limite_gasto = ?, updated_at = NOW(3)
              WHERE id = ? AND user_id = ? AND sistema = 0`,
             [nome, cor, limite_gasto ? parseFloat(limite_gasto) : null, id, userId]
         );
     }
 
     static async arquivar(id, userId) {
-        await db.query("UPDATE categorias SET status = 'arquivada', updated_at = NOW() WHERE (id = ? OR parent_id = ?) AND user_id = ? AND sistema = 0", [id, id, userId]);
+        await db.query("UPDATE categorias SET status = 'arquivada', updated_at = NOW(3) WHERE (id = ? OR parent_id = ?) AND user_id = ? AND sistema = 0", [id, id, userId]);
     }
 
     static async restaurar(id, userId) {
-        await db.query("UPDATE categorias SET status = 'ativa', updated_at = NOW() WHERE (id = ? OR parent_id = ?) AND user_id = ? AND sistema = 0", [id, id, userId]);
+        await db.query("UPDATE categorias SET status = 'ativa', updated_at = NOW(3) WHERE (id = ? OR parent_id = ?) AND user_id = ? AND sistema = 0", [id, id, userId]);
     }
 }
 

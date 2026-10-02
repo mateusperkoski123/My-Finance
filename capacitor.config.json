@@ -1,0 +1,15 @@
+{
+  "appId": "com.myfinance.gestaofinanc",
+  "appName": "MyFinance",
+  "webDir": "public",
+  "server": {
+    "url": "https://darkred-porcupine-963236.hostingersite.com",
+    "androidScheme": "https",
+    "cleartext": false,
+    "allowNavigation": ["darkred-porcupine-963236.hostingersite.com"]
+  },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 1500, "backgroundColor": "#0b0d12", "showSpinner": false },
+    "StatusBar": { "style": "DARK", "backgroundColor": "#0b0d12" }
+  }
+}

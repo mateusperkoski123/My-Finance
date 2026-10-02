@@ -1869,3 +1869,55 @@ select.form-control { min-height: 44px; }
 
 .tabela tfoot td { border-top: 1px solid var(--border); padding-top: 10px; padding-bottom: 10px; }
 .tabela tfoot .demonstrativo-resultado td { border-top: 2px solid var(--border); font-size: 15px; }
+
+/* ---- PWA & Safe Area Styles ---- */
+:root {
+    --sat: env(safe-area-inset-top);
+    --sab: env(safe-area-inset-bottom);
+    --sal: env(safe-area-inset-left);
+    --sar: env(safe-area-inset-right);
+}
+
+.navbar {
+    padding-top: max(0px, var(--sat));
+    padding-left: max(16px, var(--sal));
+    padding-right: max(16px, var(--sar));
+}
+
+.drawer-panel {
+    padding-bottom: max(16px, var(--sab));
+}
+
+.pwa-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.1));
+    margin-left: 8px;
+    transition: all 0.2s ease;
+}
+.pwa-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--green, #10b981);
+}
+.pwa-status-badge.is-offline {
+    border-color: rgba(239, 68, 68, 0.3);
+    color: var(--red, #ef4444);
+    background: rgba(239, 68, 68, 0.1);
+}
+.pwa-status-badge.is-offline .pwa-status-dot {
+    background: var(--red, #ef4444);
+}
+.pwa-banner {
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: var(--shadow);
+}
+

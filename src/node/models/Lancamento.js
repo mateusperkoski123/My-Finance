@@ -204,8 +204,8 @@ class Lancamento {
                 const [res] = await conn.query(
                     `INSERT INTO lancamentos 
                      (user_id, serie_id, conta_id, categoria_id, tipo, descricao, valor, 
-                      data_competencia, data_pagamento, status, recorrente, observacoes, created_at, updated_at) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
+                      data_competencia, data_pagamento, status, recorrente, observacoes, client_id, created_at, updated_at) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(3), NOW(3))`,
                     [
                         userId,
                         serieId,
@@ -218,7 +218,8 @@ class Lancamento {
                         datePagStr,
                         statusOcorrencia,
                         eFixo ? 1 : 0,
-                        data.observacoes || null
+                        data.observacoes || null,
+                        i === 0 ? (data.client_id || null) : null
                     ]
                 );
                 lancamentosCriados.push(res.insertId);
@@ -236,7 +237,7 @@ class Lancamento {
 
     // Transferencia entre contas: par de lancamentos (saida + entrada) ligados por transferencia_par_id.
     // Imediata = os dois ja pagos na data; agendada = os dois pendentes (o saldo so move ao marcar como pago).
-    static async criarTransferencia({ userId, origem, destino, valor, data, descricao = '', agendada = false, eFixo = false, quantidade = 1 }) {
+    static async criarTransferencia({ userId, origem, destino, valor, data, descricao = '', agendada = false, eFixo = false, quantidade = 1, clientId = null }) {
         const Categoria = require('./Categoria');
         const catId = await Categoria.idSistema(userId, 'transferencia');
         const total = Math.max(1, quantidade);
@@ -245,14 +246,15 @@ class Lancamento {
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
-            const inserir = (contaId, valorLinha, desc, dataComp) => conn.query(
-                `INSERT INTO lancamentos (user_id, serie_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia, data_pagamento, status, recorrente, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, 'transferencia', ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-                [userId, serieId, contaId, catId, desc, valorLinha, dataComp, agendada ? null : dataComp, agendada ? 'pendente' : 'pago', eFixo ? 1 : 0]
+            // clientId (sincronizacao do app) fica so na perna de saida da primeira ocorrencia.
+            const inserir = (contaId, valorLinha, desc, dataComp, cid = null) => conn.query(
+                `INSERT INTO lancamentos (user_id, serie_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia, data_pagamento, status, recorrente, client_id, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, 'transferencia', ?, ?, ?, ?, ?, ?, ?, NOW(3), NOW(3))`,
+                [userId, serieId, contaId, catId, desc, valorLinha, dataComp, agendada ? null : dataComp, agendada ? 'pendente' : 'pago', eFixo ? 1 : 0, cid]
             );
             for (let i = 0; i < total; i++) {
                 const dataComp = addMonthsYMD(data, i);
-                const [saida] = await inserir(origem.id, -valor, `Transferência enviada para ${destino.nome}${sufixo}`, dataComp);
+                const [saida] = await inserir(origem.id, -valor, `Transferência enviada para ${destino.nome}${sufixo}`, dataComp, i === 0 ? clientId : null);
                 const [entrada] = await inserir(destino.id, valor, `Transferência recebida de ${origem.nome}${sufixo}`, dataComp);
                 await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [entrada.insertId, saida.insertId]);
                 await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [saida.insertId, entrada.insertId]);
@@ -284,7 +286,7 @@ class Lancamento {
                     `UPDATE lancamentos SET 
                      conta_id = ?, categoria_id = ?, descricao = ?, 
                      valor = ?, recorrente = ?, observacoes = ?, 
-                     updated_at = NOW() 
+                     updated_at = NOW(3) 
                      WHERE user_id = ? AND serie_id = ? AND data_competencia >= ?`,
                     [
                         data.conta_id || itemAtual.conta_id, categoriaFinalId, data.descricao || itemAtual.descricao,
@@ -297,7 +299,7 @@ class Lancamento {
                     `UPDATE lancamentos SET 
                      conta_id = ?, categoria_id = ?, descricao = ?, 
                      valor = ?, recorrente = ?, observacoes = ?, 
-                     updated_at = NOW() 
+                     updated_at = NOW(3) 
                      WHERE user_id = ? AND serie_id = ?`,
                     [
                         data.conta_id || itemAtual.conta_id, categoriaFinalId, data.descricao || itemAtual.descricao,
@@ -307,13 +309,13 @@ class Lancamento {
                 );
             }
             // Status/data de pagamento valem so para a ocorrencia editada (nao marca a serie inteira como paga).
-            await db.query('UPDATE lancamentos SET status = ?, data_pagamento = ?, updated_at = NOW() WHERE id = ? AND user_id = ?', [statusStr, dataPagStr, id, userId]);
+            await db.query('UPDATE lancamentos SET status = ?, data_pagamento = ?, updated_at = NOW(3) WHERE id = ? AND user_id = ?', [statusStr, dataPagStr, id, userId]);
         } else {
             await db.query(
                 `UPDATE lancamentos SET 
                  conta_id = ?, categoria_id = ?, descricao = ?, 
                  valor = ?, data_competencia = ?, data_pagamento = ?, 
-                 status = ?, recorrente = ?, observacoes = ?, updated_at = NOW() 
+                 status = ?, recorrente = ?, observacoes = ?, updated_at = NOW(3) 
                  WHERE id = ? AND user_id = ?`,
                 [
                     data.conta_id || itemAtual.conta_id, categoriaFinalId, data.descricao || itemAtual.descricao,
@@ -327,16 +329,22 @@ class Lancamento {
     }
 
     static async excluir(id, userId, escopoSerie = 'apenas_esta') {
+        const SyncExclusao = require('./SyncExclusao');
         const item = await this.buscarPorId(id, userId);
         if (!item) return;
+        let onde; let params;
         if (item.serie_id && escopoSerie === 'esta_e_proximas') {
-            await db.query('DELETE FROM lancamentos WHERE user_id = ? AND serie_id = ? AND data_competencia >= ?', [userId, item.serie_id, item.data_competencia]);
+            onde = 'user_id = ? AND serie_id = ? AND data_competencia >= ?'; params = [userId, item.serie_id, item.data_competencia];
         } else if (item.serie_id && escopoSerie === 'toda_serie') {
-            await db.query('DELETE FROM lancamentos WHERE user_id = ? AND serie_id = ?', [userId, item.serie_id]);
+            onde = 'user_id = ? AND serie_id = ?'; params = [userId, item.serie_id];
         } else {
             const { ids } = await this.idsDoPar(id, userId);
-            await db.query(`DELETE FROM lancamentos WHERE user_id = ? AND id IN (${ids.map(() => '?').join(',')})`, [userId, ...(ids.length ? ids : [id])]);
+            const lista = ids.length ? ids : [id];
+            onde = `user_id = ? AND id IN (${lista.map(() => '?').join(',')})`; params = [userId, ...lista];
         }
+        // O app precisa saber o que foi apagado: registra antes de excluir de verdade.
+        await SyncExclusao.registrar('lancamentos', onde, params);
+        await db.query(`DELETE FROM lancamentos WHERE ${onde}`, params);
     }
 
     // Transferencia agendada = duas pernas (saida e entrada) ligadas por transferencia_par_id; as duas andam juntas.
@@ -353,7 +361,7 @@ class Lancamento {
         const { ids } = await this.idsDoPar(id, userId);
         if (!ids.length) return;
         await db.query(
-            `UPDATE lancamentos SET status = ?, data_pagamento = ?, updated_at = NOW() WHERE user_id = ? AND id IN (${ids.map(() => '?').join(',')})`,
+            `UPDATE lancamentos SET status = ?, data_pagamento = ?, updated_at = NOW(3) WHERE user_id = ? AND id IN (${ids.map(() => '?').join(',')})`,
             [status, pagDate, userId, ...ids]
         );
     }

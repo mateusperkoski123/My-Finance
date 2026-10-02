@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0b0d12">
-    <link rel="manifest" href="/manifest.webmanifest">
+    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
     <link rel="icon" type="image/png" href="/assets/icons/icon-192.png">
     <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -49,17 +49,21 @@
     };
     </script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="/assets/css/app.css?v=<%= Date.now() %>">
+    <link rel="stylesheet" href="/assets/css/app.css?v=<%= assetVersion %>">
 </head>
 <body>
 <header class="navbar">
     <div class="navbar__inner">
-        <!-- Top Left: Menu Toggle (Mobile Only) + Brand Logo -->
+        <!-- Top Left: Menu Toggle (Mobile Only) + Brand Logo + Online/Offline Badge -->
         <div style="display: flex; align-items: center; gap: 10px;">
             <a href="/" class="navbar__brand" style="display: flex; align-items: center; gap: 6px;">
                 <i class="ph-fill ph-hands-clapping" style="font-size: 22px;"></i>
                 <span style="font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em;">MyFinance</span>
             </a>
+            <div id="pwa-status-badge" class="pwa-status-badge" role="status" aria-live="polite">
+                <span class="pwa-status-dot"></span>
+                <span id="pwa-status-text" class="pwa-status-text"><%= t('pwa.online') %></span>
+            </div>
         </div>
 
         <% if (usuarioLogado) { %>
@@ -110,6 +114,25 @@
 </header>
 
 <main class="container">
+    <!-- PWA Banners -->
+    <div id="pwa-update-banner" class="alert alert-aviso pwa-banner" style="display: none; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="ph ph-arrows-clockwise" style="font-size: 20px;"></i>
+            <span><%= t('pwa.atualizacao_disponivel') %></span>
+        </div>
+        <button type="button" id="btn-pwa-update" class="btn btn-sm btn-primary"><%= t('pwa.atualizar') %></button>
+    </div>
+
+    <div id="pwa-install-banner" class="alert alert-aviso pwa-banner" style="display: none; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
+            <i class="ph ph-download-simple" style="font-size: 20px;"></i>
+            <span id="pwa-install-text"><%= t('pwa.instalar_app') %></span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <button type="button" id="btn-pwa-install" class="btn btn-sm btn-primary"><%= t('pwa.instalar_app') %></button>
+            <button type="button" id="btn-pwa-dismiss" class="btn btn-sm btn-outline" aria-label="<%= t('pwa.dispensar') %>">&times;</button>
+        </div>
+    </div>
     <% if (flash) { %>
         <%
             let msgText = flash.mensagem || '';
@@ -266,6 +289,165 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 </script>
+<script src="/assets/js/app-db.js"></script>
+<script src="/assets/js/app-regras.js"></script>
+<script src="/assets/js/app-sync.js"></script>
 <script src="/assets/js/app.js"></script>
+<script>
+// PWA Service Worker Registration & Installation Handler
+(function() {
+    const GF_PWA_T = {
+        online: <%- JSON.stringify(t('pwa.online')) %>,
+        offline: <%- JSON.stringify(t('pwa.offline')) %>,
+        instalar_dica_ios: <%- JSON.stringify(t('pwa.instalar_dica_ios')) %>
+    };
+
+    function updateOnlineStatus() {
+        const badge = document.getElementById('pwa-status-badge');
+        const text = document.getElementById('pwa-status-text');
+        if (!badge || !text) return;
+        if (navigator.onLine) {
+            badge.classList.remove('is-offline');
+            badge.classList.add('is-online');
+            text.textContent = GF_PWA_T.online;
+        } else {
+            badge.classList.remove('is-online');
+            badge.classList.add('is-offline');
+            text.textContent = GF_PWA_T.offline;
+        }
+    }
+
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+    document.addEventListener('DOMContentLoaded', updateOnlineStatus);
+
+    const GF_USER_ID = <%- usuarioLogado ? Number(usuarioLogado.id) : 'null' %>;
+    window.GF_USER_ID = GF_USER_ID;
+    const NA_TELA_DE_ENTRADA = /^\/(login|cadastro)(\/|$)/.test(location.pathname);
+    let atualizacaoPedida = false;
+
+    function avisarServiceWorker(msg) {
+        if (!('serviceWorker' in navigator)) return;
+        navigator.serviceWorker.ready.then(function(reg) { if (reg.active) reg.active.postMessage(msg); }).catch(function() {});
+    }
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                .then(function(reg) {
+                    // Versao nova ja instalada e esperando (ex.: aba aberta durante o deploy)
+                    if (reg.waiting && navigator.serviceWorker.controller) {
+                        const aviso = document.getElementById('pwa-update-banner');
+                        if (aviso) aviso.style.display = 'flex';
+                    }
+                    reg.addEventListener('updatefound', function() {
+                        const novo = reg.installing;
+                        if (!novo) return;
+                        novo.addEventListener('statechange', function() {
+                            if (novo.state === 'installed' && navigator.serviceWorker.controller) {
+                                const aviso = document.getElementById('pwa-update-banner');
+                                if (aviso) aviso.style.display = 'flex';
+                            }
+                        });
+                    });
+                }).catch(function(err) {
+                    console.warn('SW registration failed:', err);
+                });
+
+            // So recarrega quando o proprio usuario pediu a atualizacao (nunca no meio de um formulario).
+            navigator.serviceWorker.addEventListener('controllerchange', function() {
+                if (atualizacaoPedida) window.location.reload();
+            });
+
+            if (GF_USER_ID) {
+                avisarServiceWorker({ type: 'SET_USER', id: String(GF_USER_ID) });
+            } else if (NA_TELA_DE_ENTRADA && navigator.onLine) {
+                // Saiu da conta (ou sessao expirou): apaga paginas e dados locais do usuario anterior.
+                avisarServiceWorker({ type: 'CLEAR_USER_DATA' });
+                if (window.AppSync && window.AppSync.encerrarSessaoLocal) window.AppSync.encerrarSessaoLocal();
+            }
+        });
+    }
+
+    // Ao sair: revoga o token deste aparelho e apaga o cache de paginas.
+    document.addEventListener('submit', function(e) {
+        const f = e.target;
+        if (f && f.getAttribute && f.getAttribute('action') === '/logout') {
+            avisarServiceWorker({ type: 'CLEAR_USER_DATA' });
+            if (window.AppSync && window.AppSync.encerrarSessaoLocal) window.AppSync.encerrarSessaoLocal();
+        }
+    }, true);
+
+    const btnUpdate = document.getElementById('btn-pwa-update');
+    if (btnUpdate) {
+        btnUpdate.addEventListener('click', function() {
+            if (navigator.serviceWorker) {
+                navigator.serviceWorker.getRegistration().then(function(reg) {
+                    if (reg && reg.waiting) {
+                        atualizacaoPedida = true;
+                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    }
+                });
+            }
+        });
+    }
+
+    let deferredPrompt = null;
+    let isDismissed = false;
+    try {
+        isDismissed = localStorage.getItem('pwa_install_dismissed') === '1';
+    } catch(e) {}
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (!isDismissed) {
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.style.display = 'flex';
+        }
+    });
+
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+    const isStandalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+    if (isIOS && !isStandalone && !isDismissed) {
+        document.addEventListener('DOMContentLoaded', function() {
+            const banner = document.getElementById('pwa-install-banner');
+            const installText = document.getElementById('pwa-install-text');
+            const btnInstall = document.getElementById('btn-pwa-install');
+            if (banner && installText) {
+                installText.textContent = GF_PWA_T.instalar_dica_ios;
+                if (btnInstall) btnInstall.style.display = 'none';
+                banner.style.display = 'flex';
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnInstall = document.getElementById('btn-pwa-install');
+        const btnDismiss = document.getElementById('btn-pwa-dismiss');
+        const banner = document.getElementById('pwa-install-banner');
+
+        if (btnInstall) {
+            btnInstall.addEventListener('click', function() {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then(function() {
+                        deferredPrompt = null;
+                        if (banner) banner.style.display = 'none';
+                    });
+                }
+            });
+        }
+        if (btnDismiss) {
+            btnDismiss.addEventListener('click', function() {
+                if (banner) banner.style.display = 'none';
+                try {
+                    localStorage.setItem('pwa_install_dismissed', '1');
+                } catch(e) {}
+            });
+        }
+    });
+})();
+</script>
 </body>
 </html>

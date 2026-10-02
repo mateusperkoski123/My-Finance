@@ -22,6 +22,23 @@ const assinaturaController = require('../controllers/assinaturaController');
 const legalController = require('../controllers/legalController');
 const contaController = require('../controllers/contaController');
 const adminController = require('../controllers/adminController');
+const apiAppController = require('../controllers/apiAppController');
+const { exigirToken } = require('../middleware/apiAuthMiddleware');
+const rateLimit = require('express-rate-limit');
+
+const apiSyncLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false
+});
+
+const apiLoginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    standardHeaders: true,
+    legacyHeaders: false
+});
 
 const { requireAuth, guestOnly } = require('../middleware/authMiddleware');
 const { exigirRecurso, exigirAdmin, limiteContas } = require('../middleware/contaMiddleware');
@@ -57,6 +74,9 @@ router.post('/logout', requireAuth, authController.logout);
 // Paginas legais (publicas), aceite de termos e verificacao de e-mail
 router.get('/termos', legalController.termos);
 router.get('/privacidade', legalController.privacidade);
+router.get('/offline', (req, res) => {
+    res.render('offline', { title: req.t('offline.titulo') });
+});
 router.get('/aceitar-termos', requireAuth, legalController.aceitarPage);
 router.post('/aceitar-termos', requireAuth, legalController.aceitarSubmit);
 router.get('/verificar-email/:token', contaController.verificarEmail);
@@ -132,6 +152,16 @@ router.post('/configuracoes/perfil/senha', requireAuth, configuracoesController.
 router.get('/configuracoes/dados', requireAuth, configuracoesController.dados);
 router.get('/configuracoes/dados/exportar', requireAuth, exigirRecurso('rec_backup'), configuracoesController.exportarDados);
 router.post('/configuracoes/dados/importar', requireAuth, exigirRecurso('rec_backup'), upload.single('arquivo'), configuracoesController.importarDados);
+router.get('/configuracoes/dispositivos', requireAuth, configuracoesController.dispositivos);
+router.post('/configuracoes/dispositivos/:id/revogar', requireAuth, configuracoesController.revogarDispositivo);
+
+// API Mobile App & Offline Sync routes
+router.post('/api/app/login', apiLoginLimiter, apiAppController.login);
+// O navegador logado no site pede o token do proprio aparelho (sessao + CSRF); depois sincroniza como o app.
+router.post('/app/dispositivo', apiLoginLimiter, requireAuth, apiAppController.registrarDispositivoWeb);
+router.post('/api/app/logout', exigirToken, apiAppController.logout);
+router.get('/api/app/sync', apiSyncLimiter, exigirToken, apiAppController.sync);
+router.post('/api/app/sync/push', apiSyncLimiter, exigirToken, apiAppController.push);
 const comunidadeController = require('../controllers/comunidadeController');
 const iaController = require('../controllers/iaController');
 const { exigirIa, limiteMensagens } = require('../middleware/iaMiddleware');

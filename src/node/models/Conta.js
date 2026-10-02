@@ -81,7 +81,7 @@ class Conta {
             }
             const [res] = await conn.query(
                 `INSERT INTO contas (user_id, nome, tipo, saldo_inicial, cor, conta_padrao, status, created_at, updated_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, 'ativa', NOW(), NOW())`,
+                 VALUES (?, ?, ?, ?, ?, ?, 'ativa', NOW(3), NOW(3))`,
                 [userId, nome, tipo || 'corrente', parseFloat(saldo_inicial) || 0, cor || '#2563eb', serPadrao ? 1 : 0]
             );
             await conn.commit();
@@ -104,7 +104,7 @@ class Conta {
                 await conn.query('UPDATE contas SET conta_padrao = 0 WHERE user_id = ?', [userId]);
             }
             await conn.query(
-                'UPDATE contas SET nome = ?, tipo = ?, cor = ?, conta_padrao = IF(?, 1, conta_padrao), updated_at = NOW() WHERE id = ? AND user_id = ?',
+                'UPDATE contas SET nome = ?, tipo = ?, cor = ?, conta_padrao = IF(?, 1, conta_padrao), updated_at = NOW(3) WHERE id = ? AND user_id = ?',
                 [nome, tipo, cor, conta_padrao ? 1 : 0, id, userId]
             );
             await conn.commit();
@@ -118,12 +118,12 @@ class Conta {
     }
 
     static async arquivar(id, userId) {
-        await db.query("UPDATE contas SET status = 'arquivada', conta_padrao = 0, updated_at = NOW() WHERE id = ? AND user_id = ?", [id, userId]);
+        await db.query("UPDATE contas SET status = 'arquivada', conta_padrao = 0, updated_at = NOW(3) WHERE id = ? AND user_id = ?", [id, userId]);
         await this.garantirContaPadrao(userId);
     }
 
     static async restaurar(id, userId) {
-        await db.query("UPDATE contas SET status = 'ativa', updated_at = NOW() WHERE id = ? AND user_id = ?", [id, userId]);
+        await db.query("UPDATE contas SET status = 'ativa', updated_at = NOW(3) WHERE id = ? AND user_id = ?", [id, userId]);
         await this.garantirContaPadrao(userId);
     }
 
@@ -131,6 +131,9 @@ class Conta {
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
+            const SyncExclusao = require('./SyncExclusao');
+            await SyncExclusao.registrar('lancamentos', 'conta_id = ? AND user_id = ?', [id, userId], conn);
+            await SyncExclusao.registrar('contas', 'id = ? AND user_id = ?', [id, userId], conn);
             await conn.query('DELETE FROM lancamentos WHERE conta_id = ? AND user_id = ?', [id, userId]);
             await conn.query('DELETE FROM contas WHERE id = ? AND user_id = ?', [id, userId]);
             await conn.commit();

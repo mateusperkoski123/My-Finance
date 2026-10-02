@@ -2,6 +2,7 @@ const express = require('express');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
 const path = require('path');
+const fs = require('fs');
 const expressLayouts = require('express-ejs-layouts');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -41,6 +42,17 @@ app.use('/cadastro', authLimiter);
 // Body parsing
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
+// PWA: o service worker e servido com o identificador do build (muda a cada deploy/reinicio),
+// o que invalida os caches antigos no aparelho. APP_VERSION pode fixar o valor.
+const BUILD_ID = process.env.APP_VERSION || `${require('./package.json').version}-${Date.now().toString(36)}`;
+const SW_FONTE = fs.readFileSync(path.join(__dirname, 'public/service-worker.js'), 'utf8');
+app.get('/service-worker.js', (req, res) => {
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.setHeader('Service-Worker-Allowed', '/');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(SW_FONTE.split('__BUILD_ID__').join(BUILD_ID));
+});
 
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
@@ -88,6 +100,7 @@ app.use((req, res, next) => {
     res.locals.currentUrl = req.originalUrl;
     res.locals.googleAtivo = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
     res.locals.usuarioLogado = null;
+    res.locals.assetVersion = BUILD_ID;
     next();
 });
 
@@ -99,6 +112,8 @@ app.use(async (req, res, next) => {
             if (user) {
                 req.user = user;
                 res.locals.usuarioLogado = user;
+                // O service worker so guarda paginas autenticadas identificadas por este cabecalho (e as apaga se o usuario mudar).
+                res.setHeader('X-Cache-User', String(user.id));
                 // Ultimo acesso: grava no maximo uma vez a cada ACESSO_INTERVALO_HORAS (padrao 12) por usuario, sem esperar a gravacao.
                 const intervalo = (Number(process.env.ACESSO_INTERVALO_HORAS) || 12) * 3600 * 1000;
                 const ultimo = user.ultimo_acesso_em ? new Date(user.ultimo_acesso_em).getTime() : 0;
@@ -113,6 +128,40 @@ app.use(async (req, res, next) => {
 
 // i18n & CSRF middlewares
 app.use(i18nMiddleware);
+
+// Manifest do app: textos no idioma da conta (o navegador envia o cookie porque o link usa crossorigin="use-credentials").
+app.get('/manifest.webmanifest', (req, res) => {
+    const t = req.t;
+    const icone = [{ src: '/assets/icons/icon-192.png', sizes: '192x192' }];
+    res.setHeader('Content-Type', 'application/manifest+json; charset=utf-8');
+    res.setHeader('Cache-Control', 'private, no-cache');
+    res.setHeader('Vary', 'Cookie, Accept-Language');
+    res.json({
+        id: 'myfinance-pwa',
+        name: t('pwa.manifest_nome'),
+        short_name: 'MyFinance',
+        description: t('pwa.manifest_descricao'),
+        start_url: '/?source=pwa',
+        scope: '/',
+        display: 'standalone',
+        orientation: 'portrait',
+        background_color: '#0b0d12',
+        theme_color: '#0b0d12',
+        lang: req.lang,
+        categories: ['finance'],
+        icons: [
+            { src: '/assets/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+            { src: '/assets/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+            { src: '/assets/icons/icon-192-maskable.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+            { src: '/assets/icons/icon-512-maskable.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }
+        ],
+        shortcuts: [
+            { name: t('pwa.atalho_gasto'), short_name: t('pwa.atalho_gasto_curto'), url: '/?source=pwa&action=despesa', icons: icone },
+            { name: t('pwa.atalho_receita'), short_name: t('pwa.atalho_receita_curto'), url: '/?source=pwa&action=receita', icons: icone },
+            { name: t('pwa.atalho_contas'), short_name: t('pwa.atalho_contas'), url: '/contas?source=pwa', icons: icone }
+        ]
+    });
+});
 app.use(csrfMiddleware);
 
 // Regras de conta: suspensao, aceite de termos e modo somente leitura (assinatura vencida)

@@ -577,3 +577,13 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   window.addEventListener('scroll', function () { fecharMenus(null); }, { passive: true });
 })();
+
+// Atalhos do app instalado (?action=despesa|receita): abre o formulario correspondente no painel.
+(function () {
+  document.addEventListener('DOMContentLoaded', function () {
+    var acao = new URLSearchParams(location.search).get('action');
+    var alvo = { despesa: 'modal-novo-despesa', receita: 'modal-novo-receita' }[acao];
+    var modal = alvo && document.getElementById(alvo);
+    if (modal) modal.classList.add('is-open');
+  });
+})();
