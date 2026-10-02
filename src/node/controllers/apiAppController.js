@@ -94,11 +94,23 @@ async function categoriaDoUsuario(userId, v) {
 
 const tsLinha = async (tabela, id) => (await db.query(`SELECT DATE_FORMAT(updated_at, '${FORMATO_TS}') AS t FROM ${tabela} WHERE id = ?`, [id]))[0][0]?.t || null;
 
+// Fixo (24 meses) e Repetir (N vezes) sao excludentes; se vierem os dois, vale o fixo (mesma regra do site).
+function serieDe(dados) {
+    const eFixo = ['1', 1, true, 'true'].includes(dados.e_fixo);
+    const repetir = !eFixo && ['1', 1, true, 'true'].includes(dados.repetir);
+    let quantidade = 1;
+    if (repetir) {
+        quantidade = Number(dados.quantidade_repeticoes);
+        if (!Number.isInteger(quantidade) || quantidade < 2 || quantidade > 60) throw new ErroOp('quantidade_invalida');
+    }
+    return { eFixo, repetir, quantidade };
+}
+
 // ---------- operacoes (push) ----------
 const OPERACOES = {
-    // Receita ou despesa unica (series fixo/repetir sao feitas online).
+    // Receita ou despesa: unica, fixa (24 meses) ou repetida N vezes. O servidor gera as parcelas com a mesma regra do site.
     'lancamentos.create': async (userId, dados) => {
-        if (dados.e_fixo || dados.repetir || dados.recorrente) throw new ErroOp('serie_nao_suportada_offline');
+        const serie = serieDe(dados);
         const tipo = String(dados.tipo || '');
         if (!['receita', 'despesa'].includes(tipo)) throw new ErroOp('tipo_invalido');
         const status = dados.status === undefined ? 'pago' : String(dados.status);
@@ -113,7 +125,10 @@ const OPERACOES = {
             data_competencia: dataYMD(dados.data_competencia, { obrigatoria: true }),
             data_pagamento: dataYMD(dados.data_pagamento),
             observacoes: texto(dados.observacoes, 500, { campo: 'observacoes' }),
-            client_id: clientId
+            client_id: clientId,
+            e_fixo: serie.eFixo ? 1 : 0,
+            repetir: serie.repetir ? 1 : 0,
+            quantidade_repeticoes: serie.quantidade
         };
         if (clientId) {
             const ja = await achar('lancamentos', userId, { client_id: clientId }, 'id');
@@ -177,6 +192,26 @@ const OPERACOES = {
         return { id_servidor: perna ? perna.id : null, updated_at: perna ? await tsLinha('lancamentos', perna.id) : null };
     },
 
+    // Transferencia agendada: as pernas ficam pendentes e o saldo so move ao marcar como pago (igual ao site).
+    'lancamentos.agendar_transferencia': async (userId, dados) => {
+        const origem = await contaDoUsuario(userId, dados.conta_origem_id);
+        const destino = await contaDoUsuario(userId, dados.conta_destino_id);
+        if (origem.id === destino.id) throw new ErroOp('contas_iguais');
+        const serie = serieDe(dados);
+        const clientId = uuidOuNulo(dados.client_id);
+        if (clientId) {
+            const ja = await achar('lancamentos', userId, { client_id: clientId }, 'id');
+            if (ja) return { id_servidor: ja.id, updated_at: await tsLinha('lancamentos', ja.id) };
+        }
+        await Lancamento.criarTransferencia({
+            userId, origem, destino, valor: valorPositivo(dados.valor), data: dataYMD(dados.data, { obrigatoria: true }),
+            descricao: texto(dados.descricao, 100, { campo: 'descricao' }) || '',
+            agendada: true, eFixo: serie.eFixo, quantidade: serie.eFixo ? 24 : serie.quantidade, clientId
+        });
+        const perna = clientId ? await achar('lancamentos', userId, { client_id: clientId }, 'id') : null;
+        return { id_servidor: perna ? perna.id : null, updated_at: perna ? await tsLinha('lancamentos', perna.id) : null };
+    },
+
     'categorias.create': async (userId, dados) => {
         const clientId = uuidOuNulo(dados.client_id);
         if (clientId) {
@@ -186,7 +221,8 @@ const OPERACOES = {
         const cor = dados.cor === undefined || dados.cor === null || dados.cor === '' ? null : String(dados.cor);
         if (cor && !/^#[0-9a-fA-F]{6}$/.test(cor)) throw new ErroOp('cor_invalida');
         const pai = dados.parent_id ? await categoriaDoUsuario(userId, dados.parent_id) : null;
-        const id = await Categoria.criar(userId, { parent_id: pai, nome: texto(dados.nome, 100, { obrigatorio: true, campo: 'nome' }), cor, client_id: clientId });
+        const limite = dados.limite_gasto === undefined || dados.limite_gasto === null || dados.limite_gasto === '' ? null : valorPositivo(dados.limite_gasto);
+        const id = await Categoria.criar(userId, { parent_id: pai, nome: texto(dados.nome, 100, { obrigatorio: true, campo: 'nome' }), cor, limite_gasto: limite, client_id: clientId });
         return { id_servidor: id, updated_at: await tsLinha('categorias', id) };
     }
 };
@@ -397,7 +433,7 @@ class ApiAppController {
                 if (req.somenteLeitura) throw new ErroOp('somente_leitura', { guardar: false });
                 const dados = op.dados && typeof op.dados === 'object' && !Array.isArray(op.dados) ? { ...op.dados } : {};
                 if (op.base_updated_at !== undefined && dados.base_updated_at === undefined) dados.base_updated_at = op.base_updated_at;
-                if (chave.endsWith('.create') || chave === 'lancamentos.transferir') dados.client_id = dados.client_id || idLower;
+                if (chave.endsWith('.create') || chave === 'lancamentos.transferir' || chave === 'lancamentos.agendar_transferencia') dados.client_id = dados.client_id || idLower;
                 const r = await executar(userId, dados);
                 resultado = { estado: 'ok', sucesso: true, ...r };
                 if (r.estado) { resultado = { ...r, sucesso: false }; }

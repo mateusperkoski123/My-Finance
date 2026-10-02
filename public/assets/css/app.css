@@ -1937,3 +1937,14 @@ select.form-control { min-height: 44px; }
 /* ---- Sem conexao: modulos que precisam de internet ficam esmaecidos ---- */
 a.requer-internet-bloqueado { opacity: .45; cursor: not-allowed; }
 a.requer-internet-bloqueado::after { content: ''; }
+
+/* ---- Celular: botao de menu a esquerda abre a lista completa de modulos; a faixa de icones some ---- */
+.navbar__hamb { display: none; width: 40px; height: 40px; align-items: center; justify-content: center; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--card); color: var(--text); font-size: 22px; cursor: pointer; padding: 0; flex-shrink: 0; }
+@media (max-width: 768px) {
+  .navbar__hamb { display: inline-flex; }
+  .navbar__inner > nav.navbar__links { display: none !important; }
+  .navbar__inner { justify-content: space-between; }
+}
+.fila-historico__titulo { font-size: 13px; font-weight: 700; margin: 18px 0 6px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.fila-historico__item { font-size: 12.5px; padding: 4px 0; color: var(--muted); }

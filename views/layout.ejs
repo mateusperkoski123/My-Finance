@@ -56,6 +56,9 @@
     <div class="navbar__inner">
         <!-- Top Left: Menu Toggle (Mobile Only) + Brand Logo + Online/Offline Badge -->
         <div style="display: flex; align-items: center; gap: 10px;">
+            <% if (usuarioLogado) { %>
+            <button type="button" id="btn-hamburguer" class="navbar__hamb" aria-label="<%= t('nav.menu') %>"><i class="ph ph-list"></i></button>
+            <% } %>
             <a href="/" class="navbar__brand" style="display: flex; align-items: center; gap: 6px;">
                 <i class="ph-fill ph-hands-clapping" style="font-size: 22px;"></i>
                 <span style="font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em;">MyFinance</span>
@@ -283,6 +286,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const marcar = () => faixa.classList.toggle('tem-mais', faixa.scrollWidth - faixa.clientWidth - faixa.scrollLeft > 4);
         marcar(); faixa.addEventListener('scroll', marcar, { passive: true }); window.addEventListener('resize', marcar);
     }
+    const hamb = document.getElementById('btn-hamburguer');
+    if (hamb) hamb.addEventListener('click', (e) => { e.stopPropagation(); abrirMenuMobile(); });
     const toggleBtn = document.getElementById('btn-toggle-menu');
     if (toggleBtn) {
         toggleBtn.addEventListener('click', (e) => {
@@ -301,6 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <p class="muted" style="font-size: 13px; margin: 0 0 14px;"><%= t('off.fila_ajuda') %></p>
         <div id="fila-lista"></div>
+        <div id="fila-historico"></div>
         <button type="button" id="fila-enviar" class="btn btn-primary" style="width: 100%; margin-top: 14px;"><%= t('off.enviar_agora') %></button>
     </div>
 </div>
@@ -312,7 +318,7 @@ window.GF_OFF_T = {
     "sem_conexao": <%- JSON.stringify(t('pwa.offline')) %>,
     "modulo_requer": <%- JSON.stringify(t('off.modulo_requer')) %>,
     "acao_requer": <%- JSON.stringify(t('off.acao_requer')) %>,
-<% ['salvo','serie','invalido','falha_guardar','vazia','descartar','confirmar_descartar','enviadas','enviando','aguardando_internet','aguardando_servidor','conflito','tipo_despesa','tipo_receita','tipo_transferencia','tipo_pagar','tipo_desfazer','tipo_generico','erro_generico','erro_somente_leitura','erro_conta_invalida','erro_categoria_invalida','erro_nao_encontrado','erro_valor_invalido','erro_data_invalida','erro_contas_iguais'].forEach(function (k) { %>    <%- JSON.stringify(k) %>: <%- JSON.stringify(t('off.' + k)) %>,
+<% ['confirmar_sair','historico','serie_fixo','serie_repetir','tipo_agendar','tipo_categoria','salvo','serie','invalido','falha_guardar','vazia','descartar','confirmar_descartar','enviadas','enviando','aguardando_internet','aguardando_servidor','conflito','tipo_despesa','tipo_receita','tipo_transferencia','tipo_pagar','tipo_desfazer','tipo_generico','erro_generico','erro_somente_leitura','erro_conta_invalida','erro_categoria_invalida','erro_nao_encontrado','erro_valor_invalido','erro_data_invalida','erro_contas_iguais','erro_quantidade_invalida','erro_nome_obrigatorio','erro_cor_invalida'].forEach(function (k) { %>    <%- JSON.stringify(k) %>: <%- JSON.stringify(t('off.' + k)) %>,
 <% }) %>};
 </script>
 <script src="/assets/js/app-conexao.js"></script>

@@ -21,8 +21,10 @@
         const usuario = window.GF_USER_ID;
         if (!usuario) return null;
         const donoLocal = await window.AppDb.obterMeta('user_id');
-        if (donoLocal && Number(donoLocal) !== Number(usuario)) await window.AppDb.limparTudo();
-        if (await window.AppDb.obterMeta('token_revogado')) return null; // revogado em Configuracoes: so volta a sincronizar apos novo login
+        if (donoLocal && Number(donoLocal) !== Number(usuario)) {
+            // Outro usuario neste aparelho: os dados do anterior saem (mas isso so acontece depois do logout, que avisa sobre pendencias).
+            await window.AppDb.limparTudo();
+        }
         const existente = await window.AppDb.obterMeta('app_token');
         if (existente) return existente;
         const r = await fetch('/app/dispositivo', {
@@ -80,7 +82,9 @@
             for (const item of pendentes) {
                 const r = porId.get(item.client_id);
                 if (!r) { await window.AppDb.atualizarOutboxItem(item.id, { status: 'pending' }); continue; }
+                const titulo = (item.resumo && item.resumo.titulo) || item.acao;
                 if (r.estado === 'ok') {
+                    await window.AppDb.registrarHistorico({ titulo, estado: 'ok', id_servidor: r.id_servidor || null, valor: item.resumo ? item.resumo.valor : null }).catch(() => {});
                     await window.AppDb.concluirOutbox(item);
                     andou = true;
                     enviadas++;
@@ -88,6 +92,7 @@
                     await window.AppDb.atualizarOutboxItem(item.id, { status: 'conflict', erro: 'conflito', servidor: r.servidor || null });
                     andou = true;
                 } else if (r.estado === 'rejeitada') {
+                    await window.AppDb.registrarHistorico({ titulo, estado: 'rejeitada', erro: r.erro || null }).catch(() => {});
                     await window.AppDb.atualizarOutboxItem(item.id, { status: 'rejected', erro: r.erro || 'rejeitada' });
                     andou = true;
                 } else {
@@ -135,9 +140,9 @@
             atualizarIndicador(problemas.length ? '!' + problemas.length : hora);
         } catch (err) {
             if (err && err.codigo === 401) {
-                // Token revogado ou expirado: apaga os dados locais e nao tenta de novo ate um novo login.
-                await window.AppDb.limparTudo();
-                await window.AppDb.salvarMeta('token_revogado', true);
+                // Token revogado ou expirado: NUNCA apaga as alteracoes que ainda nao foram enviadas.
+                // Descarta so o token; na proxima rodada o site (sessao ativa) emite um novo.
+                await window.AppDb.salvarMeta('app_token', null);
             } else {
                 console.warn('Falha na sincronizacao:', err && err.message);
             }

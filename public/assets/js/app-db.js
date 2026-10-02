@@ -137,9 +137,10 @@
                 data_pagamento: d.status === 'pago' ? (d.data_pagamento || d.data_competencia) : null, observacoes: d.observacoes || null, pendente_sync: true
             }];
         }
-        if (op.tabela === 'lancamentos' && op.acao === 'transferir') {
+        if (op.tabela === 'lancamentos' && (op.acao === 'transferir' || op.acao === 'agendar_transferencia')) {
             const v = Math.abs(num(d.valor));
-            const base = { tipo: 'transferencia', status: 'pago', data_competencia: d.data, data_pagamento: d.data, pendente_sync: true, categoria_id: null };
+            const agendada = op.acao === 'agendar_transferencia';
+            const base = { tipo: 'transferencia', status: agendada ? 'pendente' : 'pago', data_competencia: d.data, data_pagamento: agendada ? null : d.data, pendente_sync: true, categoria_id: null };
             return [
                 Object.assign({ client_id: clientId, client_or_id: clientId, conta_id: num(d.conta_origem_id), descricao: d.descricao || 'Transferência', valor: -v }, base),
                 Object.assign({ client_or_id: clientId + ':in', conta_id: num(d.conta_destino_id), descricao: d.descricao || 'Transferência', valor: v }, base)
@@ -158,9 +159,13 @@
             resumo: op.resumo || null, status: 'pending', tentativas: 0, criado_em: new Date().toISOString(), erro: null, desfazer: null
         };
         return abrir().then((db) => new Promise((resolve, reject) => {
-            const tx = db.transaction(['outbox', 'lancamentos'], 'readwrite');
+            const tx = db.transaction(['outbox', 'lancamentos', 'categorias'], 'readwrite');
             const lanc = tx.objectStore('lancamentos');
             provisorios(op, clientId).forEach((p) => lanc.put(p));
+            if (op.tabela === 'categorias' && op.acao === 'create') {
+                const d = op.dados;
+                tx.objectStore('categorias').put({ client_id: clientId, client_or_id: clientId, nome: d.nome, cor: d.cor || '#3b82f6', parent_id: d.parent_id || null, limite_gasto: d.limite_gasto || null, status: 'ativa', sistema: 0, pendente_sync: true });
+            }
             if (op.tabela === 'lancamentos' && op.acao === 'pagar') {
                 const chave = `id_${Number(item.dados.id)}`;
                 const get = lanc.get(chave);
@@ -186,7 +191,7 @@
         return abrir().then((db) => new Promise((resolve, reject) => {
             const tx = db.transaction(['outbox', 'lancamentos'], 'readwrite');
             tx.objectStore('outbox').delete(item.id);
-            if (item.acao === 'transferir') tx.objectStore('lancamentos').delete(item.client_id + ':in');
+            if (item.acao === 'transferir' || item.acao === 'agendar_transferencia') tx.objectStore('lancamentos').delete(item.client_id + ':in');
             tx.oncomplete = () => resolve(true);
             tx.onerror = (err) => reject(err.target.error);
         }));
@@ -195,11 +200,12 @@
     // O usuario desistiu da operacao: tira da fila e desfaz a copia provisoria.
     function descartarOutbox(item) {
         return abrir().then((db) => new Promise((resolve, reject) => {
-            const tx = db.transaction(['outbox', 'lancamentos'], 'readwrite');
+            const tx = db.transaction(['outbox', 'lancamentos', 'categorias'], 'readwrite');
             const lanc = tx.objectStore('lancamentos');
             tx.objectStore('outbox').delete(item.id);
-            if (item.acao === 'create') lanc.delete(item.client_id);
-            if (item.acao === 'transferir') { lanc.delete(item.client_id); lanc.delete(item.client_id + ':in'); }
+            if (item.tabela === 'categorias') { tx.objectStore('categorias').delete(item.client_id); }
+            if (item.acao === 'create' && item.tabela === 'lancamentos') lanc.delete(item.client_id);
+            if (item.acao === 'transferir' || item.acao === 'agendar_transferencia') { lanc.delete(item.client_id); lanc.delete(item.client_id + ':in'); }
             if (item.acao === 'pagar' && item.desfazer) {
                 const get = lanc.get(item.desfazer.chave);
                 get.onsuccess = () => {
@@ -209,6 +215,14 @@
             tx.oncomplete = () => resolve(true);
             tx.onerror = (err) => reject(err.target.error);
         }));
+    }
+
+    // Ultimos envios concluidos (ou recusados): fica guardado para o usuario conferir o que o servidor respondeu.
+    function registrarHistorico(entrada) {
+        return obterMeta('historico_envios').then((lista) => {
+            const nova = [Object.assign({ em: new Date().toISOString() }, entrada)].concat(Array.isArray(lista) ? lista : []).slice(0, 20);
+            return salvarMeta('historico_envios', nova);
+        });
     }
 
     // Toda a fila (para a tela "Aguardando envio"), da mais antiga para a mais nova.
@@ -317,6 +331,7 @@
     exports.atualizarOutboxItem = atualizarOutboxItem;
     exports.removerOutboxItem = removerOutboxItem;
     exports.limparTudo = limparTudo;
+    exports.registrarHistorico = registrarHistorico;
     exports.concluirOutbox = concluirOutbox;
     exports.descartarOutbox = descartarOutbox;
     exports.listarOutbox = listarOutbox;
