@@ -69,6 +69,14 @@ const relatoriosController = {
             orderSql = 'l.data_competencia ASC';
         }
 
+        // Pendentes: "Vencimento" (padrao do seletor) ordena do mais proximo para o mais distante.
+        let pendentesOrderSql = 'l.data_competencia ASC, l.id ASC';
+        if (ordenar === 'preco' || ordenar === 'valor') {
+            pendentesOrderSql = 'ABS(l.valor) DESC, l.id ASC';
+        } else if (ordenar === 'data_criacao' || ordenar === 'criacao') {
+            pendentesOrderSql = 'l.created_at DESC, l.id DESC';
+        }
+
         // Fetch category distribution for charts
         // Regra: o total de uma categoria incorpora o de suas subcategorias.
         const [catData] = await db.query(
@@ -93,9 +101,9 @@ const relatoriosController = {
              FROM lancamentos l
              LEFT JOIN categorias c ON l.categoria_id = c.id
              LEFT JOIN contas cb ON l.conta_id = cb.id
-             WHERE l.user_id = ? AND l.status = 'pendente'
-             ORDER BY ${orderSql}`,
-            [userId]
+             WHERE l.user_id = ? AND l.status = 'pendente' AND l.data_competencia BETWEEN ? AND ?
+             ORDER BY ${pendentesOrderSql}`,
+            [userId, inicio, fim]
         );
 
         // Fetch demonstrativo mensal
