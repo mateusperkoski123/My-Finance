@@ -7,18 +7,22 @@
     </div>
 </div>
 
+<% const _per = periodo.preset === 'custom' ? '&data_inicio=' + periodo.inicio + '&data_fim=' + periodo.fim : ((periodo.preset === 'mes' || periodo.preset === 'anual') ? '&mes=' + periodo.mes + '&ano=' + periodo.ano : ''); %>
 <div class="contas-toolbar">
     <div class="tabs tabs--grade">
-        <a href="/relatorios?aba=graficos&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'graficos' ? 'is-active' : '' %>"><i class="ph ph-chart-pie-slice"></i> <%= t('relatorios.aba_graficos') %></a>
-        <a href="/relatorios?aba=pendentes&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'pendentes' ? 'is-active' : '' %>"><i class="ph ph-clock-countdown"></i> <%= t('relatorios.aba_pendentes') %></a>
-        <a href="/relatorios?aba=demonstrativo&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'demonstrativo' ? 'is-active' : '' %>"><i class="ph ph-table"></i> <%= t('relatorios.aba_demonstrativo') %></a>
-        <a href="/relatorios?aba=demonstrativo_anual&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="tabs__item <%= aba === 'demonstrativo_anual' ? 'is-active' : '' %>"><i class="ph ph-calendar-blank"></i> <%= t('relatorios.aba_demonstrativo_anual') %></a>
+        <a href="/relatorios?aba=graficos&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %><%= _per %>" class="tabs__item <%= aba === 'graficos' ? 'is-active' : '' %>"><i class="ph ph-chart-pie-slice"></i> <%= t('relatorios.aba_graficos') %></a>
+        <a href="/relatorios?aba=pendentes&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %><%= _per %>" class="tabs__item <%= aba === 'pendentes' ? 'is-active' : '' %>"><i class="ph ph-clock-countdown"></i> <%= t('relatorios.aba_pendentes') %></a>
+        <a href="/relatorios?aba=demonstrativo&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %><%= _per %>" class="tabs__item <%= aba === 'demonstrativo' ? 'is-active' : '' %>"><i class="ph ph-table"></i> <%= t('relatorios.aba_demonstrativo') %></a>
+        <a href="/relatorios?aba=demonstrativo_anual&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %><%= _per %>" class="tabs__item <%= aba === 'demonstrativo_anual' ? 'is-active' : '' %>"><i class="ph ph-calendar-blank"></i> <%= t('relatorios.aba_demonstrativo_anual') %></a>
     </div>
 </div>
 
 <!-- Global Filter Bar (Period presets, Grouping, Ordering) -->
 <form method="get" action="/relatorios" class="card" style="margin-bottom: 20px; padding: 14px 18px;">
     <input type="hidden" name="aba" value="<%= aba %>">
+    <input type="hidden" name="preset" value="<%= periodo.preset %>">
+    <input type="hidden" name="mes" value="<%= periodo.mes %>">
+    <input type="hidden" name="ano" value="<%= periodo.ano %>">
     <% const _base = '/relatorios?aba=' + aba + '&preset=mes&ordenar=' + ordenar + '&agrupar=' + agrupar; %>
     <div class="mes-nav">
         <a class="btn btn-outline btn-sm" href="<%= _base %>&mes=<%= periodo.mes_anterior %>&ano=<%= periodo.ano_anterior %>" aria-label="<%= t('painel.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
@@ -69,7 +73,7 @@
             <input type="date" name="data_inicio" value="<%= periodo.inicio %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;" aria-label="<%= t('relatorios.data_inicial') %>">
             <span class="muted" style="font-size: 12px;"><%= t('filtro.ate') %></span>
             <input type="date" name="data_fim" value="<%= periodo.fim %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;" aria-label="<%= t('relatorios.data_final') %>">
-            <button type="submit" class="btn btn-outline btn-sm" style="border-radius: 8px;"><%= t('filtro.aplicar_datas') %></button>
+            <button type="submit" name="aplicar" value="1" class="btn btn-outline btn-sm" style="border-radius: 8px;"><%= t('filtro.aplicar_datas') %></button>
         </div>
     </details>
     <a class="exportar-link" href="/relatorios/exportar?data_inicio=<%= periodo.inicio %>&data_fim=<%= periodo.fim %>"><i class="ph ph-download-simple"></i> <%= t('relatorios.exportar_csv') %></a>

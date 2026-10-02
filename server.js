@@ -169,10 +169,11 @@ const { contaMiddleware } = require('./src/node/middleware/contaMiddleware');
 app.use((req, res, next) => contaMiddleware(req, res, next).catch(next));
 
 // Helpers in views
-const { moeda, formatDate, formatDateTime, truncarTexto, descricaoLancamento } = require('./src/node/core/helpers');
+const { moeda, formatDate, formatDateTime, truncarTexto, descricaoLancamento, hojeLocal } = require('./src/node/core/helpers');
 app.use((req, res, next) => {
     res.locals.moeda = (val) => moeda(val, res.locals.currency);
     res.locals.formatDate = formatDate;
+    res.locals.hojeLocal = hojeLocal;
     res.locals.formatDateTime = formatDateTime;
     res.locals.truncarTexto = truncarTexto;
     res.locals.descricaoLancamento = (l) => descricaoLancamento(l, res.locals.t);

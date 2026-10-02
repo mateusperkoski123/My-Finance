@@ -8,7 +8,7 @@ const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 const Ia = require('../models/Ia');
 const Lancamento = require('../models/Lancamento');
-const { toLocalYMD } = require('./helpers');
+const { toLocalYMD, hojeLocal } = require('./helpers');
 
 // Dois modelos: mensagens so de texto usam um modelo barato; as que trazem foto (leitura de comprovante, onde um erro de valor custa caro) usam o mais preciso.
 const MODELO_IMAGEM = process.env.IA_MODELO_IMAGEM || process.env.IA_MODELO || 'claude-sonnet-5-5';
@@ -270,7 +270,7 @@ const EXECUTORES = {
 
     async listar_pendentes(input, ctx) {
         const tipo = ['despesa', 'receita'].includes(input.tipo) ? input.tipo : 'todos';
-        const hoje = toLocalYMD(new Date());
+        const hoje = toLocalYMD(hojeLocal());
         const ate = dataValida(input.ate_data) ? input.ate_data : fimDoMes(hoje);
         const tipos = tipo === 'todos' ? ['receita', 'despesa'] : [tipo];
         const marcas = tipos.map(() => '?').join(',');
@@ -345,7 +345,7 @@ const EXECUTORES = {
             if (pai) nomeCategoria = `${pai.nome} / ${categoria.nome}`;
         }
 
-        const hoje = toLocalYMD(new Date());
+        const hoje = toLocalYMD(hojeLocal());
         const data = dataValida(input.data) ? input.data : hoje;
         const status = ['pago', 'pendente'].includes(input.status) ? input.status : (data <= hoje ? 'pago' : 'pendente');
         const payload = {
@@ -375,7 +375,7 @@ const EXECUTORES = {
             }
             itens.push({ id: l.id, tipo: l.tipo, descricao: l.descricao, valor: Math.abs(Number(l.valor)), conta_nome: l.conta_nome, data: ymd(l.data_competencia), status_atual: l.status });
         }
-        const hoje = toLocalYMD(new Date());
+        const hoje = toLocalYMD(hojeLocal());
         return adicionarAoPlano(ctx, { op: 'status', status, data_pagamento: status === 'pago' ? (dataValida(input.data) ? input.data : hoje) : null, itens });
     },
 
@@ -457,7 +457,7 @@ const EXECUTORES = {
         const destino = await Conta.buscarPorId(input.conta_destino_id, ctx.userId);
         if (!origem || !destino || origem.status !== 'ativa' || destino.status !== 'ativa') throw new Error('Conta invalida. Use ids de listar_contas.');
         if (origem.id === destino.id) throw new Error('Origem e destino sao a mesma conta.');
-        const hoje = toLocalYMD(new Date());
+        const hoje = toLocalYMD(hojeLocal());
         const data = dataValida(input.data) ? input.data : hoje;
         const repeticao = ['fixa', 'repetir'].includes(input.repeticao) ? input.repeticao : 'unica';
         const quantidade = repeticao === 'fixa' ? 24 : (repeticao === 'repetir' ? Math.min(Math.max(parseInt(input.quantidade, 10) || 2, 2), 60) : 1);
@@ -470,7 +470,7 @@ const EXECUTORES = {
 };
 
 function montarSistema({ usuario, contas, categorias, nivel = 1 }) {
-    const hoje = new Date();
+    const hoje = hojeLocal();
     const moeda = usuario.moeda || 'PYG';
     const idioma = usuario.idioma || 'pt-BR';
     const dias = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado'];

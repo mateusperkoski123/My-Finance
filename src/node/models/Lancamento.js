@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const { randomUUID: uuidv4 } = require('crypto');
-const { toLocalYMD, formatDate, addMonthsYMD } = require('../core/helpers');
+const { toLocalYMD, formatDate, addMonthsYMD, hojeLocal } = require('../core/helpers');
 
 // Lancamento marcado como fixo (receita/despesa recorrente) gera 24 meses, a atual incluida.
 const MESES_FIXO = 24;
@@ -187,7 +187,7 @@ class Lancamento {
             const totalOcorrencias = eFixo ? MESES_FIXO : qtdPedida;
             const serieId = totalOcorrencias > 1 ? uuidv4() : null;
 
-            const dataBase = data.data_competencia || toLocalYMD(new Date());
+            const dataBase = data.data_competencia || toLocalYMD(hojeLocal());
             const pagDate = data.status === 'pago' ? (data.data_pagamento || dataBase) : null;
             const categoriaFinalId = data.subcategoria_id || data.categoria_id || null;
             const rawValor = Math.abs(parseFloat(data.valor) || 0);
@@ -360,7 +360,7 @@ class Lancamento {
     }
 
     static async marcarComoPago(id, userId, status = 'pago', dataPagamento = null) {
-        const pagDate = status === 'pago' ? (dataPagamento || toLocalYMD(new Date())) : null;
+        const pagDate = status === 'pago' ? (dataPagamento || toLocalYMD(hojeLocal())) : null;
         const { ids } = await this.idsDoPar(id, userId);
         if (!ids.length) return;
         await db.query(

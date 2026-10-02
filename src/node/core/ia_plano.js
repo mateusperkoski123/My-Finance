@@ -6,7 +6,7 @@ const Lancamento = require('../models/Lancamento');
 const Categoria = require('../models/Categoria');
 const Conta = require('../models/Conta');
 const SyncExclusao = require('../models/SyncExclusao');
-const { toLocalYMD } = require('./helpers');
+const { toLocalYMD, hojeLocal } = require('./helpers');
 
 const marcas = (n) => Array(n).fill('?').join(',');
 
@@ -41,7 +41,7 @@ async function executarOp(userId, op) {
                 if (!l) throw new Error(`Lançamento não encontrado: ${item.descricao}`);
                 if (l.status === op.status) continue;
                 anteriores.push({ id: item.id, status: l.status, data_pagamento: l.data_pagamento ? toLocalYMD(new Date(l.data_pagamento)) : null });
-                await Lancamento.marcarComoPago(item.id, userId, op.status, op.status === 'pago' ? (op.data_pagamento || toLocalYMD(new Date())) : null);
+                await Lancamento.marcarComoPago(item.id, userId, op.status, op.status === 'pago' ? (op.data_pagamento || toLocalYMD(hojeLocal())) : null);
             }
             return { t: 'status', itens: anteriores };
         }

@@ -163,7 +163,7 @@ const configuracoesController = {
         const categoriasData = payload.categorias || [];
         const lancamentosData = payload.lancamentos || [];
 
-        const { toLocalYMD } = require('../core/helpers');
+        const { toLocalYMD, hojeLocal } = require('../core/helpers');
         // Aceita 'YYYY-MM-DD' ou ISO com fuso (backups antigos gravavam '...T03:00:00.000Z').
         const normData = (v) => {
             if (!v) return null;
@@ -245,7 +245,7 @@ const configuracoesController = {
                 const mappedCatId = l.categoria_id ? (catMap[l.categoria_id] || null) : null;
                 const tipo = TIPOS.includes(l.tipo) ? l.tipo : 'despesa';
                 const status = STATUS.includes(l.status) ? l.status : 'pendente';
-                const dataComp = normData(l.data_competencia) || toLocalYMD(new Date());
+                const dataComp = normData(l.data_competencia) || toLocalYMD(hojeLocal());
                 const dataPag = normData(l.data_pagamento);
                 let valor = parseFloat(l.valor) || 0;
                 // Invariante do sistema: despesa e negativa, receita e positiva (ajuste/transferencia mantem o sinal informado).

@@ -98,6 +98,20 @@ function truncarTexto(str, max = 45) {
     return s;
 }
 
+// Fuso de negocio do app (padrao Paraguai). O servidor (Hostinger) costuma rodar em UTC; sem isso, depois das 21h locais
+// o "hoje" viraria o dia seguinte (e o "Este mes" no ultimo dia do mes).
+const FUSO_APP = process.env.APP_TIMEZONE || process.env.IA_TIMEZONE || 'America/Asuncion';
+function hojeLocal(agora = new Date()) {
+    try {
+        const p = {};
+        new Intl.DateTimeFormat('en-CA', { timeZone: FUSO_APP, year: 'numeric', month: '2-digit', day: '2-digit' })
+            .formatToParts(agora).forEach((x) => { if (x.type !== 'literal') p[x.type] = parseInt(x.value, 10); });
+        return new Date(p.year, p.month - 1, p.day);
+    } catch (e) {
+        return new Date(agora.getFullYear(), agora.getMonth(), agora.getDate());
+    }
+}
+
 function toLocalYMD(d = new Date()) {
     if (!d) return '';
     const dateObj = (d instanceof Date) ? d : new Date(d);
@@ -145,5 +159,6 @@ module.exports = {
     formatDate,
     formatDateTime,
     truncarTexto,
-    toLocalYMD
+    toLocalYMD,
+    hojeLocal
 };

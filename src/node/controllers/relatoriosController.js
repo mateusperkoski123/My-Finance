@@ -1,13 +1,13 @@
 const db = require('../config/db');
 const Lancamento = require('../models/Lancamento');
-const { toLocalYMD } = require('../core/helpers');
+const { toLocalYMD, hojeLocal } = require('../core/helpers');
 
 const relatoriosController = {
     index: async (req, res) => {
         const userId = req.user.id;
         const query = req.query;
 
-        const hojeObj = new Date();
+        const hojeObj = hojeLocal();
         const hoje = toLocalYMD(hojeObj);
         
         let mes = parseInt(query.mes || (hojeObj.getMonth() + 1), 10);
@@ -15,7 +15,10 @@ const relatoriosController = {
 
         let inicio, fim, preset = query.preset || 'mes';
 
-        if (query.data_inicio && query.data_fim) {
+        // Datas so valem como periodo personalizado quando vieram do botao "Aplicar" ou de um link com preset=custom/sem preset;
+        // os outros envios do formulario (ordenar/agrupar) carregam as datas so para exibir o periodo atual.
+        const usaDatas = query.data_inicio && query.data_fim && (query.aplicar || !query.preset || query.preset === 'custom');
+        if (usaDatas) {
             inicio = query.data_inicio;
             fim = query.data_fim;
             preset = 'custom';
@@ -23,11 +26,11 @@ const relatoriosController = {
             inicio = hoje;
             fim = hoje;
         } else if (preset === '7dias') {
-            const d = new Date(); d.setDate(d.getDate() - 7);
+            const d = hojeLocal(); d.setDate(d.getDate() - 7);
             inicio = toLocalYMD(d);
             fim = hoje;
         } else if (preset === '30dias') {
-            const d = new Date(); d.setDate(d.getDate() - 30);
+            const d = hojeLocal(); d.setDate(d.getDate() - 30);
             inicio = toLocalYMD(d);
             fim = hoje;
         } else if (preset === 'anual') {
@@ -69,7 +72,8 @@ const relatoriosController = {
             orderSql = 'l.data_competencia ASC';
         }
 
-        // Pendentes: "Vencimento" (padrao do seletor) ordena do mais proximo para o mais distante.
+        // Pendentes: respeita o periodo escolhido; se o periodo contem hoje, as atrasadas (de antes do periodo) tambem aparecem.
+        // "Vencimento" (padrao do seletor) ordena do mais proximo para o mais distante.
         let pendentesOrderSql = 'l.data_competencia ASC, l.id ASC';
         if (ordenar === 'preco' || ordenar === 'valor') {
             pendentesOrderSql = 'ABS(l.valor) DESC, l.id ASC';
@@ -101,9 +105,10 @@ const relatoriosController = {
              FROM lancamentos l
              LEFT JOIN categorias c ON l.categoria_id = c.id
              LEFT JOIN contas cb ON l.conta_id = cb.id
-             WHERE l.user_id = ? AND l.status = 'pendente' AND l.data_competencia BETWEEN ? AND ?
+             WHERE l.user_id = ? AND l.status = 'pendente'
+               AND (l.data_competencia BETWEEN ? AND ? OR (? AND l.data_competencia < ?))
              ORDER BY ${pendentesOrderSql}`,
-            [userId, inicio, fim]
+            [userId, inicio, fim, inicio <= hoje && fim >= hoje ? 1 : 0, hoje]
         );
 
         // Fetch demonstrativo mensal
@@ -171,7 +176,7 @@ const relatoriosController = {
 
 relatoriosController.exportar = async (req, res) => {
     const userId = req.user.id;
-    const hoje = new Date();
+    const hoje = hojeLocal();
     let inicio = req.query.data_inicio, fim = req.query.data_fim;
     const ymd = /^\d{4}-\d{2}-\d{2}$/;
     if (!ymd.test(inicio || '') || !ymd.test(fim || '')) {

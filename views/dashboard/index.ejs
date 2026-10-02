@@ -1,11 +1,11 @@
 
 
 <%
-const dataHoje = formatDate(new Date());
-const data7DiasDate = new Date(); data7DiasDate.setDate(data7DiasDate.getDate() - 7);
+const dataHoje = formatDate(hojeLocal());
+const data7DiasDate = hojeLocal(); data7DiasDate.setDate(data7DiasDate.getDate() - 7);
 const data7Dias = formatDate(data7DiasDate);
-const dataAnoInicio = new Date().getFullYear() + '-01-01';
-const dataAnoFim = new Date().getFullYear() + '-12-31';
+const dataAnoInicio = hojeLocal().getFullYear() + '-01-01';
+const dataAnoFim = hojeLocal().getFullYear() + '-12-31';
 
 const e7Dias = periodo.customizado && periodo.inicio === data7Dias && periodo.fim === dataHoje;
 const eAno = periodo.customizado && periodo.inicio === dataAnoInicio && periodo.fim === dataAnoFim;
@@ -33,7 +33,7 @@ const nomesMeses = {
 
         <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
             <a href="/?data_inicio=<%= dataHoje %>&data_fim=<%= dataHoje %>" class="btn <%= eHoje ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('painel.hoje') %></a>
-            <a href="/?mes=<%= new Date().getMonth() + 1 %>&ano=<%= new Date().getFullYear() %>" class="btn <%= eMes ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
+            <a href="/?mes=<%= hojeLocal().getMonth() + 1 %>&ano=<%= hojeLocal().getFullYear() %>" class="btn <%= eMes ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
             <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-filtro-avancado" style="border-radius: 20px;"><i class="ph ph-sliders-horizontal"></i> <%= t('filtro.filtrar') %></button>
         </div>
     </div>

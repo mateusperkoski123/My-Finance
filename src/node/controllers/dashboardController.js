@@ -1,7 +1,7 @@
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 const Lancamento = require('../models/Lancamento');
-const { parseMoeda, toLocalYMD, moeda } = require('../core/helpers');
+const { parseMoeda, toLocalYMD, moeda, hojeLocal } = require('../core/helpers');
 
 // Destino pos-acao: campo 'voltar' do formulario (somente caminho local), senao Referer, senao '/'.
 const destinoRetorno = (req) => {
@@ -18,7 +18,7 @@ const dashboardController = {
         const query = req.query;
 
         // Period logic
-        const hoje = new Date();
+        const hoje = hojeLocal();
         let mes = parseInt(query.mes || (hoje.getMonth() + 1), 10);
         let ano = parseInt(query.ano || hoje.getFullYear(), 10);
 
@@ -78,7 +78,7 @@ const dashboardController = {
 
         const dadosLancamentos = await Lancamento.buscarFiltrados(userId, periodo, filtros, ordenacao, pagina, porPagina, agrupamento);
 
-        const pendenciasUrgentes = await Lancamento.pendentesUrgentes(userId, toLocalYMD(new Date()));
+        const pendenciasUrgentes = await Lancamento.pendentesUrgentes(userId, toLocalYMD(hojeLocal()));
         const despesasPorCategoria = await Lancamento.resumoPorCategoriaPai(userId, periodo, 'despesa');
 
         res.render('dashboard/index', {
@@ -131,7 +131,7 @@ const dashboardController = {
             tipo: b.tipo || 'despesa',
             descricao: b.descricao.trim(),
             valor: val,
-            data_competencia: b.data_competencia || toLocalYMD(new Date()),
+            data_competencia: b.data_competencia || toLocalYMD(hojeLocal()),
             data_vencimento: b.data_vencimento || null,
             data_pagamento: b.data_pagamento || null,
             status: (b.foi_pago === '1' || b.foi_recebida === '1' || b.status === 'pago') ? 'pago' : 'pendente',

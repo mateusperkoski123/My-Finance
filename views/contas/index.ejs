@@ -305,7 +305,7 @@
                 </div>
                 <div class="form-group">
                     <label><%= t('contas.transferir.data_label') %></label>
-                    <input class="input" type="date" name="data" value="<%= formatDate(new Date()) %>" required>
+                    <input class="input" type="date" name="data" value="<%= formatDate(hojeLocal()) %>" required>
                 </div>
             </div>
 
@@ -358,7 +358,7 @@
                 </div>
                 <div class="form-group">
                     <label><%= t('agendar.data') %></label>
-                    <input class="input" type="date" name="data" value="<%= formatDate(new Date()) %>" required>
+                    <input class="input" type="date" name="data" value="<%= formatDate(hojeLocal()) %>" required>
                 </div>
             </div>
 

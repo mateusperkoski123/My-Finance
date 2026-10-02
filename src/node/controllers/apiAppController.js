@@ -303,7 +303,7 @@ class ApiAppController {
                 if (!cur || typeof cur !== 'object') return res.status(400).json({ sucesso: false, erro: 'cursor_invalido' });
             }
             const completo = !cur;
-            const hoje = new Date();
+            const hoje = require('../core/helpers').hojeLocal();
             // Primeira carga: lancamentos de 12 meses atras ate 24 meses a frente (cobre as series fixas).
             const janela = completo
                 ? [`${hoje.getFullYear() - 1}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`, `${hoje.getFullYear() + 2}-${String(hoje.getMonth() + 1).padStart(2, '0')}-01`]

@@ -1,7 +1,7 @@
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 const db = require('../config/db');
-const { parseMoeda, toLocalYMD, addMonthsYMD } = require('../core/helpers');
+const { parseMoeda, toLocalYMD, addMonthsYMD, hojeLocal } = require('../core/helpers');
 const { randomUUID: uuidv4 } = require('crypto');
 
 const MESES_FIXO = 24;
@@ -154,8 +154,8 @@ const contasController = {
                     userId, id, catId,
                     delta >= 0 ? 'Ajuste de saldo (entrada)' : 'Ajuste de saldo (saída)',
                     delta,
-                    b.data || toLocalYMD(new Date()),
-                    b.data || toLocalYMD(new Date())
+                    b.data || toLocalYMD(hojeLocal()),
+                    b.data || toLocalYMD(hojeLocal())
                 ]
             );
 
@@ -194,7 +194,7 @@ const contasController = {
 
             const catId = await Categoria.idSistema(userId, 'transferencia');
 
-            const dataComp = data || toLocalYMD(new Date());
+            const dataComp = data || toLocalYMD(hojeLocal());
             const descStr = descricao ? descricao.trim() : 'Transferência entre contas';
 
             // Saída da origem
