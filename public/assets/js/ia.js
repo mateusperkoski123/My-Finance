@@ -145,6 +145,138 @@
     return '<div class="ia-cartao ia-plano" data-cartao="' + c.id + '"><div class="ia-cartao__topo"><span>' + esc(T.plano) + '</span><strong>' + c.operacoes.length + '</strong></div><ol class="ia-plano__lista">' + itens + '</ol>' + rodape + '</div>';
   }
 
+  // ---- Anexos: fotos (reduzidas no navegador) e audio gravado ----
+  var MAX_FOTOS = 3;
+  var MAX_SEG_AUDIO = 60;
+  var anexos = { fotos: [], audio: null };
+  var elAnexos = document.getElementById('ia-anexos');
+  var btnCamera = document.getElementById('ia-btn-camera');
+  var btnFoto = document.getElementById('ia-btn-foto');
+  var btnAudio = document.getElementById('ia-btn-audio');
+  var elTempo = document.getElementById('ia-tempo-audio');
+  var inCamera = document.getElementById('ia-in-camera');
+  var inGaleria = document.getElementById('ia-in-galeria');
+  var gravacao = null;
+
+  function mmss(s) { return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
+
+  function renderAnexos() {
+    var tem = anexos.fotos.length || anexos.audio;
+    elAnexos.hidden = !tem;
+    elAnexos.innerHTML =
+      anexos.fotos.map(function (f, i) {
+        return '<span class="ia-anexo"><img src="' + f.url + '" alt=""><button type="button" data-rm-foto="' + i + '" aria-label="' + esc(T.remover) + '">&times;</button></span>';
+      }).join('') +
+      (anexos.audio ? '<span class="ia-anexo ia-anexo--audio"><i class="ph ph-microphone"></i> ' + mmss(anexos.audio.seg) + '<audio controls src="' + anexos.audio.url + '"></audio><button type="button" data-rm-audio="1" aria-label="' + esc(T.remover) + '">&times;</button></span>' : '');
+  }
+
+  function limparAnexos(revogar) {
+    if (revogar) {
+      anexos.fotos.forEach(function (f) { URL.revokeObjectURL(f.url); });
+      if (anexos.audio) URL.revokeObjectURL(anexos.audio.url);
+    }
+    anexos = { fotos: [], audio: null };
+    renderAnexos();
+  }
+
+  // Reduz a foto para ~1280 px (JPEG): menos tokens, upload rapido e comprovantes continuam legiveis.
+  function reduzirFoto(arquivo) {
+    return new Promise(function (resolve, reject) {
+      var maxLado = 1280;
+      var desenhar = function (img, w, h) {
+        var escala = Math.min(1, maxLado / Math.max(w, h));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(w * escala));
+        c.height = Math.max(1, Math.round(h * escala));
+        var ctx = c.getContext('2d');
+        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(function (b) { b ? resolve(b) : reject(new Error('blob')); }, 'image/jpeg', 0.82);
+      };
+      if (window.createImageBitmap) {
+        createImageBitmap(arquivo, { imageOrientation: 'from-image' }).then(function (bmp) { desenhar(bmp, bmp.width, bmp.height); }, function () { reject(new Error('img')); });
+      } else {
+        var url = URL.createObjectURL(arquivo);
+        var im = new Image();
+        im.onload = function () { desenhar(im, im.naturalWidth, im.naturalHeight); URL.revokeObjectURL(url); };
+        im.onerror = function () { URL.revokeObjectURL(url); reject(new Error('img')); };
+        im.src = url;
+      }
+    });
+  }
+
+  function adicionarFotos(lista) {
+    var arquivos = Array.prototype.slice.call(lista || []);
+    if (!arquivos.length) return;
+    var vagas = MAX_FOTOS - anexos.fotos.length;
+    if (arquivos.length > vagas) window.alert(T.erroFotoMax.replace('__N__', MAX_FOTOS));
+    arquivos.slice(0, Math.max(vagas, 0)).forEach(function (a) {
+      reduzirFoto(a).then(function (blob) {
+        anexos.fotos.push({ blob: blob, url: URL.createObjectURL(blob) });
+        renderAnexos();
+      }).catch(function () { window.alert(T.erroFotoPreparar); });
+    });
+  }
+
+  function escolherMime() {
+    var opcoes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+    for (var i = 0; i < opcoes.length; i++) { if (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(opcoes[i])) return opcoes[i]; }
+    return '';
+  }
+
+  function marcarGravando(sim) {
+    btnAudio.classList.toggle('is-gravando', sim);
+    btnAudio.title = sim ? T.pararGravacao : T.gravarAudio;
+    btnAudio.querySelector('i').className = sim ? 'ph-fill ph-stop-circle' : 'ph ph-microphone';
+    if (!sim) elTempo.textContent = '';
+  }
+
+  function pararGravacao() { if (gravacao && gravacao.mr.state !== 'inactive') gravacao.mr.stop(); }
+
+  function alternarGravacao() {
+    if (gravacao) { pararGravacao(); return; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { window.alert(T.erroMicNao); return; }
+    if (anexos.audio) { URL.revokeObjectURL(anexos.audio.url); anexos.audio = null; renderAnexos(); }
+    navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+      var mime = escolherMime();
+      var mr = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
+      var pedacos = [];
+      var inicio = Date.now();
+      gravacao = { mr: mr };
+      mr.ondataavailable = function (e) { if (e.data && e.data.size) pedacos.push(e.data); };
+      mr.onstop = function () {
+        clearInterval(gravacao.timer);
+        stream.getTracks().forEach(function (t) { t.stop(); });
+        var seg = Math.round((Date.now() - inicio) / 1000);
+        var blob = new Blob(pedacos, { type: mr.mimeType || mime || 'audio/webm' });
+        gravacao = null;
+        marcarGravando(false);
+        if (seg >= 1 && blob.size > 0) { anexos.audio = { blob: blob, url: URL.createObjectURL(blob), seg: Math.min(seg, MAX_SEG_AUDIO) }; renderAnexos(); }
+      };
+      mr.start();
+      marcarGravando(true);
+      gravacao.timer = setInterval(function () {
+        var s = Math.round((Date.now() - inicio) / 1000);
+        elTempo.textContent = mmss(s);
+        if (s >= MAX_SEG_AUDIO) { pararGravacao(); window.alert(T.limiteAudio.replace('__N__', MAX_SEG_AUDIO)); }
+      }, 250);
+    }).catch(function () { window.alert(T.erroMic); });
+  }
+
+  // Camera direta so em aparelhos de toque; no computador ficam "anexar foto" e "gravar audio".
+  if (btnCamera && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) btnCamera.hidden = false;
+  if (btnCamera) btnCamera.addEventListener('click', function () { inCamera.value = ''; inCamera.click(); });
+  if (btnFoto) btnFoto.addEventListener('click', function () { inGaleria.value = ''; inGaleria.click(); });
+  if (btnAudio) btnAudio.addEventListener('click', alternarGravacao);
+  if (inCamera) inCamera.addEventListener('change', function () { adicionarFotos(inCamera.files); });
+  if (inGaleria) inGaleria.addEventListener('change', function () { adicionarFotos(inGaleria.files); });
+  if (elAnexos) elAnexos.addEventListener('click', function (e) {
+    var f = e.target.closest('[data-rm-foto]');
+    var a = e.target.closest('[data-rm-audio]');
+    if (f) { var i = Number(f.getAttribute('data-rm-foto')); URL.revokeObjectURL(anexos.fotos[i].url); anexos.fotos.splice(i, 1); renderAnexos(); }
+    if (a && anexos.audio) { URL.revokeObjectURL(anexos.audio.url); anexos.audio = null; renderAnexos(); }
+  });
+
   // ---- Cartao de confirmacao ----
   function cartaoHtml(c) {
     if (c.plano) return planoHtml(c);
@@ -169,11 +301,13 @@
   function rolarFim() { elMsgs.scrollTop = elMsgs.scrollHeight; }
   function limparBoasVindas() { var b = document.getElementById('ia-boasvindas'); if (b) b.remove(); }
 
-  function addMsg(papel, texto, acoes) {
+  function addMsg(papel, texto, acoes, midia) {
     limparBoasVindas();
     var d = document.createElement('div');
     d.className = 'ia-msg ia-msg--' + papel;
-    var corpo = papel === 'user' ? '<p>' + esc(texto).replace(/\n/g, '<br>') + '</p>' : md(texto);
+    var corpo = papel === 'user' ? (texto ? '<p>' + esc(texto).replace(/\n/g, '<br>') + '</p>' : '') : md(texto);
+    if (midia && midia.fotos && midia.fotos.length) corpo = '<div class="ia-miniaturas">' + midia.fotos.map(function (u) { return '<img src="' + u + '" alt="">'; }).join('') + '</div>' + corpo;
+    if (midia && midia.audio) corpo = '<div class="ia-chip-audio"><i class="ph ph-microphone"></i> ' + mmss(midia.audio) + '</div>' + corpo;
     d.innerHTML = '<div class="ia-bolha">' + corpo + '</div>' + (acoes || []).map(cartaoHtml).join('');
     elMsgs.appendChild(d);
     rolarFim();
@@ -232,20 +366,44 @@
 
   function enviar(texto) {
     texto = String(texto || '').trim();
-    if (!texto || enviando) return;
+    var temAnexo = anexos.fotos.length > 0 || !!anexos.audio;
+    if ((!texto && !temAnexo) || enviando) return;
+    if (gravacao) pararGravacao();
     enviando = true;
     elBtn.disabled = true;
-    addMsg('user', texto);
+
+    var form = new FormData();
+    form.append('texto', texto);
+    if (conversaId) form.append('conversa_id', conversaId);
+    anexos.fotos.forEach(function (f, i) { form.append('imagens', f.blob, 'foto' + (i + 1) + '.jpg'); });
+    if (anexos.audio) {
+      var ext = /mp4/.test(anexos.audio.blob.type) ? 'm4a' : (/ogg/.test(anexos.audio.blob.type) ? 'ogg' : 'webm');
+      form.append('audio', anexos.audio.blob, 'audio.' + ext);
+      form.append('audio_seg', anexos.audio.seg);
+    }
+    var midia = { fotos: anexos.fotos.map(function (f) { return f.url; }), audio: anexos.audio ? anexos.audio.seg : 0 };
+    var bolha = addMsg('user', texto, null, midia);
+    limparAnexos(false); // as miniaturas continuam na conversa; os URLs so sao liberados ao recarregar a pagina
     elTexto.value = '';
     elContador.textContent = '0/600';
     var pensando = addPensando();
 
-    api('/ia/mensagem', { texto: texto, conversa_id: conversaId }).then(function (d) {
+    fetch('/ia/mensagem', {
+      method: 'POST',
+      headers: { 'X-CSRF-Token': csrf(), 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+      body: form
+    }).then(function (r) { return r.json().catch(function () { return {}; }); }).then(function (d) {
       pensando.remove();
       if (d.conversa_id && !conversaId) {
         conversaId = d.conversa_id;
         adicionarNaLista(conversaId, d.titulo);
         marcarAtiva(conversaId);
+      }
+      if (d.transcricao) {
+        var p = document.createElement('p');
+        p.className = 'ia-transcricao';
+        p.innerHTML = '<i class="ph ph-microphone"></i> <em>' + esc(d.transcricao) + '</em>';
+        bolha.querySelector('.ia-bolha').appendChild(p);
       }
       if (d.sucesso) addMsg('assistant', d.mensagem.texto, d.mensagem.acoes);
       else addMsg('assistant', '⚠️ ' + (d.erro || T.erro));

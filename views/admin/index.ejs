@@ -6,6 +6,7 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
 <div class="page-header">
     <h1><i class="ph ph-shield-star"></i> <%= t('admin.titulo') %></h1>
     <p class="muted"><%= t('admin.subtitulo') %></p>
+    <a class="btn btn-outline btn-sm" href="/admin/ia"><i class="ph ph-chart-bar"></i> <%= t('admin.ia_consumo_link') %></a>
     <a class="btn btn-outline btn-sm" href="/admin/arquivados"><i class="ph ph-archive"></i> <%= t('admin.ver_arquivados') %> (<%= m.usuarios.arquivados %>)</a>
 </div>
 
@@ -27,6 +28,9 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
 <section class="card" style="margin-top: 16px;">
     <form method="get" action="/admin" class="busca-linha" role="search" style="margin-bottom: 12px;">
         <input class="input" type="search" name="q" value="<%= busca %>" placeholder="<%= t('admin.buscar') %>">
+        <select class="input" name="periodo" aria-label="<%= t('admin.periodo.rotulo') %>" title="<%= t('admin.periodo.rotulo') %>" onchange="this.form.submit()" style="max-width: 190px;">
+            <% ['mes', '30d', 'total'].forEach(p => { %><option value="<%= p %>" <%= periodo === p ? 'selected' : '' %>><%= t('admin.periodo.' + p) %></option><% }) %>
+        </select>
         <button type="submit" class="btn btn-outline" aria-label="<%= t('categorias.buscar') %>"><i class="ph ph-magnifying-glass"></i></button>
     </form>
 
@@ -37,7 +41,9 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
             <thead><tr>
                 <th class="massa-col"><input type="checkbox" id="massa-todos" aria-label="<%= t('admin.massa.selecionar_todos') %>" title="<%= t('admin.massa.selecionar_todos') %>"></th>
                 <th><%= t('admin.col_usuario') %></th><th><%= t('admin.col_plano') %></th><th><%= t('admin.col_vence') %></th>
-                <th><%= t('admin.col_pedido') %></th><th><%= t('admin.col_acesso') %></th><th><%= t('tabela.acoes') %></th>
+                <th><%= t('admin.col_pedido') %></th><th><%= t('admin.col_acesso') %></th>
+                <th class="num"><%= t('admin.col_tok_texto') %></th><th class="num"><%= t('admin.col_tok_imagem') %></th><th class="num"><%= t('admin.col_tok_audio') %></th><th class="num"><%= t('admin.col_tok_total') %></th>
+                <th><%= t('tabela.acoes') %></th>
             </tr></thead>
             <tbody>
             <% usuarios.forEach(u => {
@@ -59,6 +65,11 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                     <td><%= venc ? formatDate(venc, 'DD/MM/YYYY') : '-' %></td>
                     <td><%= u.solicitado_codigo ? nomePlano(u.solicitado_codigo) + ' (' + t('assinatura.ciclo_' + (u.ciclo_solicitado || 'mensal')) + ')' : '-' %></td>
                     <td class="muted" style="font-size: 12px;"><%= u.ultimo_login_em ? formatDate(u.ultimo_login_em, 'DD/MM/YYYY') : '-' %></td>
+                    <% const c = consumo[u.id] || {}; const nf = (v) => Number(v || 0).toLocaleString(lang); %>
+                    <td class="num"><%= nf(c.tok_texto) %></td>
+                    <td class="num"><%= nf(c.tok_imagem) %></td>
+                    <td class="num"><%= nf(c.tok_audio) %></td>
+                    <td class="num"><strong><%= nf(c.tok_total) %></strong></td>
                     <td>
                         <details class="menu-acoes">
                             <summary aria-label="<%= t('acao.mais') %>"><i class="ph ph-dots-three-vertical"></i></summary>

@@ -1,6 +1,9 @@
 const Ia = require('../models/Ia');
 const Lancamento = require('../models/Lancamento');
 const iaCore = require('../core/ia');
+const midia = require('../core/ia_midia');
+const { validarImagem } = require('../core/uploads');
+const { custoClaudeMicro, custoAudioMicro } = require('../core/ia_precos');
 const { executarPlano } = require('../core/ia_plano');
 
 const LIMITE_MES = parseInt(process.env.IA_LIMITE_MENSAGENS_MES || '300', 10);
@@ -8,6 +11,22 @@ const MAX_TEXTO = 600;
 
 // Admin sempre usa o Nivel 2 (para poder testar); os demais usam o nivel definido pelo admin (padrao 1).
 const nivelDe = (req) => (req.ehAdmin || Number(req.user.ia_nivel) === 2 ? 2 : 1);
+
+// Grava o consumo do dia: tokens de texto, de imagem e de audio, e o custo estimado de cada parte.
+async function registrarConsumo(userId, uso, { imagens = 0, stt = null }) {
+    const u = uso || {};
+    const totalEntrada = (u.entrada || 0) + (u.cacheLeitura || 0) + (u.cacheEscrita || 0);
+    const custoClaude = custoClaudeMicro({ entrada: u.entrada, cacheLeitura: u.cacheLeitura, cacheEscrita: u.cacheEscrita, saida: u.saida }, iaCore.MODELO);
+    // O custo das imagens e a fatia da entrada que elas ocuparam (proporcional aos tokens).
+    const custoEntrada = custoClaude - custoClaudeMicro({ saida: u.saida }, iaCore.MODELO);
+    const custoImagem = totalEntrada > 0 ? Math.round(custoEntrada * Math.min(1, (u.tokImagem || 0) / totalEntrada)) : 0;
+    await Ia.registrarUsoDetalhado(userId, {
+        entrada: u.entrada, cacheLeitura: u.cacheLeitura, cacheEscrita: u.cacheEscrita, saida: u.saida,
+        tokImagem: u.tokImagem || 0, tokAudio: stt ? stt.tokens : 0,
+        imagens, audios: stt ? 1 : 0, audioSegundos: stt ? stt.segundos : 0,
+        custoTexto: custoClaude - custoImagem, custoImagem, custoAudio: stt ? custoAudioMicro(stt.segundos, stt.modelo) : 0
+    });
+}
 
 const iaController = {
     index: async (req, res) => {
@@ -29,12 +48,43 @@ const iaController = {
         res.json({ sucesso: true, conversa: { id: conversa.id, titulo: conversa.titulo }, mensagens });
     },
 
+    // Aceita JSON (so texto) ou multipart (texto + ate 3 fotos + 1 audio). Fotos e audio ficam so em memoria: nada e salvo.
     mensagem: async (req, res) => {
         const userId = req.user.id;
-        const texto = String((req.body && req.body.texto) || '').trim();
-        if (!texto || texto.length > MAX_TEXTO) {
+        const body = req.body || {};
+        const textoDigitado = String(body.texto || '').trim();
+        const arquivos = req.files || {};
+        const fotos = arquivos.imagens || [];
+        const audioArq = (arquivos.audio || [])[0];
+
+        if (textoDigitado.length > MAX_TEXTO) {
             return res.status(400).json({ sucesso: false, erro: req.t('ia.erro_texto', { n: MAX_TEXTO }) });
         }
+        if (!textoDigitado && !fotos.length && !audioArq) {
+            return res.status(400).json({ sucesso: false, erro: req.t('ia.erro_vazio') });
+        }
+        if (fotos.length > midia.MAX_IMAGENS) {
+            return res.status(400).json({ sucesso: false, erro: req.t('ia.erro_foto_max', { n: midia.MAX_IMAGENS }) });
+        }
+
+        // Validacao das fotos pelo conteudo real (nao pelo mimetype informado).
+        const imagens = [];
+        for (const f of fotos) {
+            const v = validarImagem(f.buffer, f.mimetype, midia.MAX_BYTES_IMAGEM);
+            if (!v.ok) return res.status(400).json({ sucesso: false, erro: req.t(v.motivo === 'flash.comunidade_imagem_grande' ? 'ia.erro_imagem_grande' : 'ia.erro_imagem') });
+            imagens.push({ mime: v.mime, base64: f.buffer.toString('base64'), tokens: midia.tokensImagem(f.buffer) });
+        }
+        let tipoAudio = null;
+        if (audioArq) {
+            tipoAudio = midia.tipoAudio(audioArq.buffer);
+            if (!tipoAudio || audioArq.size > midia.MAX_BYTES_AUDIO) {
+                return res.status(400).json({ sucesso: false, erro: req.t('ia.erro_audio_invalido') });
+            }
+            if (!midia.sttConfigurado()) {
+                return res.status(503).json({ sucesso: false, erro: req.t('ia.erro_stt_nao_configurada') });
+            }
+        }
+
         if (!iaCore.obterCliente()) {
             return res.status(503).json({ sucesso: false, erro: req.t('ia.erro_nao_configurada') });
         }
@@ -43,13 +93,36 @@ const iaController = {
             if (uso.mensagens >= LIMITE_MES) return res.status(429).json({ sucesso: false, erro: req.t('ia.erro_limite_mes') });
         }
 
-        let conversaId = req.body.conversa_id ? parseInt(req.body.conversa_id, 10) : null;
+        // Audio -> texto (a API da Claude nao recebe audio).
+        let transcricao = null;
+        let stt = null;
+        if (audioArq) {
+            try {
+                const segCliente = Math.min(Math.max(parseInt(body.audio_seg, 10) || 0, 0), midia.MAX_SEGUNDOS_AUDIO);
+                stt = await midia.transcrever({ buffer: audioArq.buffer, tipo: tipoAudio, segundos: segCliente, idioma: req.user.idioma });
+                transcricao = stt.texto;
+            } catch (err) {
+                console.error('Chat IA: falha na transcricao:', err.codigo || '', err.message);
+                return res.status(502).json({ sucesso: false, erro: req.t('ia.erro_stt') });
+            }
+            if (!transcricao) return res.status(422).json({ sucesso: false, erro: req.t('ia.erro_audio_vazio') });
+        }
+
+        // Texto que a Claude recebe (e que fica no historico). As fotos nao entram no historico, so um marcador.
+        const partes = [];
+        if (imagens.length) partes.push('📷'.repeat(imagens.length));
+        if (textoDigitado) partes.push(textoDigitado);
+        if (transcricao) partes.push(`[${req.t('ia.transcricao_rotulo')}] ${transcricao}`);
+        let texto = partes.join(' ');
+        if (imagens.length && !textoDigitado && !transcricao) texto += ' ' + req.t('ia.texto_padrao_foto');
+
+        let conversaId = body.conversa_id ? parseInt(body.conversa_id, 10) : null;
         let titulo = null;
         if (conversaId) {
             const c = await Ia.buscarConversa(conversaId, userId);
             if (!c) return res.status(404).json({ sucesso: false, erro: req.t('ia.erro_conversa') });
         } else {
-            titulo = texto.slice(0, 60);
+            titulo = (textoDigitado || transcricao || req.t('ia.texto_padrao_foto')).slice(0, 60);
             conversaId = await Ia.criarConversa(userId, titulo);
         }
 
@@ -58,7 +131,7 @@ const iaController = {
 
         let r;
         try {
-            r = await iaCore.responder({ usuario: req.user, conversaId, historico, nivel: nivelDe(req) });
+            r = await iaCore.responder({ usuario: req.user, conversaId, historico, nivel: nivelDe(req), imagens });
         } catch (err) {
             if (err.codigo === 'ia_nao_configurada') {
                 return res.status(503).json({ sucesso: false, conversa_id: conversaId, erro: req.t('ia.erro_nao_configurada') });
@@ -75,6 +148,7 @@ const iaController = {
             acoesIds: r.rascunhos, tokensIn: r.tokensIn, tokensOut: r.tokensOut
         });
         await Ia.registrarUso(userId, r.tokensIn, r.tokensOut);
+        await registrarConsumo(userId, r.uso, { imagens: imagens.length, stt });
         await Ia.tocarConversa(conversaId, userId);
 
         const acoes = [];
@@ -82,7 +156,7 @@ const iaController = {
             const a = await Ia.buscarAcao(aid, userId);
             if (a) acoes.push(Ia.cartao(a));
         }
-        res.json({ sucesso: true, conversa_id: conversaId, titulo, mensagem: { id: msgId, papel: 'assistant', texto: textoFinal, acoes } });
+        res.json({ sucesso: true, conversa_id: conversaId, titulo, transcricao, mensagem: { id: msgId, papel: 'assistant', texto: textoFinal, acoes } });
     },
 
     excluirConversa: async (req, res) => {

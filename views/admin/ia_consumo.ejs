@@ -1,0 +1,125 @@
+<%
+// Metrica de cada aba: qual coluna de tokens e de custo usar.
+const ABAS = {
+    geral: { tok: 'tok_total', custo: 'custo_total', extra: [['mensagens', 'iac.col_msgs']] },
+    texto: { tok: 'tok_texto', custo: 'custo_texto', extra: [['mensagens', 'iac.col_msgs']] },
+    audio: { tok: 'tok_audio', custo: 'custo_audio', extra: [['audios', 'iac.col_audios'], ['audio_segundos', 'iac.col_segundos']] },
+    fotos: { tok: 'tok_imagem', custo: 'custo_imagem', extra: [['imagens', 'iac.col_fotos']] }
+};
+const cfg = ABAS[aba];
+const nf = (v) => Number(v || 0).toLocaleString(lang);
+const usd = (micro) => { const v = Number(micro || 0) / 1e6; return 'US$ ' + v.toLocaleString(lang, { minimumFractionDigits: v >= 1 ? 2 : 4, maximumFractionDigits: v >= 1 ? 2 : 4 }); };
+const usdV = (v) => 'US$ ' + Number(v || 0).toLocaleString(lang, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const maxTok = Math.max(1, ...serie.map(r => Number(r[cfg.tok] || 0)));
+const topo = usuarios.slice().sort((a, b) => Number(b[cfg.tok] || 0) - Number(a[cfg.tok] || 0)).filter(u => Number(u[cfg.tok] || 0) > 0).slice(0, 10);
+const kpis = [['iac.hoje', totais.hoje], ['iac.sete', totais.d7], ['iac.trinta', totais.d30], ['iac.mes', totais.mes], ['iac.total', totais.total]];
+%>
+<div class="page-header">
+    <h1><i class="ph ph-chart-bar"></i> <%= t('iac.titulo') %></h1>
+    <p class="muted"><%= t('iac.subtitulo') %></p>
+    <a class="btn btn-outline btn-sm" href="/admin"><i class="ph ph-arrow-left"></i> <%= t('admin.voltar') %></a>
+</div>
+
+<%# ---- Creditos ---- %>
+<section class="card iac-creditos">
+    <h2 class="iac-h"><i class="ph ph-coins"></i> <%= t('iac.creditos') %></h2>
+    <% if (cred) { %>
+        <div class="kpi-grid admin-kpis">
+            <div class="card kpi-card"><span class="kpi-card__label"><%= t('iac.credito_comprado') %></span><strong class="kpi-card__valor"><%= usdV(cred.comprado) %></strong></div>
+            <div class="card kpi-card"><span class="kpi-card__label"><%= t('iac.credito_gasto') %></span><strong class="kpi-card__valor"><%= usdV(cred.gasto) %></strong></div>
+            <div class="card kpi-card"><span class="kpi-card__label"><%= t('iac.credito_restante') %></span><strong class="kpi-card__valor" style="color: <%= cred.restante <= 0 ? 'var(--red)' : (cred.restante < cred.comprado * 0.2 ? 'var(--pendente)' : 'var(--green)') %>;"><%= usdV(cred.restante) %></strong></div>
+            <div class="card kpi-card"><span class="kpi-card__label"><%= t('iac.credito_media') %></span><strong class="kpi-card__valor"><%= usdV(cred.media7) %></strong>
+                <span class="kpi-card__sub"><%= t('iac.credito_dias') %>: <%= cred.dias === null ? t('iac.credito_sem_consumo') : cred.dias %></span></div>
+        </div>
+    <% } else { %>
+        <p class="muted"><%= t('iac.sem_creditos') %></p>
+    <% } %>
+
+    <form method="post" action="/admin/ia/creditos" class="iac-form">
+        <%- csrfCampo %>
+        <label><%= t('iac.valor_usd') %><input class="input" type="text" inputmode="decimal" name="valor_usd" placeholder="5.00" required></label>
+        <label><%= t('iac.data_compra') %><input class="input" type="date" name="data_compra" value="<%= hoje %>" required></label>
+        <label><%= t('iac.nota') %><input class="input" type="text" name="nota" maxlength="120"></label>
+        <button type="submit" class="btn btn-primary btn-sm"><i class="ph ph-plus"></i> <%= t('iac.adicionar') %></button>
+    </form>
+
+    <% if (creditos.length) { %>
+        <ul class="iac-lista">
+            <% creditos.forEach(c => { %>
+                <li>
+                    <span><strong><%= usdV(c.valor_usd) %></strong> · <%= formatDate(c.data_compra, 'DD/MM/YYYY') %><% if (c.nota) { %> · <span class="muted"><%= c.nota %></span><% } %></span>
+                    <form method="post" action="/admin/ia/creditos/<%= c.id %>/excluir" data-confirm="<%= t('iac.excluir_credito') %>">
+                        <%- csrfCampo %>
+                        <button type="submit" class="iac-x" aria-label="<%= t('acao.excluir') %>" title="<%= t('acao.excluir') %>"><i class="ph ph-trash"></i></button>
+                    </form>
+                </li>
+            <% }) %>
+        </ul>
+    <% } %>
+    <p class="muted iac-aviso"><i class="ph ph-info"></i> <%= t('iac.credito_aviso') %></p>
+</section>
+
+<%# ---- Abas ---- %>
+<div class="tabs iac-abas" role="tablist">
+    <% ['geral', 'texto', 'audio', 'fotos'].forEach(a => { %>
+        <a href="/admin/ia?aba=<%= a %>" role="tab" aria-selected="<%= a === aba %>" class="tabs__item <%= a === aba ? 'is-active' : '' %>"><%= t('iac.aba.' + a) %></a>
+    <% }) %>
+</div>
+
+<div class="kpi-grid iac-kpis">
+    <% kpis.forEach(([rotulo, tot]) => { %>
+        <div class="card kpi-card">
+            <span class="kpi-card__label"><%= t(rotulo) %></span>
+            <strong class="kpi-card__valor"><%= nf(tot[cfg.tok]) %></strong>
+            <span class="kpi-card__sub"><%= usd(tot[cfg.custo]) %><% cfg.extra.forEach(([k, r]) => { %> · <%= nf(tot[k]) %> <%= t(r).toLowerCase() %><% }) %></span>
+        </div>
+    <% }) %>
+</div>
+
+<section class="card" style="margin-top: 16px;">
+    <h2 class="iac-h"><%= t('iac.diario') %></h2>
+    <div class="tabela-container">
+        <table class="tabela iac-tabela">
+            <thead><tr>
+                <th><%= t('iac.col_dia') %></th>
+                <% cfg.extra.forEach(([k, r]) => { %><th class="num"><%= t(r) %></th><% }) %>
+                <th class="num"><%= t('iac.col_tokens') %></th><th class="num"><%= t('iac.col_custo') %></th><th class="iac-barra-col"></th>
+            </tr></thead>
+            <tbody>
+            <% serie.slice().reverse().forEach(r => { const tk = Number(r[cfg.tok] || 0); %>
+                <tr class="<%= tk === 0 ? 'iac-zero' : '' %>">
+                    <td><%= formatDate(r.dia, 'DD/MM/YYYY') %><% if (r.dia === hoje) { %> <span class="badge badge-neutro"><%= t('iac.hoje') %></span><% } %></td>
+                    <% cfg.extra.forEach(([k]) => { %><td class="num"><%= nf(r[k]) %></td><% }) %>
+                    <td class="num"><%= nf(tk) %></td>
+                    <td class="num"><%= usd(r[cfg.custo]) %></td>
+                    <td class="iac-barra-col"><span class="iac-barra" style="width: <%= Math.round(tk / maxTok * 100) %>%;"></span></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="card" style="margin-top: 16px;">
+    <h2 class="iac-h"><i class="ph ph-users"></i> <%= t('iac.top_usuarios') %></h2>
+    <% if (!topo.length) { %>
+        <p class="muted"><%= t('iac.sem_dados') %></p>
+    <% } else { %>
+        <div class="tabela-container">
+            <table class="tabela">
+                <thead><tr><th><%= t('iac.col_usuario') %></th><% cfg.extra.forEach(([k, r]) => { %><th class="num"><%= t(r) %></th><% }) %><th class="num"><%= t('iac.col_tokens') %></th><th class="num"><%= t('iac.col_custo') %></th></tr></thead>
+                <tbody>
+                <% topo.forEach(u => { %>
+                    <tr>
+                        <td><strong><%= u.nome %></strong><div class="muted" style="font-size: 12px;"><%= u.email %></div></td>
+                        <% cfg.extra.forEach(([k]) => { %><td class="num"><%= nf(u[k]) %></td><% }) %>
+                        <td class="num"><%= nf(u[cfg.tok]) %></td>
+                        <td class="num"><%= usd(u[cfg.custo]) %></td>
+                    </tr>
+                <% }) %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
+</section>
+<p class="muted iac-aviso"><i class="ph ph-info"></i> <%= t('iac.estimado') %></p>

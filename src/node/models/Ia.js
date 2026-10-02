@@ -128,6 +128,84 @@ class Ia {
         );
     }
 
+    // ---- Consumo (tokens de texto / imagem / audio e custo estimado), por usuario e por dia ----
+    static async registrarUsoDetalhado(userId, u) {
+        const dia = require('../core/ia_precos').hojeUso();
+        await db.query(
+            `INSERT INTO ia_uso_diario (user_id, dia, mensagens, tok_entrada, tok_cache_leitura, tok_cache_escrita, tok_saida, tok_imagem, tok_audio,
+                                        imagens, audios, audio_segundos, custo_texto_micro, custo_imagem_micro, custo_audio_micro)
+             VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE mensagens = mensagens + 1, tok_entrada = tok_entrada + VALUES(tok_entrada),
+                tok_cache_leitura = tok_cache_leitura + VALUES(tok_cache_leitura), tok_cache_escrita = tok_cache_escrita + VALUES(tok_cache_escrita),
+                tok_saida = tok_saida + VALUES(tok_saida), tok_imagem = tok_imagem + VALUES(tok_imagem), tok_audio = tok_audio + VALUES(tok_audio),
+                imagens = imagens + VALUES(imagens), audios = audios + VALUES(audios), audio_segundos = audio_segundos + VALUES(audio_segundos),
+                custo_texto_micro = custo_texto_micro + VALUES(custo_texto_micro), custo_imagem_micro = custo_imagem_micro + VALUES(custo_imagem_micro),
+                custo_audio_micro = custo_audio_micro + VALUES(custo_audio_micro)`,
+            [userId, dia, u.entrada || 0, u.cacheLeitura || 0, u.cacheEscrita || 0, u.saida || 0, u.tokImagem || 0, u.tokAudio || 0,
+                u.imagens || 0, u.audios || 0, u.audioSegundos || 0, u.custoTexto || 0, u.custoImagem || 0, u.custoAudio || 0]
+        );
+    }
+
+    // Expressoes SQL das metricas (p = prefixo da tabela). texto = tudo que a Claude leu/escreveu menos a parte das imagens.
+    static metricas(p = '') {
+        return `SUM(${p}tok_entrada + ${p}tok_cache_leitura + ${p}tok_cache_escrita + ${p}tok_saida - ${p}tok_imagem) AS tok_texto,
+                SUM(${p}tok_imagem) AS tok_imagem, SUM(${p}tok_audio) AS tok_audio,
+                SUM(${p}tok_entrada + ${p}tok_cache_leitura + ${p}tok_cache_escrita + ${p}tok_saida + ${p}tok_audio) AS tok_total,
+                SUM(${p}mensagens) AS mensagens, SUM(${p}imagens) AS imagens, SUM(${p}audios) AS audios, SUM(${p}audio_segundos) AS audio_segundos,
+                SUM(${p}custo_texto_micro) AS custo_texto, SUM(${p}custo_imagem_micro) AS custo_imagem, SUM(${p}custo_audio_micro) AS custo_audio,
+                SUM(${p}custo_texto_micro + ${p}custo_imagem_micro + ${p}custo_audio_micro) AS custo_total`;
+    }
+
+    // Mapa user_id -> metricas desde a data (YYYY-MM-DD) ou do inicio de tudo.
+    static async consumoPorUsuario(desde = null) {
+        const [rows] = await db.query(
+            `SELECT user_id, ${this.metricas()} FROM ia_uso_diario ${desde ? 'WHERE dia >= ?' : ''} GROUP BY user_id`,
+            desde ? [desde] : []
+        );
+        const mapa = {};
+        rows.forEach((r) => { mapa[r.user_id] = r; });
+        return mapa;
+    }
+
+    static async serieDiaria(desde, ate) {
+        const [rows] = await db.query(
+            `SELECT DATE_FORMAT(dia, '%Y-%m-%d') AS dia, ${this.metricas()} FROM ia_uso_diario WHERE dia BETWEEN ? AND ? GROUP BY dia ORDER BY dia`,
+            [desde, ate]
+        );
+        return rows;
+    }
+
+    static async totalPeriodo(desde, ate = null) {
+        const [rows] = await db.query(
+            `SELECT ${this.metricas()} FROM ia_uso_diario WHERE dia >= ? ${ate ? 'AND dia <= ?' : ''}`,
+            ate ? [desde, ate] : [desde]
+        );
+        return rows[0];
+    }
+
+    static async usuariosNoPeriodo(desde) {
+        const [rows] = await db.query(
+            `SELECT u.user_id, COALESCE(us.nome, '-') AS nome, COALESCE(us.email, '(removido)') AS email, ${this.metricas('u.')}
+             FROM ia_uso_diario u LEFT JOIN users us ON us.id = u.user_id WHERE u.dia >= ? GROUP BY u.user_id, us.nome, us.email`,
+            [desde]
+        );
+        return rows;
+    }
+
+    // ---- Creditos comprados (informados manualmente: a Anthropic nao expoe o saldo pela API) ----
+    static async listarCreditos() {
+        const [rows] = await db.query("SELECT id, valor_usd, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra, nota FROM ia_creditos ORDER BY data_compra DESC, id DESC");
+        return rows;
+    }
+
+    static async adicionarCredito(valorUsd, dataCompra, nota) {
+        await db.query('INSERT INTO ia_creditos (valor_usd, data_compra, nota) VALUES (?, ?, ?)', [valorUsd, dataCompra, nota ? String(nota).slice(0, 120) : null]);
+    }
+
+    static async excluirCredito(id) {
+        await db.query('DELETE FROM ia_creditos WHERE id = ?', [id]);
+    }
+
     static async definirNivel(userId, nivel) {
         await db.query('UPDATE users SET ia_nivel = ? WHERE id = ?', [nivel === 2 ? 2 : 1, userId]);
     }

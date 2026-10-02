@@ -6,13 +6,13 @@
  * @param {string} [mimeDeclarado]
  * @returns {{ ok: boolean, mime: string|null, motivo: string|null }}
  */
-function validarImagem(buffer, mimeDeclarado) {
+function validarImagem(buffer, mimeDeclarado, maxBytes = 2 * 1024 * 1024) {
     if (!buffer || !Buffer.isBuffer(buffer) || buffer.length === 0) {
         return { ok: false, mime: null, motivo: 'flash.comunidade_imagem_invalida' };
     }
 
-    // Limite maximo de 2 MB (2 * 1024 * 1024 bytes)
-    if (buffer.length > 2 * 1024 * 1024) {
+    // Limite maximo (padrao 2 MB)
+    if (buffer.length > maxBytes) {
         return { ok: false, mime: null, motivo: 'flash.comunidade_imagem_grande' };
     }
 

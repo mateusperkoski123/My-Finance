@@ -3,16 +3,81 @@ const User = require('../models/User');
 const { fmt } = require('../core/legal');
 
 const redirecionar = (res) => res.redirect('/admin');
+const Ia = require('../models/Ia');
+const { hojeUso } = require('../core/ia_precos');
+
+// 'YYYY-MM-DD' somado em n dias (n pode ser negativo), sem depender do fuso do servidor.
+const somarDias = (ymd, n) => {
+    const [y, m, d] = ymd.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+};
 
 const adminController = {
     index: async (req, res) => {
         const busca = String(req.query.q || '').trim().slice(0, 100);
-        const [metricas, usuarios, planos] = await Promise.all([
+        // Consumo da IA por usuario: este mes (padrao), ultimos 30 dias ou tudo.
+        const periodo = ['mes', '30d', 'total'].includes(req.query.periodo) ? req.query.periodo : 'mes';
+        const hoje = hojeUso();
+        const desde = periodo === 'mes' ? hoje.slice(0, 8) + '01' : (periodo === '30d' ? somarDias(hoje, -29) : null);
+        const [metricas, usuarios, planos, consumo] = await Promise.all([
             Assinatura.metricas(),
             Assinatura.listarUsuariosAdmin({ busca }),
-            Assinatura.listarPlanos()
+            Assinatura.listarPlanos(),
+            Ia.consumoPorUsuario(desde)
         ]);
-        res.render('admin/index', { title: req.t('admin.titulo'), metricas, usuarios, planos, busca, fmt });
+        res.render('admin/index', { title: req.t('admin.titulo'), metricas, usuarios, planos, busca, fmt, consumo, periodo });
+    },
+
+    // Consumo da IA: tokens (texto / fotos / audios), custo estimado por dia e saldo de creditos (informado manualmente).
+    iaConsumo: async (req, res) => {
+        const aba = ['geral', 'texto', 'audio', 'fotos'].includes(req.query.aba) ? req.query.aba : 'geral';
+        const hoje = hojeUso();
+        const d7 = somarDias(hoje, -6);
+        const d30 = somarDias(hoje, -29);
+        const mesIni = hoje.slice(0, 8) + '01';
+        const [serieBruta, tHoje, t7, t30, tMes, tTotal, usuarios, creditos] = await Promise.all([
+            Ia.serieDiaria(d30, hoje), Ia.totalPeriodo(hoje, hoje), Ia.totalPeriodo(d7), Ia.totalPeriodo(d30),
+            Ia.totalPeriodo(mesIni), Ia.totalPeriodo('2000-01-01'), Ia.usuariosNoPeriodo(d30), Ia.listarCreditos()
+        ]);
+        // Preenche os dias sem consumo com zero (30 dias completos).
+        const porDia = {};
+        serieBruta.forEach((r) => { porDia[r.dia] = r; });
+        const serie = [];
+        for (let i = 29; i >= 0; i--) { const dia = somarDias(hoje, -i); serie.push(porDia[dia] || { dia }); }
+
+        // Creditos: comprado - gasto estimado desde a primeira compra registrada.
+        let cred = null;
+        if (creditos.length) {
+            const comprado = creditos.reduce((s, c) => s + Number(c.valor_usd), 0);
+            const primeira = creditos.map((c) => c.data_compra).sort()[0];
+            const desdePrimeira = await Ia.totalPeriodo(primeira);
+            const gasto = Number(desdePrimeira.custo_total || 0) / 1e6;
+            const media7 = Number(t7.custo_total || 0) / 1e6 / 7;
+            const restante = comprado - gasto;
+            cred = { comprado, gasto, restante, media7, dias: media7 > 0 ? Math.floor(Math.max(restante, 0) / media7) : null, primeira };
+        }
+        res.render('admin/ia_consumo', {
+            title: req.t('iac.titulo'), aba, hoje, serie, totais: { hoje: tHoje, d7: t7, d30: t30, mes: tMes, total: tTotal },
+            usuarios, creditos, cred
+        });
+    },
+
+    adicionarCredito: async (req, res) => {
+        const valor = Number(String(req.body.valor_usd || '').replace(',', '.'));
+        const data = String(req.body.data_compra || '');
+        if (!(valor > 0) || valor > 100000 || !/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_credito_invalido') };
+            return res.redirect('/admin/ia');
+        }
+        await Ia.adicionarCredito(Math.round(valor * 100) / 100, data, String(req.body.nota || '').trim());
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.admin_credito_ok') };
+        res.redirect('/admin/ia');
+    },
+
+    excluirCredito: async (req, res) => {
+        await Ia.excluirCredito(parseInt(req.params.id, 10));
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.admin_credito_excluido') };
+        res.redirect('/admin/ia');
     },
 
     // Registra um pagamento recebido (transferencia, Tigo Money, etc.) e ativa o plano.

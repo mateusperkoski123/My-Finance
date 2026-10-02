@@ -68,6 +68,9 @@ router.post('/assinatura/solicitar', requireAuth, assinaturaController.solicitar
 
 // Administracao (somente role=admin)
 router.get('/admin', requireAuth, exigirAdmin, adminController.index);
+router.get('/admin/ia', requireAuth, exigirAdmin, adminController.iaConsumo);
+router.post('/admin/ia/creditos', requireAuth, exigirAdmin, adminController.adicionarCredito);
+router.post('/admin/ia/creditos/:id/excluir', requireAuth, exigirAdmin, adminController.excluirCredito);
 router.post('/admin/usuarios/massa', requireAuth, exigirAdmin, adminController.acaoEmMassa);
 router.post('/admin/usuarios/:id/pagamento', requireAuth, exigirAdmin, adminController.registrarPagamento);
 router.post('/admin/usuarios/:id/trial', requireAuth, exigirAdmin, adminController.estenderTrial);
@@ -174,7 +177,14 @@ router.post('/comunidade/comentarios/:id/excluir', requireAuth, comunidadeContro
 // Chat IA (desligado por padrao; o admin libera por usuario)
 router.get('/ia', requireAuth, exigirIa, iaController.index);
 router.get('/ia/conversas/:id', requireAuth, exigirIa, iaController.conversa);
-router.post('/ia/mensagem', requireAuth, exigirIa, limiteMensagens, iaController.mensagem);
+const uploadIa = (req, res, next) => {
+    multer({ storage: multer.memoryStorage(), limits: { fileSize: 6 * 1024 * 1024, files: 4, fields: 10 } })
+        .fields([{ name: 'imagens', maxCount: 3 }, { name: 'audio', maxCount: 1 }])(req, res, (err) => {
+            if (err) return res.status(400).json({ sucesso: false, erro: req.t(err.code === 'LIMIT_FILE_SIZE' ? 'ia.erro_imagem_grande' : 'ia.erro_foto_max', { n: 3 }) });
+            next();
+        });
+};
+router.post('/ia/mensagem', requireAuth, exigirIa, limiteMensagens, uploadIa, iaController.mensagem);
 router.post('/ia/conversas/:id/excluir', requireAuth, exigirIa, iaController.excluirConversa);
 router.post('/ia/acoes/:id/confirmar', requireAuth, exigirIa, iaController.confirmarAcao);
 router.post('/ia/acoes/:id/cancelar', requireAuth, exigirIa, iaController.cancelarAcao);

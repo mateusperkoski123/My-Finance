@@ -13,6 +13,10 @@ const _T = {
     cDescricao: t('ia.campo_descricao'), cValor: t('ia.campo_valor'), cData: t('ia.campo_data'), cCategoria: t('ia.campo_categoria'), cConta: t('ia.campo_conta'),
     escApenas: t('ia.escopo_apenas_esta'), escProximas: t('ia.escopo_esta_e_proximas'), escToda: t('ia.escopo_toda_serie'),
     repFixa: t('ia.rep_fixa'), repRepetir: t('ia.rep_repetir', { n: '__N__' }), paraConta: t('ia.para_conta', { a: '__A__', b: '__B__' }), emPai: t('ia.em_pai', { pai: '__P__' }),
+    anexarFoto: t('ia.anexar_foto'), tirarFoto: t('ia.tirar_foto'), gravarAudio: t('ia.gravar_audio'), pararGravacao: t('ia.parar_gravacao'),
+    remover: t('ia.remover_anexo'), gravando: t('ia.gravando'), erroMic: t('ia.erro_mic'), erroMicNao: t('ia.erro_mic_nao_suportado'),
+    limiteAudio: t('ia.limite_audio', { n: '__N__' }), erroFotoPreparar: t('ia.erro_foto_preparar'), erroFotoMax: t('ia.erro_foto_max', { n: '__N__' }),
+    transcricao: t('ia.transcricao_rotulo'),
     resOk: t('ia.res_ok'), resParcial: t('ia.res_parcial'), pendente: t('ia.cartao_pendente'), erro: t('ia.erro_generico'), semConversas: t('ia.sem_conversas')
 };
 const _sugestoes = [t('ia.sugestao_pagar'), t('ia.sugestao_receber'), t('ia.sugestao_resumo'), t('ia.sugestao_saldos')];
@@ -45,12 +49,21 @@ const _sugestoes = [t('ia.sugestao_pagar'), t('ia.sugestao_receber'), t('ia.suge
         </div>
 
         <form class="ia-form" id="ia-form" autocomplete="off">
+            <div class="ia-anexos" id="ia-anexos" hidden></div>
             <textarea id="ia-texto" rows="2" maxlength="600" placeholder="<%= t('ia.placeholder') %>" aria-label="<%= t('ia.placeholder') %>"></textarea>
             <div class="ia-form__rodape">
-                <span class="muted" id="ia-contador">0/600</span>
+                <div class="ia-ferramentas">
+                    <%# A camera direta so aparece em celular/tablet; no computador fica anexar foto e gravar audio. %>
+                    <button type="button" class="ia-ico" id="ia-btn-camera" hidden title="<%= t('ia.tirar_foto') %>" aria-label="<%= t('ia.tirar_foto') %>"><i class="ph ph-camera"></i></button>
+                    <button type="button" class="ia-ico" id="ia-btn-foto" title="<%= t('ia.anexar_foto') %>" aria-label="<%= t('ia.anexar_foto') %>"><i class="ph ph-image"></i></button>
+                    <button type="button" class="ia-ico" id="ia-btn-audio" title="<%= t('ia.gravar_audio') %>" aria-label="<%= t('ia.gravar_audio') %>"><i class="ph ph-microphone"></i><span class="ia-ico__tempo" id="ia-tempo-audio"></span></button>
+                    <span class="muted" id="ia-contador">0/600</span>
+                </div>
                 <button type="submit" class="btn btn-primary" id="ia-enviar" aria-label="<%= t('ia.enviar') %>"><i class="ph ph-paper-plane-tilt"></i></button>
             </div>
         </form>
+        <input type="file" id="ia-in-camera" accept="image/*" capture="environment" hidden>
+        <input type="file" id="ia-in-galeria" accept="image/*" multiple hidden>
         <p class="muted ia-aviso"><%= t('ia.aviso') %>
             <% if (restantes !== null) { %> · <%= t('ia.restantes', { n: restantes }) %><% } %></p>
     </section>
