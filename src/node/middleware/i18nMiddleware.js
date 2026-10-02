@@ -1,7 +1,9 @@
 const { t } = require('../core/i18n');
+const { IDIOMAS, detectarIdioma } = require('../core/idiomas');
 
 function i18nMiddleware(req, res, next) {
-    const lang = req.user ? req.user.idioma : (req.session?.idioma || 'pt-BR');
+    // Visitante (sem login): idioma escolhido no seletor, ou o do navegador, ou portugues.
+    const lang = req.user ? req.user.idioma : (req.session?.idioma || detectarIdioma(req) || 'pt-BR');
     const currency = req.user ? req.user.moeda : 'PYG';
     const theme = req.user ? req.user.tema : 'claro';
 
@@ -9,6 +11,7 @@ function i18nMiddleware(req, res, next) {
     req.t = (key, params) => t(key, params, lang);
     
     res.locals.lang = lang;
+    res.locals.idiomas = IDIOMAS;
     res.locals.currency = currency;
     res.locals.theme = theme;
     res.locals.t = req.t;

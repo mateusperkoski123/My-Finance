@@ -202,10 +202,10 @@ const nomesMeses = {
         <div style="display: flex; align-items: center; gap: 6px;">
             <span class="muted" style="font-size: 13px;"><%= t('filtro.ordenar') %></span>
             <select class="input" style="padding: 6px 12px; font-size: 13px; border-radius: 12px;" onchange="gfAtualizarParam('ordenar', this.value)">
-                <option value="data" <%= (ordenacao === 'data') ? 'selected' : '' %>>Data (mais recentes)</option>
-                <option value="vencimento" <%= ordenacao === 'vencimento' ? 'selected' : '' %>>Vencimento (mais antigos)</option>
-                <option value="valor" <%= ordenacao === 'valor' ? 'selected' : '' %>>Maior valor</option>
-                <option value="criacao" <%= ordenacao === 'criacao' ? 'selected' : '' %>>Adicionados por último</option>
+                <option value="data" <%= (ordenacao === 'data') ? 'selected' : '' %>><%= t('ordenar.data') %></option>
+                <option value="vencimento" <%= ordenacao === 'vencimento' ? 'selected' : '' %>><%= t('ordenar.vencimento') %></option>
+                <option value="valor" <%= ordenacao === 'valor' ? 'selected' : '' %>><%= t('ordenar.valor') %></option>
+                <option value="criacao" <%= ordenacao === 'criacao' ? 'selected' : '' %>><%= t('ordenar.criacao') %></option>
             </select>
         </div>
     </div>
@@ -228,10 +228,10 @@ function gfAtualizarParam(chave, valor) {
 <% if (_filtroAtivo) { %>
 <div class="filtro-ativo" role="status">
     <span><i class="ph ph-funnel"></i>
-        <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? 'Somente despesas' : ((filtros.tipo === 'receitas' || filtros.tipo === 'receita') ? 'Somente receitas' : 'Filtro ativo') %>
-        · <strong><%= totalRegistros %></strong> lançamento(s) · total <strong><%= moeda(somaFiltrada) %></strong>
+        <%= (filtros.tipo === 'despesas' || filtros.tipo === 'despesa') ? t('filtro.somente_despesas') : ((filtros.tipo === 'receitas' || filtros.tipo === 'receita') ? t('filtro.somente_receitas') : t('filtro.ativo')) %>
+        · <%- t('filtro.total', { n: '<strong>' + totalRegistros + '</strong>', valor: '<strong>' + moeda(somaFiltrada) + '</strong>' }) %>
     </span>
-    <a href="<%= periodo.customizado ? '/?data_inicio=' + periodo.inicio + '&data_fim=' + periodo.fim : '/?mes=' + periodo.mes + '&ano=' + periodo.ano %>">Limpar filtros</a>
+    <a href="<%= periodo.customizado ? '/?data_inicio=' + periodo.inicio + '&data_fim=' + periodo.fim : '/?mes=' + periodo.mes + '&ano=' + periodo.ano %>"><%= t('filtro.limpar') %></a>
 </div>
 <% } %>
 
@@ -245,7 +245,7 @@ function gfAtualizarParam(chave, valor) {
                     <summary style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; cursor: pointer; background: var(--bg); font-weight: 600; font-size: 13.5px; user-select: none;">
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <i class="ph ph-caret-right" style="font-size: 14px; transition: transform 0.2s;"></i>
-                            <strong><%= ({ 'Pagos': t('grupo.pagos'), 'Pendentes': t('grupo.pendentes'), 'Sem Data': t('grupo.sem_data'), 'Outros': t('grupo.outros'), 'Sem categoria': t('comum.sem_categoria'), 'Sem Categoria': t('comum.sem_categoria') })[g.key] || g.key %></strong>
+                            <strong><%= ({ 'Pagos': t('grupo.pagos'), 'Pendentes': t('grupo.pendentes'), 'Sem Data': t('grupo.sem_data'), 'Outros': t('grupo.outros'), 'Sem categoria': t('comum.sem_categoria'), 'Sem Categoria': t('comum.sem_categoria') })[g.key] || (String(g.key).startsWith('Sem Categoria / ') ? t('comum.sem_categoria') + ' / ' + String(g.key).slice(16) : g.key) %></strong>
                             <span class="muted" style="font-size: 12px; font-weight: normal;">(<%= g.count %>)</span>
                         </div>
                         <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
@@ -310,7 +310,7 @@ function gfAtualizarParam(chave, valor) {
                                             </td>
                                             <td>
                                                 <span class="badge <%= l.status === 'pago' ? 'badge-sucesso' : 'badge-alerta' %>">
-                                                    <%= l.status === 'pago' ? (l.tipo === 'receita' ? 'Recebido' : 'Pago') : 'Pendente' %>
+                                                    <%= l.status === 'pago' ? (l.tipo === 'receita' ? t('lanc.status.recebido') : t('lanc.status.pago')) : t('lanc.status.pendente') %>
                                                 </span>
                                             </td>
                                             <td class="td-acoes"><%- include('../partials/acoes_lancamento', { l: l, modalSerie: true }) %></td>
@@ -375,7 +375,7 @@ function gfAtualizarParam(chave, valor) {
                                 </td>
                                 <td>
                                     <span class="badge <%= l.status === 'pago' ? 'badge-sucesso' : 'badge-alerta' %>">
-                                        <%= l.status === 'pago' ? (l.tipo === 'receita' ? 'Recebido' : 'Pago') : 'Pendente' %>
+                                        <%= l.status === 'pago' ? (l.tipo === 'receita' ? t('lanc.status.recebido') : t('lanc.status.pago')) : t('lanc.status.pendente') %>
                                     </span>
                                 </td>
                                 <td class="td-acoes"><%- include('../partials/acoes_lancamento', { l: l, modalSerie: true }) %></td>

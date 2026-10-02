@@ -238,9 +238,7 @@ class Lancamento {
     // Imediata = os dois ja pagos na data; agendada = os dois pendentes (o saldo so move ao marcar como pago).
     static async criarTransferencia({ userId, origem, destino, valor, data, descricao = '', agendada = false, eFixo = false, quantidade = 1 }) {
         const Categoria = require('./Categoria');
-        await Categoria.garantirCategoriasSistema(userId);
-        const [cat] = await db.query("SELECT id FROM categorias WHERE user_id = ? AND chave_sistema = 'transferencia' LIMIT 1", [userId]);
-        const catId = cat[0] ? cat[0].id : null;
+        const catId = await Categoria.idSistema(userId, 'transferencia');
         const total = Math.max(1, quantidade);
         const serieId = total > 1 ? uuidv4() : null;
         const sufixo = descricao ? ' - ' + descricao : '';

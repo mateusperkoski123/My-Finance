@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const { normalizarIdioma } = require('../core/idiomas');
 const User = require('../models/User');
 
 const authController = {
@@ -37,6 +38,8 @@ const authController = {
 
     registerSubmit: async (req, res) => {
         const { nome, email, senha, confirmar_senha, aceitar_termos } = req.body;
+        // Idioma escolhido no cadastro: define a interface da conta e o idioma das categorias iniciais.
+        const idioma = normalizarIdioma(req.body.idioma) || req.lang || 'pt-BR';
         const s = (senha || '').trim();
         const cs = (confirmar_senha || '').trim();
 
@@ -68,7 +71,7 @@ const authController = {
             nome: nome.trim(),
             email: email.trim(),
             senha_hash: hash,
-            idioma: req.lang || 'pt-BR',
+            idioma,
             moeda: 'PYG',
             tema: 'claro'
         });
@@ -76,14 +79,15 @@ const authController = {
         // E-mail de verificacao: se o envio falhar, o cadastro continua (da para reenviar depois).
         try {
             const link = `${req.protocol || 'https'}://${req.get('host')}/verificar-email/${userId.tokenVerificacao}`;
-            await require('../core/mailer').sendVerificationEmail(email.trim(), link, req.lang);
+            await require('../core/mailer').sendVerificationEmail(email.trim(), link, idioma);
         } catch (err) {
             console.error('Falha ao enviar e-mail de verificacao:', err.message);
         }
         await User.registrarLogin(userId.id, { email: email.trim(), ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
 
         req.session.user_id = userId.id;
-        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.cadastro_sucesso') };
+        req.session.idioma = idioma;
+        req.session.flash = { tipo: 'sucesso', mensagem: require('../core/i18n').t('flash.cadastro_sucesso', {}, idioma) };
         res.redirect('/');
     },
 
@@ -254,7 +258,8 @@ const authController = {
             const user = await User.findOrCreateFromGoogle({
                 googleId: userinfo.id,
                 nome: userinfo.name || userinfo.email.split('@')[0],
-                email: userinfo.email
+                email: userinfo.email,
+                idioma: normalizarIdioma(req.session.idioma) || 'pt-BR'
             });
 
             if (user.status && user.status !== 'ativo') {

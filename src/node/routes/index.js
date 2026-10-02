@@ -39,6 +39,13 @@ router.get('/login', guestOnly, authController.loginPage);
 router.post('/login', guestOnly, authController.loginSubmit);
 router.get('/cadastro', guestOnly, authController.registerPage);
 router.post('/cadastro', guestOnly, authController.registerSubmit);
+// Seletor de idioma das telas publicas (login, cadastro, recuperar senha). Logado: o idioma muda em Configuracoes.
+router.get('/idioma/:codigo', (req, res) => {
+    const codigo = require('../core/idiomas').normalizarIdioma(req.params.codigo);
+    if (codigo && !req.user) req.session.idioma = codigo;
+    const v = String(req.query.voltar || '');
+    res.redirect(/^\/[A-Za-z0-9_\-\/]*$/.test(v) && !v.startsWith('//') ? v : '/login');
+});
 router.get('/esqueci-senha', guestOnly, authController.esqueciSenhaPage);
 router.post('/esqueci-senha', guestOnly, authController.esqueciSenhaSubmit);
 router.get('/redefinir-senha/:token', guestOnly, authController.redefinirSenhaPage);

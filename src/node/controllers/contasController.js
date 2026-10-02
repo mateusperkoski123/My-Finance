@@ -143,9 +143,7 @@ const contasController = {
                 return res.redirect('/contas');
             }
 
-            await Categoria.garantirCategoriasSistema(userId);
-            const [catRes] = await db.query("SELECT id FROM categorias WHERE user_id = ? AND nome = 'Ajuste de Saldo' LIMIT 1", [userId]);
-            const catId = catRes[0] ? catRes[0].id : null;
+            const catId = await Categoria.idSistema(userId, 'ajuste_saldo');
 
             const delta = tipoAjuste === 'ingreso' ? valAjuste : -valAjuste;
 
@@ -194,9 +192,7 @@ const contasController = {
                 return res.redirect('/contas');
             }
 
-            await Categoria.garantirCategoriasSistema(userId);
-            const [catRes] = await db.query("SELECT id FROM categorias WHERE user_id = ? AND nome = 'Transferência Bancária' LIMIT 1", [userId]);
-            const catId = catRes[0] ? catRes[0].id : null;
+            const catId = await Categoria.idSistema(userId, 'transferencia');
 
             const dataComp = data || toLocalYMD(new Date());
             const descStr = descricao ? descricao.trim() : 'Transferência entre contas';
@@ -250,9 +246,7 @@ const contasController = {
             const qtd = eFixo ? MESES_FIXO : (eRepetir ? Math.min(Math.max(parseInt(req.body.quantidade_repeticoes, 10) || 1, 1), 60) : 1);
             const serieId = qtd > 1 ? uuidv4() : null;
 
-            await Categoria.garantirCategoriasSistema(userId);
-            const [catRes] = await db.query("SELECT id FROM categorias WHERE user_id = ? AND chave_sistema = 'transferencia' LIMIT 1", [userId]);
-            const catId = catRes[0] ? catRes[0].id : null;
+            const catId = await Categoria.idSistema(userId, 'transferencia');
             const sufixo = descricao ? ' - ' + descricao : '';
 
             await conn.beginTransaction();

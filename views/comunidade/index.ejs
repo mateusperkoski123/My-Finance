@@ -75,15 +75,15 @@
                         <div class="comunidade-paginacao">
                             <% if (paginacao.pagina > 1) { %>
                                 <a href="?pagina=<%= paginacao.pagina - 1 %>&orden=<%= filtros.orden %><%= filtros.categoria ? '&categoria=' + filtros.categoria : '' %><%= filtros.q ? '&q=' + encodeURIComponent(filtros.q) : '' %><%= filtros.minhas ? '&minhas=1' : '' %>" class="btn btn-sm btn-outline">
-                                    ← Anterior
+                                    <%= t('comunidade.pag.anterior') %>
                                 </a>
                             <% } %>
                             <span class="text-muted" style="font-size: 13px;">
-                                Página <%= paginacao.pagina %> de <%= paginacao.totalPaginas %>
+                                <%= t('comunidade.pag.de', { a: paginacao.pagina, b: paginacao.totalPaginas }) %>
                             </span>
                             <% if (paginacao.pagina < paginacao.totalPaginas) { %>
                                 <a href="?pagina=<%= paginacao.pagina + 1 %>&orden=<%= filtros.orden %><%= filtros.categoria ? '&categoria=' + filtros.categoria : '' %><%= filtros.q ? '&q=' + encodeURIComponent(filtros.q) : '' %><%= filtros.minhas ? '&minhas=1' : '' %>" class="btn btn-sm btn-outline">
-                                    Próxima →
+                                    <%= t('comunidade.pag.proxima') %>
                                 </a>
                             <% } %>
                         </div>
@@ -241,7 +241,7 @@
 <!-- Visualizador de Imagem Ampliada (Lightbox Modal) -->
 <div class="modal-backdrop" id="modal-lightbox" style="display: none; background: rgba(0,0,0,0.85); z-index: 9999;" onclick="fecharVisualizadorImagem()">
     <div style="position: relative; max-width: 90vw; max-height: 90vh; margin: auto; display: flex; align-items: center; justify-content: center; height: 100vh;">
-        <img id="lightbox-img" src="" alt="Imagem ampliada" style="max-width: 100%; max-height: 90vh; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        <img id="lightbox-img" src="" alt="<%= t('comunidade.img_ampliada') %>" style="max-width: 100%; max-height: 90vh; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
         <button type="button" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: #fff; font-size: 32px; cursor: pointer;" onclick="fecharVisualizadorImagem()">&times;</button>
     </div>
 </div>

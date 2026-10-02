@@ -318,12 +318,12 @@ function alternarSeguir(id, btnElement) {
         if (data.seguiu) {
             btnElement.classList.remove('btn-primary');
             btnElement.classList.add('btn-outline');
-            if (span) span.textContent = 'Deixar de seguir';
+            if (span) span.textContent = GF_T.com_deixar;
             if (icon) icon.className = 'ph ph-bell-slash';
         } else {
             btnElement.classList.remove('btn-outline');
             btnElement.classList.add('btn-primary');
-            if (span) span.textContent = 'Ser notificado';
+            if (span) span.textContent = GF_T.com_seguir;
             if (icon) icon.className = 'ph ph-bell';
         }
     })
@@ -361,7 +361,7 @@ function previewImagensComentario(input) {
 
     const arquivos = Array.from(input.files || []);
     if (arquivos.length > 2) {
-        alert('Máximo 2 imagens por comentário.');
+        alert(GF_T.com_max_imgs);
         input.value = '';
         if (countSpan) countSpan.textContent = '';
         return;
@@ -442,7 +442,7 @@ function enviarComentario(id, event) {
 
 function excluirComentario(id, event) {
     if (event) event.stopPropagation();
-    if (!confirm('Tem certeza que deseja excluir este comentário?')) return;
+    if (!confirm(GF_T.com_conf_coment)) return;
 
     fetch('/comunidade/comentarios/' + id + '/excluir', {
         method: 'POST',
@@ -465,7 +465,7 @@ function excluirComentario(id, event) {
 // ---- Exclusão de Post ----
 
 function excluirPostAutor(id) {
-    if (!confirm('Tem certeza que deseja excluir sua postagem?')) return;
+    if (!confirm(GF_T.com_conf_post)) return;
 
     fetch('/comunidade/' + id + '/excluir', {
         method: 'POST',
@@ -553,7 +553,7 @@ function alternarOcultoAdmin(id) {
 }
 
 function excluirPostAdmin(id) {
-    if (!confirm('Tem certeza que deseja excluir definitivamente esta postagem como admin?')) return;
+    if (!confirm(GF_T.com_conf_admin)) return;
 
     fetch('/admin/comunidade/' + id + '/excluir', {
         method: 'POST',

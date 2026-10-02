@@ -1803,3 +1803,9 @@ select.form-control { min-height: 44px; }
 .ia-falha { color: var(--red); }
 .ia-cartao__estado.ia-parcial { color: var(--pendente, #d97706); font-weight: 600; }
 .ia-op .ia-ok { color: var(--green); }
+
+/* Seletor de idioma das telas publicas */
+.auth-idiomas { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin: 4px auto 14px; }
+.auth-idiomas a { padding: 7px 12px; border: 1px solid var(--border); border-radius: 999px; font-size: 12.5px; color: var(--muted); text-decoration: none; min-height: 34px; display: inline-flex; align-items: center; }
+.auth-idiomas a:hover { border-color: var(--primary); color: var(--text); }
+.auth-idiomas a.is-active { background: var(--primary); border-color: var(--primary); color: var(--primary-text); font-weight: 600; }

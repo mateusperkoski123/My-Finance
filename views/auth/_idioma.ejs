@@ -1,0 +1,5 @@
+<nav class="auth-idiomas" aria-label="<%= t('auth.idioma') %>">
+    <% Object.entries(idiomas).forEach(([codigo, rotulo]) => { %>
+        <a href="/idioma/<%= codigo %>?voltar=<%= encodeURIComponent(currentRoute || '/login') %>" lang="<%= codigo %>" hreflang="<%= codigo %>" class="<%= lang === codigo ? 'is-active' : '' %>" <%= lang === codigo ? 'aria-current=true' : '' %>><%= rotulo %></a>
+    <% }) %>
+</nav>

@@ -183,15 +183,15 @@
             <!-- Informações Gerais -->
             <div class="card comunidade-sidebar-card">
                 <div class="comunidade-info-item">
-                    <span class="text-muted">Status</span>
+                    <span class="text-muted"><%= t('comunidade.lbl.status') %></span>
                     <span class="comunidade-badge comunidade-badge--<%= post.status %>"><%= t('comunidade.status.' + post.status) %></span>
                 </div>
                 <div class="comunidade-info-item">
-                    <span class="text-muted">Categoria</span>
+                    <span class="text-muted"><%= t('comunidade.lbl.categoria') %></span>
                     <strong><%= t('comunidade.cat.' + post.categoria) %></strong>
                 </div>
                 <div class="comunidade-info-item">
-                    <span class="text-muted">Data</span>
+                    <span class="text-muted"><%= t('comunidade.lbl.data') %></span>
                     <span><%= formatDate(post.created_at, 'DD/MM/YYYY') %></span>
                 </div>
             </div>
@@ -216,7 +216,7 @@
                     <!-- Alterar Status -->
                     <form onsubmit="alterarStatusAdmin('<%= post.id %>', event)" style="margin-bottom: 10px;">
                         <div class="form-group">
-                            <label class="form-label" style="font-size: 12px;">Status</label>
+                            <label class="form-label" style="font-size: 12px;"><%= t('comunidade.lbl.status') %></label>
                             <select name="status" id="admin-status-select" class="form-control form-control-sm">
                                 <% ['novo', 'em_analise', 'planejado', 'em_andamento', 'resolvido', 'recusado'].forEach(st => { %>
                                     <option value="<%= st %>" <%= post.status === st ? 'selected' : '' %>><%= t('comunidade.status.' + st) %></option>
@@ -229,7 +229,7 @@
                     <!-- Alterar Categoria -->
                     <form onsubmit="alterarCategoriaAdmin('<%= post.id %>', event)" style="margin-bottom: 10px;">
                         <div class="form-group">
-                            <label class="form-label" style="font-size: 12px;">Categoria</label>
+                            <label class="form-label" style="font-size: 12px;"><%= t('comunidade.lbl.categoria') %></label>
                             <select name="categoria" id="admin-cat-select" class="form-control form-control-sm">
                                 <option value="sugestao" <%= post.categoria === 'sugestao' ? 'selected' : '' %>><%= t('comunidade.cat.sugestao') %></option>
                                 <option value="bug" <%= post.categoria === 'bug' ? 'selected' : '' %>><%= t('comunidade.cat.bug') %></option>

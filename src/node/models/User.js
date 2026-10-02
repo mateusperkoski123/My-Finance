@@ -25,7 +25,7 @@ class User {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, NOW(), NOW(), NOW())`,
             [nome, email, senha_hash, idioma, moeda, tema, origem, sha256(tokenVerificacao), TERMOS_VERSAO]
         );
-        await require('./Categoria').criarPadrao(result.insertId);
+        await require('./Categoria').criarPadrao(result.insertId, idioma);
         await require('./Assinatura').iniciarTrial(result.insertId);
         return { id: result.insertId, tokenVerificacao };
     }
@@ -72,7 +72,7 @@ class User {
         return rows[0] || null;
     }
 
-    static async findOrCreateFromGoogle({ googleId, nome, email }) {
+    static async findOrCreateFromGoogle({ googleId, nome, email, idioma = 'pt-BR' }) {
         // 1. Find by google_id
         let user = await this.findByGoogleId(googleId);
         if (user) return user;
@@ -93,10 +93,10 @@ class User {
         const [result] = await db.query(
             `INSERT INTO users (nome, email, senha_hash, google_id, idioma, moeda, tema, origem, email_verificado_em, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, ?, ?, 'google', NOW(), NOW(), NOW())`,
-            [nome, email, hash, googleId, 'pt-BR', 'PYG', 'claro']
+            [nome, email, hash, googleId, idioma, 'PYG', 'claro']
         );
 
-        await require('./Categoria').criarPadrao(result.insertId);
+        await require('./Categoria').criarPadrao(result.insertId, idioma);
         await require('./Assinatura').iniciarTrial(result.insertId);
         return this.findById(result.insertId);
     }
