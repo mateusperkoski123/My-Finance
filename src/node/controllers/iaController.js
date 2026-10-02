@@ -24,7 +24,7 @@ async function registrarConsumo(userId, uso, { imagens = 0, stt = null }) {
         entrada: u.entrada, cacheLeitura: u.cacheLeitura, cacheEscrita: u.cacheEscrita, saida: u.saida,
         tokImagem: u.tokImagem || 0, tokAudio: stt ? stt.tokens : 0,
         imagens, audios: stt ? 1 : 0, audioSegundos: stt ? stt.segundos : 0,
-        custoTexto: custoClaude - custoImagem, custoImagem, custoAudio: stt ? custoAudioMicro(stt.segundos, stt.modelo) : 0
+        custoTexto: custoClaude - custoImagem, custoImagem, custoAudio: stt ? (stt.custoMicro != null ? stt.custoMicro : custoAudioMicro(stt.segundos, stt.modelo)) : 0
     });
 }
 

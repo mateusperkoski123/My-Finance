@@ -12,6 +12,23 @@ const PADRAO = CLAUDE['claude-sonnet-5-5'];
 // Transcricao de audio: USD por minuto de audio.
 const STT_POR_MINUTO = { 'gpt-4o-mini-transcribe': 0.003, 'gpt-4o-transcribe': 0.006, 'whisper-1': 0.006 };
 
+// Gemini (USD por milhao de tokens). Na camada gratuita o custo real e zero; aqui fica o preco da camada paga (estimativa conservadora).
+const GEMINI = {
+    'gemini-3.8-flash': { audio: 0.75, saida: 3.75 },
+    'gemini-3.7-flash': { audio: 0.75, saida: 3.75 },
+    'gemini-3.6-flash': { audio: 0.75, saida: 3.75 },
+    'gemini-3.5-flash': { audio: 0.75, saida: 3.75 },
+    'gemini-3.5-flash-lite': { audio: 0.3, saida: 2.5 },
+    'gemini-2.5-flash-lite': { audio: 0.3, saida: 0.4 }
+};
+
+function custoGeminiMicro({ tokensAudio = 0, tokensSaida = 0 }, modelo) {
+    const p = GEMINI[modelo] || GEMINI['gemini-3.8-flash'];
+    const pa = Number(process.env.GEMINI_PRECO_AUDIO) || p.audio;
+    const ps = Number(process.env.GEMINI_PRECO_SAIDA) || p.saida;
+    return Math.round(tokensAudio * pa + tokensSaida * ps);
+}
+
 // Estimativa de tokens de audio quando o provedor nao informa (aprox. 10 por segundo).
 const AUDIO_TOKENS_POR_SEGUNDO = 10;
 
@@ -33,4 +50,4 @@ function hojeUso(data = new Date()) {
     try { return data.toLocaleDateString('en-CA', { timeZone: tz }); } catch (e) { return data.toISOString().slice(0, 10); }
 }
 
-module.exports = { CLAUDE, STT_POR_MINUTO, AUDIO_TOKENS_POR_SEGUNDO, precoClaude, custoClaudeMicro, custoAudioMicro, hojeUso };
+module.exports = { GEMINI, custoGeminiMicro, CLAUDE, STT_POR_MINUTO, AUDIO_TOKENS_POR_SEGUNDO, precoClaude, custoClaudeMicro, custoAudioMicro, hojeUso };
