@@ -1502,7 +1502,10 @@ h1 > .ph, .page-header h1 .ph { vertical-align: -0.12em; margin-right: 6px; colo
 /* Painel no desktop: KPIs a esquerda, rosca a direita ---------------------- */
 @media (min-width: 1024px) {
   .painel-resumo:has(.grafico-card) { display: grid; grid-template-columns: 1.15fr 1fr; gap: 16px; align-items: stretch; margin-bottom: 16px; }
-  .painel-resumo:has(.grafico-card) .kpi-grid { grid-template-columns: 1fr 1fr; margin-bottom: 0; align-content: start; }
+  /* Os cartoes da esquerda crescem para ter a mesma altura da rosca da direita (linhas iguais, conteudo centralizado). */
+  .painel-resumo:has(.grafico-card) .kpi-grid { grid-template-columns: 1fr 1fr; margin-bottom: 0; align-content: stretch; grid-auto-rows: 1fr; }
+  .painel-resumo:has(.grafico-card) .kpi-card { justify-content: center; gap: 6px; padding: 18px 20px; }
+  .painel-resumo:has(.grafico-card) .kpi-card__valor { font-size: 20px; }
   .painel-resumo:has(.grafico-card) .kpi-card--full { grid-column: 1 / -1; }
   .painel-resumo:has(.grafico-card) .grafico-card { margin-bottom: 0 !important; }
   .painel-resumo:has(.grafico-card) .grafico-card__corpo--rosca { flex-wrap: nowrap; }
