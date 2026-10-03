@@ -2067,3 +2067,20 @@ tr.gf-prov-row td { border-bottom: 1px dashed var(--border); }
     50% { box-shadow: 0 0 20px rgba(245, 197, 66, .7), 0 0 60px rgba(245, 197, 66, .3); }
   }
 }
+
+/* Painel e extrato em telas medias/grandes: a tabela se ajusta a largura disponivel (nunca corta "Acoes" nem exige rolagem lateral).
+   Descricao e categoria quebram linha; data, valor e status ficam em uma linha; abaixo de 1180px o botao Pagar vira so icone. */
+@media (min-width: 769px) {
+  .tabela-lanc, .tabela-extrato { white-space: normal; table-layout: auto; }
+  .tabela-lanc th, .tabela-lanc td, .tabela-extrato th, .tabela-extrato td { padding: 10px 8px; vertical-align: middle; }
+  .tabela-lanc td:nth-child(1), .tabela-extrato td:nth-child(2) { min-width: 130px; overflow-wrap: anywhere; }
+  .tabela-lanc td:nth-child(2) span, .tabela-lanc td:nth-child(2) div { white-space: normal !important; }
+  .tabela-lanc td:nth-child(3) { overflow-wrap: anywhere; }
+  .tabela-lanc td:nth-child(4), .tabela-lanc td:nth-child(5), .tabela-lanc td:nth-child(6),
+  .tabela-extrato td:nth-child(1), .tabela-extrato td:nth-child(4), .tabela-extrato td:nth-child(5) { white-space: nowrap; }
+  .tabela-lanc th:last-child, .tabela-lanc td.td-acoes, .tabela-extrato th:last-child, .tabela-extrato td:last-child { width: 1%; white-space: nowrap; }
+}
+@media (min-width: 769px) and (max-width: 1180px) {
+  .tabela-lanc .btn-pagar span, .tabela-extrato .btn-pagar span { display: none; }
+  .tabela-lanc .btn-pagar, .tabela-extrato .btn-pagar { padding: 6px 9px; }
+}
