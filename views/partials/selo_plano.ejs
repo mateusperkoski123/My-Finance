@@ -1,0 +1,2 @@
+<%# Selo pequeno que marca um recurso de um plano acima do atual. Espera: plano ('premium' | 'pro'). %>
+<span class="selo-plano selo-plano--<%= plano %>" title="<%= t('bloq.disponivel_no', { plano: t('plano.' + plano + '.nome') }) %>"><i class="ph-fill ph-crown-simple" aria-hidden="true"></i><%= t('plano.' + plano + '.curto') %><span class="sr-only"> (<%= t('bloq.disponivel_no', { plano: t('plano.' + plano + '.nome') }) %>)</span></span>

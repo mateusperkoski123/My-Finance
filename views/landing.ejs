@@ -1,0 +1,1500 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-tema="claro" class="scroll-smooth">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title id="meta-title">MyFinance - Gestão Financeira Inteligente</title>
+    <meta name="description" content="Controle financeiro completo: contas bancárias, lançamentos parcelados, relatórios DRE, inteligência artificial por texto, foto e áudio, e aplicativo offline.">
+    <link rel="icon" type="image/png" href="/assets/icons/icon-192.png">
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <style>
+        :root[data-tema="claro"] {
+            --bg: #f5f6f8;
+            --card: #ffffff;
+            --text: #16181d;
+            --muted: #5b6370;
+            --border: #e5e7eb;
+            --nav-bg: #0b0d12;
+            --nav-text: #e8eaed;
+            --nav-text-muted: #9aa0aa;
+            --primary: #111827;
+            --primary-text: #ffffff;
+            --green: #15803d;
+            --green-bg: #e7f7ee;
+            --red: #c81e1e;
+            --red-bg: #fdecec;
+            --blue: #2563eb;
+            --blue-bg: #eff6ff;
+            --ouro: #d97706;
+            --ouro-bg: #fef3c7;
+            --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 8px 20px rgba(16, 24, 40, .07);
+            --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.08);
+            color-scheme: light;
+        }
+
+        :root[data-tema="escuro"] {
+            --bg: #0e1015;
+            --card: #171a21;
+            --text: #e7e9ee;
+            --muted: #9aa0aa;
+            --border: #2a2e37;
+            --nav-bg: #000000;
+            --nav-text: #e7e9ee;
+            --nav-text-muted: #8b909b;
+            --primary: #e7e9ee;
+            --primary-text: #14161b;
+            --green: #34d399;
+            --green-bg: #113127;
+            --red: #f87171;
+            --red-bg: #3a1618;
+            --blue: #60a5fa;
+            --blue-bg: #1e293b;
+            --ouro: #fbbf24;
+            --ouro-bg: #451a03;
+            --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 24px rgba(0, 0, 0, .4);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
+            color-scheme: dark;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14.5px;
+            line-height: 1.5;
+            overflow-x: hidden;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: var(--nav-bg);
+            color: var(--nav-text);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .navbar__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .navbar__brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--nav-text);
+        }
+        .navbar__logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: var(--green);
+            color: #ffffff;
+            font-size: 20px;
+        }
+        .navbar__links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .navbar__link {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--nav-text-muted);
+            transition: color 0.15s;
+        }
+        .navbar__link:hover { color: #ffffff; }
+
+        /* Idioma Switcher */
+        .lang-select {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #ffffff;
+            padding: 5px 8px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+        }
+        .lang-select option {
+            background: #111827;
+            color: #ffffff;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: var(--primary-text);
+        }
+        .btn-primary:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+        .btn-outline {
+            background: var(--card);
+            color: var(--text);
+            border-color: var(--border);
+        }
+        .btn-outline:hover {
+            background: var(--bg);
+            border-color: var(--muted);
+        }
+        .btn-green {
+            background: var(--green);
+            color: #ffffff;
+        }
+        .btn-green:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(21, 128, 61, 0.25);
+        }
+        .btn-pro {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            color: #ffffff;
+        }
+        .btn-pro:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+        .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+        .btn-lg { padding: 13px 26px; font-size: 16px; border-radius: 12px; }
+
+        /* Cards */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(21, 128, 61, 0.2); }
+        .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(37, 99, 235, 0.2); }
+        .badge-ouro { background: var(--ouro-bg); color: var(--ouro); border: 1px solid rgba(217, 119, 6, 0.2); }
+
+        /* Hero */
+        .hero {
+            padding: 60px 0 80px;
+        }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 48px;
+            align-items: center;
+        }
+        .hero h1 {
+            font-size: 44px;
+            line-height: 1.15;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin: 18px 0;
+            color: var(--text);
+        }
+        .hero p {
+            font-size: 16.5px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+        .stars { color: #f59e0b; font-size: 16px; display: flex; gap: 2px; }
+
+        /* Mockup */
+        .mockup-card {
+            border-radius: 20px;
+            padding: 22px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+        }
+        .mockup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .mockup-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            background: var(--bg);
+            padding: 3px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .saldo-display {
+            font-size: 34px;
+            font-weight: 800;
+            color: var(--green);
+            letter-spacing: -0.02em;
+            margin-top: 4px;
+        }
+        .resumo-duplo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .resumo-box {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+        }
+        .resumo-box small { font-size: 11px; color: var(--muted); display: block; }
+        .resumo-box strong { font-size: 16px; font-weight: 700; margin-top: 2px; display: block; }
+        .val-receita { color: var(--green); }
+        .val-despesa { color: var(--red); }
+
+        .transacao-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13.5px;
+        }
+        .transacao-item:last-child { border-bottom: none; }
+        .transacao-icone {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        /* Seções */
+        .section {
+            padding: 70px 0;
+        }
+        .section-header {
+            text-align: center;
+            max-width: 680px;
+            margin: 0 auto 50px;
+        }
+        .section-header h2 {
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            margin-top: 10px;
+            color: var(--text);
+        }
+        .section-header p {
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 22px;
+        }
+        .feature-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 26px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--green);
+        }
+        .feature-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        .feature-card p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        /* Pricing Section (Exata Estrutura de Colunas do Sistema) */
+        .planos-topo {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .planos-ciclo {
+            display: inline-flex;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 4px;
+            gap: 4px;
+            margin-top: 18px;
+            box-shadow: var(--shadow);
+        }
+        .planos-ciclo button {
+            border: none;
+            background: none;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .planos-ciclo button.is-ativo {
+            background: var(--primary);
+            color: var(--primary-text);
+        }
+        .planos-ciclo button small {
+            color: var(--green);
+            font-weight: 700;
+            margin-left: 4px;
+        }
+
+        .planos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            align-items: stretch;
+        }
+        .plano-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px 24px;
+            box-shadow: var(--shadow);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .plano-card:hover {
+            transform: translateY(-4px);
+        }
+        .plano-card--destaque {
+            border: 2px solid var(--green);
+            box-shadow: 0 8px 26px rgba(21, 128, 61, 0.15);
+        }
+        .plano-card--pro {
+            border: 2px solid var(--ouro);
+            box-shadow: 0 8px 26px rgba(217, 119, 6, 0.15);
+        }
+        .plano-faixa {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+        .plano-faixa--green { background: var(--green); color: #ffffff; }
+        .plano-faixa--ouro { background: var(--ouro); color: #ffffff; }
+
+        .plano-card h3 { font-size: 22px; font-weight: 800; }
+        .plano-sub { font-size: 13px; color: var(--muted); min-height: 38px; margin-top: 4px; }
+        .plano-preco {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text);
+            margin: 16px 0 4px;
+        }
+        .plano-preco small { font-size: 14px; font-weight: 500; color: var(--muted); }
+        .plano-cobranca { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+
+        /* Grupos de recursos detalhados das colunas */
+        .plano-grupo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+        .plano-grupo-header:first-of-type {
+            margin-top: 16px;
+        }
+
+        .plano-recursos {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .plano-recursos li {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            line-height: 1.45;
+        }
+        .plano-recursos li i { font-size: 16px; margin-top: 2px; flex-shrink: 0; }
+        .plano-recursos li.is-on i { color: var(--green); }
+        .plano-recursos li.is-off { color: var(--muted); opacity: 0.55; }
+        .plano-recursos li.is-off i { color: var(--muted); }
+
+        /* Trial Banner */
+        .trial-banner {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 22px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-top: 36px;
+            flex-wrap: wrap;
+        }
+
+        /* FAQ */
+        .faq-list {
+            max-width: 760px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .faq-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        .faq-question {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 18px 22px;
+            text-align: left;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .faq-answer {
+            display: none;
+            padding: 0 22px 18px;
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+        .faq-item.is-open .faq-answer { display: block; }
+        .faq-item.is-open .faq-question i { transform: rotate(180deg); }
+
+        /* Footer */
+        .footer {
+            background: var(--nav-bg);
+            color: var(--nav-text-muted);
+            padding: 40px 0 30px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 13.5px;
+        }
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .footer-links {
+            display: flex;
+            gap: 20px;
+        }
+        .footer-links a:hover { color: #ffffff; }
+
+        /* Responsive */
+        @media (max-width: 960px) {
+            .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+            .hero h1 { font-size: 34px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .planos-grid { grid-template-columns: 1fr; }
+            .navbar__links { display: none; }
+        }
+        /* Celular: a barra do topo cabe na tela (o botao de teste gratis ja esta logo abaixo, no destaque)
+           e nenhum bloco passa da largura da tela. */
+        @media (max-width: 600px) {
+            .navbar__brand > span:not(.navbar__logo) { display: none; }
+            .navbar__inner > div:last-child { gap: 6px !important; }
+            .navbar__inner a[href="/cadastro"] { display: none; }
+            .ia-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+            .ia-grid > * { min-width: 0; }
+            #ia .card { padding: 22px 16px !important; }
+            #ia h2 { font-size: 24px !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="navbar">
+        <div class="container navbar__inner">
+            <a href="/" class="navbar__brand">
+                <span class="navbar__logo"><i class="ph-fill ph-hands-clapping"></i></span>
+                <span>MyFinance</span>
+            </a>
+
+            <nav class="navbar__links">
+                <a href="#recursos" class="navbar__link" data-i18n="nav_recursos">Recursos</a>
+                <a href="#ia" class="navbar__link" data-i18n="nav_ia">Assistente IA</a>
+                <a href="#planos" class="navbar__link" data-i18n="nav_planos">Planos</a>
+                <a href="#faq" class="navbar__link" data-i18n="nav_faq">Perguntas Frequentes</a>
+            </nav>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <!-- Seletor de Idioma PT / ES -->
+                <select id="lang-toggle" class="lang-select" aria-label="Idioma">
+                    <option value="pt-BR">🇧🇷 PT</option>
+                    <option value="es-PY">🇵🇾 ES</option>
+                </select>
+
+                <!-- Botao Tema Claro/Escuro -->
+                <button type="button" id="tema-toggle" class="btn btn-outline btn-sm" aria-label="Alternar tema" style="background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #ffffff;">
+                    <i class="ph ph-moon"></i>
+                </button>
+                <a href="/login" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #ffffff;" data-i18n="nav_entrar">
+                    <i class="ph ph-sign-in"></i> Entrar
+                </a>
+                <a href="/cadastro" class="btn btn-green btn-sm" data-i18n="nav_cadastro">
+                    <i class="ph ph-sparkle"></i> Teste Grátis
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                
+                <!-- Left: Headline -->
+                <div>
+                    <span class="badge badge-green">
+                        <i class="ph-fill ph-check-circle"></i> <span data-i18n="hero_badge">3 dias de teste grátis no plano que você escolher, sem cartão</span>
+                    </span>
+
+                    <h1 data-i18n="hero_titulo">Gestão financeira simples, inteligente e completa.</h1>
+
+                    <p data-i18n="hero_sub">
+                        Controle suas contas bancárias, lançamentos parcelados, relatórios DRE e automatize sua rotina com a Inteligência Artificial integrada por texto, foto e voz.
+                    </p>
+
+                    <div class="hero-actions">
+                        <a href="/cadastro" class="btn btn-green btn-lg">
+                            <span data-i18n="hero_cta">Começar Teste Grátis (3 Dias)</span>
+                            <i class="ph-bold ph-arrow-right"></i>
+                        </a>
+                        <a href="#planos" class="btn btn-outline btn-lg">
+                            <span data-i18n="hero_ver_planos">Ver Planos</span>
+                        </a>
+                    </div>
+
+                    <div class="stars">
+                        <i class="ph-fill ph-star"></i>
+                        <i class="ph-fill ph-star"></i>
+                        <i class="ph-fill ph-star"></i>
+                        <i class="ph-fill ph-star"></i>
+                        <i class="ph-fill ph-star"></i>
+                        <span style="margin-left: 8px; font-size: 13.5px; color: var(--muted);">
+                            <b>4.9 / 5</b> · <span data-i18n="hero_satisfacao">Plataforma multi-moeda e multi-idioma (Gs., R$, $)</span>
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Right: Realistic MyFinance UI Mockup -->
+                <div>
+                    <div class="mockup-card">
+                        <div class="mockup-header">
+                            <span class="mockup-tag"><i class="ph ph-wallet"></i> <span data-i18n="mock_saldo_disp">Saldo Disponível</span></span>
+                            <span style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Outubro 2026</span>
+                        </div>
+
+                        <div style="font-size: 13px; color: var(--muted);" data-i18n="mock_total_cons">Total Consolidado</div>
+                        <div class="saldo-display">Gs. 14.850.000</div>
+
+                        <div class="resumo-duplo">
+                            <div class="resumo-box">
+                                <small><i class="ph-bold ph-arrow-down-left" style="color: var(--green);"></i> <span data-i18n="mock_receitas">Receitas</span></small>
+                                <strong class="val-receita">+ Gs. 18.200.000</strong>
+                            </div>
+                            <div class="resumo-box">
+                                <small><i class="ph-bold ph-arrow-up-right" style="color: var(--red);"></i> <span data-i18n="mock_despesas">Despesas</span></small>
+                                <strong class="val-despesa">- Gs. 3.350.000</strong>
+                            </div>
+                        </div>
+
+                        <!-- Mini Transactions -->
+                        <div style="margin-top: 18px;">
+                            <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px;" data-i18n="mock_lanc_recentes">
+                                Lançamentos Recentes
+                            </div>
+
+                            <div class="transacao-item">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="transacao-icone" style="background: var(--green-bg); color: var(--green);">
+                                        <i class="ph-bold ph-arrow-down-left"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600;" data-i18n="mock_salario">Salário Mensal</div>
+                                        <div style="font-size: 11.5px; color: var(--muted);" data-i18n="mock_conta_corrente">Conta Corrente Principal</div>
+                                    </div>
+                                </div>
+                                <strong class="val-receita">+ Gs. 12.000.000</strong>
+                            </div>
+
+                            <div class="transacao-item">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="transacao-icone" style="background: var(--red-bg); color: var(--red);">
+                                        <i class="ph-bold ph-shopping-cart"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600;">Supermercado <span class="badge badge-ouro" style="font-size: 10px; padding: 1px 6px;">IA</span></div>
+                                        <div style="font-size: 11.5px; color: var(--muted);" data-i18n="mock_foto_recibo">Registrado por Foto de Recibo</div>
+                                    </div>
+                                </div>
+                                <strong class="val-despesa">- Gs. 650.000</strong>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="recursos" class="section" style="background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-blue"><i class="ph ph-squares-four"></i> <span data-i18n="feat_badge">Funcionalidades do Sistema</span></span>
+                <h2 data-i18n="feat_titulo">Tudo o que você precisa em um só lugar</h2>
+                <p data-i18n="feat_sub">Desenvolvido pensando em simplicidade, segurança e controle contábil profissional.</p>
+            </div>
+
+            <div class="features-grid">
+                
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--blue-bg); color: var(--blue);">
+                        <i class="ph-bold ph-bank"></i>
+                    </div>
+                    <h3 data-i18n="f1_tit">Contas Bancárias & Transferências</h3>
+                    <p data-i18n="f1_desc">Criação ilimitada de contas, transferências entre bancos com lançamento automático de contrapartida e ajuste manual de saldo com extrato detalhado.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--green-bg); color: var(--green);">
+                        <i class="ph-bold ph-tag"></i>
+                    </div>
+                    <h3 data-i18n="f2_tit">Categorias com Cores e Hierarquia</h3>
+                    <p data-i18n="f2_desc">Organize receitas e despesas em 2 níveis (categorias e subcategorias), cores personalizadas e limites de gastos por categoria.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--ouro-bg); color: var(--ouro);">
+                        <i class="ph-bold ph-calendar-check"></i>
+                    </div>
+                    <h3 data-i18n="f3_tit">Lançamentos Parcelados e Fixos</h3>
+                    <p data-i18n="f3_desc">Controle compras parceladas ou contas recorrentes com geração automática de parcelas independentes e fáceis de editar.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--green-bg); color: var(--green);">
+                        <i class="ph-bold ph-table"></i>
+                    </div>
+                    <h3 data-i18n="f4_tit">Demonstrativo DRE Anual</h3>
+                    <p data-i18n="f4_desc">Demonstrativo contábil mensal e anual estruturado em formato de planilha com colunas sticky fixas para análise estratégica.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--blue-bg); color: var(--blue);">
+                        <i class="ph-bold ph-device-mobile"></i>
+                    </div>
+                    <h3 data-i18n="f5_tit">App Mobile com Modo Offline</h3>
+                    <p data-i18n="f5_desc">Instale como aplicativo (PWA) no iPhone ou Android. Lance gastos mesmo sem internet que o sistema sincroniza ao reconectar.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--ouro-bg); color: var(--ouro);">
+                        <i class="ph-bold ph-download-simple"></i>
+                    </div>
+                    <h3 data-i18n="f6_tit">Backup JSON & Exportação CSV</h3>
+                    <p data-i18n="f6_desc">Exporte todos os seus dados a qualquer momento e restaure com mesclagem inteligente sem riscos de perda de informações.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- IA Assistant Section -->
+    <section id="ia" class="section">
+        <div class="container">
+            <div class="card" style="background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%); border: 1px solid var(--border); padding: 40px;">
+                <div class="ia-grid" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center;">
+                    <div>
+                        <span class="badge badge-ouro"><i class="ph-fill ph-brain"></i> <span data-i18n="ia_badge">Inteligência Artificial</span></span>
+                        <h2 style="font-size: 32px; font-weight: 800; margin: 14px 0;" data-i18n="ia_titulo">Assistente Financeiro com IA Integrada</h2>
+                        <p style="color: var(--muted); font-size: 15.5px; line-height: 1.6; margin-bottom: 20px;" data-i18n="ia_sub">
+                            Chega de digitar tudo manualmente. Nossa IA entende sua rotina e faz o trabalho pesado para você com total segurança:
+                        </p>
+                        <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 14px;">
+                            <li style="display: flex; align-items: center; gap: 10px;">
+                                <i class="ph-bold ph-check-circle" style="color: var(--green); font-size: 18px;"></i>
+                                <span data-i18n="ia_item1"><b>Registro por Texto Direto:</b> Basta digitar <i>"Gastei 45.000 em almoço"</i>.</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 10px;">
+                                <i class="ph-bold ph-check-circle" style="color: var(--green); font-size: 18px;"></i>
+                                <span data-i18n="ia_item2"><b>Registro por Foto & Áudio:</b> Envie fotos de recibos fiscais ou áudios de voz.</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 10px;">
+                                <i class="ph-bold ph-check-circle" style="color: var(--green); font-size: 18px;"></i>
+                                <span data-i18n="ia_item3"><b>IA Nível 2 Avançada:</b> Marca previstos como pagos, altera categorias e consulta relatórios.</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 10px;">
+                                <i class="ph-bold ph-check-circle" style="color: var(--green); font-size: 18px;"></i>
+                                <span data-i18n="ia_item4"><b>Botão de Desfazer em 10s:</b> Controle total e segurança em cada ação gerada pela IA.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow);">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                            <span style="background: var(--ouro-bg); color: var(--ouro); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;"><i class="ph-fill ph-sparkle"></i></span>
+                            <div>
+                                <strong style="font-size: 14px; display: block;" data-i18n="ia_chat_tit">Chat IA MyFinance</strong>
+                                <span style="font-size: 11px; color: var(--green);">● Online</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                            <div style="background: var(--bg); padding: 10px 14px; border-radius: 12px; align-self: flex-end; max-width: 85%;" data-i18n="ia_chat_user">
+                                📸 [Foto de Nota Fiscal de Combustível Gs. 180.000]
+                            </div>
+                            <div style="background: var(--green-bg); color: var(--green); padding: 10px 14px; border-radius: 12px; align-self: flex-start; max-width: 90%; border: 1px solid rgba(21, 128, 61, 0.2);" data-i18n="ia_chat_bot">
+                                ✨ Identifiquei: <b>Posto Petrobras - Gs. 180.000</b> na categoria <b>Transporte / Combustível</b>. Lançamento registrado com sucesso! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Desfazer (10s)]</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section (Exata Estrutura de Colunas e Categorias do Sistema) -->
+    <section id="planos" class="section" style="background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container">
+            
+            <div class="planos-topo">
+                <span class="badge badge-green"><i class="ph ph-crown-simple"></i> <span data-i18n="planos_badge">Nossos Planos</span></span>
+                <h2 style="font-size: 34px; font-weight: 800; margin: 10px 0;" data-i18n="planos_titulo">Escolha o plano ideal para você</h2>
+                <p style="color: var(--muted); font-size: 15px;" data-i18n="planos_sub">Sem taxas ocultas. Cancele ou altere seu plano quando desejar.</p>
+
+                <!-- Ciclo Switcher (Mensal / Anual) -->
+                <div class="planos-ciclo" role="group">
+                    <button type="button" class="is-ativo" data-ciclo="mensal" data-i18n="ciclo_mensal">Mensal</button>
+                    <button type="button" data-ciclo="anual"><span data-i18n="ciclo_anual">Anual</span> <small data-i18n="dois_meses_gratis">2 meses grátis</small></button>
+                </div>
+            </div>
+
+            <!-- Grid de Colunas de Planos -->
+            <div class="planos-grid">
+
+                <!-- 1. Plano Básico -->
+                <article class="plano-card">
+                    <div>
+                        <h3 data-i18n="p_basico_nome">Plano Básico</h3>
+                        <div class="plano-sub" data-i18n="p_basico_sub">Registre e acompanhe: painel, gráficos, pendentes e demonstrativo anual.</div>
+                        
+                        <div class="plano-preco">
+                            Gs. <span class="preco-val" data-mensal="25.000" data-anual="20.833">25.000</span><small>/<span data-i18n="mes">mês</span></small>
+                        </div>
+                        <div class="plano-cobranca" 
+                             data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 250.000 por ano · economize Gs. 50.000"
+                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 250.000 por año · ahorre Gs. 50.000">
+                            cobrado todo mês
+                        </div>
+
+                        <a href="/cadastro?plano=basico" class="btn btn-outline" style="width: 100%;" data-i18n="btn_quero_plano">Quero este plano</a>
+
+                        <!-- Finanças -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_financas">Finanças</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_painel">Painel mensal, categorias e subcategorias</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_contas_basico">Contas bancárias: <b>Até 2 contas</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_lancamentos">Lançamentos fixos, parcelados e transferências</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_relatorios">Relatórios com gráficos e pendentes</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_anual">Demonstrativo anual</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_estado">Demonstrativo financeiro e orçamento por categoria</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_avancado">Fluxo de caixa, visão por conta e comparação com o ano passado</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_exportar">Exportar (CSV e PDF) e backup</span></li>
+                        </ul>
+
+                        <!-- Inteligência Artificial -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_ia">Inteligência Artificial</span>
+                            <span style="font-size: 11px; font-weight: 500; text-transform: none;" data-i18n="nao_incluida">Não incluída</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_chat_ia">Chat IA para consultas</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_ia_texto">Registro direto por texto</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_ia_midia">Registro por foto e voz</span></li>
+                        </ul>
+
+                        <!-- Aplicativo -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_app">Aplicativo</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_app_web">Sistema web (navegador)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_app_mobile">App instalável (Android e iPhone)</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_app_offline">Registro offline com sincronização</span></li>
+                        </ul>
+
+                        <!-- Suporte e Extras -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_extras">Suporte e Extras</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_comunidade">Comunidade e sugestões</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_suporte">Suporte por e-mail</span></li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 2. Plano Premium (Melhor Custo-Benefício) -->
+                <article class="plano-card plano-card--destaque">
+                    <span class="plano-faixa plano-faixa--green"><i class="ph-bold ph-star"></i> <span data-i18n="faixa_vendido">Melhor Custo-Benefício</span></span>
+                    <div>
+                        <h3 data-i18n="p_premium_nome">Plano Premium</h3>
+                        <div class="plano-sub" data-i18n="p_premium_sub">Analise e planeje: demonstrativo financeiro, orçamento, IA e registro offline.</div>
+                        
+                        <div class="plano-preco">
+                            Gs. <span class="preco-val" data-mensal="45.000" data-anual="37.500">45.000</span><small>/<span data-i18n="mes">mês</span></small>
+                        </div>
+                        <div class="plano-cobranca" 
+                             data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 450.000 por ano · economize Gs. 90.000"
+                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 450.000 por año · ahorre Gs. 90.000">
+                            cobrado todo mês
+                        </div>
+
+                        <a href="/cadastro?plano=premium" class="btn btn-green" style="width: 100%;" data-i18n="btn_quero_plano">Quero este plano</a>
+
+                        <!-- Finanças -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_financas">Finanças</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_painel">Painel mensal, categorias e subcategorias</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_contas_prem">Contas bancárias: <b>Até 3 contas</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_lancamentos">Lançamentos fixos, parcelados e transferências</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_relatorios">Relatórios com gráficos e pendentes</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_anual">Demonstrativo anual</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span><b data-i18n="r_estado_dest">Demonstrativo financeiro e orçamento por categoria</b></span></li>
+                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_avancado">Fluxo de caixa, visão por conta e comparação com o ano passado</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_exportar">Exportar (CSV e PDF) e backup</span></li>
+                        </ul>
+
+                        <!-- Inteligência Artificial -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_ia">Inteligência Artificial</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_chat_ia">Chat IA para consultas</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_ia_texto">Registro direto por texto (com 10 s para desfazer)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_limite_prem">Chat IA: <b>300 mensagens/mês</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_midia_prem">Registro por foto (recibos) e áudio: <b>10 registros/mês</b></span></li>
+                        </ul>
+
+                        <!-- Aplicativo -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_app">Aplicativo</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_app_web">Sistema web (navegador)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_app_mobile">App instalável (Android e iPhone)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span><b data-i18n="r_app_offline_dest">Registro offline com sincronização</b></span></li>
+                        </ul>
+
+                        <!-- Suporte e Extras -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_extras">Suporte e Extras</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_comunidade">Comunidade e sugestões</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_suporte">Suporte por e-mail</span></li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 3. Plano Pro (Mais Completo) -->
+                <article class="plano-card plano-card--pro">
+                    <span class="plano-faixa plano-faixa--ouro"><i class="ph-bold ph-crown-simple"></i> <span data-i18n="faixa_completo">Mais Completo</span></span>
+                    <div>
+                        <h3 data-i18n="p_pro_nome">Plano Pro</h3>
+                        <div class="plano-sub" data-i18n="p_pro_sub">Tudo: fluxo de caixa, exportação, 3 vezes mais registros por foto e áudio e contas ilimitadas.</div>
+                        
+                        <div class="plano-preco">
+                            Gs. <span class="preco-val" data-mensal="80.000" data-anual="66.667">80.000</span><small>/<span data-i18n="mes">mês</span></small>
+                        </div>
+                        <div class="plano-cobranca" 
+                             data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 800.000 por ano · economize Gs. 160.000"
+                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 800.000 por año · ahorre Gs. 160.000">
+                            cobrado todo mês
+                        </div>
+
+                        <a href="/cadastro?plano=pro" class="btn btn-pro" style="width: 100%;" data-i18n="btn_quero_plano">Quero este plano</a>
+
+                        <!-- Finanças -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_financas">Finanças</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_painel">Painel mensal, categorias e subcategorias</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span><b data-i18n="r_contas_ilim">Contas bancárias: Ilimitadas</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_lancamentos">Lançamentos fixos, parcelados e transferências</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_relatorios">Relatórios com gráficos e pendentes</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_anual">Demonstrativo anual</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_estado">Demonstrativo financeiro e orçamento por categoria</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span><b data-i18n="r_avancado_dest">Fluxo de caixa, visão por conta e comparação com o ano passado</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span><b data-i18n="r_exportar_dest">Exportar (CSV e PDF) e backup</b></span></li>
+                        </ul>
+
+                        <!-- Inteligência Artificial -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_ia">Inteligência Artificial</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_chat_ia">Chat IA para consultas</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_midia_pro">Registro por foto (recibos) e áudio: <b>30 registros/mês</b> (3 vezes mais)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span><b data-i18n="r_ia_nivel2">IA avançada: interage com lançamentos previstos</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_limite_pro">Chat IA: <b>600 mensagens/mês</b></span></li>
+                        </ul>
+
+                        <!-- Aplicativo -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_app">Aplicativo</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_app_web">Sistema web (navegador)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span data-i18n="r_app_mobile">App instalável (Android e iPhone)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span><b data-i18n="r_app_offline_dest">Registro offline com sincronização</b></span></li>
+                        </ul>
+
+                        <!-- Suporte e Extras -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_extras">Suporte e Extras</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span><b data-i18n="r_suporte_prio">Suporte prioritário</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check"></i> <span><b data-i18n="r_novidades">Acesso antecipado a novidades</b></span></li>
+                        </ul>
+                    </div>
+                </article>
+
+            </div>
+
+            <!-- Trial Banner -->
+            <div class="trial-banner">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--green-bg); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        <i class="ph-fill ph-gift"></i>
+                    </div>
+                    <div>
+                        <strong style="font-size: 16px; display: block;" data-i18n="trial_banner_tit">Quer testar antes de escolher?</strong>
+                        <span style="font-size: 13.5px; color: var(--muted);" data-i18n="trial_banner_sub">Escolha um plano e use-o <b>grátis por 3 dias</b>, sem cadastrar cartão. Durante o teste você pode trocar de plano.</span>
+                    </div>
+                </div>
+                <a href="/cadastro" class="btn btn-green" data-i18n="trial_banner_btn">Criar Conta Gratuita</a>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="section">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-green"><i class="ph ph-question"></i> <span data-i18n="faq_badge">Dúvidas Comuns</span></span>
+                <h2 data-i18n="faq_titulo">Perguntas Frequentes</h2>
+            </div>
+
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button class="faq-question" type="button">
+                        <span data-i18n="faq_q1">Como funciona o teste grátis de 3 dias?</span>
+                        <i class="ph-bold ph-caret-down"></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a1">
+                        Ao criar sua conta você escolhe o plano que quer testar (Básico, Premium ou Pro) e o usa gratuitamente por 3 dias, sem informar cartão de crédito. Durante o teste dá para trocar de plano, sem reiniciar o prazo. O teste vale uma vez por conta: depois dele, para continuar é preciso contratar um plano, e os seus dados ficam guardados.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button">
+                        <span data-i18n="faq_q2">Como funciona a Inteligência Artificial no sistema?</span>
+                        <i class="ph-bold ph-caret-down"></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a2">
+                        Você pode conversar no Chat IA para registrar despesas por texto ("Gastei 50 mil em mercado"), enviar foto do recibo fiscal ou áudio de voz. A IA reconhece o valor, data e categoria e lança direto para você com 10 segundos para desfazer com um clique.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button">
+                        <span data-i18n="faq_q3">Como funciona o modo offline?</span>
+                        <i class="ph-bold ph-caret-down"></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a3">
+                        Ao instalar o MyFinance como App no celular (iOS/Android), você pode registrar seus lançamentos mesmo em locais sem sinal de internet. Quando seu telefone reconectar, tudo sincroniza automaticamente.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button">
+                        <span data-i18n="faq_q4">Quais moedas são suportadas?</span>
+                        <i class="ph-bold ph-caret-down"></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a4">
+                        O MyFinance suporta Guaranies (Gs. PYG), Real (R$ BRL), Dólar ($ USD) e Euro (€ EUR), além de suporte nativo aos idiomas Português e Espanhol.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button">
+                        <span data-i18n="faq_q5">Meus dados ficam seguros?</span>
+                        <i class="ph-bold ph-caret-down"></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a5">
+                        Sim. Utilizamos isolamento rigoroso multi-tenant por usuário, criptografia de ponta a ponta e proteção CSRF nativa. Além disso, você pode exportar um backup JSON de todas as suas contas e transações quando desejar.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-inner">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="navbar__logo" style="width: 28px; height: 28px; font-size: 16px;"><i class="ph-fill ph-hands-clapping"></i></span>
+                <span style="font-weight: 700; color: #ffffff;">MyFinance</span>
+                <span style="font-size: 12px; color: var(--nav-text-muted);">© <%= new Date().getFullYear() %> <span data-i18n="direitos">Todos os direitos reservados.</span></span>
+            </div>
+
+            <div class="footer-links">
+                <a href="/termos" data-i18n="termos">Termos de Uso</a>
+                <a href="/privacidade" data-i18n="privacidade">Privacidade</a>
+                <a href="/login" data-i18n="nav_entrar">Entrar</a>
+                <a href="/cadastro" data-i18n="nav_cadastro">Cadastrar</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Multilingual JS Engine -->
+    <script>
+        const TRANSLATIONS = {
+            'pt-BR': {
+                meta_title: 'MyFinance - Gestão Financeira Inteligente',
+                nav_recursos: 'Recursos',
+                nav_ia: 'Assistente IA',
+                nav_planos: 'Planos',
+                nav_faq: 'Perguntas Frequentes',
+                nav_entrar: 'Entrar',
+                nav_cadastro: 'Teste Grátis',
+                hero_badge: '3 dias de teste grátis no plano que você escolher, sem cartão',
+                hero_titulo: 'Gestão financeira simples, inteligente e completa.',
+                hero_sub: 'Controle suas contas bancárias, lançamentos parcelados, relatórios DRE e automatize sua rotina com a Inteligência Artificial integrada por texto, foto e voz.',
+                hero_cta: 'Começar Teste Grátis (3 Dias)',
+                hero_ver_planos: 'Ver Planos',
+                hero_satisfacao: 'Plataforma multi-moeda e multi-idioma (Gs., R$, $)',
+                mock_saldo_disp: 'Saldo Disponível',
+                mock_total_cons: 'Total Consolidado',
+                mock_receitas: 'Receitas',
+                mock_despesas: 'Despesas',
+                mock_lanc_recentes: 'Lançamentos Recentes',
+                mock_salario: 'Salário Mensal',
+                mock_conta_corrente: 'Conta Corrente Principal',
+                mock_foto_recibo: 'Registrado por Foto de Recibo',
+                feat_badge: 'Funcionalidades do Sistema',
+                feat_titulo: 'Tudo o que você precisa em um só lugar',
+                feat_sub: 'Desenvolvido pensando em simplicidade, segurança e controle contábil profissional.',
+                f1_tit: 'Contas Bancárias & Transferências',
+                f1_desc: 'Criação ilimitada de contas, transferências entre bancos com lançamento automático de contrapartida e ajuste manual de saldo com extrato detalhado.',
+                f2_tit: 'Categorias com Cores e Hierarquia',
+                f2_desc: 'Organize receitas e despesas em 2 níveis (categorias e subcategorias), cores personalizadas e limites de gastos por categoria.',
+                f3_tit: 'Lançamentos Parcelados e Fixos',
+                f3_desc: 'Controle compras parceladas ou contas recorrentes com geração automática de parcelas independentes e fáceis de editar.',
+                f4_tit: 'Demonstrativo DRE Anual',
+                f4_desc: 'Demonstrativo contábil mensal e anual estruturado em formato de planilha com colunas sticky fixas para análise estratégica.',
+                f5_tit: 'App Mobile com Modo Offline',
+                f5_desc: 'Instale como aplicativo (PWA) no iPhone ou Android. Lance gastos mesmo sem internet que o sistema sincroniza ao reconectar.',
+                f6_tit: 'Backup JSON & Exportação CSV',
+                f6_desc: 'Exporte todos os seus dados a qualquer momento e restaure com mesclagem inteligente sem riscos de perda de informações.',
+                ia_badge: 'Inteligência Artificial',
+                ia_titulo: 'Assistente Financeiro com IA Integrada',
+                ia_sub: 'Chega de digitar tudo manualmente. Nossa IA entende sua rotina e faz o trabalho pesado para você com total segurança:',
+                ia_item1: '<b>Registro por Texto Direto:</b> Basta digitar <i>"Gastei 45.000 em almoço"</i>.',
+                ia_item2: '<b>Registro por Foto & Áudio:</b> Envie fotos de recibos fiscais ou áudios de voz.',
+                ia_item3: '<b>IA Nível 2 Avançada:</b> Marca previstos como pagos, altera categorias e consulta relatórios.',
+                ia_item4: '<b>Botão de Desfazer em 10s:</b> Controle total e segurança em cada ação gerada pela IA.',
+                ia_chat_tit: 'Chat IA MyFinance',
+                ia_chat_user: '📸 [Foto de Nota Fiscal de Combustível Gs. 180.000]',
+                ia_chat_bot: '✨ Identifiquei: <b>Posto Petrobras - Gs. 180.000</b> na categoria <b>Transporte / Combustível</b>. Lançamento registrado com sucesso! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Desfazer (10s)]</span>',
+                planos_badge: 'Nossos Planos',
+                planos_titulo: 'Escolha o plano ideal para você',
+                planos_sub: 'Sem taxas ocultas. Cancele ou altere seu plano quando desejar.',
+                ciclo_mensal: 'Mensal',
+                ciclo_anual: 'Anual',
+                dois_meses_gratis: '2 meses grátis',
+                mes: 'mês',
+                btn_quero_plano: 'Quero este plano',
+                faixa_vendido: 'Melhor Custo-Benefício',
+                faixa_completo: 'Mais Completo',
+                p_basico_nome: 'Plano Básico',
+                p_basico_sub: 'Registre e acompanhe: painel, gráficos, pendentes e demonstrativo anual.',
+                p_premium_nome: 'Plano Premium',
+                p_premium_sub: 'Analise e planeje: demonstrativo financeiro, orçamento, IA e registro offline.',
+                p_pro_nome: 'Plano Pro',
+                p_pro_sub: 'Tudo: fluxo de caixa, exportação, 3 vezes mais registros por foto e áudio e contas ilimitadas.',
+                grp_financas: 'Finanças',
+                grp_ia: 'Inteligência Artificial',
+                grp_app: 'Aplicativo',
+                grp_extras: 'Suporte e Extras',
+                nao_incluida: 'Não incluída',
+                r_painel: 'Painel mensal, categorias e subcategorias',
+                r_contas_basico: 'Contas bancárias: <b>Até 2 contas</b>',
+                r_contas_prem: 'Contas bancárias: <b>Até 3 contas</b>',
+                r_contas_ilim: 'Contas bancárias: Ilimitadas',
+                r_lancamentos: 'Lançamentos fixos, parcelados e transferências',
+                r_relatorios: 'Relatórios com gráficos e pendentes',
+                r_anual: 'Demonstrativo anual',
+                r_anual_dest: 'Demonstrativo anual',
+                r_estado: 'Demonstrativo financeiro e orçamento por categoria',
+                r_estado_dest: 'Demonstrativo financeiro e orçamento por categoria',
+                r_avancado: 'Fluxo de caixa, visão por conta e comparação com o ano passado',
+                r_avancado_dest: 'Fluxo de caixa, visão por conta e comparação com o ano passado',
+                r_exportar: 'Exportar (CSV e PDF) e backup',
+                r_exportar_dest: 'Exportar (CSV e PDF) e backup',
+                r_chat_ia: 'Chat IA para consultas',
+                r_ia_texto: 'Registro direto por texto (com 10 s para desfazer)',
+                r_ia_midia: 'Registro por foto e voz',
+                r_ia_foto_audio: 'Registro por foto (recibos) e áudio',
+                r_ia_nivel2: 'IA avançada: interage com lançamentos previstos',
+                r_limite_prem: 'Chat IA: <b>300 mensagens/mês</b>',
+                r_limite_pro: 'Chat IA: <b>600 mensagens/mês</b>',
+                r_midia_prem: 'Registro por foto (recibos) e áudio: <b>10 registros/mês</b>',
+                r_midia_pro: 'Registro por foto (recibos) e áudio: <b>30 registros/mês</b> (3 vezes mais)',
+                r_app_web: 'Sistema web (navegador)',
+                r_app_mobile: 'App instalável (Android e iPhone)',
+                r_app_offline: 'Registro offline com sincronização',
+                r_app_offline_dest: 'Registro offline com sincronização',
+                r_comunidade: 'Comunidade e sugestões',
+                r_suporte: 'Suporte por e-mail',
+                r_suporte_prio: 'Suporte prioritário',
+                r_novidades: 'Acesso antecipado a novidades',
+                trial_banner_tit: 'Quer testar antes de escolher?',
+                trial_banner_sub: 'Escolha um plano e use-o <b>grátis por 3 dias</b>, sem cadastrar cartão. Durante o teste você pode trocar de plano.',
+                trial_banner_btn: 'Criar Conta Gratuita',
+                faq_badge: 'Dúvidas Comuns',
+                faq_titulo: 'Perguntas Frequentes',
+                faq_q1: 'Como funciona o teste grátis de 3 dias?',
+                faq_a1: 'Ao criar sua conta você escolhe o plano que quer testar (Básico, Premium ou Pro) e o usa gratuitamente por 3 dias, sem informar cartão de crédito. Durante o teste dá para trocar de plano, sem reiniciar o prazo. O teste vale uma vez por conta: depois dele, para continuar é preciso contratar um plano, e os seus dados ficam guardados.',
+                faq_q2: 'Como funciona a Inteligência Artificial no sistema?',
+                faq_a2: 'Você pode conversar no Chat IA para registrar despesas por texto ("Gastei 50 mil em mercado"), enviar foto do recibo fiscal ou áudio de voz. A IA reconhece o valor, data e categoria e lança direto para você com 10 segundos para desfazer com um clique.',
+                faq_q3: 'Como funciona o modo offline?',
+                faq_a3: 'Ao instalar o MyFinance como App no celular (iOS/Android), você pode registrar seus lançamentos mesmo em locais sem sinal de internet. Quando seu telefone reconectar, tudo sincroniza automaticamente.',
+                faq_q4: 'Quais moedas são suportadas?',
+                faq_a4: 'O MyFinance suporta Guaranies (Gs. PYG), Real (R$ BRL), Dólar ($ USD) e Euro (€ EUR), além de suporte nativo aos idiomas Português e Espanhol.',
+                faq_q5: 'Meus dados ficam seguros?',
+                faq_a5: 'Sim. Utilizamos isolamento rigoroso multi-tenant por usuário, criptografia de ponta a ponta e proteção CSRF nativa. Além disso, você pode exportar um backup JSON de todas as suas contas e transações quando desejar.',
+                direitos: 'Todos os direitos reservados.',
+                termos: 'Termos de Uso',
+                privacidade: 'Privacidade'
+            },
+            'es-PY': {
+                meta_title: 'MyFinance - Gestión Financiera Inteligente',
+                nav_recursos: 'Recursos',
+                nav_ia: 'Asistente IA',
+                nav_planos: 'Planes',
+                nav_faq: 'Preguntas Frecuentes',
+                nav_entrar: 'Iniciar Sesión',
+                nav_cadastro: 'Prueba Gratis',
+                hero_badge: '3 días de prueba gratis en el plan que elija, sin tarjeta',
+                hero_titulo: 'Gestión financiera simple, inteligente y completa.',
+                hero_sub: 'Controle sus cuentas bancarias, movimientos en cuotas, informes demostrativos y automatice su rutina con Inteligencia Artificial integrada por texto, foto y voz.',
+                hero_cta: 'Comenzar Prueba Gratis (3 Días)',
+                hero_ver_planos: 'Ver Planes',
+                hero_satisfacao: 'Plataforma multi-moneda y multi-idioma (Gs., R$, $)',
+                mock_saldo_disp: 'Saldo Disponible',
+                mock_total_cons: 'Total Consolidado',
+                mock_receitas: 'Ingresos',
+                mock_despesas: 'Gastos',
+                mock_lanc_recentes: 'Movimientos Recientes',
+                mock_salario: 'Sueldo Mensual',
+                mock_conta_corrente: 'Cuenta Corriente Principal',
+                mock_foto_recibo: 'Registrado por Foto de Recibo',
+                feat_badge: 'Funciones del Sistema',
+                feat_titulo: 'Todo lo que necesita en un solo lugar',
+                feat_sub: 'Diseñado pensando en simplicidad, seguridad y control contable profesional.',
+                f1_tit: 'Cuentas Bancarias y Transferencias',
+                f1_desc: 'Creación ilimitada de cuentas, transferencias entre bancos con movimiento automático de contrapartida y ajuste manual de saldo con extracto detallado.',
+                f2_tit: 'Categorías con Colores y Jerarquía',
+                f2_desc: 'Organice ingresos y gastos en 2 niveles (categorías y subcategorías), colores personalizados y límites de gastos por categoría.',
+                f3_tit: 'Movimientos en Cuotas y Fijos',
+                f3_desc: 'Controle compras en cuotas o gastos recurrentes con generación automática de cuotas independientes y fáciles de editar.',
+                f4_tit: 'Demostrativo Anual DRE',
+                f4_desc: 'Demostrativo contable mensual y anual estructurado en formato de planilla con columnas fijas para análisis estratégico.',
+                f5_tit: 'App Móvil con Modo sin Conexión',
+                f5_desc: 'Instale como aplicación (PWA) en iPhone o Android. Registre gastos incluso sin internet que el sistema sincroniza al reconectar.',
+                f6_tit: 'Copia de Seguridad y Exportación CSV',
+                f6_desc: 'Exporte todos sus datos en cualquier momento y restaure con fusión inteligente sin riesgo de pérdida de información.',
+                ia_badge: 'Inteligencia Artificial',
+                ia_titulo: 'Asistente Financiero con IA Integrada',
+                ia_sub: 'Basta de escribir todo a mano. Nuestra IA comprende su rutina y hace el trabajo pesado por usted con total seguridad:',
+                ia_item1: '<b>Registro directo por texto:</b> Simplemente escriba <i>"Gasté 45.000 en almuerzo"</i>.',
+                ia_item2: '<b>Registro por foto y audio:</b> Envíe fotos de comprobantes fiscales o notas de voz.',
+                ia_item3: '<b>IA Avanzada Nivel 2:</b> Marca previstos como cobrados/pagados, edita categorías y consulta informes.',
+                ia_item4: '<b>Botón de deshacer en 10 s:</b> Control total y seguridad en cada acción generada por la IA.',
+                ia_chat_tit: 'Chat IA MyFinance',
+                ia_chat_user: '📸 [Foto de Factura de Combustible Gs. 180.000]',
+                ia_chat_bot: '✨ Identifiqué: <b>Estación Petrobras - Gs. 180.000</b> en la categoría <b>Transporte / Combustible</b>. ¡Movimiento registrado! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Deshacer (10 s)]</span>',
+                planos_badge: 'Nuestros Planes',
+                planos_titulo: 'Elija el plan ideal para usted',
+                planos_sub: 'Sin cargos ocultos. Cancele o cambie de plan cuando lo desee.',
+                ciclo_mensal: 'Mensual',
+                ciclo_anual: 'Anual',
+                dois_meses_gratis: '2 meses gratis',
+                mes: 'mes',
+                btn_quero_plano: 'Quiero este plan',
+                faixa_vendido: 'La mejor relación calidad-precio',
+                faixa_completo: 'Más completo',
+                p_basico_nome: 'Plan Básico',
+                p_basico_sub: 'Registre y haga seguimiento: panel, gráficos, pendientes y demostrativo anual.',
+                p_premium_nome: 'Plan Premium',
+                p_premium_sub: 'Analice y planifique: estado financiero, presupuesto, IA y registro sin conexión.',
+                p_pro_nome: 'Plan Pro',
+                p_pro_sub: 'Todo: flujo de caja, exportación, 3 veces más registros por foto y audio y cuentas ilimitadas.',
+                grp_financas: 'Finanzas',
+                grp_ia: 'Inteligencia Artificial',
+                grp_app: 'Aplicación',
+                grp_extras: 'Soporte y Extras',
+                nao_incluida: 'No incluida',
+                r_painel: 'Panel mensual, categorías y subcategorías',
+                r_contas_basico: 'Cuentas bancarias: <b>Hasta 2 cuentas</b>',
+                r_contas_prem: 'Cuentas bancarias: <b>Hasta 3 cuentas</b>',
+                r_contas_ilim: 'Cuentas bancarias: Ilimitadas',
+                r_lancamentos: 'Movimientos fijos, repetidos y transferencias',
+                r_relatorios: 'Informes con gráficos y pendientes',
+                r_anual: 'Demostrativo anual',
+                r_anual_dest: 'Demostrativo anual',
+                r_estado: 'Estado financiero y presupuesto por categoría',
+                r_estado_dest: 'Estado financiero y presupuesto por categoría',
+                r_avancado: 'Flujo de caja, vista por cuenta y comparación con el año pasado',
+                r_avancado_dest: 'Flujo de caja, vista por cuenta y comparación con el año pasado',
+                r_exportar: 'Exportar (CSV y PDF) y copia de seguridad',
+                r_exportar_dest: 'Exportar (CSV y PDF) y copia de seguridad',
+                r_chat_ia: 'Chat IA para consultas',
+                r_ia_texto: 'Registro por texto directo (con 10 s para revertir)',
+                r_ia_midia: 'Registro por foto y voz',
+                r_ia_foto_audio: 'Registrar transacciones por foto y audio',
+                r_ia_nivel2: 'IA avanzada: interactúa con transacciones previstas',
+                r_limite_prem: 'Chat IA: <b>300 mensajes/mes</b>',
+                r_limite_pro: 'Chat IA: <b>600 mensajes/mes</b>',
+                r_midia_prem: 'Registro por foto (recibos) y audio: <b>10 registros/mes</b>',
+                r_midia_pro: 'Registro por foto (recibos) y audio: <b>30 registros/mes</b> (3 veces más)',
+                r_app_web: 'Sistema web (navegador)',
+                r_app_mobile: 'App instalable (Android e iPhone)',
+                r_app_offline: 'Registro sin conexión con sincronización',
+                r_app_offline_dest: 'Registro sin conexión con sincronización',
+                r_comunidade: 'Comunidad y sugerencias',
+                r_suporte: 'Soporte por correo electrónico',
+                r_suporte_prio: 'Soporte prioritario',
+                r_novidades: 'Acceso anticipado a novedades',
+                trial_banner_tit: '¿Desea probar antes de elegir?',
+                trial_banner_sub: 'Elija un plan y úselo <b>gratis por 3 días</b>, sin ingresar tarjeta. Durante la prueba puede cambiar de plan.',
+                trial_banner_btn: 'Crear Cuenta Gratuita',
+                faq_badge: 'Preguntas Frecuentes',
+                faq_titulo: 'Preguntas Frecuentes',
+                faq_q1: '¿Cómo funciona la prueba gratis de 3 días?',
+                faq_a1: 'Al crear su cuenta usted elige el plan que quiere probar (Básico, Premium o Pro) y lo usa gratis por 3 días, sin tarjeta de crédito. Durante la prueba puede cambiar de plan, sin reiniciar el plazo. La prueba vale una vez por cuenta: después, para continuar hay que contratar un plan, y sus datos quedan guardados.',
+                faq_q2: '¿Cómo funciona la Inteligencia Artificial en el sistema?',
+                faq_a2: 'Puede chatear con la IA para registrar gastos por texto ("Gasté 50 mil en súper"), enviar foto del ticket o nota de voz. La IA reconoce el monto, fecha y categoría y lo registra al instante con 10 segundos para deshacer.',
+                faq_q3: '¿Cómo funciona el modo sin conexión?',
+                faq_a3: 'Al instalar MyFinance como App en su celular (iOS/Android), puede registrar movimientos incluso sin internet. Cuando su teléfono recupere la conexión, todo se sincroniza automáticamente.',
+                faq_q4: '¿Qué monedas son compatibles?',
+                faq_a4: 'MyFinance es compatible con Guaraníes (Gs. PYG), Real (R$ BRL), Dólar ($ USD) y Euro (€ EUR), además de soporte nativo en Español y Portugués.',
+                faq_q5: '¿Mis datos están seguros?',
+                faq_a5: 'Sí. Utilizamos aislamiento multi-usuario por cuenta, cifrado SSL y protección CSRF nativa. Además, puede descargar una copia de seguridad JSON de sus cuentas y transacciones cuando lo desee.',
+                direitos: 'Todos los derechos reservados.',
+                termos: 'Términos de Uso',
+                privacidade: 'Privacidad'
+            }
+        };
+
+        // Idioma Engine
+        const langSelect = document.getElementById('lang-toggle');
+        const idiomaSalvo = localStorage.getItem('gf_idioma') || 'pt-BR';
+        langSelect.value = idiomaSalvo;
+        aplicarIdioma(idiomaSalvo);
+
+        langSelect.addEventListener('change', (e) => {
+            const lang = e.target.value;
+            localStorage.setItem('gf_idioma', lang);
+            aplicarIdioma(lang);
+        });
+
+        function aplicarIdioma(lang) {
+            const dict = TRANSLATIONS[lang] || TRANSLATIONS['pt-BR'];
+            document.documentElement.lang = lang;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) {
+                    el.innerHTML = dict[key];
+                }
+            });
+
+            // Atualiza cobranca
+            atualizarCobrancas(lang);
+        }
+
+        function atualizarCobrancas(lang) {
+            const cicloBtn = document.querySelector('.planos-ciclo button.is-ativo');
+            const ciclo = cicloBtn ? cicloBtn.getAttribute('data-ciclo') : 'mensal';
+            const langKey = lang === 'es-PY' ? 'es' : 'pt';
+
+            document.querySelectorAll('.plano-cobranca').forEach(el => {
+                const texto = el.getAttribute('data-cobranca-' + ciclo + '-' + langKey);
+                if (texto) el.textContent = texto;
+            });
+        }
+
+        // Tema Toggle (Claro / Escuro)
+        const temaBtn = document.getElementById('tema-toggle');
+        const html = document.documentElement;
+        
+        const temaSalvo = localStorage.getItem('gf_tema') || 'claro';
+        html.setAttribute('data-tema', temaSalvo);
+        atualizarIconeTema(temaSalvo);
+
+        temaBtn.addEventListener('click', () => {
+            const temaAtual = html.getAttribute('data-tema');
+            const novoTema = temaAtual === 'claro' ? 'escuro' : 'claro';
+            html.setAttribute('data-tema', novoTema);
+            localStorage.setItem('gf_tema', novoTema);
+            atualizarIconeTema(novoTema);
+        });
+
+        function atualizarIconeTema(tema) {
+            temaBtn.innerHTML = tema === 'claro' ? '<i class="ph ph-moon"></i>' : '<i class="ph ph-sun"></i>';
+        }
+
+        // Alternância Ciclo de Preços (Mensal / Anual)
+        document.querySelectorAll('.planos-ciclo button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const ciclo = btn.getAttribute('data-ciclo');
+                document.querySelectorAll('.planos-ciclo button').forEach(b => b.classList.toggle('is-ativo', b === btn));
+                
+                // Preços
+                document.querySelectorAll('.preco-val').forEach(el => {
+                    el.textContent = el.getAttribute('data-' + ciclo);
+                });
+
+                // Cobranças no idioma atual
+                const curLang = langSelect.value || 'pt-BR';
+                atualizarCobrancas(curLang);
+            });
+        });
+
+        // FAQ Accordion
+        document.querySelectorAll('.faq-question').forEach(q => {
+            q.addEventListener('click', () => {
+                const item = q.parentElement;
+                item.classList.toggle('is-open');
+            });
+        });
+    </script>
+
+</body>
+</html>

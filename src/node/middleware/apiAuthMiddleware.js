@@ -24,10 +24,13 @@ async function exigirToken(req, res, next) {
             return res.status(403).json({ sucesso: false, erro: 'conta_inativa' });
         }
 
-        const ass = await Assinatura.obter(user.id);
-        const statusEfetivo = ass ? ass.status_efetivo : 'trial';
-        // Mesma regra do site: assinatura vencida/cancelada = somente leitura (admin e exceção).
-        req.somenteLeitura = Boolean(ass && ass.somente_leitura && user.role !== 'admin');
+        const ass = await Assinatura.garantir(user.id, user.role === 'admin' ? 'beta' : 'pendente');
+        const statusEfetivo = ass.status_efetivo;
+        // Mesma regra do site: sem teste em andamento e sem plano contratado, o app nao sincroniza nada
+        // (barrado em exigirOffline; sair da conta continua funcionando).
+        req.acessoBloqueado = Boolean(ass.bloqueada && user.role !== 'admin');
+        // Assinatura paga vencida/cancelada = somente leitura (admin e exceção).
+        req.somenteLeitura = Boolean(ass.somente_leitura && user.role !== 'admin');
 
         // Anexar usuario e dispositivo ao contexto da requisicao
         req.user = user;

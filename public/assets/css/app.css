@@ -2005,6 +2005,16 @@ tr.gf-prov-row td { border-bottom: 1px dashed var(--border); }
 .adm-lista li { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
 .adm-lista li:last-child { border-bottom: 0; }
 .adm-lista__sub { padding-left: 14px !important; color: var(--muted); font-size: 12.5px; }
+.adm-ativos th:first-child, .adm-ativos td:first-child { width: 1%; }
+.adm-ativos td { vertical-align: middle; }
+@media (max-width: 768px) {
+  .adm-ativos .iac-barra-col { display: none; }
+  /* Lista de usuarios: busca e lupa na primeira linha; os filtros (vencimento, ordem) embaixo, cada um na largura toda */
+  .admin-filtros { flex-wrap: wrap; }
+  .admin-filtros input[type="search"] { order: 1; }
+  .admin-filtros button { order: 2; }
+  .admin-filtros select.input { order: 3; flex: 1 1 100%; max-width: none !important; }
+}
 .adm-previa__lista { display: grid; gap: 8px; margin-top: 10px; }
 .adm-previa__msg { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 12px; background: var(--green-bg, rgba(16,185,129,.1)); font-size: 14px; font-weight: 600; }
 @media (max-width: 900px) { .adm-duas, .adm-duas--2, .adm-graficos { grid-template-columns: 1fr; } .admin-kpis { grid-template-columns: 1fr 1fr; } }
@@ -2236,3 +2246,390 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
 .fluxo-alertas .badge { font-size: 12px; padding: 6px 10px; }
 @media (max-width: 800px) { .cmp-kpis, .cmp-duo { grid-template-columns: 1fr; } .estado-vistas__item { padding: 8px 10px; font-size: 12.5px; } }
 .estado-contas th, .estado-contas td { padding: 10px 8px; }
+
+/* ==========================================================================
+   Revisao de usabilidade (computador e celular)
+   ========================================================================== */
+
+/* Foco visivel para quem navega pelo teclado */
+.btn:focus-visible, .tabs__item:focus-visible, .navbar__link:focus-visible, .icon-btn:focus-visible,
+.drawer-link:focus-visible, .settings-menu__item:focus-visible, summary:focus-visible, .btn-pagar:focus-visible {
+  outline: 2px solid var(--blue); outline-offset: 2px;
+}
+
+/* ---- Telas de entrada (login, cadastro, recuperar senha, aceitar termos): o cartao nao estica na pagina inteira ---- */
+.auth-card { max-width: 440px; margin-left: auto; margin-right: auto; }
+
+/* ---- Modais: classes usadas nas telas que estavam sem estilo (.modal__close, .modal__actions, .modal__body) ---- */
+.modal { overscroll-behavior: contain; } /* chegar ao fim do formulario nao sai rolando a pagina de tras */
+@supports (height: 100dvh) { .modal { max-height: 90dvh; } }
+.modal__header h3 { margin: 0; font-size: 17px; }
+.modal__close, .modal__fechar {
+  background: none; border: none; cursor: pointer; color: var(--muted); padding: 0;
+  width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.modal__close { font-size: 24px; line-height: 1; margin: -6px -8px -6px 8px; }
+.modal__fechar { font-size: 18px; margin: -6px -8px -6px 8px; }
+.modal__close:hover, .modal__fechar:hover { background: var(--bg); color: var(--text); }
+.modal__actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 16px; }
+.modal__actions form { display: inline-flex; margin: 0; }
+.btn-danger { background: var(--red); color: var(--on-accent); border-color: var(--red); }
+.btn-danger:hover { opacity: .9; }
+.badge-padrao { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+.badge-erro { background: var(--red-bg); color: var(--red); }
+.btn-olho { background: none; border: none; padding: 4px; cursor: pointer; color: var(--muted); font-size: 20px; line-height: 1; display: inline-flex; border-radius: 8px; }
+.btn-olho:hover { color: var(--text); background: var(--bg); }
+
+/* ---- Painel: botoes de nova receita / nova despesa ---- */
+.myfinance-action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.btn-acao { min-height: 48px; padding: 12px; border: none; border-radius: 14px; font-size: 14px; font-weight: 700; color: var(--on-accent); gap: 8px; }
+.btn-acao .ph { font-size: 20px; margin-right: 0; }
+.btn-acao--receita { background: var(--green); }
+.btn-acao--despesa { background: var(--red); }
+.btn-acao:hover { opacity: .92; }
+
+/* ---- Formulario de receita/despesa e de transferencia (partials/modal_lancamento.ejs) ---- */
+.modal-backdrop--lanc { background: rgba(0, 0, 0, .5); backdrop-filter: blur(4px); }
+.modal--lanc { max-width: 520px; max-height: 92vh; border-radius: 20px; padding: 24px 24px 0; box-shadow: 0 20px 40px rgba(0, 0, 0, .15); }
+@supports (height: 100dvh) { .modal--lanc { max-height: 92dvh; } }
+.modal--lanc .modal__header { margin-bottom: 16px; }
+.modal__titulo { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.modal__titulo h2 { font-size: 18px; font-weight: 700; margin: 0; }
+.modal__icone {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; font-size: 20px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--bg); color: var(--muted); border: 1px solid var(--border);
+}
+.modal--receita .modal__icone { background: var(--green-bg); color: var(--green); border-color: transparent; }
+.modal--despesa .modal__icone { background: var(--red-bg); color: var(--red); border-color: transparent; }
+
+.lanc-form { display: flex; flex-direction: column; gap: 12px; }
+.lanc-form .form-group { margin: 0; }
+.lanc-form label { font-size: 13px; }
+.lanc-form .input { border-radius: 12px; padding: 10px 14px; }
+.lanc-form__secao { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 700; margin: 6px 0 0; }
+.lanc-form .lanc-form__valor { font-size: 18px; font-weight: 700; }
+.lanc-campo { display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; background: var(--bg); }
+.lanc-campo--linha { flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; }
+.lanc-campo[hidden], .lanc-grupo[hidden] { display: none; }
+.lanc-campo__rotulo { display: flex; align-items: center; gap: 12px; margin: 0; min-width: 0; font-weight: 400; }
+.lanc-campo__rotulo strong { display: block; font-size: 13px; font-weight: 600; }
+.lanc-campo__rotulo small { display: block; font-size: 11.5px; line-height: 1.35; color: var(--muted); margin-top: 1px; }
+.lanc-campo__ico {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0; font-size: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--card); color: var(--muted); border: 1px solid var(--border);
+}
+/* Situacao: relogio ambar enquanto esta pendente, visto verde quando foi pago/recebido */
+.lanc-campo__ico--status { background: color-mix(in srgb, var(--pendente) 16%, transparent); color: var(--pendente); border-color: transparent; }
+.lanc-campo__ico--status.is-pago { background: var(--green-bg); color: var(--green); }
+.lanc-campo .input { background: var(--card); border-radius: 10px; padding: 8px 12px; }
+.lanc-campo .toggle { margin: 0; flex-shrink: 0; }
+.lanc-campo .toggle:has(input[data-gf-status-toggle]:checked) .toggle__track { background: var(--green); }
+.lanc-grupo { display: flex; flex-direction: column; gap: 12px; }
+.lanc-serie__titulo { font-weight: 600; font-size: 13px; margin: 0; }
+.lanc-serie__dica { font-size: 11.5px; margin: 0; }
+.lanc-form .lanc-serie__opcao { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 400; margin: 0; min-height: 30px; cursor: pointer; }
+
+/* Rodape do formulario sempre a vista: Cancelar e Salvar nao ficam escondidos no fim da rolagem */
+.modal-rodape {
+  position: sticky; bottom: 0; z-index: 2; display: flex; gap: 10px;
+  margin: 6px -24px 0; padding: 14px 24px 20px;
+  background: var(--card); border-top: 1px solid var(--border);
+}
+.modal-rodape .btn { flex: 1; min-height: 46px; border-radius: 12px; font-size: 14px; font-weight: 700; }
+.modal-rodape .btn-salvar { flex: 2; background: var(--primary); color: var(--primary-text); border: none; }
+.modal--receita .btn-salvar { background: var(--green); color: var(--on-accent); }
+.modal--despesa .btn-salvar { background: var(--red); color: var(--on-accent); }
+.modal-rodape .btn-salvar:hover { opacity: .92; }
+
+/* ---- Listas de lancamentos (Painel, Pendentes, Estado financeiro por categoria, Extrato) ---- */
+.lista-card { border-radius: 16px; padding: 20px; }
+.lista-grupo { border-radius: 12px; padding: 0; border: 1px solid var(--border); overflow: hidden; }
+.lista-grupo__corpo { padding: 12px 18px; border-top: 1px solid var(--border); }
+
+/* ---- Categorias: busca ---- */
+.categorias-filtros { padding: 14px; margin-bottom: 20px; }
+.categorias-filtros .input { flex: 1; }
+
+/* ---- Estado financeiro: o nome da categoria/conta pode quebrar linha (a tabela nao precisa rolar no computador) ---- */
+.estado-t td:first-child { white-space: normal; min-width: 130px; }
+
+/* ---- Tablet e notebook pequeno: a barra do topo cabe em UMA linha (antes os atalhos quebravam em 2 ou 3 linhas
+   e a barra ocupava ate um quarto da tela). Sai o nome do usuario, o indicador de conexao vira so a bolinha
+   (o texto volta quando esta sem conexao) e, abaixo de 900px, so o atalho da tela atual mostra o nome. ---- */
+@media (min-width: 769px) and (max-width: 1150px) {
+  .navbar__inner { gap: 12px; }
+  .navbar__links { flex-wrap: nowrap; gap: 2px; margin-left: 4px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .navbar__links::-webkit-scrollbar { display: none; }
+  .navbar__link { padding: 12px 8px; flex-shrink: 0; }
+  .navbar__user-nome { display: none; }
+  .pwa-status-badge:not(.is-offline) { padding: 6px; margin-left: 2px; }
+  .pwa-status-badge:not(.is-offline) .pwa-status-text { display: none; }
+}
+@media (min-width: 769px) and (max-width: 900px) {
+  .navbar__link { padding: 12px 11px; }
+  .navbar__link:not(.is-active) .navbar__label { display: none; }
+  .navbar__link:not(.is-active) .navbar__icon { font-size: 22px; }
+}
+
+@media (max-width: 768px) {
+  /* Faixas da conta (teste gratis, confirmar e-mail, somente leitura): uma linha so, com o botao ao lado */
+  .faixa-conta { flex-wrap: nowrap; gap: 8px; padding: 8px 10px; font-size: 12.5px; margin-top: 0; margin-bottom: 10px; }
+  .faixa-conta span { min-width: 0; }
+  .faixa-conta form { flex-shrink: 0; }
+  .faixa-conta .btn { min-height: 34px; padding: 6px 10px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+
+  /* Modais: com um formulario aberto, a pagina de tras nao rola junto com o dedo */
+  html:has(.modal-backdrop.is-open) { overflow: hidden; }
+  .modal__actions { flex-direction: column-reverse; gap: 8px; }
+  .modal__actions .btn, .modal__actions form { width: 100%; }
+  .modal__actions .btn { min-height: 44px; }
+  .modal--lanc { padding: 20px 16px 0; }
+  .modal-rodape { margin: 6px -16px 0; padding: 12px 16px calc(14px + env(safe-area-inset-bottom)); }
+  .lanc-form .input, .lanc-campo .input { font-size: 16px; } /* abaixo de 16px o iPhone aproxima a tela ao focar */
+  .btn-olho { min-width: 36px; min-height: 36px; align-items: center; justify-content: center; }
+
+  /* Lista de lancamentos: sem a moldura de fora, cada lancamento ja e um cartao e usa a largura toda da tela */
+  .lista-card { padding: 0; background: none; border: none; box-shadow: none; border-radius: 0; overflow: visible; }
+  .lista-grupo { background: var(--card); }
+  .lista-grupo__corpo { padding: 8px; }
+  .lista-grupo > summary { flex-wrap: wrap; gap: 6px 10px; padding: 12px 14px !important; }
+  .lista-grupo > summary > div { flex-wrap: wrap; }
+  .tabela-lanc tr.lanc-linha--receita, .tabela-extrato tr.lanc-linha--receita { border-left-color: var(--green); }
+  .tabela-lanc tr.lanc-linha--despesa, .tabela-extrato tr.lanc-linha--despesa { border-left-color: var(--red); }
+
+  /* Cartao do lancamento em 3 linhas: [descricao | valor] / [categoria | conta] / [data situacao | acoes] */
+  .tabela-lanc tr:not(:has(td[colspan])) {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas: "desc desc valor" "cat cat conta" "data status acoes";
+    gap: 6px 10px;
+  }
+  .tabela-lanc td:nth-child(1) { overflow-wrap: break-word; }
+  .tabela-lanc td:nth-child(3) { grid-area: conta; align-self: start; text-align: right; max-width: 40vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tabela-lanc td:nth-child(4) { grid-area: data; white-space: nowrap; }
+  .tabela-lanc td:nth-child(6) { grid-area: status; justify-self: start; }
+  .tabela-extrato td:nth-child(2) { overflow-wrap: break-word; }
+
+  /* A terceira linha (data, situacao, Pagar e menu) precisa caber tambem dentro de um grupo, onde ha menos largura:
+     margens menores no grupo, etiqueta e botao um pouco mais compactos e, em telas muito estreitas, o botao so com o icone */
+  .lista-grupo__corpo { padding: 8px 4px; }
+  .lista-grupo .tabela-lanc tr { padding: 12px 10px; }
+  .tabela-lanc tr:not(:has(td[colspan])) { column-gap: 8px; }
+  .tabela-lanc td:nth-child(6) .badge { padding: 3px 8px; white-space: nowrap; }
+  .tabela-lanc .btn-pagar { padding: 6px 10px; }
+  .tabela-lanc .acoes-linha { gap: 4px; }
+}
+@media (max-width: 345px) {
+  .tabela-lanc .btn-pagar span { display: none; }
+  .tabela-lanc .btn-pagar { padding: 6px 11px; }
+}
+@media (max-width: 768px) {
+
+  /* Pendencias do dia: valor em cima do botao, deixando a descricao respirar */
+  .pendencias__item { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "info valor" "info botao"; gap: 4px 10px; }
+  .pendencias__info { grid-area: info; }
+  .pendencias__valor { grid-area: valor; text-align: right; }
+  .pendencias__item form { grid-area: botao; justify-self: end; }
+  .pendencias__desc { white-space: normal; overflow-wrap: break-word; }
+
+  /* Categorias: busca em linha propria e acoes ao lado do nome (metade da altura de antes) */
+  .categorias-filtros { flex-wrap: wrap; gap: 10px; }
+  .categorias-filtros .input { flex: 1 1 100%; max-width: none; }
+  .categoria-linha { flex-wrap: nowrap; }
+  .categoria-linha__principal { flex-wrap: wrap; row-gap: 4px; }
+  .categoria-linha__acoes { width: auto; border-top: none; padding-top: 0; flex-shrink: 0; gap: 0 !important; }
+
+  /* Nenhuma tabela pode ficar com colunas cortadas: as que nao viram cartoes rolam para o lado dentro do proprio cartao */
+  .tabela-container { overflow-x: auto; }
+  .tabela-container:has(> .tabela-lanc), .tabela-container:has(> .tabela-extrato), .tabela-container:has(> .tabela-pend), .tabela-container:has(> .tabela-disp) { overflow: visible; }
+
+  /* Tabelas do Estado financeiro (categorias, comparativo, fluxo de caixa, por conta): rolam para o lado com a
+     primeira coluna fixa; a sombra na borda avisa que ha mais colunas */
+  .tabela-container--rola {
+    overflow-x: auto; -webkit-overflow-scrolling: touch;
+    background:
+      linear-gradient(to left, var(--card) 40%, transparent) right center / 34px 100% no-repeat local,
+      radial-gradient(farthest-side at 100% 50%, rgba(0, 0, 0, .22), transparent) right center / 12px 100% no-repeat scroll;
+  }
+  .tabela-container--rola .estado-t { white-space: nowrap; min-width: max-content; }
+  .tabela-container--rola .estado-t th:first-child,
+  .tabela-container--rola .estado-t td:first-child {
+    position: sticky; left: 0; z-index: 1; background: var(--card);
+    white-space: normal; min-width: 108px; max-width: 150px;
+  }
+
+  /* Dispositivos conectados: cada aparelho vira um bloco, com o botao "Revogar" sempre ao alcance */
+  .tabela-disp thead { display: none; }
+  .tabela-disp, .tabela-disp tbody { display: block; width: 100%; }
+  .tabela-disp tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "nome status" "plat plat" "uso acoes"; gap: 6px 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .tabela-disp tbody tr:last-child { border-bottom: none; }
+  .tabela.tabela-disp td { display: block; padding: 0; border: none; }
+  .tabela-disp td:nth-child(1) { grid-area: nome; }
+  .tabela-disp td:nth-child(2) { grid-area: plat; }
+  .tabela-disp td:nth-child(3) { grid-area: uso; color: var(--muted); font-size: 12.5px; }
+  .tabela-disp td:nth-child(4) { grid-area: status; justify-self: end; }
+  .tabela-disp td:nth-child(5) { grid-area: acoes; justify-self: end; }
+}
+
+/* ---- Pedido de plano: telefone de contato, aviso de IVA e tela de pedidos do admin ---- */
+.plano-card__iva { font-size: 11.5px; margin: -4px 0 10px; }
+.pedido-resumo { padding: 12px 14px; border-radius: 14px; background: var(--bg); border: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+.pedido-resumo__preco { font-size: 18px; font-weight: 800; }
+.pedido-tel { display: flex; gap: 8px; }
+.pedido-tel select { flex: 0 0 auto; width: auto; max-width: 52%; }
+.pedido-tel input { flex: 1 1 0; min-width: 0; }
+.pedidos-resumo { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.tabela-pedidos td { vertical-align: middle; }
+@media (max-width: 768px) {
+  .pedido-tel { flex-direction: column; }
+  .pedido-tel select { max-width: none; width: 100%; }
+}
+
+@media (max-width: 768px) {
+  /* Pedidos de plano no celular: cada pedido vira um cartao (contato e o botao Ativar sempre a vista) */
+  .tabela-container:has(> .tabela-pedidos) { overflow: visible; }
+  .tabela-pedidos thead { display: none; }
+  .tabela-pedidos, .tabela-pedidos tbody { display: block; width: 100%; }
+  .tabela-pedidos tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 10px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .tabela-pedidos tbody tr:last-child { border-bottom: none; }
+  .tabela.tabela-pedidos td { display: block; padding: 0; border: none; min-width: 0; }
+  .tabela-pedidos td:nth-child(1) { grid-column: 1 / -1; }
+  .tabela-pedidos td:nth-child(2) { grid-column: 1 / -1; }
+  .tabela-pedidos td:nth-child(3) { grid-column: 1; }
+  .tabela-pedidos td:nth-child(4) { grid-column: 2; justify-self: end; }
+  .tabela-pedidos td:nth-child(5) { grid-column: 1; text-align: left; }
+  .tabela-pedidos td:nth-child(6) { grid-column: 2; justify-self: end; }
+  .tabela-pedidos td:nth-child(7) { grid-column: 1 / -1; display: flex !important; gap: 8px; }
+  .tabela-pedidos td:nth-child(7) .btn { min-height: 40px; }
+  .tabela-pedidos td:nth-child(7) a.btn { flex: 1; justify-content: center; }
+}
+
+/* ---- Comunidade > Novidades ---- */
+.comunidade-abas { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.comunidade-abas .tabs__item { display: inline-flex; align-items: center; gap: 6px; }
+.selo-novidade { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 5px; margin-left: 4px; border-radius: 999px; background: var(--red); color: #fff; font-size: 11px; font-weight: 800; line-height: 1; vertical-align: middle; }
+.selo-novidade--aba { margin-left: 2px; }
+.novidades-lista { display: flex; flex-direction: column; gap: 14px; }
+.novidade { padding: 18px 20px; border-radius: 16px; display: flex; flex-direction: column; gap: 8px; }
+.novidade__topo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.novidade__data { margin-left: auto; font-size: 12px; }
+.novidade__tipo { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; background: var(--bg); color: var(--muted); }
+.novidade__tipo--modulo { background: #ede9fe; color: #6d28d9; }
+.novidade__tipo--novidade { background: var(--green-bg); color: var(--green); }
+.novidade__tipo--melhoria { background: #dbeafe; color: #1d4ed8; }
+:root[data-tema="escuro"] .novidade__tipo--modulo { background: #2e1f5e; color: #c4b5fd; }
+:root[data-tema="escuro"] .novidade__tipo--melhoria { background: #172554; color: #93c5fd; }
+.novidade__nova { padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; background: var(--red); color: #fff; }
+.novidade__titulo { margin: 0; font-size: 18px; }
+.novidade__texto { margin: 0; font-size: 14.5px; line-height: 1.55; white-space: pre-line; }
+.novidade__origem { margin: 0; font-size: 13px; }
+.novidade__reacoes { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.novidade__reacao { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer; }
+.novidade__reacao:hover { border-color: var(--text); }
+.novidade__reacao.is-ativa { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.novidade__reacao[data-reagir="nao_gostei"].is-ativa { background: var(--red-bg); border-color: var(--red); color: var(--red); }
+.novidade__reacao i { font-size: 17px; }
+.nov-adm { list-style: none; margin: 0; padding: 0; }
+.nov-adm__item { display: flex; justify-content: space-between; align-items: center; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.nov-adm__item:last-child { border-bottom: 0; }
+.nov-adm__info { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 280px; }
+.nov-adm__titulo { overflow-wrap: anywhere; }
+.nov-adm__acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.nov-adm__acoes form { margin: 0; }
+.nov-form { display: flex; flex-direction: column; gap: 16px; }
+.nov-form__linha { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.nov-form__campo { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; }
+.nov-form__campo small { font-weight: 400; }
+.nov-form__idioma { border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 12px; margin: 0; min-width: 0; }
+.nov-form__idioma legend { padding: 0 6px; font-weight: 800; font-size: 13px; }
+.nov-form__idioma textarea { resize: vertical; }
+.nov-form__acoes { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+@media (max-width: 768px) {
+  .nov-form__linha { grid-template-columns: 1fr; }
+  .nov-form__acoes .btn { flex: 1 1 100%; min-height: 44px; justify-content: center; }
+  .novidade { padding: 16px; }
+  .nov-adm__acoes { width: 100%; }
+}
+
+/* Selinho de novidades no menu do topo: fica sobre o icone (nao aumenta a altura da barra) */
+.navbar__link { position: relative; }
+.navbar__link .selo-novidade { position: absolute; top: 6px; left: calc(50% + 6px); margin: 0; min-width: 16px; height: 16px; font-size: 10px; box-shadow: 0 0 0 2px var(--nav-bg, #0b0b0f); }
+.nov-form textarea.input { font-family: inherit; line-height: 1.5; }
+.navbar__hamb { position: relative; }
+.selo-novidade--ponto { position: absolute; top: 6px; right: 6px; min-width: 10px; width: 10px; height: 10px; padding: 0; margin: 0; box-shadow: 0 0 0 2px #fff; }
+
+/* ==========================================================================
+   Niveis de plano: selo do plano, apresentacao de recurso de outro plano,
+   teste gratis (escolher plano / teste encerrado) e cota de foto e audio da IA
+   ========================================================================== */
+
+/* Selo pequeno do plano que inclui o recurso (abas, botoes, itens de menu) */
+.selo-plano { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 800; line-height: 1.3; letter-spacing: .02em; white-space: nowrap; vertical-align: middle; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.selo-plano .ph-fill { font-size: 11px; margin: 0; }
+.selo-plano--premium { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+:root[data-tema="escuro"] .selo-plano { background: #3b2f0b; color: #fcd34d; border-color: #6b5310; }
+:root[data-tema="escuro"] .selo-plano--premium { background: #172554; color: #93c5fd; border-color: #1e3a8a; }
+.chip-bloqueado { color: var(--muted); }
+.navbar__coroa { position: absolute; top: 6px; left: calc(50% + 7px); font-size: 11px; line-height: 1; color: #fcd34d; }
+.drawer-link .selo-plano { margin-left: auto; }
+
+/* Apresentacao de um recurso que faz parte de um plano acima (no lugar de uma mensagem de erro) */
+.bloq { max-width: 640px; margin: 20px auto; padding: 28px 26px; border-radius: 18px; }
+.bloq__topo { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.bloq__icone { width: 48px; height: 48px; border-radius: 14px; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; background: #dbeafe; color: #1e40af; }
+.bloq--pro .bloq__icone { background: #fef3c7; color: #92400e; }
+:root[data-tema="escuro"] .bloq__icone { background: #172554; color: #93c5fd; }
+:root[data-tema="escuro"] .bloq--pro .bloq__icone { background: #3b2f0b; color: #fcd34d; }
+.bloq__titulo { font-size: 20px; margin: 0 0 4px; }
+.bloq__texto { margin: 0 0 14px; color: var(--muted); font-size: 14.5px; }
+.bloq__lista { list-style: none; margin: 0 0 18px; padding: 0; display: flex; flex-direction: column; gap: 9px; }
+.bloq__lista li { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; line-height: 1.4; }
+.bloq__lista .ph-bold { color: var(--green); margin-top: 2px; flex-shrink: 0; }
+.bloq__acoes { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.bloq__acoes form { margin: 0; }
+.bloq__dica { font-size: 12.5px; margin: 12px 0 0; }
+
+/* Teste gratis: escolher o plano */
+.planos--teste .planos__topo { align-items: center; text-align: center; margin: 8px 0 20px; }
+.planos--teste .planos__topo h1 { font-size: 26px; margin: 0; }
+.planos--teste .planos__topo p { max-width: 640px; font-size: 14.5px; }
+.teste-selo { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 999px; background: var(--green-bg); color: var(--green); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.teste-nota { font-size: 13px; text-align: center; margin: 4px 0 24px; }
+.plano-card__testar { margin: 0; }
+.plano-card__testar .btn { width: 100%; justify-content: center; }
+.plano-card--pro .plano-card__testar .btn { color: var(--nav-text); border-color: #3a3f4a; background: transparent; }
+
+/* Teste encerrado: aviso no topo da tela de assinatura (a unica tela aberta) */
+.teste-fim { display: flex; gap: 14px; align-items: flex-start; border-left: 4px solid var(--pendente); border-radius: 16px; margin-bottom: 18px; }
+.teste-fim h1 { font-size: 20px; margin: 0 0 6px; }
+.teste-fim p { margin: 0; font-size: 14.5px; line-height: 1.5; }
+.teste-fim__icone { width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; background: color-mix(in srgb, var(--pendente) 16%, transparent); color: var(--pendente); }
+
+/* Barra do topo de quem esta sem acesso: so o nome e o botao de sair */
+.navbar__user--bloqueado { margin-left: auto; }
+.navbar__sair { display: inline-flex; align-items: center; gap: 6px; font: inherit; font-size: 13px; font-weight: 600; padding: 8px 12px; min-height: 38px; border-radius: 10px; border: 1px solid rgba(255, 255, 255, .2); background: none; color: var(--nav-text); cursor: pointer; }
+.navbar__sair:hover { background: rgba(255, 255, 255, .08); }
+
+/* Chat IA: cota de registros por foto e audio do mes */
+.ia-cota { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 6px 0 0; font-size: 12px; font-weight: 600; color: var(--muted); }
+.ia-cota[hidden] { display: none; }
+.ia-cota.is-alerta { color: var(--pendente); }
+.ia-cota.is-esgotada { color: var(--red); }
+.ia-ico.is-bloqueado { opacity: .55; }
+.ia-ico.is-bloqueado::after { content: ""; position: absolute; top: 6px; right: 6px; width: 9px; height: 9px; border-radius: 50%; background: var(--pendente); box-shadow: 0 0 0 2px var(--bg); }
+.ia-cota-aviso { border-left-color: var(--pendente); }
+.ia-cota-aviso .ia-cartao__topo span { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; color: var(--text); }
+.ia-cota-aviso p { margin: 8px 0 0; font-size: 13.5px; line-height: 1.45; }
+.ia-cota-aviso .ia-cartao__acoes { margin-top: 10px; }
+
+@media (max-width: 768px) {
+  .bloq { padding: 20px 16px; margin: 12px 0; }
+  .bloq__acoes .btn, .bloq__acoes form { width: 100%; }
+  .bloq__acoes .btn { justify-content: center; }
+  .planos--teste .planos__topo h1 { font-size: 21px; }
+  .teste-fim { padding: 16px; }
+  .teste-fim h1 { font-size: 18px; }
+  .navbar__sair span { display: inline; }
+}

@@ -46,19 +46,30 @@
         cat_escolha: <%- JSON.stringify(t('cat_rapida.escolha_categoria')) %>,
         cat_cor: <%- JSON.stringify(t('cat_rapida.cor')) %>,
         cat_erro: <%- JSON.stringify(t('cat_rapida.erro')) %>,
-        erro_acao: <%- JSON.stringify(t('js.erro_acao')) %>
+        erro_acao: <%- JSON.stringify(t('js.erro_acao')) %>,
+        valor_invalido: <%- JSON.stringify(t('flash.lanc_valor_invalido')) %>
     };
     </script>
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="/assets/css/app.css?v=<%= assetVersion %>">
+    <%# Icones (Phosphor): so os tres pesos usados no sistema, em versao fixa e direto como folha de estilo
+        (o carregador por script trazia seis pesos e so aplicava os icones depois de a pagina aparecer). %>
+    <% ['regular', 'bold', 'fill'].forEach(function (peso) { %><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/<%= peso %>/style.css" crossorigin="anonymous">
+    <% }) %><link rel="stylesheet" href="/assets/css/app.css?v=<%= assetVersion %>">
 </head>
 <body>
 <header class="navbar">
     <div class="navbar__inner">
         <!-- Top Left: Menu Toggle (Mobile Only) + Brand Logo + Online/Offline Badge -->
+        <%# Plano com Chat IA e o admin nao desligou este usuario: mostra o Chat. Plano sem IA: mostra com o selo do plano que inclui. %>
+        <%# (As paginas de erro podem ser montadas antes das regras de conta: por isso os "typeof".) %>
+        <% const _ass = typeof assinatura !== 'undefined' ? assinatura : null; %>
+        <% const _adm = typeof ehAdmin !== 'undefined' && ehAdmin; %>
+        <% const _bloq = typeof acessoBloqueado !== 'undefined' && acessoBloqueado; %>
+        <% const _planoTemIa = Boolean(_ass && _ass.plano && _ass.plano.rec_ia); %>
+        <% const _mostrarIa = Boolean(usuarioLogado && (_adm || !_planoTemIa || usuarioLogado.ia_habilitada)); %>
+        <% const _seloIa = !_adm && !_planoTemIa; %>
         <div style="display: flex; align-items: center; gap: 10px;">
-            <% if (usuarioLogado) { %>
-            <button type="button" id="btn-hamburguer" class="navbar__hamb" aria-label="<%= t('nav.menu') %>"><i class="ph ph-list"></i></button>
+            <% if (usuarioLogado && !_bloq) { %>
+            <button type="button" id="btn-hamburguer" class="navbar__hamb" aria-label="<%= t('nav.menu') %>"><i class="ph ph-list"></i><% if (novidadesNovas > 0) { %><span class="selo-novidade selo-novidade--ponto" aria-hidden="true"></span><% } %></button>
             <% } %>
             <a href="/" class="navbar__brand" style="display: flex; align-items: center; gap: 6px;">
                 <i class="ph-fill ph-hands-clapping" style="font-size: 22px;"></i>
@@ -73,7 +84,16 @@
             </button>
         </div>
 
-        <% if (usuarioLogado) { %>
+        <% if (usuarioLogado && _bloq) { %>
+            <%# Sem teste em andamento e sem plano contratado: so a tela de escolher/contratar um plano e a saida. %>
+            <div class="navbar__user navbar__user--bloqueado">
+                <span class="navbar__user-nome" style="font-weight: 600;"><%= usuarioLogado.nome %></span>
+                <form method="post" action="/logout" style="margin: 0;">
+                    <%- csrfCampo %>
+                    <button type="submit" class="navbar__sair"><i class="ph ph-sign-out" aria-hidden="true"></i> <%= t('nav.sair') %></button>
+                </form>
+            </div>
+        <% } else if (usuarioLogado) { %>
             <nav class="navbar__links">
                 <a href="/" title="<%= t('nav.visao_geral') %>" class="navbar__link <%= currentRoute === '/' ? 'is-active' : '' %>">
                     <span class="navbar__icon"><i class="ph ph-squares-four"></i></span>
@@ -97,15 +117,17 @@
                     <span class="navbar__label"><%= t('nav.admin') %></span>
                 </a>
                 <% } %>
-                <% if (ehAdmin || (usuarioLogado && usuarioLogado.ia_habilitada && assinatura && assinatura.plano && assinatura.plano.rec_ia)) { %>
+                <% if (_mostrarIa) { %>
                 <a href="/ia" title="<%= t('nav.ia') %>" class="navbar__link <%= currentRoute.startsWith('/ia') ? 'is-active' : '' %>">
                     <span class="navbar__icon"><i class="ph ph-sparkle"></i></span>
                     <span class="navbar__label"><%= t('nav.ia') %></span>
+                    <% if (_seloIa) { %><span class="navbar__coroa" title="<%= t('bloq.disponivel_no', { plano: t('plano.premium.nome') }) %>"><i class="ph-fill ph-crown-simple" aria-hidden="true"></i></span><% } %>
                 </a>
                 <% } %>
                 <a href="/comunidade" title="<%= t('nav.comunidad') %>" class="navbar__link <%= currentRoute.startsWith('/comunidade') ? 'is-active' : '' %>">
                     <span class="navbar__icon"><i class="ph ph-users-three"></i></span>
                     <span class="navbar__label"><%= t('nav.comunidad') %></span>
+                    <% if (novidadesNovas > 0) { %><span class="selo-novidade" title="<%= t('novidades.selo_titulo', { n: novidadesNovas }) %>"><%= novidadesNovas > 9 ? '9+' : novidadesNovas %></span><% } %>
                 </a>
                 <a href="/configuracoes" title="<%= t('nav.configuracoes') %>" class="navbar__link <%= currentRoute.startsWith('/configuracoes') ? 'is-active' : '' %>">
                     <span class="navbar__icon"><i class="ph ph-gear"></i></span>
@@ -158,7 +180,8 @@
                 msgText = resText.startsWith('flash.') ? (flash.tipo === 'sucesso' ? t('flash.generico_ok') : t('flash.generico_erro')) : resText;
             }
         %>
-        <div class="alert alert-<%= flash.tipo === 'sucesso' ? 'sucesso' : 'erro' %>" style="display: flex; align-items: center; gap: 8px;">
+        <%# data-flash: so esta mensagem some sozinha depois de alguns segundos (app.js); as faixas e os avisos fixos ficam. %>
+        <div class="alert alert-<%= flash.tipo === 'sucesso' ? 'sucesso' : 'erro' %>" data-flash role="<%= flash.tipo === 'sucesso' ? 'status' : 'alert' %>" style="display: flex; align-items: center; gap: 8px;">
             <i class="ph-bold <%= flash.tipo === 'sucesso' ? 'ph-check-circle' : 'ph-warning-circle' %>" style="font-size: 18px;"></i>
             <span><%= msgText %></span>
         </div>
@@ -168,8 +191,8 @@
         <% const _st = assinatura.status_efetivo; %>
         <% if (_st === 'vencida' || _st === 'cancelada') { %>
             <div class="alert alert-erro faixa-conta"><i class="ph ph-lock-simple"></i> <span><%= t('faixa.somente_leitura') %></span> <a href="/assinatura" class="btn btn-sm btn-primary"><%= t('faixa.ver_planos') %></a></div>
-        <% } else if (_st === 'trial') { %>
-            <div class="alert alert-aviso faixa-conta"><i class="ph ph-gift"></i> <span><%= t('faixa.trial', { dias: assinatura.dias_restantes }) %></span> <a href="/assinatura" class="btn btn-sm btn-outline"><%= t('faixa.ver_planos') %></a></div>
+        <% } else if (_st === 'trial' && currentRoute !== '/assinatura') { %>
+            <div class="alert alert-aviso faixa-conta"><i class="ph ph-gift"></i> <span><%= assinatura.teste_plano ? t('faixa.trial_plano', { plano: t('plano.' + assinatura.plano_codigo + '.nome'), dias: assinatura.dias_restantes }) : t('faixa.trial', { dias: assinatura.dias_restantes }) %></span> <a href="/assinatura" class="btn btn-sm btn-outline"><%= t('faixa.ver_planos') %></a></div>
         <% } else if (_st === 'ativa' && assinatura.dias_restantes <= 5) { %>
             <div class="alert alert-aviso faixa-conta"><i class="ph ph-clock-countdown"></i> <span><%= t('faixa.renovar', { dias: assinatura.dias_restantes }) %></span> <a href="/assinatura" class="btn btn-sm btn-outline"><%= t('faixa.renovar_botao') %></a></div>
         <% } %>
@@ -184,7 +207,7 @@
     <%- body %>
 </main>
 
-<% if (usuarioLogado) { %>
+<% if (usuarioLogado && !_bloq) { %>
 
     <!-- Mobile Drawer Overlay & Menu Panel -->
     <div class="drawer-backdrop" id="mobile-drawer-backdrop" style="display: none;" onclick="fecharMenuMobile()">
@@ -228,15 +251,17 @@
                     <span><%= t('nav.admin') %></span>
                 </a>
                 <% } %>
-                <% if (ehAdmin || (usuarioLogado && usuarioLogado.ia_habilitada && assinatura && assinatura.plano && assinatura.plano.rec_ia)) { %>
+                <% if (_mostrarIa) { %>
                 <a href="/ia" class="drawer-link <%= currentRoute.startsWith('/ia') ? 'is-active' : '' %>">
                     <i class="ph ph-sparkle"></i>
                     <span><%= t('nav.ia') %></span>
+                    <% if (_seloIa) { %><%- include('partials/selo_plano', { plano: 'premium' }) %><% } %>
                 </a>
                 <% } %>
                 <a href="/comunidade" class="drawer-link <%= currentRoute.startsWith('/comunidade') ? 'is-active' : '' %>">
                     <i class="ph ph-users-three"></i>
                     <span><%= t('nav.comunidad') %></span>
+                    <% if (novidadesNovas > 0) { %><span class="selo-novidade" title="<%= t('novidades.selo_titulo', { n: novidadesNovas }) %>"><%= novidadesNovas > 9 ? '9+' : novidadesNovas %></span><% } %>
                 </a>
                 <a href="/assinatura" class="drawer-link <%= currentRoute === '/assinatura' ? 'is-active' : '' %>">
                     <i class="ph ph-crown-simple"></i>

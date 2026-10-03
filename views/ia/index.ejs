@@ -18,6 +18,10 @@ const _T = {
     limiteAudio: t('ia.limite_audio', { n: '__N__' }), erroFotoPreparar: t('ia.erro_foto_preparar'), erroFotoMax: t('ia.erro_foto_max', { n: '__N__' }),
     transcricao: t('ia.transcricao_rotulo'),
     reverter: t('ia.reverter'), revertido: t('ia.revertido'),
+    cotaMidia: t('ia.cota_midia', { usados: '__U__', limite: '__L__' }), cotaTitulo: t('ia.cota_titulo', { n: '__N__' }),
+    cotaUpgrade: t('ia.cota_upgrade', { plano: '__P__', m: '__M__' }), cotaBotao: t('ia.cota_botao', { plano: '__P__' }),
+    cotaVolta: t('ia.cota_volta'), cotaTextoLivre: t('ia.cota_texto_livre'),
+    midiaPlanoTitulo: t('ia.midia_plano_titulo'), midiaPlano: t('ia.erro_plano_midia'), midiaBloqueada: t('ia.midia_bloqueada'),
     resOk: t('ia.res_ok'), resParcial: t('ia.res_parcial'), pendente: t('ia.cartao_pendente'), erro: t('ia.erro_generico'), semConversas: t('ia.sem_conversas')
 };
 const _sugestoes = [t('ia.sugestao_pagar'), t('ia.sugestao_receber'), t('ia.sugestao_resumo'), t('ia.sugestao_saldos')];
@@ -67,11 +71,13 @@ const _sugestoes = [t('ia.sugestao_pagar'), t('ia.sugestao_receber'), t('ia.suge
         <input type="file" id="ia-in-galeria" accept="image/*" multiple hidden>
         <p class="muted ia-aviso"><%= t('ia.aviso') %>
             <% if (restantes !== null) { %> · <%= t('ia.restantes', { n: restantes }) %><% } %></p>
+        <%# Cota de registros por foto e audio do mes (atualizada pelo ia.js a cada resposta). %>
+        <p class="ia-cota" id="ia-cota" hidden><i class="ph ph-camera" aria-hidden="true"></i> <span id="ia-cota-texto"></span></p>
     </section>
 </div>
 
 <script>
 window.IA_T = <%- JSON.stringify(_T).replace(/</g, '\\u003c') %>;
-window.IA_CFG = { moeda: <%- JSON.stringify(currency || 'PYG') %> };
+window.IA_CFG = { moeda: <%- JSON.stringify(currency || 'PYG') %>, cota: <%- jsonScript(cota || null) %> };
 </script>
 <script src="/assets/js/ia.js?v=<%= Date.now() %>"></script>

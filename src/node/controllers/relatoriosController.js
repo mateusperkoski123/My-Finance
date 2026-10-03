@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const Lancamento = require('../models/Lancamento');
-const { toLocalYMD, hojeLocal } = require('../core/helpers');
+const { toLocalYMD, hojeLocal, dataValida, mesAnoValidos } = require('../core/helpers');
 const { CONTA_ATIVA } = require('../models/Lancamento');
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
@@ -92,19 +92,18 @@ function montarEstado(linhas, orcamentoMult) {
 }
 
 
-const YMD = /^\d{4}-\d{2}-\d{2}$/;
-
 // ---- Periodo escolhido (mes, ano, hoje, 7 dias, datas) e os parametros que o identificam nos links ----
 function resolverPeriodo(query) {
     const hojeObj = hojeLocal();
     const hoje = toLocalYMD(hojeObj);
-    const mes = parseInt(query.mes || (hojeObj.getMonth() + 1), 10);
-    const ano = parseInt(query.ano || hojeObj.getFullYear(), 10);
+    // Mes e ano vem da URL: valores fora do esperado caem no mes atual (antes, "?mes=abc" derrubava a pagina).
+    const { mes, ano } = mesAnoValidos(query.mes, query.ano, hojeObj);
     let inicio, fim, preset = query.preset || 'mes';
 
     // Datas so valem como periodo personalizado quando vieram do botao "Aplicar" ou de um link com preset=custom/sem preset;
     // os outros envios do formulario carregam as datas so para exibir o periodo atual.
-    const usaDatas = YMD.test(query.data_inicio || '') && YMD.test(query.data_fim || '') && (query.aplicar || !query.preset || query.preset === 'custom');
+    const usaDatas = dataValida(query.data_inicio) && dataValida(query.data_fim) && query.data_inicio <= query.data_fim
+        && (query.aplicar || !query.preset || query.preset === 'custom');
     if (usaDatas) {
         inicio = query.data_inicio;
         fim = query.data_fim;
@@ -156,7 +155,7 @@ function resolverComparacao(query, periodo) {
     let comparar = ['anterior', 'ano', 'custom'].includes(query.comparar) ? query.comparar : 'anterior';
     let periodoAnt = null;
     if (comparar === 'custom') {
-        if (YMD.test(query.cmp_inicio || '') && YMD.test(query.cmp_fim || '') && query.cmp_inicio <= query.cmp_fim) {
+        if (dataValida(query.cmp_inicio) && dataValida(query.cmp_fim) && query.cmp_inicio <= query.cmp_fim) {
             periodoAnt = { inicio: query.cmp_inicio, fim: query.cmp_fim };
         } else {
             comparar = 'anterior';
@@ -310,11 +309,18 @@ const relatoriosController = {
         const query = req.query;
         const { periodo, periodoParams, hoje, hojeObj } = resolverPeriodo(query);
         const { inicio, fim, preset } = periodo;
-        const aba = query.aba || 'graficos';
-        const anoAnual = parseInt(query.ano_anual || periodo.ano, 10);
+        const aba = ['graficos', 'pendentes', 'demonstrativo', 'demonstrativo_anual'].includes(query.aba) ? query.aba : 'graficos';
+        const anoAnual = mesAnoValidos(1, query.ano_anual || periodo.ano, hojeObj).ano;
+
+        // Niveis de plano: o Demonstrativo Financeiro e do Premium e do Pro; fluxo de caixa, visao por conta e
+        // comparacao com o ano passado/datas escolhidas sao do Pro. Sem o recurso, a tela apresenta o que ele faz
+        // (views/partials/recurso_bloqueado) e nada e calculado.
+        const pode = req.pode || (() => false);
+        const estadoBloqueado = aba === 'demonstrativo' && !pode('rec_estado');
+        const avancado = pode('rec_estado_avancado');
 
         // Contas e categorias dos formularios (novo / editar) nas abas que listam lancamentos.
-        const comLista = aba === 'pendentes' || aba === 'demonstrativo';
+        const comLista = aba === 'pendentes' || (aba === 'demonstrativo' && !estadoBloqueado);
         let contas = [], categoriasArvore = [];
         if (comLista) {
             contas = await Conta.buscarPorUsuario(userId, false);
@@ -335,7 +341,7 @@ const relatoriosController = {
         const pagina = Math.max(parseInt(query.pagina || '1', 10) || 1, 1);
         const porPagina = Math.min(Math.max(parseInt(query.por_pagina || '30', 10) || 30, 10), 200);
 
-        const estadoPorCategoria = aba === 'demonstrativo' && (filtros.categoria_id || filtros.subcategoria_id);
+        const estadoPorCategoria = aba === 'demonstrativo' && !estadoBloqueado && (filtros.categoria_id || filtros.subcategoria_id);
         let dadosLista = null;
         if (aba === 'pendentes' || estadoPorCategoria) {
             const extra = aba === 'pendentes' ? { status: 'pendente', atrasadas: inicio <= hoje && fim >= hoje } : {};
@@ -346,17 +352,20 @@ const relatoriosController = {
         const tipoFiltro = ['receita', 'despesa'].includes(query.tipo) ? query.tipo : '';
         const nivel = ['cat', 'sub'].includes(query.nivel) ? query.nivel : '';
         const vista = ['comparativo', 'fluxo', 'contas'].includes(query.vista) ? query.vista : '';
+        const vistaBloqueada = ['fluxo', 'contas'].includes(vista) && !avancado;
         let estado = null, orcamentoMult = null, porConta = null, fluxo = null;
-        const { comparar, periodoAnt, cmpParams } = resolverComparacao(query, periodo);
+        // Sem o recurso avancado a comparacao e sempre com o periodo anterior (os parametros da URL sao ignorados).
+        const { comparar, periodoAnt, cmpParams } = resolverComparacao(avancado ? query : {}, periodo);
 
+        const comEstado = aba === 'demonstrativo' && !estadoBloqueado && !estadoPorCategoria;
         let resumo = null;
-        if (aba === 'graficos' || (aba === 'demonstrativo' && !estadoPorCategoria)) {
+        if (aba === 'graficos' || comEstado) {
             resumo = await Lancamento.resumoPeriodo(userId, periodo);
         }
-        if (aba === 'demonstrativo' && !estadoPorCategoria) {
+        if (comEstado) {
             ({ estado, orcamentoMult } = await carregarEstado(userId, periodo, periodoAnt));
-            if (vista === 'contas') porConta = await carregarPorConta(userId, periodo);
-            if (vista === 'fluxo') fluxo = await carregarFluxo(userId, periodo, resumo.saldo_anterior);
+            if (vista === 'contas' && !vistaBloqueada) porConta = await carregarPorConta(userId, periodo);
+            if (vista === 'fluxo' && !vistaBloqueada) fluxo = await carregarFluxo(userId, periodo, resumo.saldo_anterior);
         }
 
         // ---- Graficos: totais por tipo, situacao, categoria e subcategoria (o navegador monta e filtra os 4 graficos) ----
@@ -454,6 +463,9 @@ const relatoriosController = {
             tipoFiltro,
             nivel,
             vista,
+            estadoBloqueado,
+            vistaBloqueada,
+            avancado,
             comparar,
             cmpParams,
             estado,
@@ -541,8 +553,7 @@ relatoriosController.exportar = async (req, res) => {
     const userId = req.user.id;
     const hoje = hojeLocal();
     let inicio = req.query.data_inicio, fim = req.query.data_fim;
-    const ymd = /^\d{4}-\d{2}-\d{2}$/;
-    if (!ymd.test(inicio || '') || !ymd.test(fim || '')) {
+    if (!dataValida(inicio) || !dataValida(fim)) {
         inicio = toLocalYMD(new Date(hoje.getFullYear(), hoje.getMonth(), 1));
         fim = toLocalYMD(new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0));
     }

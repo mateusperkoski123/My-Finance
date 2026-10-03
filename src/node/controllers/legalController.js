@@ -6,7 +6,7 @@ const { TERMOS_VERSAO } = require('../core/negocio');
 async function precos() {
     const planos = await Assinatura.listarPlanos();
     const por = (c) => (planos.find((p) => p.codigo === c) || {}).preco_mensal || 0;
-    return { basico: por('basico'), premium: por('premium') };
+    return { basico: por('basico'), premium: por('premium'), pro: por('pro') };
 }
 
 async function render(res, req, vista, secao, titulo) {

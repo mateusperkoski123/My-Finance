@@ -15,7 +15,7 @@ class User {
         return rows[0] || null;
     }
 
-    // Cadastro por e-mail/senha. Registra aceite dos termos e inicia o teste gratis.
+    // Cadastro por e-mail/senha. Registra aceite dos termos; o teste gratis comeca quando a pessoa escolhe o plano.
     // Retorna { id, tokenVerificacao } (o token vai por e-mail; no banco fica so o hash).
     static async create({ nome, email, senha_hash, idioma = 'pt-BR', moeda = 'PYG', tema = 'claro', origem = 'web' }) {
         const tokenVerificacao = crypto.randomBytes(24).toString('hex');
@@ -26,7 +26,7 @@ class User {
             [nome, email, senha_hash, idioma, moeda, tema, origem, sha256(tokenVerificacao), TERMOS_VERSAO]
         );
         await require('./Categoria').criarPadrao(result.insertId, idioma);
-        await require('./Assinatura').iniciarTrial(result.insertId);
+        await require('./Assinatura').criarPendente(result.insertId);
         return { id: result.insertId, tokenVerificacao };
     }
 
@@ -43,6 +43,11 @@ class User {
             'UPDATE users SET nome = ?, email_verificado_em = IF(email = ?, email_verificado_em, NULL), email = ?, updated_at = NOW() WHERE id = ?',
             [nome, email, email, id]
         );
+    }
+
+    // Telefone de contato (pedido de plano). codigo = "+595", numero = so digitos.
+    static async salvarTelefone(id, codigo, numero) {
+        await db.query('UPDATE users SET telefone_codigo = ?, telefone_numero = ?, updated_at = NOW() WHERE id = ?', [codigo, numero, id]);
     }
 
     static async updateSenha(id, senha_hash) {
@@ -97,7 +102,7 @@ class User {
         );
 
         await require('./Categoria').criarPadrao(result.insertId, idioma);
-        await require('./Assinatura').iniciarTrial(result.insertId);
+        await require('./Assinatura').criarPendente(result.insertId);
         return this.findById(result.insertId);
     }
 

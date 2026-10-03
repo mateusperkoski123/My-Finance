@@ -1,0 +1,38 @@
+<%#
+  Apresentacao de um recurso que faz parte de um plano acima do atual (no lugar de uma mensagem de erro).
+  Espera: recurso (chave dos textos 'bloq.<recurso>.*'), plano ('premium' | 'pro'), icone (classe Phosphor) e,
+  opcional, itens (quantos 'bloq.<recurso>.iN' existem; padrao 3).
+  Quem esta no teste do plano escolhido pode passar a testar o plano indicado na hora, sem reiniciar o prazo.
+%>
+<%
+const _bqPlano = t('plano.' + plano + '.nome');
+const _bqItens = typeof itens !== 'undefined' ? itens : 3;
+const _bqTeste = Boolean(assinatura && assinatura.teste_plano);
+%>
+<section class="card bloq bloq--<%= plano %>">
+    <div class="bloq__topo">
+        <span class="bloq__icone"><i class="ph <%= icone %>" aria-hidden="true"></i></span>
+        <%- include('selo_plano', { plano: plano }) %>
+    </div>
+    <h2 class="bloq__titulo"><%= t('bloq.' + recurso + '.titulo') %></h2>
+    <p class="bloq__texto"><%= t('bloq.' + recurso + '.texto') %></p>
+    <ul class="bloq__lista">
+        <% for (let i = 1; i <= _bqItens; i++) { %>
+            <li><i class="ph-bold ph-check" aria-hidden="true"></i> <span><%= t('bloq.' + recurso + '.i' + i) %></span></li>
+        <% } %>
+    </ul>
+    <div class="bloq__acoes">
+        <% if (_bqTeste) { %>
+            <form method="post" action="/teste/trocar">
+                <%- csrfCampo %>
+                <input type="hidden" name="plano" value="<%= plano %>">
+                <input type="hidden" name="voltar" value="<%= currentUrl %>">
+                <button type="submit" class="btn btn-primary"><%= t('bloq.testar', { plano: _bqPlano }) %></button>
+            </form>
+            <a href="/assinatura" class="btn btn-outline"><%= t('bloq.comparar_planos') %></a>
+        <% } else { %>
+            <a href="/assinatura" class="btn btn-primary"><%= t('bloq.conhecer', { plano: _bqPlano }) %></a>
+        <% } %>
+    </div>
+    <% if (_bqTeste) { %><p class="muted bloq__dica"><i class="ph ph-info" aria-hidden="true"></i> <%= t('bloq.testar_dica', { dias: assinatura.dias_restantes }) %></p><% } %>
+</section>

@@ -157,6 +157,53 @@
   var inGaleria = document.getElementById('ia-in-galeria');
   var gravacao = null;
 
+  // ---- Cota de registros por foto e audio do mes (conforme o plano; o registro por texto nao conta) ----
+  var cota = CFG.cota || null;
+  var elCota = document.getElementById('ia-cota');
+  var elCotaTexto = document.getElementById('ia-cota-texto');
+
+  function midiaBloqueada() { return !!(cota && (!cota.liberada || cota.esgotada)); }
+
+  function renderCota() {
+    var bloqueada = midiaBloqueada();
+    [btnCamera, btnFoto, btnAudio].forEach(function (b) {
+      if (!b) return;
+      if (!b.getAttribute('data-titulo')) b.setAttribute('data-titulo', b.title);
+      b.classList.toggle('is-bloqueado', bloqueada);
+      b.title = bloqueada ? T.midiaBloqueada : b.getAttribute('data-titulo');
+    });
+    if (!elCota) return;
+    if (!cota || !cota.liberada || !cota.limite) { elCota.hidden = true; return; }
+    elCota.hidden = false;
+    elCotaTexto.textContent = T.cotaMidia.replace('__U__', cota.usados).replace('__L__', cota.limite);
+    elCota.classList.toggle('is-alerta', !cota.esgotada && cota.usados >= cota.limite * 0.8);
+    elCota.classList.toggle('is-esgotada', !!cota.esgotada);
+  }
+
+  function atualizarCota(nova) { if (nova !== undefined) { cota = nova; renderCota(); } }
+
+  // Cota usada (ou plano sem foto e audio): explica e mostra o caminho para o plano de cima. O texto continua liberado.
+  function avisoMidia() {
+    if (!cota) return;
+    limparBoasVindas();
+    var semPlano = !cota.liberada;
+    var titulo = semPlano ? T.midiaPlanoTitulo : T.cotaTitulo.replace('__N__', cota.limite);
+    var linhas = [];
+    if (semPlano) linhas.push(T.midiaPlano);
+    else if (cota.upgrade) linhas.push(T.cotaUpgrade.replace('__P__', cota.upgrade.nome).replace('__M__', cota.upgrade.limite));
+    else linhas.push(T.cotaVolta);
+    linhas.push(T.cotaTextoLivre);
+    var botao = cota.upgrade
+      ? '<div class="ia-cartao__acoes"><a class="btn btn-primary btn-sm" href="/assinatura"><i class="ph-fill ph-crown-simple"></i> ' + esc(T.cotaBotao.replace('__P__', cota.upgrade.nome)) + '</a></div>'
+      : '';
+    var d = document.createElement('div');
+    d.className = 'ia-msg ia-msg--assistant';
+    d.innerHTML = '<div class="ia-cartao ia-cota-aviso"><div class="ia-cartao__topo"><span><i class="ph ph-lock-simple"></i> ' + esc(titulo) + '</span></div>' +
+      '<p>' + linhas.map(esc).join(' ') + '</p>' + botao + '</div>';
+    elMsgs.appendChild(d);
+    rolarFim();
+  }
+
   function mmss(s) { return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2); }
 
   function renderAnexos() {
@@ -266,9 +313,10 @@
 
   // Camera direta so em aparelhos de toque; no computador ficam "anexar foto" e "gravar audio".
   if (btnCamera && window.matchMedia && window.matchMedia('(pointer: coarse)').matches) btnCamera.hidden = false;
-  if (btnCamera) btnCamera.addEventListener('click', function () { inCamera.value = ''; inCamera.click(); });
-  if (btnFoto) btnFoto.addEventListener('click', function () { inGaleria.value = ''; inGaleria.click(); });
-  if (btnAudio) btnAudio.addEventListener('click', alternarGravacao);
+  if (btnCamera) btnCamera.addEventListener('click', function () { if (midiaBloqueada()) { avisoMidia(); return; } inCamera.value = ''; inCamera.click(); });
+  if (btnFoto) btnFoto.addEventListener('click', function () { if (midiaBloqueada()) { avisoMidia(); return; } inGaleria.value = ''; inGaleria.click(); });
+  if (btnAudio) btnAudio.addEventListener('click', function () { if (!gravacao && midiaBloqueada()) { avisoMidia(); return; } alternarGravacao(); });
+  renderCota();
   if (inCamera) inCamera.addEventListener('change', function () { adicionarFotos(inCamera.files); });
   if (inGaleria) inGaleria.addEventListener('change', function () { adicionarFotos(inGaleria.files); });
   if (elAnexos) elAnexos.addEventListener('click', function (e) {
@@ -420,7 +468,9 @@
         p.innerHTML = '<i class="ph ph-microphone"></i> <em>' + esc(d.transcricao) + '</em>';
         bolha.querySelector('.ia-bolha').appendChild(p);
       }
+      atualizarCota(d.cota_midia);
       if (d.sucesso) addMsg('assistant', d.mensagem.texto, d.mensagem.acoes);
+      else if (d.cota_midia && midiaBloqueada()) avisoMidia(); // cota de foto e audio usada: aviso com o plano de cima, nao um erro
       else addMsg('assistant', '⚠️ ' + (d.erro || T.erro));
     }).catch(function () {
       pensando.remove();
@@ -437,6 +487,7 @@
     var cartao = btn.closest('.ia-cartao');
     cartao.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
     api('/ia/acoes/' + id + '/reverter').then(function (d) {
+      atualizarCota(d.cota_midia); // o que foi revertido volta para a cota de foto e audio
       var novo = d.cartao;
       if (novo) { var tmp = document.createElement('div'); tmp.innerHTML = cartaoHtml(novo); cartao.replaceWith(tmp.firstChild); }
       else { cartao.querySelectorAll('button').forEach(function (b) { b.disabled = false; }); }

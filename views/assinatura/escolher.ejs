@@ -1,0 +1,49 @@
+<%# Teste gratis: a pessoa escolhe o plano que quer testar (uma vez por conta). Espera: planos, sugerido, fmt, recursosDoPlano, veioDoTesteAntigo. %>
+<% const _dias = negocio.TRIAL_DIAS; %>
+<section class="planos planos--teste">
+    <div class="planos__topo">
+        <span class="teste-selo"><i class="ph-fill ph-gift" aria-hidden="true"></i> <%= t('assinatura.gratis') %></span>
+        <h1><%= t('teste.titulo', { dias: _dias }) %></h1>
+        <p class="muted"><%= t(veioDoTesteAntigo ? 'teste.sub_antigo' : 'teste.sub_novo', { dias: _dias }) %></p>
+    </div>
+    <div class="planos__abas" role="group">
+        <% planos.forEach(p => { %>
+            <button type="button" data-aba="<%= p.codigo %>" class="<%= p.codigo === sugerido ? 'is-ativo' : '' %>"><%= t('plano.' + p.codigo + '.curto') %></button>
+        <% }) %>
+    </div>
+
+    <div class="planos-grid">
+        <% planos.forEach(p => { %>
+            <article class="card plano-card <%= p.codigo === 'premium' ? 'plano-card--destaque' : '' %> <%= p.codigo === 'pro' ? 'plano-card--pro' : '' %> <%= p.codigo === sugerido ? 'is-sel' : '' %>" data-plano="<%= p.codigo %>">
+                <% if (p.codigo === 'premium') { %><span class="plano-card__faixa plano-card__faixa--vendido"><i class="ph-bold ph-star" aria-hidden="true"></i> <%= t('assinatura.mais_vendido') %></span><% } else if (p.codigo === 'pro') { %><span class="plano-card__faixa plano-card__faixa--ouro"><i class="ph-bold ph-crown-simple" aria-hidden="true"></i> <%= t('assinatura.mais_completo') %></span><% } %>
+                <h3><%= t('plano.' + p.codigo + '.nome') %></h3>
+                <div class="muted plano-card__sub"><%= t('plano.' + p.codigo + '.sub') %></div>
+                <div class="muted plano-card__sub plano-card__cobranca"><%= t('teste.depois', { valor: fmt(p.preco_mensal) }) %> · <%= t('assinatura.sem_iva') %></div>
+
+                <form method="post" action="/teste/iniciar" class="plano-card__acoes">
+                    <%- csrfCampo %>
+                    <input type="hidden" name="plano" value="<%= p.codigo %>">
+                    <button type="submit" class="btn <%= p.codigo === 'pro' ? 'btn-pro' : (p.codigo === 'premium' ? 'btn-primary' : 'btn-outline') %>"><%= t('teste.botao', { dias: _dias }) %></button>
+                </form>
+
+                <%- include('_recursos', { p: p }) %>
+            </article>
+        <% }) %>
+    </div>
+</section>
+
+<p class="muted teste-nota"><i class="ph ph-info" aria-hidden="true"></i> <%= t('teste.uma_vez') %> <a href="/assinatura"><%= t('teste.contratar_direto') %></a></p>
+
+<script>
+(function () {
+    var secao = document.querySelector('.planos');
+    if (!secao) return;
+    secao.querySelectorAll('[data-aba]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var cod = btn.getAttribute('data-aba');
+            secao.querySelectorAll('[data-aba]').forEach(function (b) { b.classList.toggle('is-ativo', b === btn); });
+            secao.querySelectorAll('.plano-card').forEach(function (c) { c.classList.toggle('is-sel', c.getAttribute('data-plano') === cod); });
+        });
+    });
+})();
+</script>

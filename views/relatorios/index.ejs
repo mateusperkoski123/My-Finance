@@ -1,4 +1,5 @@
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<%# Versao fixa: um salto de versao da biblioteca nao pode quebrar os graficos sem ninguem ter mexido no sistema. %>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 
 <div class="page-header page-header--acoes">
     <div>
@@ -14,11 +15,13 @@
     <div class="tabs tabs--grade">
         <a href="/relatorios?aba=graficos&<%= _qs() %>" class="tabs__item <%= aba === 'graficos' ? 'is-active' : '' %>"><i class="ph ph-chart-pie-slice"></i> <%= t('relatorios.aba_graficos') %></a>
         <a href="/relatorios?aba=pendentes&<%= _qs() %>" class="tabs__item <%= aba === 'pendentes' ? 'is-active' : '' %>"><i class="ph ph-clock-countdown"></i> <%= t('relatorios.aba_pendentes') %></a>
-        <a href="/relatorios?aba=demonstrativo&<%= _qs() %>" class="tabs__item <%= aba === 'demonstrativo' ? 'is-active' : '' %>"><i class="ph ph-table"></i> <%= t('relatorios.aba_demonstrativo') %></a>
+        <a href="/relatorios?aba=demonstrativo&<%= _qs() %>" class="tabs__item <%= aba === 'demonstrativo' ? 'is-active' : '' %>"><i class="ph ph-table"></i> <%= t('relatorios.aba_demonstrativo') %><% if (!pode('rec_estado')) { %> <%- include('../partials/selo_plano', { plano: 'premium' }) %><% } %></a>
         <a href="/relatorios?aba=demonstrativo_anual&<%= _qs() %>" class="tabs__item <%= aba === 'demonstrativo_anual' ? 'is-active' : '' %>"><i class="ph ph-calendar-blank"></i> <%= t('relatorios.aba_demonstrativo_anual') %></a>
     </div>
 </div>
 
+<%# A barra de periodo nao aparece no Demonstrativo Anual (que tem o proprio seletor de ano) nem na apresentacao de um recurso de outro plano. %>
+<% if (aba !== 'demonstrativo_anual' && !estadoBloqueado) { %>
 <!-- Barra de periodo (mes anterior/proximo, atalhos e periodo personalizado) -->
 <form method="get" action="/relatorios" class="card" style="margin-bottom: 20px; padding: 14px 18px;">
     <input type="hidden" name="aba" value="<%= aba %>">
@@ -47,8 +50,13 @@
             <button type="submit" name="aplicar" value="1" class="btn btn-outline btn-sm" style="border-radius: 8px;"><%= t('filtro.aplicar_datas') %></button>
         </div>
     </details>
+    <% if (pode('rec_exportar')) { %>
     <a class="exportar-link" href="/relatorios/exportar?data_inicio=<%= periodo.inicio %>&data_fim=<%= periodo.fim %>"><i class="ph ph-download-simple"></i> <%= t('relatorios.exportar_csv') %></a>
+    <% } else { %>
+    <a class="exportar-link" href="/assinatura"><i class="ph ph-download-simple"></i> <%= t('relatorios.exportar_csv') %> <%- include('../partials/selo_plano', { plano: 'pro' }) %></a>
+    <% } %>
 </form>
+<% } %>
 
 <% if (aba === 'graficos') { %>
     <% if (resumo) { %>
@@ -149,12 +157,12 @@
         <p class="muted grafico-vazio" id="vazioFreq" hidden><%= t('relatorios.sem_movimentacoes_periodo') %></p>
     </div>
 
-    <script src="/assets/js/charts.js?v=<%= Date.now() %>"></script>
+    <script src="/assets/js/charts.js?v=<%= assetVersion %>"></script>
     <script>
     window.GF_GRAF = {
-        dados: <%- JSON.stringify(graficosDados || []) %>,
-        per: <%- JSON.stringify(new URLSearchParams(periodoParams).toString()) %>,
-        lang: <%- JSON.stringify(lang) %>,
+        dados: <%- jsonScript(graficosDados || []) %>,
+        per: <%- jsonScript(new URLSearchParams(periodoParams).toString()) %>,
+        lang: <%- jsonScript(lang) %>,
         t: {
             semCategoria: <%- JSON.stringify(t('comum.sem_categoria')) %>,
             total: <%- JSON.stringify(t('graf.total')) %>,
@@ -162,11 +170,11 @@
         }
     };
     </script>
-    <script src="/assets/js/graficos.js?v=<%= Date.now() %>"></script>
+    <script src="/assets/js/graficos.js?v=<%= assetVersion %>"></script>
     <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const freqData = <%- JSON.stringify(frequencia || []) %>;
-        const evoData = <%- JSON.stringify(evolucao || []) %>;
+        const freqData = <%- jsonScript(frequencia || []) %>;
+        const evoData = <%- jsonScript(evolucao || []) %>;
         if (evoData.length > 1) {
             GFCharts.evolucao('chartEvolucao', evoData);
         } else {
@@ -187,9 +195,9 @@
 
     <% if (contas && contas.length > 0) { %>
     <!-- Adicionar ingreso / gasto sem sair desta tela (mesmos formularios da Visao geral) -->
-    <div class="myfinance-action-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-        <button type="button" class="btn btn-primary" data-modal-open="modal-novo-receita" style="background: var(--green); border: none; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 14px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="ph ph-plus-circle" style="font-size: 20px;"></i> <%= t('painel.nova_receita') %></button>
-        <button type="button" class="btn btn-primary" data-modal-open="modal-novo-despesa" style="background: var(--red); border: none; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 14px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="ph ph-minus-circle" style="font-size: 20px;"></i> <%= t('painel.nova_despesa') %></button>
+    <div class="myfinance-action-buttons">
+        <button type="button" class="btn btn-acao btn-acao--receita" data-modal-open="modal-novo-receita"><i class="ph ph-plus-circle"></i> <%= t('painel.nova_receita') %></button>
+        <button type="button" class="btn btn-acao btn-acao--despesa" data-modal-open="modal-novo-despesa"><i class="ph ph-minus-circle"></i> <%= t('painel.nova_despesa') %></button>
     </div>
     <% const dataHoje = formatDate(hojeLocal()); %>
     <%- include('../partials/modais_lancamento', { dataHoje, voltar: currentUrl }) %>
@@ -199,7 +207,9 @@
     <%- include('../partials/lista_lancamentos') %>
     <%- include('../partials/modais_excluir_serie', { lancamentos }) %>
 <% } else if (aba === 'demonstrativo') { %>
-    <% if (categoriaFiltro) { %>
+    <% if (estadoBloqueado) { %>
+        <%- include('../partials/recurso_bloqueado', { recurso: 'estado', plano: 'premium', icone: 'ph-table', itens: 4 }) %>
+    <% } else if (categoriaFiltro) { %>
         <%# Transacoes da categoria escolhida (clique no grafico ou na tabela), no mesmo formato da Visao geral. %>
         <div class="card" style="border-radius: 16px; padding: 16px 20px; margin: 20px 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
             <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
@@ -254,8 +264,15 @@
                 <div class="estado-barra__chips">
                     <span class="muted rot"><%= t('est.comparar') %></span>
                     <%- _chip(comparar === 'anterior', _lnk({}, { semCmp: true }), t('est.cmp_anterior')) %>
+                    <% if (avancado) { %>
                     <%- _chip(comparar === 'ano', _lnk({ comparar: 'ano' }, { semCmp: true }), t('est.cmp_ano')) %>
+                    <% } else { %>
+                    <%# Comparar com o ano passado ou com datas escolhidas faz parte do Pro. %>
+                    <a href="/assinatura" class="btn btn-sm btn-outline chip-bloqueado" style="border-radius: 20px;"><%= t('est.cmp_ano') %> <%- include('../partials/selo_plano', { plano: 'pro' }) %></a>
+                    <a href="/assinatura" class="btn btn-sm btn-outline chip-bloqueado" style="border-radius: 20px;"><i class="ph ph-calendar-blank"></i> <%= t('est.cmp_custom') %> <%- include('../partials/selo_plano', { plano: 'pro' }) %></a>
+                    <% } %>
                 </div>
+                <% if (avancado) { %>
                 <details class="periodo-custom" <%= comparar === 'custom' ? 'open' : '' %>>
                     <summary><i class="ph ph-calendar-blank"></i> <%= t('est.cmp_custom') %><%= comparar === 'custom' ? ': ' + _ant : '' %></summary>
                     <form method="get" action="/relatorios" class="estado-barra__form">
@@ -269,11 +286,16 @@
                         <button type="submit" class="btn btn-outline btn-sm"><%= t('filtro.aplicar_datas') %></button>
                     </form>
                 </details>
+                <% } %>
             </div>
             <div class="estado-barra__exp">
+                <% if (pode('rec_exportar')) { %>
                 <a class="btn btn-outline btn-sm" href="<%= _exp('/relatorios/estado/imprimir', {}) %>" target="_blank" rel="noopener"><i class="ph ph-file-pdf"></i> <%= t('est.pdf') %></a>
                 <a class="btn btn-outline btn-sm" href="<%= _exp('/relatorios/estado/imprimir', { anexo: '1' }) %>" target="_blank" rel="noopener" title="<%= t('est.pdf_anexo_dica') %>"><i class="ph ph-list-bullets"></i> <%= t('est.pdf_anexo') %></a>
                 <a class="btn btn-outline btn-sm" href="<%= _exp('/relatorios/estado/csv', {}) %>"><i class="ph ph-file-csv"></i> <%= t('est.csv') %></a>
+                <% } else { %>
+                <a class="btn btn-outline btn-sm chip-bloqueado" href="/assinatura"><i class="ph ph-file-pdf"></i> <%= t('est.pdf') %> · <%= t('est.csv') %> <%- include('../partials/selo_plano', { plano: 'pro' }) %></a>
+                <% } %>
             </div>
         </div>
 
@@ -320,9 +342,14 @@
 
         <nav class="estado-vistas" aria-label="<%= t('est.vistas') %>">
             <% [['', 'est.vista_categorias', 'ph-list-dashes'], ['comparativo', 'est.vista_comparativo', 'ph-arrows-left-right'], ['fluxo', 'est.vista_fluxo', 'ph-chart-bar'], ['contas', 'est.vista_contas', 'ph-bank']].forEach(v => { %>
-                <a href="<%= _lnk({}, { vista: v[0] }) %>" class="estado-vistas__item <%= vista === v[0] ? 'is-ativo' : '' %>"><i class="ph <%= v[2] %>"></i> <%= t(v[1]) %></a>
+                <a href="<%= _lnk({}, { vista: v[0] }) %>" class="estado-vistas__item <%= vista === v[0] ? 'is-ativo' : '' %>"><i class="ph <%= v[2] %>"></i> <%= t(v[1]) %><% if (!avancado && (v[0] === 'fluxo' || v[0] === 'contas')) { %> <%- include('../partials/selo_plano', { plano: 'pro' }) %><% } %></a>
             <% }) %>
         </nav>
+
+        <% if (vistaBloqueada) { %>
+            <%# Fluxo de caixa e visao por conta fazem parte do Pro: apresenta o recurso no lugar do conteudo. %>
+            <%- include('../partials/recurso_bloqueado', { recurso: vista, plano: 'pro', icone: vista === 'fluxo' ? 'ph-chart-bar' : 'ph-bank' }) %>
+        <% } %>
 
         <% if (!vista) { %>
         <div class="card" style="border-radius: 16px; padding: 14px 18px; margin-top: 16px; display: flex; gap: 14px 24px; flex-wrap: wrap; align-items: center;">
@@ -377,7 +404,7 @@
                 <strong style="color: <%= _cor %>;"><%= moeda(S.total) %></strong>
             </div>
             <p class="muted" style="font-size: 12px; margin: 0 0 12px;"><%= t('graf.clique_categoria') %><% if (tp === 'despesa' && !orcamentoMult) { %> · <%= t('est.orcado_so_mes') %><% } %></p>
-            <div class="tabela-container">
+            <div class="tabela-container tabela-container--rola">
                 <table class="tabela estado-t">
                     <thead>
                         <tr>
@@ -394,7 +421,7 @@
                         <% _linhas.forEach(L => {
                             const x = L.no;
                             const href = _lnk(Object.assign({ tipo: tp, categoria_id: L.cat.id }, (L.sub && x.id) ? { subcategoria_id: x.id } : {}));
-                            const nome = x.direto ? t('est.sem_subcategoria') : x.nome;
+                            const nome = x.direto ? t('est.sem_subcategoria') : (x.nome || t('comum.sem_categoria'));
                         %>
                             <tr class="<%= L.filho ? 'estado-sub' : (L.sub ? 'estado-sub estado-sub--solo' : 'estado-cat') %>">
                                 <td>
@@ -459,7 +486,7 @@
                     <h3 style="color: <%= _cor %>;"><%= tp === 'receita' ? t('comum.receitas') : t('comum.despesas') %></h3>
                     <span class="muted" style="font-size: 12px;"><%= t('est.atual') %> × <%= _ant %></span>
                 </div>
-                <div class="tabela-container">
+                <div class="tabela-container tabela-container--rola">
                     <table class="tabela estado-t">
                         <thead>
                             <tr>
@@ -474,7 +501,7 @@
                         <tbody>
                             <% _linhas.forEach(c => { const dif = c.total - c.anterior; %>
                             <tr>
-                                <td><a href="<%= _lnk({ tipo: tp, categoria_id: c.id }, { semVista: true }) %>" class="estado-nome"><span class="estado-dot" style="background: <%= c.cor || '#3b82f6' %>;"></span><span><%= c.nome %></span></a></td>
+                                <td><a href="<%= _lnk({ tipo: tp, categoria_id: c.id }, { semVista: true }) %>" class="estado-nome"><span class="estado-dot" style="background: <%= c.cor || '#3b82f6' %>;"></span><span><%= c.nome || t('comum.sem_categoria') %></span></a></td>
                                 <td class="num"><strong><%= moeda(c.total) %></strong></td>
                                 <td class="num"><%= moeda(c.anterior) %></td>
                                 <td class="num"><%- _difTxt(dif) %></td>
@@ -502,7 +529,8 @@
             const _dif = D.cats.map(c => ({ c, d: c.total - c.anterior }));
             const _altas = _dif.filter(x => x.d > 0.5).sort((a, b) => b.d - a.d).slice(0, 3);
             const _quedas = _dif.filter(x => x.d < -0.5).sort((a, b) => a.d - b.d).slice(0, 3);
-            const _item = (x) => '<div class="it"><a href="' + _lnk({ tipo: 'despesa', categoria_id: x.c.id }, { semVista: true }) + '" class="estado-nome">' + x.c.nome.replace(/</g, '&lt;') + '</a><span>' + _difTxt(x.d) + ' ' + _delta(x.c.variacao, false) + '</span></div>';
+            // Lancamentos sem categoria entram como um grupo sem nome: mostra "Sem categoria" (antes derrubava a tela).
+            const _item = (x) => '<div class="it"><a href="' + _lnk({ tipo: 'despesa', categoria_id: x.c.id }, { semVista: true }) + '" class="estado-nome">' + String(x.c.nome || t('comum.sem_categoria')).replace(/&/g, '&amp;').replace(/</g, '&lt;') + '</a><span>' + _difTxt(x.d) + ' ' + _delta(x.c.variacao, false) + '</span></div>';
             %>
             <div class="cmp-duo">
                 <div class="cmp-lista"><h4>▲ <%= t('est.maiores_altas') %></h4><%- _altas.length ? _altas.map(_item).join('') : '<p class="muted">' + t('est.sem_altas') + '</p>' %></div>
@@ -571,7 +599,7 @@
                     <span>▨ <%= t('est.legenda_previsto') %></span>
                     <span><b style="color: #2a78d6;">●</b> <%= t('est.legenda_saldo') %></span>
                 </div>
-                <div class="tabela-container" style="margin-top: 8px;">
+                <div class="tabela-container tabela-container--rola" style="margin-top: 8px;">
                     <table class="tabela estado-t">
                         <thead>
                             <tr>
@@ -642,7 +670,7 @@
                     <h3><%= t('est.vista_contas') %></h3>
                     <span class="muted" style="font-size: 12px;"><%= t('est.contas_dica') %></span>
                 </div>
-                <div class="tabela-container">
+                <div class="tabela-container tabela-container--rola">
                     <table class="tabela estado-t estado-contas">
                         <thead>
                             <tr>

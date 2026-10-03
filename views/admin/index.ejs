@@ -1,7 +1,7 @@
 <%
 const m = metricas;
 const nomePlano = (c) => t('plano.' + c + '.nome');
-const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge-sucesso', vencida: 'badge-pendente', cancelada: 'badge-pendente', sem: 'badge-neutro' };
+const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge-sucesso', vencida: 'badge-pendente', cancelada: 'badge-pendente', teste_encerrado: 'badge-pendente', escolher: 'badge-neutro', sem: 'badge-neutro' };
 %>
 <%- include('_abas', { abaAdmin: 'usuarios' }) %>
 <div class="page-header">
@@ -14,23 +14,28 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
     <div class="card kpi-card"><span class="kpi-card__label"><%= t('admin.kpi_usuarios') %></span><strong class="kpi-card__valor"><%= m.usuarios.total %></strong>
         <span class="kpi-card__sub"><%= t('admin.kpi_novos', { d7: m.usuarios.novos_7d || 0, d30: m.usuarios.novos_30d || 0 }) %></span></div>
     <div class="card kpi-card"><span class="kpi-card__label"><%= t('admin.kpi_teste') %></span><strong class="kpi-card__valor"><%= (Number(m.assinaturas.beta) || 0) + (Number(m.assinaturas.trial) || 0) %></strong>
-        <span class="kpi-card__sub"><%= t('admin.kpi_teste_det', { beta: m.assinaturas.beta || 0, trial: m.assinaturas.trial || 0 }) %></span></div>
+        <span class="kpi-card__sub"><%= t('admin.kpi_teste_det', { beta: m.assinaturas.beta || 0, trial: m.assinaturas.trial || 0, escolher: m.assinaturas.escolher || 0 }) %></span></div>
     <div class="card kpi-card"><span class="kpi-card__label"><%= t('admin.kpi_pagantes') %></span><strong class="kpi-card__valor"><%= m.assinaturas.ativas || 0 %></strong>
-        <span class="kpi-card__sub"><%= t('admin.kpi_pagantes_det', { vencidas: m.assinaturas.vencidas || 0, canceladas: m.assinaturas.canceladas || 0 }) %></span></div>
+        <span class="kpi-card__sub"><%= t('admin.kpi_pagantes_det', { vencidas: m.assinaturas.vencidas || 0, canceladas: m.assinaturas.canceladas || 0, encerrados: m.assinaturas.teste_encerrado || 0 }) %></span></div>
     <div class="card kpi-card"><span class="kpi-card__label"><%= t('admin.kpi_mrr') %></span><strong class="kpi-card__valor">Gs. <%= fmt(m.mrr) %></strong>
         <span class="kpi-card__sub"><%= t('admin.kpi_receita_mes', { valor: fmt(m.receitaMes) }) %></span></div>
 </div>
 
 <% if (Number(m.assinaturas.solicitacoes) > 0) { %>
-    <div class="alert alert-aviso"><i class="ph ph-hourglass"></i> <%= t('admin.pedidos_pendentes', { n: m.assinaturas.solicitacoes }) %></div>
+    <div class="alert alert-aviso"><i class="ph ph-hourglass"></i> <%= t('admin.pedidos_pendentes', { n: m.assinaturas.solicitacoes }) %> <a href="/admin/pedidos"><b><%= t('adm.pedidos_ver') %></b></a></div>
 <% } %>
 
 <section class="card" style="margin-top: 16px;">
-    <form method="get" action="/admin/usuarios" class="busca-linha" role="search" style="margin-bottom: 12px;">
+    <form method="get" action="/admin/usuarios" class="busca-linha admin-filtros" role="search" style="margin-bottom: 12px;">
         <input class="input" type="search" name="q" value="<%= busca %>" placeholder="<%= t('admin.buscar') %>">
         <select class="input" name="vence" aria-label="<%= t('admin.vence.rotulo') %>" title="<%= t('admin.vence.rotulo') %>" onchange="this.form.submit()" style="max-width: 250px;">
             <option value=""><%= t('admin.vence.todos') %></option>
             <% ['1', '3', '7', '15', 'vencido', 'sem'].forEach(v => { %><option value="<%= v %>" <%= vence === v ? 'selected' : '' %>><%= t('admin.vence.' + v) %></option><% }) %>
+        </select>
+        <select class="input" name="ordenar" aria-label="<%= t('admin.ordenar.rotulo') %>" title="<%= t('admin.ordenar.rotulo') %>" onchange="this.form.submit()" style="max-width: 250px;">
+            <option value=""><%= t('admin.ordenar.padrao') %></option>
+            <option value="lanc_30d" <%= ordenar === 'lanc_30d' ? 'selected' : '' %>><%= t('admin.ordenar.lanc_30d', { dias: diasAtividade }) %></option>
+            <option value="lanc_total" <%= ordenar === 'lanc_total' ? 'selected' : '' %>><%= t('admin.ordenar.lanc_total') %></option>
         </select>
         <button type="submit" class="btn btn-outline" aria-label="<%= t('categorias.buscar') %>"><i class="ph ph-magnifying-glass"></i></button>
     </form>
@@ -44,6 +49,7 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                 <th class="massa-col"><input type="checkbox" id="massa-todos" aria-label="<%= t('admin.massa.selecionar_todos') %>" title="<%= t('admin.massa.selecionar_todos') %>"></th>
                 <th><%= t('admin.col_usuario') %></th><th><%= t('admin.col_plano') %></th><th><%= t('admin.col_vence') %></th>
                 <th><%= t('admin.col_pedido') %></th><th><%= t('admin.col_acesso') %></th>
+                <th class="num" title="<%= t('admin.lanc_dica') %>"><%= t('admin.col_lancamentos') %></th>
                 <th><%= t('tabela.acoes') %></th>
             </tr></thead>
             <tbody>
@@ -55,9 +61,11 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                     <td>
                         <strong><%= u.nome %></strong>
                         <% if (u.role === 'admin') { %><span class="badge badge-neutro">admin</span><% } %>
-                        <% if (u.ia_habilitada) { %><span class="badge badge-sucesso"><i class="ph ph-sparkle"></i> IA<%= u.ia_nivel === 2 ? ' 2' : '' %></span><% } %>
+                        <%# O Chat IA vem do plano; o selo so aparece para quem o admin desligou ou deixou no nivel basico. %>
+                        <% if (!u.ia_habilitada) { %><span class="badge badge-pendente"><i class="ph ph-sparkle"></i> <%= t('admin.ia_desligada') %></span><% } else if (u.ia_nivel !== 2) { %><span class="badge badge-neutro"><i class="ph ph-sparkle"></i> <%= t('admin.ia_nivel1') %></span><% } %>
                         <% if (u.user_status !== 'ativo') { %><span class="badge badge-pendente"><%= t('admin.suspenso') %></span><% } %>
                         <div class="muted" style="font-size: 12px;"><%= u.email %> <% if (!u.email_verificado_em) { %>· <%= t('admin.sem_verificar') %><% } %></div>
+                        <% if (u.telefone_numero) { %><div class="muted" style="font-size: 12px;"><i class="ph ph-phone"></i> <%= u.telefone_codigo %> <%= u.telefone_numero %></div><% } %>
                     </td>
                     <td>
                         <%= u.plano_codigo ? nomePlano(u.plano_codigo) : '-' %>
@@ -72,8 +80,12 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                         <% } else if (u.status_efetivo === 'beta') { %><span class="muted" style="font-size: 12px;"><%= t('admin.sem_vencimento') %></span>
                         <% } else { %>-<% } %>
                     </td>
-                    <td><%= u.solicitado_codigo ? nomePlano(u.solicitado_codigo) + ' (' + t('assinatura.ciclo_' + (u.ciclo_solicitado || 'mensal')) + ')' : '-' %></td>
+                    <td><%- u.solicitado_codigo ? '<a href="/admin/pedidos">' + nomePlano(u.solicitado_codigo).replace(/&/g, '&amp;').replace(/</g, '&lt;') + ' (' + t('assinatura.ciclo_' + (u.ciclo_solicitado || 'mensal')) + ')</a>' : '-' %></td>
                     <td class="muted" style="font-size: 12px; white-space: nowrap;"><%= u.ultimo_acesso ? formatDateTime(u.ultimo_acesso) : '-' %></td>
+                    <td class="num">
+                        <strong><%= u.lanc_total.toLocaleString(lang) %></strong>
+                        <div class="muted" style="font-size: 12px;"><%= t('admin.lanc_recentes', { n: u.lanc_30d.toLocaleString(lang), dias: diasAtividade }) %></div>
+                    </td>
                     <td>
                         <details class="menu-acoes">
                             <summary aria-label="<%= t('acao.mais') %>"><i class="ph ph-dots-three-vertical"></i></summary>
@@ -97,7 +109,7 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                                 <form method="post" action="/admin/usuarios/<%= u.id %>/trial" class="admin-form">
                                     <%- csrfCampo %>
                                     <strong><%= t('admin.estender_teste') %></strong>
-                                    <input class="input" type="number" name="dias" value="7" min="1" max="365">
+                                    <input class="input" type="number" name="dias" value="<%= negocio.TRIAL_DIAS %>" min="1" max="365">
                                     <button type="submit" class="btn btn-outline btn-sm"><%= t('admin.estender') %></button>
                                 </form>
                                 <form method="post" action="/admin/usuarios/<%= u.id %>/cancelar" data-confirm="<%= t('admin.confirmar_cancelar') %>" class="admin-form">

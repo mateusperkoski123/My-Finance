@@ -9,17 +9,24 @@ const GRUPOS = [
     ['financas', [
         { k: 'painel', on: () => true },
         { k: 'contas', on: () => true, val: (p) => (p.max_contas === null || p.max_contas === undefined ? { key: 'pr.val.ilimitadas' } : { key: 'pr.val.ate_contas', n: p.max_contas }) },
-        { k: 'lancamentos', on: () => true },
+        { k: 'lancamentos', on: () => true }
+    ]],
+    // As visualizacoes sobem de nivel: cada plano mostra tudo do anterior e acrescenta as suas.
+    ['visoes', [
         { k: 'relatorios', on: () => true },
         { k: 'anual', on: (p) => !!p.rec_relatorio_anual },
+        { k: 'estado', on: (p) => !!p.rec_estado },
+        { k: 'orcamento', on: (p) => !!p.rec_estado },
+        { k: 'fluxo', on: (p) => !!p.rec_estado_avancado },
+        { k: 'por_conta', on: (p) => !!p.rec_estado_avancado },
+        { k: 'comparar', on: (p) => !!p.rec_estado_avancado },
         { k: 'exportar', on: (p) => !!p.rec_exportar && !!p.rec_backup }
     ]],
     ['ia', [
         { k: 'chat', on: (p) => !!p.rec_ia },
         { k: 'texto', on: (p) => !!p.rec_ia },
-        { k: 'foto', on: (p) => !!p.rec_ia && !!p.rec_ia_midia },
-        { k: 'audio', on: (p) => !!p.rec_ia && !!p.rec_ia_midia },
         { k: 'limite_ia', on: (p) => !!p.rec_ia, val: (p) => ({ key: 'pr.val.msgs_mes', n: p.ia_limite_mes || IA_LIMITE_PADRAO }) },
+        { k: 'midia', on: (p) => !!p.rec_ia && !!p.rec_ia_midia, val: (p) => (p.ia_midia_limite_mes ? { key: 'pr.val.registros_mes', n: p.ia_midia_limite_mes } : null) },
         { k: 'nivel2', on: (p) => !!p.rec_ia && !!p.rec_ia_nivel2 }
     ]],
     ['app', [
@@ -47,4 +54,16 @@ function recursosDoPlano(plano) {
     });
 }
 
-module.exports = { recursosDoPlano };
+// Primeiro plano que inclui cada recurso travado: e o plano indicado no selo e na tela de recurso bloqueado.
+const PLANO_MINIMO = {
+    rec_estado: 'premium',
+    rec_estado_avancado: 'pro',
+    rec_exportar: 'pro',
+    rec_backup: 'pro',
+    rec_ia: 'premium',
+    rec_ia_midia: 'premium',
+    rec_ia_nivel2: 'pro',
+    rec_offline: 'premium'
+};
+
+module.exports = { recursosDoPlano, PLANO_MINIMO };

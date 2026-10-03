@@ -1,7 +1,8 @@
 // Regras de conta aplicadas a toda requisicao de usuario logado:
 //  1) conta suspensa -> encerra a sessao;
 //  2) termos de uso pendentes -> obriga aceitar;
-//  3) assinatura vencida/cancelada -> modo somente leitura (consulta e exportacao continuam).
+//  3) teste ainda sem plano escolhido, ou teste ja usado sem contratar -> so as telas de escolher/contratar um plano;
+//  4) assinatura paga vencida/cancelada -> modo somente leitura (consulta e exportacao continuam).
 const Assinatura = require('../models/Assinatura');
 const negocio = require('../core/negocio');
 const db = require('../config/db');
@@ -12,11 +13,17 @@ function comecaCom(caminho, bases) {
     return bases.some((b) => caminho === b || caminho.startsWith(b + '/'));
 }
 
+// Chamadas feitas pelo JavaScript do app (sincronizacao, IA, fotos) recebem a resposta em JSON, nunca um redirecionamento.
+const querJson = (req) => Boolean(req.xhr || (req.headers.accept && req.headers.accept.includes('application/json'))
+    || req.path.startsWith('/api/') || req.path.startsWith('/app/'));
+
 async function contaMiddleware(req, res, next) {
     res.locals.assinatura = null;
     res.locals.ehAdmin = false;
     res.locals.emailNaoVerificado = false;
+    res.locals.acessoBloqueado = false;
     res.locals.negocio = negocio;
+    res.locals.pode = () => false;
     const user = req.user;
     if (!user) return next();
 
@@ -35,10 +42,26 @@ async function contaMiddleware(req, res, next) {
         return res.redirect('/aceitar-termos');
     }
 
-    const ass = await Assinatura.garantir(user.id, 'beta');
+    const ass = await Assinatura.garantir(user.id, ehAdmin ? 'beta' : 'pendente');
     req.assinatura = ass;
     res.locals.assinatura = ass;
     res.locals.emailNaoVerificado = !user.email_verificado_em;
+    // O plano atual inclui o recurso? (ex.: pode('rec_estado')). Admin sempre pode.
+    req.pode = (recurso) => Boolean(ehAdmin || (ass.plano && ass.plano[recurso]));
+    res.locals.pode = req.pode;
+
+    // Sem teste em andamento e sem plano contratado: a conta so abre as telas de escolher/contratar um plano.
+    const bloqueado = ass.bloqueada && !ehAdmin;
+    res.locals.acessoBloqueado = bloqueado;
+    if (bloqueado && !comecaCom(req.path, negocio.ROTAS_LIVRES_BLOQUEIO)) {
+        const escolher = ass.status_efetivo === 'escolher';
+        const destino = escolher ? '/teste' : '/assinatura';
+        const chave = escolher ? 'flash.escolha_plano' : 'flash.teste_encerrado';
+        if (querJson(req)) return res.status(403).json({ sucesso: false, erro: req.t(chave), codigo: escolher ? 'escolher_plano' : 'teste_encerrado' });
+        // Entrar no sistema (GET) cai direto na tela certa, que ja explica a situacao; o aviso so vai junto de uma acao barrada.
+        if (req.method !== 'GET' && req.method !== 'HEAD') req.session.flash = { tipo: 'erro', mensagem: req.t(chave) };
+        return res.redirect(destino);
+    }
 
     if (ass.somente_leitura && !ehAdmin && req.method !== 'GET' && req.method !== 'HEAD') {
         const livre = comecaCom(req.path, negocio.ROTAS_LIVRES_SOMENTE_LEITURA)
@@ -61,7 +84,7 @@ function exigirRecurso(recurso, chaveMensagem = 'flash.recurso_premium') {
     };
 }
 
-// Limite de contas bancarias ativas do plano (ex.: Basico = 3). Vale para criar e restaurar.
+// Limite de contas bancarias ativas do plano (ex.: Basico = 2). Vale para criar e restaurar.
 async function limiteContas(req, res, next) {
     const max = req.assinatura && req.assinatura.plano ? req.assinatura.plano.max_contas : null;
     if (req.ehAdmin || max === null || max === undefined) return next();

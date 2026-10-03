@@ -1,5 +1,9 @@
 const Categoria = require('../models/Categoria');
-const { parseMoeda } = require('../core/helpers');
+const { parseMoeda, corValida } = require('../core/helpers');
+
+const nomeDe = (b) => (typeof b.nome === 'string' ? b.nome.trim().slice(0, 120) : '');
+// Limite de gasto mensal: vazio, zero ou negativo = sem limite.
+const limiteDe = (b) => { const v = b.limite_gasto ? parseMoeda(b.limite_gasto) : 0; return v > 0 ? v : null; };
 
 const categoriasController = {
     index: async (req, res) => {
@@ -28,16 +32,18 @@ const categoriasController = {
     criar: async (req, res) => {
         const userId = req.user.id;
         const b = req.body;
-        if (!b.nome || !b.nome.trim()) {
+        const nome = nomeDe(b);
+        if (!nome) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.categoria_nome_obrigatorio') };
             return res.redirect('/categorias');
         }
 
         await Categoria.criar(userId, {
-            nome: b.nome.trim(),
-            cor: b.cor || '#3b82f6',
+            nome,
+            cor: corValida(b.cor) ? b.cor : '#3b82f6',
             categoria_pai_id: b.categoria_pai_id || null,
-            limite_gasto: b.limite_gasto ? parseMoeda(b.limite_gasto) : null
+            // Orcamento (limite por categoria) faz parte do Demonstrativo Financeiro (Premium e Pro).
+            limite_gasto: req.pode('rec_estado') ? limiteDe(b) : null
         });
 
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.categoria_criada') };
@@ -65,11 +71,18 @@ const categoriasController = {
         const userId = req.user.id;
         const id = req.params.id;
         const b = req.body;
+        const nome = nomeDe(b);
+        const atual = await Categoria.buscarPorId(id, userId);
+        if (!nome || !atual || atual.sistema) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t(nome ? 'flash.generico_erro' : 'flash.categoria_nome_obrigatorio') };
+            return res.redirect('/categorias');
+        }
 
+        // Cor e limite: o formulario da subcategoria so envia o nome; o que nao vem fica como estava.
         await Categoria.atualizar(id, userId, {
-            nome: b.nome.trim(),
-            cor: b.cor,
-            limite_gasto: b.limite_gasto ? parseMoeda(b.limite_gasto) : null
+            nome,
+            cor: corValida(b.cor) ? b.cor : atual.cor,
+            limite_gasto: b.limite_gasto !== undefined && req.pode('rec_estado') ? limiteDe(b) : atual.limite_gasto
         });
 
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.categoria_atualizada') };

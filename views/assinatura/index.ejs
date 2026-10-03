@@ -4,10 +4,22 @@ const st = ass ? ass.status_efetivo : null;
 const ciclos = { mensal: t('assinatura.ciclo_mensal'), anual: t('assinatura.ciclo_anual') };
 const nomePlano = (c) => t('plano.' + c + '.nome');
 %>
+<%# Sem teste em andamento e sem plano contratado (acessoBloqueado), esta e a unica tela do sistema: sem o menu de Configuracoes. %>
+<% if (!acessoBloqueado) { %>
 <div class="page-header">
     <h1><i class="ph ph-gear"></i> <%= t('config.titulo') %></h1>
 </div>
 <%- include('../configuracoes/_menu', { menuAtivo: 'assinatura' }) %>
+<% } %>
+<% if (st === 'teste_encerrado' && !ehAdmin) { %>
+<section class="card teste-fim" role="status">
+    <span class="teste-fim__icone"><i class="ph ph-hourglass-high" aria-hidden="true"></i></span>
+    <div>
+        <h1><%= t('assinatura.teste_fim_titulo') %></h1>
+        <p><%= t('assinatura.teste_fim_texto', { app: negocio.NOME_APP }) %></p>
+    </div>
+</section>
+<% } %>
 <div class="page-header" style="margin-top: 4px;">
     <h2 style="margin: 0;"><i class="ph ph-crown-simple"></i> <%= t('assinatura.titulo') %></h2>
     <p class="muted"><%= t('assinatura.subtitulo') %></p>
@@ -18,12 +30,16 @@ const nomePlano = (c) => t('plano.' + c + '.nome');
     <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start;">
         <div>
             <span class="muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;"><%= t('assinatura.seu_plano') %></span>
-            <h2 style="margin: 4px 0 6px;"><%= nomePlano(ass.plano_codigo) %></h2>
+            <h2 style="margin: 4px 0 6px;"><%= st === 'escolher' ? t('assinatura.sem_plano') : nomePlano(ass.plano_codigo) %></h2>
             <p class="muted" style="margin: 0;">
                 <% if (st === 'beta') { %>
                     <%= t('assinatura.estado_beta') %>
                 <% } else if (st === 'trial') { %>
-                    <%= t('assinatura.estado_trial', { dias: ass.dias_restantes }) %>
+                    <%= t(ass.teste_plano ? 'assinatura.estado_trial_plano' : 'assinatura.estado_trial', { dias: ass.dias_restantes }) %>
+                <% } else if (st === 'escolher') { %>
+                    <%= t('assinatura.estado_escolher') %>
+                <% } else if (st === 'teste_encerrado') { %>
+                    <%= t('assinatura.estado_teste_encerrado') %>
                 <% } else if (st === 'ativa') { %>
                     <%= t('assinatura.estado_ativa', { ciclo: ciclos[ass.ciclo] || '', data: formatDate(ass.periodo_fim, 'DD/MM/YYYY'), dias: ass.dias_restantes }) %>
                 <% } else if (st === 'cancelada') { %>
@@ -45,6 +61,12 @@ const nomePlano = (c) => t('plano.' + c + '.nome');
     <% if (st === 'vencida' || st === 'cancelada') { %>
         <div class="alert alert-erro" style="margin-top: 14px;"><i class="ph ph-lock-simple"></i> <%= t('assinatura.modo_leitura') %></div>
     <% } %>
+    <% if (st === 'escolher') { %>
+        <div style="margin-top: 14px;">
+            <a href="/teste" class="btn btn-primary"><i class="ph ph-gift"></i> <%= t('assinatura.escolher_botao') %></a>
+            <p class="muted" style="font-size: 12.5px; margin: 8px 0 0;"><%= t('assinatura.prueba_sub', { dias: negocio.TRIAL_DIAS }) %></p>
+        </div>
+    <% } %>
 </section>
 <% } %>
 
@@ -55,7 +77,6 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
 <section class="planos">
     <div class="planos__topo">
         <h2><%= t('assinatura.escolha') %></h2>
-        <p class="muted"><%= t('assinatura.prueba_sub', { dias: negocio.TRIAL_DIAS }) %></p>
         <div class="planos__ciclo" role="group" aria-label="<%= t('assinatura.ciclo') %>">
             <button type="button" class="is-ativo" data-ciclo="mensal"><%= t('assinatura.ciclo_mensal') %></button>
             <button type="button" data-ciclo="anual"><%= t('assinatura.ciclo_anual') %> <small><%= t('assinatura.dois_gratis') %></small></button>
@@ -78,33 +99,30 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
     %>
         <article class="card plano-card <%= atual ? 'plano-card--atual' : '' %> <%= p.codigo === 'premium' ? 'plano-card--destaque' : '' %> <%= p.codigo === 'pro' ? 'plano-card--pro' : '' %> <%= p.codigo === selecionado ? 'is-sel' : '' %>" data-plano="<%= p.codigo %>">
             <% if (p.codigo === 'premium') { %><span class="plano-card__faixa plano-card__faixa--vendido"><i class="ph-bold ph-star" aria-hidden="true"></i> <%= t('assinatura.mais_vendido') %></span><% } else if (p.codigo === 'pro') { %><span class="plano-card__faixa plano-card__faixa--ouro"><i class="ph-bold ph-crown-simple" aria-hidden="true"></i> <%= t('assinatura.mais_completo') %></span><% } %>
-            <% if (atual) { %><span class="plano-card__selo plano-card__selo--atual"><%= t('assinatura.plano_atual') %></span><% } %>
+            <% if (atual) { %><span class="plano-card__selo plano-card__selo--atual"><%= t(st === 'trial' ? 'assinatura.em_teste' : 'assinatura.plano_atual') %></span><% } %>
             <h3><%= nomePlano(p.codigo) %></h3>
             <div class="muted plano-card__sub"><%= t('plano.' + p.codigo + '.sub') %></div>
             <div class="plano-card__preco">Gs. <span data-preco data-mensal="<%= txtMensal %>" data-anual="<%= txtAnual %>"><%= txtMensal %></span><small>/<%= t('assinatura.mes') %></small></div>
             <div class="muted plano-card__sub plano-card__cobranca" data-cobranca data-mensal="<%= linhaMensal %>" data-anual="<%= linhaAnual %>"><%= linhaMensal %></div>
 
-            <form method="post" action="/assinatura/solicitar" class="plano-card__acoes">
-                <%- csrfCampo %>
-                <input type="hidden" name="plano" value="<%= p.codigo %>">
-                <input type="hidden" name="ciclo" value="mensal" data-ciclo-campo>
-                <button type="submit" class="btn <%= p.codigo === 'pro' ? 'btn-pro' : (p.codigo === 'premium' ? 'btn-primary' : 'btn-outline') %>"><%= t('assinatura.quero_plano') %></button>
-            </form>
+            <div class="muted plano-card__iva"><%= t('assinatura.sem_iva') %></div>
 
-            <% recursosDoPlano(p).forEach(g => { %>
-                <div class="plano-card__grupo">
-                    <span><%= t('pr.grupo.' + g.chave) %></span>
-                    <% if (g.nenhum) { %><span class="plano-card__na"><%= t('pr.nao_incluida') %></span><% } %>
-                </div>
-                <ul class="plano-card__lista">
-                    <% g.itens.forEach(i => { %>
-                        <li class="<%= i.on ? '' : 'is-off' %>">
-                            <i class="ph-bold <%= i.on ? 'ph-check' : 'ph-x' %>" aria-hidden="true"></i>
-                            <span><span class="sr-only"><%= t(i.on ? 'pr.incluso' : 'pr.nao_incluso') %>: </span><%= t('pr.item.' + i.k) %><% if (i.val) { %>: <b><%= t(i.val.key, { n: i.val.n }) %></b><% } %></span>
-                        </li>
-                    <% }) %>
-                </ul>
-            <% }) %>
+            <div class="plano-card__acoes">
+                <button type="button" data-solicitar data-plano="<%= p.codigo %>" data-nome="<%= nomePlano(p.codigo) %>"
+                        data-resumo-mensal="Gs. <%= txtMensal %> / <%= t('assinatura.mes') %>"
+                        data-resumo-anual="Gs. <%= fmt(p.preco_anual) %> / <%= t('assinatura.ano') %> (Gs. <%= txtAnual %> / <%= t('assinatura.mes') %>)"
+                        class="btn <%= p.codigo === 'pro' ? 'btn-pro' : (p.codigo === 'premium' ? 'btn-primary' : 'btn-outline') %>"><%= t('assinatura.quero_plano') %></button>
+                <%# Durante o teste do plano escolhido da para passar a testar outro plano; o prazo nao reinicia. %>
+                <% if (ass && ass.teste_plano && ass.plano_codigo !== p.codigo) { %>
+                    <form method="post" action="/teste/trocar" class="plano-card__testar">
+                        <%- csrfCampo %>
+                        <input type="hidden" name="plano" value="<%= p.codigo %>">
+                        <button type="submit" class="btn btn-outline btn-sm" title="<%= t('assinatura.testar_plano_dica', { dias: ass.dias_restantes }) %>"><i class="ph ph-flask" aria-hidden="true"></i> <%= t('assinatura.testar_plano') %></button>
+                    </form>
+                <% } %>
+            </div>
+
+            <%- include('_recursos', { p: p }) %>
         </article>
     <% }) %>
 </div>
@@ -119,7 +137,23 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
             var c = btn.getAttribute('data-ciclo');
             secao.querySelectorAll('[data-ciclo]').forEach(function (b) { b.classList.toggle('is-ativo', b === btn); });
             secao.querySelectorAll('[data-preco],[data-cobranca]').forEach(function (el) { el.textContent = el.getAttribute('data-' + c); });
-            secao.querySelectorAll('[data-ciclo-campo]').forEach(function (i) { i.value = c; });
+            ciclo = c;
+        });
+    });
+
+    // "Quero este plano": abre a janela de confirmacao (plano, ciclo, preco sem IVA e telefone de contato).
+    var ciclo = 'mensal';
+    secao.querySelectorAll('[data-solicitar]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var modal = document.getElementById('modal-pedido-plano');
+            modal.querySelector('[name="plano"]').value = btn.getAttribute('data-plano');
+            modal.querySelector('[name="ciclo"]').value = ciclo;
+            modal.querySelector('[data-pedido-nome]').textContent = btn.getAttribute('data-nome');
+            modal.querySelector('[data-pedido-ciclo]').textContent = secao.querySelector('[data-ciclo="' + ciclo + '"]').firstChild.textContent.trim();
+            modal.querySelector('[data-pedido-preco]').textContent = btn.getAttribute('data-resumo-' + ciclo);
+            modal.classList.add('is-open');
+            var campo = modal.querySelector('[name="telefone_numero"]');
+            if (campo) setTimeout(function () { campo.focus(); }, 50);
         });
     });
     secao.querySelectorAll('[data-aba]').forEach(function (btn) {
@@ -132,7 +166,48 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
 })();
 </script>
 
-<p class="muted" style="font-size: 13px; margin-top: 4px;"><i class="ph ph-info"></i> <%= t('assinatura.como_pagar') %><% if (negocio.EMAIL_SUPORTE) { %> <b><%= negocio.EMAIL_SUPORTE %></b><% } %></p>
+<div class="modal-backdrop modal-backdrop--lanc" id="modal-pedido-plano" data-modal>
+    <div class="modal card modal--lanc">
+        <div class="modal__header">
+            <div class="modal__titulo">
+                <span class="modal__icone"><i class="ph ph-crown-simple"></i></span>
+                <h2><%= t('assinatura.pedido_titulo') %></h2>
+            </div>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="/assinatura/solicitar" class="lanc-form">
+            <%- csrfCampo %>
+            <input type="hidden" name="plano" value="">
+            <input type="hidden" name="ciclo" value="mensal">
+            <div class="pedido-resumo">
+                <div><strong data-pedido-nome></strong> · <span data-pedido-ciclo></span></div>
+                <div class="pedido-resumo__preco" data-pedido-preco></div>
+                <div class="muted" style="font-size: 12.5px;"><i class="ph ph-info"></i> <%= t('assinatura.sem_iva_aviso') %></div>
+            </div>
+            <label class="lanc-campo">
+                <span><%= t('assinatura.telefone') %></span>
+                <div class="pedido-tel">
+                    <select class="input" name="telefone_codigo" aria-label="<%= t('assinatura.pais') %>">
+                        <% paises.forEach(pa => { %><option value="<%= pa.codigo %>" <%= (usuarioLogado.telefone_codigo || '+595') === pa.codigo ? 'selected' : '' %>><%= pa.bandeira %> <%= pa.nome[idiomaTel] %> (<%= pa.codigo %>)</option><% }) %>
+                    </select>
+                    <input class="input" type="tel" name="telefone_numero" inputmode="tel" autocomplete="tel-national" required maxlength="20"
+                           placeholder="981 123 456" value="<%= usuarioLogado.telefone_numero || '' %>">
+                </div>
+                <small class="muted"><%= t('assinatura.telefone_dica') %></small>
+            </label>
+            <div class="modal-rodape">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('assinatura.cancelar') %></button>
+                <button type="submit" class="btn btn-primary btn-salvar"><%= t('assinatura.enviar_pedido') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<p class="muted" style="font-size: 13px; margin-top: 4px;"><i class="ph ph-info"></i> <%= negocio.EMAIL_SUPORTE ? t('assinatura.como_pagar') : t('assinatura.como_pagar').replace(/\s*[^.]*:\s*$/, '') %><% if (negocio.EMAIL_SUPORTE) { %> <b><%= negocio.EMAIL_SUPORTE %></b><% } %></p>
+<% if (acessoBloqueado) { %>
+    <%# Unico caminho para a tela da conta enquanto o resto do sistema esta fechado (a pessoa pode excluir a conta e os dados). %>
+    <p class="muted" style="font-size: 13px;"><a href="/configuracoes/conta"><i class="ph ph-identification-card"></i> <%= t('config.menu.conta') %>: <%= t('conta.excluir_titulo') %></a></p>
+<% } %>
 
 <% if (pagamentos && pagamentos.length > 0) { %>
 <section class="card" style="margin-top: 20px;">

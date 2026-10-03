@@ -1,6 +1,15 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const { normalizarIdioma } = require('../core/idiomas');
 const User = require('../models/User');
+const { iniciarSessao } = require('../middleware/authMiddleware');
+const { PLANOS_VENDA } = require('../core/negocio');
+
+// Campo de formulario como texto (um campo repetido ou em formato de objeto vira vazio em vez de quebrar a rota).
+const texto = (v) => (typeof v === 'string' ? v : '');
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Hash qualquer, so para o login gastar o mesmo tempo quando o e-mail nao existe (nao revela quem tem conta).
+const HASH_FALSO = bcrypt.hashSync(crypto.randomBytes(12).toString('hex'), 10);
 
 const authController = {
     loginPage: (req, res) => {
@@ -8,15 +17,19 @@ const authController = {
     },
 
     loginSubmit: async (req, res) => {
-        const { email, senha } = req.body;
+        const email = texto(req.body.email).trim();
+        const senha = texto(req.body.senha);
         if (!email || !senha) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.cadastro_incompleto') };
             return res.redirect('/login');
         }
 
-        const user = await User.findByEmail(email.trim());
-        const infoLog = { email: email.trim(), ip: req.ip, userAgent: req.get('User-Agent') };
-        if (!user || !bcrypt.compareSync(senha, user.senha_hash)) {
+        const user = await User.findByEmail(email);
+        const infoLog = { email, ip: req.ip, userAgent: req.get('User-Agent') };
+        const hash = user && user.senha_hash ? user.senha_hash : HASH_FALSO;
+        // O cadastro guarda a senha sem espacos nas pontas; quem digita com um espaco sobrando ainda entra.
+        const senhaOk = bcrypt.compareSync(senha, hash) || (senha !== senha.trim() && bcrypt.compareSync(senha.trim(), hash));
+        if (!user || !senhaOk) {
             await User.registrarLogin(user ? user.id : null, { ...infoLog, sucesso: false }).catch(() => {});
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.login_invalido') };
             return res.redirect('/login');
@@ -28,23 +41,32 @@ const authController = {
         }
 
         await User.registrarLogin(user.id, infoLog).catch((e) => console.error('Falha ao registrar login:', e.message));
-        req.session.user_id = user.id;
-        res.redirect('/');
+        res.redirect(await iniciarSessao(req, user.id));
     },
 
     registerPage: (req, res) => {
-        res.render('auth/cadastro', { title: req.t('auth.titulo_cadastro') });
+        // Veio de "Quero este plano" na pagina inicial: guarda o plano para a tela de escolher o teste.
+        const plano = texto(req.query.plano);
+        if (PLANOS_VENDA.includes(plano)) req.session.plano_teste = plano;
+        const planoTeste = PLANOS_VENDA.includes(req.session.plano_teste) ? req.session.plano_teste : null;
+        res.render('auth/cadastro', { title: req.t('auth.titulo_cadastro'), planoTeste });
     },
 
     registerSubmit: async (req, res) => {
-        const { nome, email, senha, confirmar_senha, aceitar_termos } = req.body;
+        const nome = texto(req.body.nome).trim().slice(0, 120);
+        const email = texto(req.body.email).trim();
+        const { aceitar_termos } = req.body;
         // Idioma escolhido no cadastro: define a interface da conta e o idioma das categorias iniciais.
         const idioma = normalizarIdioma(req.body.idioma) || req.lang || 'pt-BR';
-        const s = (senha || '').trim();
-        const cs = (confirmar_senha || '').trim();
+        const s = texto(req.body.senha).trim();
+        const cs = texto(req.body.confirmar_senha).trim();
 
         if (!nome || !email || !s) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.cadastro_incompleto') };
+            return res.redirect('/cadastro');
+        }
+        if (!EMAIL_RE.test(email) || email.length > 190) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.email_invalido') };
             return res.redirect('/cadastro');
         }
         if (s !== cs) {
@@ -60,33 +82,43 @@ const authController = {
             return res.redirect('/cadastro');
         }
 
-        const existing = await User.findByEmail(email.trim());
+        const existing = await User.findByEmail(email);
         if (existing) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.email_em_uso') };
             return res.redirect('/cadastro');
         }
 
         const hash = bcrypt.hashSync(s, 10);
-        const userId = await User.create({
-            nome: nome.trim(),
-            email: email.trim(),
-            senha_hash: hash,
-            idioma,
-            moeda: 'PYG',
-            tema: 'claro'
-        });
+        let userId;
+        try {
+            userId = await User.create({
+                nome,
+                email,
+                senha_hash: hash,
+                idioma,
+                moeda: 'PYG',
+                tema: 'claro'
+            });
+        } catch (err) {
+            // Dois cadastros com o mesmo e-mail ao mesmo tempo: o segundo cai aqui (chave unica).
+            if (err && err.code === 'ER_DUP_ENTRY') {
+                req.session.flash = { tipo: 'erro', mensagem: req.t('flash.email_em_uso') };
+                return res.redirect('/cadastro');
+            }
+            throw err;
+        }
 
         // E-mail de verificacao: se o envio falhar, o cadastro continua (da para reenviar depois).
         try {
             const link = `${req.protocol || 'https'}://${req.get('host')}/verificar-email/${userId.tokenVerificacao}`;
-            await require('../core/mailer').sendVerificationEmail(email.trim(), link, idioma);
+            await require('../core/mailer').sendVerificationEmail(email, link, idioma);
         } catch (err) {
             console.error('Falha ao enviar e-mail de verificacao:', err.message);
         }
-        await User.registrarLogin(userId.id, { email: email.trim(), ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
+        await User.registrarLogin(userId.id, { email, ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
 
-        req.session.user_id = userId.id;
         req.session.idioma = idioma;
+        await iniciarSessao(req, userId.id);
         req.session.flash = { tipo: 'sucesso', mensagem: require('../core/i18n').t('flash.cadastro_sucesso', {}, idioma) };
         res.redirect('/');
     },
@@ -102,15 +134,14 @@ const authController = {
     },
 
     esqueciSenhaSubmit: async (req, res) => {
-        const { email } = req.body;
-        if (!email || !email.trim()) {
+        const email = texto(req.body.email).trim();
+        if (!email) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.informe_email') };
             return res.redirect('/esqueci-senha');
         }
 
-        const user = await User.findByEmail(email.trim());
+        const user = await User.findByEmail(email);
         if (user) {
-            const crypto = require('crypto');
             const token = crypto.randomBytes(32).toString('hex');
             const expiresAt = new Date(Date.now() + 3600000); // 1 hour from now
 
@@ -151,9 +182,8 @@ const authController = {
 
     redefinirSenhaSubmit: async (req, res) => {
         const { token } = req.params;
-        const { nova_senha, confirmar_nova_senha } = req.body;
-        const s = (nova_senha || '').trim();
-        const cs = (confirmar_nova_senha || '').trim();
+        const s = texto(req.body.nova_senha).trim();
+        const cs = texto(req.body.confirmar_nova_senha).trim();
 
         const user = await User.findByResetToken(token);
         if (!user) {
@@ -191,13 +221,18 @@ const authController = {
         const host = req.get('host');
         const redirectUri = `${protocol}://${host}/auth/google/callback`;
         const scope = encodeURIComponent('openid email profile');
-        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}`;
+        // "state": valor aleatorio guardado na sessao e conferido na volta, para ninguem conseguir entrar na conta Google de outra pessoa neste navegador.
+        const state = crypto.randomBytes(16).toString('hex');
+        req.session.google_state = state;
+        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${state}`;
         res.redirect(url);
     },
 
     googleCallback: async (req, res) => {
         const { code, error } = req.query;
-        if (error || !code) {
+        const stateEsperado = req.session.google_state;
+        delete req.session.google_state;
+        if (error || !code || typeof code !== 'string' || !stateEsperado || req.query.state !== stateEsperado) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.google_cancelado') };
             return res.redirect('/login');
         }
@@ -254,6 +289,10 @@ const authController = {
             if (!userinfo.email) {
                 throw new Error('E-mail não fornecido pelo Google.');
             }
+            // So vincula a uma conta existente (pelo e-mail) quando o Google confirma que o e-mail pertence a quem entrou.
+            if (userinfo.verified_email === false) {
+                throw new Error('E-mail do Google não verificado.');
+            }
 
             const user = await User.findOrCreateFromGoogle({
                 googleId: userinfo.id,
@@ -267,9 +306,9 @@ const authController = {
                 return res.redirect('/login');
             }
             await User.registrarLogin(user.id, { email: user.email, ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
-            req.session.user_id = user.id;
+            const destino = await iniciarSessao(req, user.id);
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.google_bemvindo', { nome: user.nome }) };
-            res.redirect('/');
+            res.redirect(destino);
         } catch (err) {
             console.error('Google Auth Callback Error:', err);
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.google_erro') };

@@ -22,15 +22,23 @@ const assinaturaController = require('../controllers/assinaturaController');
 const legalController = require('../controllers/legalController');
 const contaController = require('../controllers/contaController');
 const adminController = require('../controllers/adminController');
+const novidadesController = require('../controllers/novidadesController');
 const apiAppController = require('../controllers/apiAppController');
 const { exigirToken } = require('../middleware/apiAuthMiddleware');
 const rateLimit = require('express-rate-limit');
 
+// Sincronizacao do app: o limite e por aparelho (token), nao por IP - varias pessoas na mesma rede
+// (casa, escritorio, operadora de celular) nao dividem a mesma cota. Sem token, vale o IP.
 const apiSyncLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 100,
+    max: 120,
+    keyGenerator: (req) => {
+        const auth = String(req.headers.authorization || '');
+        return auth.startsWith('Bearer ') && auth.length > 30 ? 'tk:' + auth.slice(-32) : req.ip;
+    },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    validate: false
 });
 
 const apiLoginLimiter = rateLimit({
@@ -92,10 +100,24 @@ router.post('/verificar-email/reenviar', requireAuth, contaController.reenviarVe
 // Assinatura
 router.get('/assinatura', requireAuth, assinaturaController.index);
 router.post('/assinatura/solicitar', requireAuth, assinaturaController.solicitar);
+// Teste gratis: escolher o plano do teste (uma vez) e trocar o plano enquanto o teste esta em andamento.
+router.get('/teste', requireAuth, assinaturaController.escolherTeste);
+router.post('/teste/iniciar', requireAuth, assinaturaController.iniciarTeste);
+router.post('/teste/trocar', requireAuth, assinaturaController.trocarTeste);
 
 // Administracao (somente role=admin)
 router.get('/admin', requireAuth, exigirAdmin, adminController.painel);
 router.get('/admin/usuarios', requireAuth, exigirAdmin, adminController.index);
+router.get('/admin/pedidos', requireAuth, exigirAdmin, adminController.pedidos);
+router.post('/admin/pedidos/:id/descartar', requireAuth, exigirAdmin, adminController.descartarPedido);
+router.get('/admin/novidades', requireAuth, exigirAdmin, novidadesController.admin);
+router.get('/admin/novidades/nova', requireAuth, exigirAdmin, novidadesController.formulario);
+router.get('/admin/novidades/:id/editar', requireAuth, exigirAdmin, novidadesController.formulario);
+router.post('/admin/novidades', requireAuth, exigirAdmin, novidadesController.salvar);
+router.post('/admin/novidades/:id', requireAuth, exigirAdmin, novidadesController.salvar);
+router.post('/admin/novidades/:id/publicar', requireAuth, exigirAdmin, novidadesController.publicar);
+router.post('/admin/novidades/:id/despublicar', requireAuth, exigirAdmin, novidadesController.despublicar);
+router.post('/admin/novidades/:id/excluir', requireAuth, exigirAdmin, novidadesController.excluir);
 router.get('/admin/ia', requireAuth, exigirAdmin, adminController.iaConsumo);
 router.post('/admin/ia/creditos', requireAuth, exigirAdmin, adminController.adicionarCredito);
 router.post('/admin/ia/creditos/:id/excluir', requireAuth, exigirAdmin, adminController.excluirCredito);
@@ -111,8 +133,16 @@ router.get('/admin/arquivados', requireAuth, exigirAdmin, adminController.arquiv
 router.post('/admin/usuarios/:id/desarquivar', requireAuth, exigirAdmin, adminController.desarquivar);
 router.post('/admin/usuarios/:id/excluir', requireAuth, exigirAdmin, adminController.excluirDefinitivo);
 
-// Dashboard routes
-router.get('/', requireAuth, dashboardController.index);
+// Landing page & Dashboard routes
+router.get('/landing', (req, res) => {
+    res.render('landing', { layout: false, title: 'MyFinance - Gestão Financeira Inteligente' });
+});
+router.get('/', (req, res, next) => {
+    if (req.session && req.session.user_id) {
+        return requireAuth(req, res, next);
+    }
+    return res.render('landing', { layout: false, title: 'MyFinance - Gestão Financeira Inteligente' });
+}, dashboardController.index);
 router.post('/lancamentos', requireAuth, dashboardController.criarLancamento);
 router.post('/lancamentos/criar', requireAuth, dashboardController.criarLancamento);
 router.post('/lancamentos/:id/atualizar', requireAuth, dashboardController.atualizarLancamento);
@@ -142,7 +172,9 @@ router.post('/categorias/:id/arquivar', requireAuth, categoriasController.arquiv
 router.post('/categorias/:id/restaurar', requireAuth, categoriasController.restaurar);
 
 // Relatorios routes
-// A aba "Demonstrativo Anual" e um recurso do Premium e do Pro (e do Plan de Prueba).
+// A aba "Demonstrativo Anual" depende de planos.rec_relatorio_anual (hoje todos os planos incluem). O Demonstrativo
+// Financeiro (Premium/Pro) e as vistas avancadas (Pro) sao tratados em relatoriosController.index, que apresenta o
+// recurso em vez de redirecionar com erro.
 const gateAnual = (req, res, next) => (req.query.aba === 'demonstrativo_anual' ? exigirRecurso('rec_relatorio_anual')(req, res, next) : next());
 router.get('/relatorios', requireAuth, gateAnual, relatoriosController.index);
 router.get('/relatorios/exportar', requireAuth, exigirRecurso('rec_exportar', 'flash.recurso_pro'), relatoriosController.exportar);
@@ -194,6 +226,8 @@ router.post('/api/app/logout', exigirToken, apiAppController.logout);
 // Registro offline e sincronizacao sao recursos do Premium e do Pro (planos.rec_offline).
 const exigirOffline = (req, res, next) => {
     if (req.user && req.user.role === 'admin') return next();
+    // Sem teste em andamento e sem plano contratado: nada sincroniza ate a pessoa escolher/contratar um plano.
+    if (req.acessoBloqueado) return res.status(403).json({ sucesso: false, erro: req.statusEfetivo === 'escolher' ? 'escolher_plano' : 'teste_encerrado' });
     if (req.assinatura && req.assinatura.plano && req.assinatura.plano.rec_offline) return next();
     return res.status(403).json({ sucesso: false, erro: 'plano_sem_offline' });
 };
@@ -230,6 +264,8 @@ router.post('/configuracoes/conta/excluir', requireAuth, contaController.excluir
 
 // Rotas do Módulo Comunidade
 router.get('/comunidade', requireAuth, comunidadeController.index);
+router.get('/comunidade/novidades', requireAuth, novidadesController.index);
+router.post('/comunidade/novidades/:id/reagir', requireAuth, limiteAcaoRapida, novidadesController.reagir);
 router.get('/comunidade/similares', requireAuth, comunidadeController.similares);
 router.get('/comunidade/anexo/:id', requireAuth, comunidadeController.servirAnexo);
 router.get('/comunidade/:id', requireAuth, comunidadeController.detalhe);

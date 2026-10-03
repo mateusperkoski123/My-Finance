@@ -1,0 +1,15 @@
+<%# Lista do que o plano inclui, por grupo (mesma fonte das travas: core/planos_recursos.js). Espera: p (linha de `planos`). %>
+<% recursosDoPlano(p).forEach(g => { %>
+    <div class="plano-card__grupo">
+        <span><%= t('pr.grupo.' + g.chave) %></span>
+        <% if (g.nenhum) { %><span class="plano-card__na"><%= t('pr.nao_incluida') %></span><% } %>
+    </div>
+    <ul class="plano-card__lista">
+        <% g.itens.forEach(i => { %>
+            <li class="<%= i.on ? '' : 'is-off' %>">
+                <i class="ph-bold <%= i.on ? 'ph-check' : 'ph-x' %>" aria-hidden="true"></i>
+                <span><span class="sr-only"><%= t(i.on ? 'pr.incluso' : 'pr.nao_incluso') %>: </span><%= t('pr.item.' + i.k) %><% if (i.val) { %>: <b><%= t(i.val.key, { n: i.val.n }) %></b><% } %></span>
+            </li>
+        <% }) %>
+    </ul>
+<% }) %>

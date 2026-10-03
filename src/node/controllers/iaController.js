@@ -1,4 +1,5 @@
 const Ia = require('../models/Ia');
+const Assinatura = require('../models/Assinatura');
 const iaCore = require('../core/ia');
 const midia = require('../core/ia_midia');
 const { validarImagem } = require('../core/uploads');
@@ -28,6 +29,36 @@ const limiteMesDe = (req) => planoDe(req).ia_limite_mes || IA_LIMITE_PADRAO;
 // desde que o plano inclua a IA avancada.
 const nivelDe = (req) => (req.ehAdmin || (Number(req.user.ia_nivel) === 2 && planoDe(req).rec_ia_nivel2) ? 2 : 1);
 
+// Cota de registros de transacao por foto ou audio no mes (o registro por texto nao conta). Admin nao tem cota.
+// Devolve null quando nao ha cota a mostrar, ou { liberada, usados, limite, esgotada, upgrade: { plano, nome, limite } | null }.
+async function cotaMidia(req, uso) {
+    if (req.ehAdmin) return null;
+    const plano = planoDe(req);
+    const limite = Number(plano.ia_midia_limite_mes) || 0;
+    const liberada = Boolean(plano.rec_ia_midia);
+    const nomeDoPlano = (codigo) => req.t('plano.' + codigo + '.nome');
+    if (!liberada) return { liberada: false, usados: 0, limite: 0, esgotada: true, upgrade: { plano: 'premium', nome: nomeDoPlano('premium'), limite: 0 } };
+    if (!limite) return null;
+    const u = uso || await Ia.uso(req.user.id);
+    const usados = Math.min(Number(u.registros_midia) || 0, limite);
+    const esgotada = usados >= limite;
+    let upgrade = null;
+    if (esgotada) {
+        const acima = await Assinatura.planoComMaisMidia(limite);
+        if (acima) upgrade = { plano: acima.codigo, nome: nomeDoPlano(acima.codigo), limite: acima.ia_midia_limite_mes };
+    }
+    return { liberada: true, usados, limite, esgotada, upgrade };
+}
+
+// Texto do aviso quando a cota de foto e audio acabou (com a indicacao do plano de cima, se houver).
+function textoCotaEsgotada(req, cota) {
+    const partes = [req.t('ia.cota_titulo', { n: cota.limite }) + '.'];
+    if (cota.upgrade) partes.push(req.t('ia.cota_upgrade', { plano: cota.upgrade.nome, m: cota.upgrade.limite }));
+    else partes.push(req.t('ia.cota_volta'));
+    partes.push(req.t('ia.cota_texto_livre'));
+    return partes.join(' ');
+}
+
 // Grava o consumo do dia: tokens de texto, de imagem e de audio, e o custo estimado de cada parte.
 async function registrarConsumo(userId, uso, { imagens = 0, stt = null, modelo = iaCore.MODELO }) {
     const u = uso || {};
@@ -52,6 +83,7 @@ const iaController = {
             title: req.t('ia.titulo'),
             conversas,
             restantes: req.ehAdmin ? null : Math.max(0, limiteMesDe(req) - uso.mensagens),
+            cota: await cotaMidia(req, uso),
             configurada: Boolean(iaCore.obterCliente())
         });
     },
@@ -79,8 +111,12 @@ const iaController = {
         if (!textoDigitado && !fotos.length && !audioArq) {
             return res.status(400).json({ sucesso: false, erro: req.t('ia.erro_vazio') });
         }
-        if ((fotos.length || audioArq) && !req.ehAdmin && !planoDe(req).rec_ia_midia) {
-            return res.status(403).json({ sucesso: false, erro: req.t('ia.erro_plano_midia') });
+        // Foto e audio: o plano precisa incluir e a cota de registros do mes nao pode ter acabado.
+        const temMidia = fotos.length > 0 || Boolean(audioArq);
+        if (temMidia && !req.ehAdmin) {
+            const cota = await cotaMidia(req);
+            if (cota && !cota.liberada) return res.status(403).json({ sucesso: false, erro: req.t('ia.erro_plano_midia'), cota_midia: cota });
+            if (cota && cota.esgotada) return res.status(429).json({ sucesso: false, erro: textoCotaEsgotada(req, cota), cota_midia: cota });
         }
         if (fotos.length > midia.MAX_IMAGENS) {
             return res.status(400).json({ sucesso: false, erro: req.t('ia.erro_foto_max', { n: midia.MAX_IMAGENS }) });
@@ -181,9 +217,20 @@ const iaController = {
         const acoes = [];
         for (const aid of r.rascunhos) {
             const a = await Ia.buscarAcao(aid, userId);
-            if (a) acoes.push(Ia.cartao(a));
+            if (!a) continue;
+            acoes.push(Ia.cartao(a));
+            // Cada transacao registrada a partir de uma foto ou de um audio conta na cota do mes.
+            if (temMidia && !req.ehAdmin) {
+                let payload = {};
+                try { payload = JSON.parse(a.payload); } catch (e) { payload = {}; }
+                await Ia.consumirMidia(userId, aid, Ia.registrosDaAcao(payload));
+            }
         }
-        res.json({ sucesso: true, conversa_id: conversaId, titulo, transcricao, mensagem: { id: msgId, papel: 'assistant', texto: textoFinal, acoes } });
+        res.json({
+            sucesso: true, conversa_id: conversaId, titulo, transcricao,
+            mensagem: { id: msgId, papel: 'assistant', texto: textoFinal, acoes },
+            cota_midia: await cotaMidia(req)
+        });
     },
 
     excluirConversa: async (req, res) => {
@@ -205,12 +252,14 @@ const iaController = {
             const p = JSON.parse(acao.payload);
             const plano = p.kind === 'plano';
             const falhas = await desfazerTudo(userId, p.desfazer || []);
+            // O que foi revertido volta para a cota de registros por foto e audio.
+            await Ia.devolverMidia(userId, id);
             const resumo = (plano ? (p.operacoes || []).map(nomeDaOp) : [p.descricao]).filter(Boolean).join('; ').slice(0, 240);
             let texto = req.t('ia.revertido_msg', { resumo });
             if (falhas) texto += '\n\n' + req.t('ia.revertido_parcial', { n: falhas });
             await Ia.adicionarMensagem({ conversaId: acao.conversa_id, userId, papel: 'assistant', conteudo: texto });
             await Ia.tocarConversa(acao.conversa_id, userId);
-            res.json({ sucesso: true, cartao: Ia.cartao(await Ia.buscarAcao(id, userId)), mensagem: { papel: 'assistant', texto } });
+            res.json({ sucesso: true, cartao: Ia.cartao(await Ia.buscarAcao(id, userId)), mensagem: { papel: 'assistant', texto }, cota_midia: await cotaMidia(req) });
         } catch (err) {
             await Ia.liberarReversao(id, userId);
             console.error('Chat IA: falha ao reverter:', err.message);

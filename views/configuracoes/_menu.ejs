@@ -1,24 +1,31 @@
+<%# Sem teste em andamento e sem plano contratado (acessoBloqueado) so ficam abertas a Assinatura, a Conta e a saida. %>
+<% const _mnItem = 'flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;'; %>
 <nav class="card settings-menu" style="margin-bottom: 16px; padding: 12px;">
     <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
-        <a href="/configuracoes" class="settings-menu__item <%= menuAtivo === 'preferencia' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
+        <% if (!acessoBloqueado) { %>
+        <a href="/configuracoes" class="settings-menu__item <%= menuAtivo === 'preferencia' ? 'is-active' : '' %>" style="<%= _mnItem %>">
             <i class="ph ph-gear"></i> <%= t('config.menu.preferencia') %>
         </a>
-        <a href="/configuracoes/perfil" class="settings-menu__item <%= menuAtivo === 'perfil' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
+        <a href="/configuracoes/perfil" class="settings-menu__item <%= menuAtivo === 'perfil' ? 'is-active' : '' %>" style="<%= _mnItem %>">
             <i class="ph ph-user"></i> <%= t('config.menu.perfil') %>
         </a>
-        <a href="/configuracoes/dados" class="settings-menu__item <%= menuAtivo === 'dados' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
+        <a href="/configuracoes/dados" class="settings-menu__item <%= menuAtivo === 'dados' ? 'is-active' : '' %>" style="<%= _mnItem %>">
             <i class="ph ph-floppy-disk"></i> <%= t('config.menu.dados') %>
+            <% if (!pode('rec_backup')) { %><%- include('../partials/selo_plano', { plano: 'pro' }) %><% } %>
         </a>
-        <a href="/assinatura" class="settings-menu__item <%= menuAtivo === 'assinatura' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
+        <% } %>
+        <a href="/assinatura" class="settings-menu__item <%= menuAtivo === 'assinatura' ? 'is-active' : '' %>" style="<%= _mnItem %>">
             <i class="ph ph-crown-simple"></i> <%= t('config.menu.assinatura') %>
         </a>
-        <a href="/configuracoes/lembretes" class="settings-menu__item <%= menuAtivo === 'lembretes' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
+        <% if (!acessoBloqueado) { %>
+        <a href="/configuracoes/lembretes" class="settings-menu__item <%= menuAtivo === 'lembretes' ? 'is-active' : '' %>" style="<%= _mnItem %>">
             <i class="ph ph-bell-ringing"></i> <%= t('config.menu.lembretes') %>
         </a>
-        <a href="/configuracoes/dispositivos" class="settings-menu__item <%= menuAtivo === 'dispositivos' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
+        <a href="/configuracoes/dispositivos" class="settings-menu__item <%= menuAtivo === 'dispositivos' ? 'is-active' : '' %>" style="<%= _mnItem %>">
             <i class="ph ph-device-mobile"></i> <%= t('config.menu.dispositivos') %>
         </a>
-        <a href="/configuracoes/conta" class="settings-menu__item <%= menuAtivo === 'conta' ? 'is-active' : '' %>" style="flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;">
+        <% } %>
+        <a href="/configuracoes/conta" class="settings-menu__item <%= menuAtivo === 'conta' ? 'is-active' : '' %>" style="<%= _mnItem %>">
             <i class="ph ph-identification-card"></i> <%= t('config.menu.conta') %>
         </a>
         <form method="post" action="/logout" style="flex: 1 1 120px; margin: 0;">

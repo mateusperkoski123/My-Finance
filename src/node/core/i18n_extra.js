@@ -13,7 +13,8 @@ module.exports = {
     'pages.categorias.titulo': ['Categorias', 'Categorías', 'Categories'],
     'pages.contas.titulo': ['Contas Bancárias', 'Cuentas Bancarias', 'Bank Accounts'],
     'pages.relatorios.titulo': ['Relatórios', 'Informes', 'Reports'],
-    'flash.sessao_expirada': ['Sessão expirada. Faça login novamente.', 'Sesión expirada. Inicie sesión nuevamente.', 'Session expired. Please sign in again.'],
+    // Aparece para quem abre uma pagina interna sem estar logado (sessao vencida ou primeira visita): texto neutro, serve aos dois casos.
+    'flash.sessao_expirada': ['Entre na sua conta para continuar.', 'Iniciá sesión para continuar.', 'Please sign in to continue.'],
     'painel.lancamento.confirmar_exclusao': ['Tem certeza que deseja excluir este lançamento?', '¿Está seguro de que desea eliminar este lanzamiento?', 'Are you sure you want to delete this entry?'],
 
     'auth.promessa': ['Suas contas, receitas e despesas num só lugar.', 'Sus cuentas, ingresos y gastos en un solo lugar.', 'Your accounts, income and expenses in one place.'],
@@ -312,7 +313,9 @@ module.exports = {
     'adm.pico': ["Pico em um dia", "Pico en un día", "Peak in one day"],
     'adm.assinaturas': ["Assinaturas", "Suscripciones", "Subscriptions"],
     'adm.s_teste_beta': ["Teste gratuito (sem vencimento)", "Prueba gratuita (sin vencimiento)", "Free trial (no expiry)"],
-    'adm.s_em_teste': ["Em teste (7 dias)", "En prueba (7 días)", "On trial (7 days)"],
+    'adm.s_em_teste': ["Em teste", "En prueba", "On trial"],
+    'adm.s_escolher': ["Sem plano de teste escolhido", "Sin plan de prueba elegido", "No trial plan chosen"],
+    'adm.s_teste_encerrado': ["Teste encerrado sem contratar", "Prueba terminada sin contratar", "Trial ended without subscribing"],
     'adm.s_pagantes': ["Pagantes ativos", "Pagantes activos", "Active payers"],
     'adm.s_vencidas': ["Vencidas", "Vencidas", "Expired"],
     'adm.s_canceladas': ["Canceladas", "Canceladas", "Cancelled"],
@@ -331,6 +334,12 @@ module.exports = {
     'adm.u_ativos_30d': ["Ativos em 30 dias", "Activos en 30 días", "Active in 30 days"],
     'adm.u_suspensos': ["Suspensos", "Suspendidos", "Suspended"],
     'adm.u_arquivados': ["Arquivados", "Archivados", "Archived"],
+    'adm.mais_ativos': ["Usuários que mais registraram (últimos {dias} dias)", "Usuarios que más registraron (últimos {dias} días)", "Users who recorded the most (last {dias} days)"],
+    'adm.mais_ativos_vazio': ["Ninguém registrou transações nos últimos {dias} dias.", "Nadie registró transacciones en los últimos {dias} días.", "Nobody recorded transactions in the last {dias} days."],
+    'adm.mais_ativos_nota': ["Conta receitas, despesas e transferências pela data em que foram registradas. Uma série fixa ou parcelada vale 1.", "Cuenta ingresos, gastos y transferencias por la fecha en que se registraron. Una serie fija o en cuotas vale 1.", "Counts income, expenses and transfers by the date they were recorded. A fixed or installment series counts as 1."],
+    'adm.mais_ativos_todos': ["Ver todos os usuários", "Ver todos los usuarios", "See all users"],
+    'adm.col_dias': ["{dias} dias", "{dias} días", "{dias} days"],
+    'adm.col_total': ["Total", "Total", "Total"],
     'adm.recentes_cadastros': ["Últimos cadastros", "Últimos registros", "Latest sign-ups"],
     'adm.recentes_pagamentos': ["Últimos pagamentos", "Últimos pagos", "Latest payments"],
     'adm.sem_pagamentos': ["Nenhum pagamento registrado ainda.", "Ningún pago registrado todavía.", "No payments recorded yet."],
@@ -417,6 +426,17 @@ module.exports = {
     'painel.comp.variacao': ['Variação', 'Variación', 'Change'],
     'painel.comp.sem_variacao': ['Sem variação', 'Sin variación', 'No change'],
     'painel.comp.novo': ['novo', 'nuevo', 'new'],
+
+    // Validacoes e avisos
+    'flash.muitas_tentativas': ['Muitas tentativas. Aguarde alguns minutos e tente de novo.', 'Demasiados intentos. Esperá unos minutos e intentá de nuevo.', 'Too many attempts. Please wait a few minutes and try again.'],
+    'flash.email_invalido': ['Informe um e-mail válido.', 'Ingresá un correo válido.', 'Please enter a valid e-mail.'],
+    'flash.lanc_data_invalida': ['Informe uma data válida.', 'Ingresá una fecha válida.', 'Please enter a valid date.'],
+    'flash.senha_obrigatoria': ['Preencha a senha atual e a nova senha.', 'Completá la contraseña actual y la nueva.', 'Fill in the current and the new password.'],
+    // Formulario de lancamento
+    'modal.fixa_dica': ['Repete todo mês: já cria os próximos 24 meses como pendentes.', 'Se repite cada mes: ya crea los próximos 24 meses como pendientes.', 'Repeats every month: creates the next 24 months as pending.'],
+    'modal.repetir_dica': ['Parcelas: cria uma por mês, na quantidade que você escolher.', 'Cuotas: crea una por mes, en la cantidad que elijas.', 'Installments: creates one per month, as many as you choose.'],
+    'painel.ocultar_saldo': ['Ocultar ou mostrar os valores', 'Ocultar o mostrar los montos', 'Hide or show the amounts'],
+    'categorias.editar_sub_titulo': ['Editar subcategoria', 'Editar subcategoría', 'Edit subcategory'],
 };
 
 const meses = {

@@ -47,7 +47,7 @@ const mesIa = r.iaCusto.mes;
     <div class="card kpi-card"><span class="kpi-card__label"><i class="ph ph-coins"></i> <%= t('adm.k_receita_mes') %></span><strong class="kpi-card__valor"><%= gs(r.receita.mes) %></strong>
         <span class="kpi-card__sub"><%= t('adm.k_receita_hoje', { hoje: gs(r.receita.hoje) }) %></span></div>
     <div class="card kpi-card <%= s.trialsVencendo3d ? 'kpi-card--alerta' : '' %>"><span class="kpi-card__label"><i class="ph ph-hourglass"></i> <%= t('adm.k_trials') %></span><strong class="kpi-card__valor"><%= nf(s.trialsVencendo3d) %></strong>
-        <span class="kpi-card__sub"><%= t('adm.k_pedidos', { n: nf(m.assinaturas.solicitacoes || 0) }) %></span></div>
+        <span class="kpi-card__sub"><a href="/admin/pedidos"><%= t('adm.k_pedidos', { n: nf(m.assinaturas.solicitacoes || 0) }) %></a></span></div>
 </div>
 
 <section class="card adm-secao">
@@ -84,6 +84,8 @@ const mesIa = r.iaCusto.mes;
         <ul class="adm-lista">
             <li><span><%= t('adm.s_teste_beta') %></span><b><%= nf(m.assinaturas.beta || 0) %></b></li>
             <li><span><%= t('adm.s_em_teste') %></span><b><%= nf(m.assinaturas.trial || 0) %></b></li>
+            <li><span><%= t('adm.s_escolher') %></span><b><%= nf(m.assinaturas.escolher || 0) %></b></li>
+            <li><span><%= t('adm.s_teste_encerrado') %></span><b><%= nf(m.assinaturas.teste_encerrado || 0) %></b></li>
             <li><span><%= t('adm.s_pagantes') %></span><b><%= nf(m.assinaturas.ativas || 0) %></b></li>
             <% m.porPlano.forEach((p) => { %><li class="adm-lista__sub"><span><%= nomePlano(p.codigo) %></span><b><%= nf(p.total) %></b></li><% }) %>
             <li><span><%= t('adm.s_vencidas') %></span><b><%= nf(m.assinaturas.vencidas || 0) %></b></li>
@@ -115,6 +117,35 @@ const mesIa = r.iaCusto.mes;
         </ul>
     </section>
 </div>
+
+<section class="card adm-secao">
+    <h2 class="adm-secao__titulo"><i class="ph ph-trophy"></i> <%= t('adm.mais_ativos', { dias: s.diasAtividade }) %></h2>
+    <% if (!s.maisAtivos.length) { %>
+        <p class="muted"><%= t('adm.mais_ativos_vazio', { dias: s.diasAtividade }) %></p>
+    <% } else { const _maxAtivo = s.maisAtivos[0].recentes || 1; %>
+        <div class="tabela-container">
+            <table class="tabela adm-ativos">
+                <thead><tr>
+                    <th class="num">#</th><th><%= t('admin.col_usuario') %></th>
+                    <th class="num"><%= t('adm.col_dias', { dias: s.diasAtividade }) %></th><th class="iac-barra-col"></th>
+                    <th class="num"><%= t('adm.col_total') %></th>
+                </tr></thead>
+                <tbody>
+                <% s.maisAtivos.forEach((u, i) => { %>
+                    <tr>
+                        <td class="num muted"><%= i + 1 %></td>
+                        <td><strong><%= u.nome %></strong><% if (u.role === 'admin') { %> <span class="badge badge-neutro">admin</span><% } %><div class="muted" style="font-size: 12px;"><%= u.email %></div></td>
+                        <td class="num"><strong><%= nf(u.recentes) %></strong></td>
+                        <td class="iac-barra-col"><span class="iac-barra" style="width: <%= Math.round(u.recentes / _maxAtivo * 100) %>%;"></span></td>
+                        <td class="num muted"><%= nf(u.total) %></td>
+                    </tr>
+                <% }) %>
+                </tbody>
+            </table>
+        </div>
+    <% } %>
+    <p class="muted adm-nota"><%= t('adm.mais_ativos_nota') %> <a href="/admin/usuarios?ordenar=lanc_30d"><%= t('adm.mais_ativos_todos') %></a></p>
+</section>
 
 <div class="adm-duas adm-duas--2">
     <section class="card adm-secao">

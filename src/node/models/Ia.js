@@ -136,8 +136,41 @@ class Ia {
 
     // ---- Uso mensal (limite por usuario) ----
     static async uso(userId) {
-        const [rows] = await db.query('SELECT mensagens, tokens_in, tokens_out FROM ia_uso WHERE user_id = ? AND mes = ?', [userId, mesAtual()]);
-        return rows[0] || { mensagens: 0, tokens_in: 0, tokens_out: 0 };
+        const [rows] = await db.query('SELECT mensagens, tokens_in, tokens_out, registros_midia FROM ia_uso WHERE user_id = ? AND mes = ?', [userId, mesAtual()]);
+        return rows[0] || { mensagens: 0, tokens_in: 0, tokens_out: 0, registros_midia: 0 };
+    }
+
+    // ---- Cota mensal de registros de transacao por foto ou audio (planos.ia_midia_limite_mes) ----
+    // Quantas transacoes (lancamentos e transferencias) uma acao aplicada pela IA registrou.
+    static registrosDaAcao(payload) {
+        const p = payload || {};
+        if (p.kind === 'plano') {
+            return (p.operacoes || []).filter((o, i) => (o.op === 'lancamento' || o.op === 'transferencia')
+                && !(p.resultados && p.resultados[i] && p.resultados[i].ok === false)).length;
+        }
+        return p.tipo ? 1 : 0;
+    }
+
+    // Soma n registros na cota do mes e anota na acao quanto ela consumiu (para devolver se for revertida).
+    static async consumirMidia(userId, acaoId, n) {
+        if (!(n > 0)) return;
+        await db.query(
+            `INSERT INTO ia_uso (user_id, mes, mensagens, tokens_in, tokens_out, registros_midia) VALUES (?, ?, 0, 0, 0, ?)
+             ON DUPLICATE KEY UPDATE registros_midia = registros_midia + VALUES(registros_midia)`,
+            [userId, mesAtual(), n]
+        );
+        await db.query('UPDATE ia_acoes SET midia_registros = ? WHERE id = ? AND user_id = ?', [n, acaoId, userId]);
+    }
+
+    // Reversao: devolve a cota o que a acao tinha consumido (uma vez so).
+    static async devolverMidia(userId, acaoId) {
+        const [[a]] = await db.query('SELECT midia_registros FROM ia_acoes WHERE id = ? AND user_id = ?', [acaoId, userId]);
+        const n = a ? Number(a.midia_registros) || 0 : 0;
+        if (!n) return 0;
+        const [r] = await db.query('UPDATE ia_acoes SET midia_registros = 0 WHERE id = ? AND user_id = ? AND midia_registros = ?', [acaoId, userId, n]);
+        if (r.affectedRows !== 1) return 0;
+        await db.query('UPDATE ia_uso SET registros_midia = IF(registros_midia > ?, registros_midia - ?, 0) WHERE user_id = ? AND mes = ?', [n, n, userId, mesAtual()]);
+        return n;
     }
 
     static async registrarUso(userId, tokensIn, tokensOut) {
