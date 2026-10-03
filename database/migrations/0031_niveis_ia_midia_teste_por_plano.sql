@@ -22,6 +22,8 @@ UPDATE planos SET rec_estado = 1, rec_estado_avancado = 1, rec_ia_midia = 1, ia_
 
 -- Chat IA liberado pelo plano: deixa de depender de o admin ligar usuario por usuario (o admin ainda pode desligar
 -- alguem). O nivel avancado vale para quem tem plano com rec_ia_nivel2.
+-- Antes de mudar, guarda quem estava com a IA ligada e em que nivel (para poder voltar atras se for preciso).
+CREATE TABLE IF NOT EXISTS bkp_0031_users_ia AS SELECT id, ia_habilitada, ia_nivel FROM users;
 ALTER TABLE users MODIFY COLUMN ia_habilitada TINYINT(1) NOT NULL DEFAULT 1;
 UPDATE users SET ia_habilitada = 1;
 ALTER TABLE users MODIFY COLUMN ia_nivel TINYINT UNSIGNED NOT NULL DEFAULT 2;
