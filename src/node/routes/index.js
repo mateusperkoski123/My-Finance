@@ -116,6 +116,7 @@ router.get('/', requireAuth, dashboardController.index);
 router.post('/lancamentos', requireAuth, dashboardController.criarLancamento);
 router.post('/lancamentos/criar', requireAuth, dashboardController.criarLancamento);
 router.post('/lancamentos/:id/atualizar', requireAuth, dashboardController.atualizarLancamento);
+router.post('/lancamentos/:id/atualizar-transferencia', requireAuth, dashboardController.atualizarTransferencia);
 router.post('/lancamentos/:id/excluir', requireAuth, dashboardController.excluirLancamento);
 router.post('/lancamentos/:id/marcar-pago', requireAuth, dashboardController.marcarPago);
 

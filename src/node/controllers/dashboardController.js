@@ -223,6 +223,31 @@ const dashboardController = {
         res.redirect(destinoRetorno(req));
     },
 
+    // Transferencia entre contas: edita valor, data e situacao (as duas pernas juntas).
+    atualizarTransferencia: async (req, res) => {
+        const userId = req.user.id;
+        const b = req.body;
+        const valor = parseMoeda(b.valor);
+        const data = String(b.data_competencia || '');
+        if (!(valor > 0)) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.transferencia_valor_invalido') };
+            return res.redirect(destinoRetorno(req));
+        }
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.agendar_invalido') };
+            return res.redirect(destinoRetorno(req));
+        }
+        const dataPag = /^\d{4}-\d{2}-\d{2}$/.test(String(b.data_pagamento || '')) ? b.data_pagamento : null;
+        const ok = await Lancamento.atualizarTransferencia(req.params.id, userId, {
+            valor, data, pago: b.status === 'pago', dataPagamento: dataPag,
+            escopo: ['esta_e_proximas', 'toda_serie'].includes(b.escopo_serie) ? b.escopo_serie : 'apenas_esta'
+        });
+        req.session.flash = ok
+            ? { tipo: 'sucesso', mensagem: req.t('flash.transferencia_atualizada') }
+            : { tipo: 'erro', mensagem: req.t('flash.conta_invalida') };
+        res.redirect(destinoRetorno(req));
+    },
+
     excluirLancamento: async (req, res) => {
         const userId = req.user.id;
         const id = req.params.id;

@@ -19,5 +19,9 @@ module.exports = {
     'filtro.proximos_7dias': ['Próximos 7 Dias', 'Próximos 7 Días', 'Next 7 Days'],
     'filtro.por_vencimento': ['Por Vencimento', 'Por Vencimiento', 'By Due Date'],
     'filtro.por_criacao': ['Por Data de Criação', 'Por Fecha de Creación', 'By Creation Date'],
+    'modal.editar_transferencia': ['Editar Transferência', 'Editar Transferencia', 'Edit Transfer'],
+    'modal.transf_aviso': ['As duas contas (saída e entrada) são atualizadas juntas.', 'Las dos cuentas (salida y entrada) se actualizan juntas.', 'Both accounts (out and in) are updated together.'],
+    'modal.transf_escopo_dica': ['O valor pode valer só para esta, para esta e as próximas ou para toda a série. Data e situação valem só para esta.', 'El monto puede valer solo para esta, para esta y las siguientes o para toda la serie. Fecha y estado valen solo para esta.', 'The amount can apply to this one only, this and the next ones, or the whole series. Date and status apply to this one only.'],
+    'flash.transferencia_atualizada': ['Transferência atualizada.', 'Transferencia actualizada.', 'Transfer updated.'],
     'extrato.periodo_todo': ['Todo o histórico', 'Todo el historial', 'Full history']
 };

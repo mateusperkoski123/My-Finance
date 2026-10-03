@@ -198,19 +198,22 @@ const contasController = {
             const descStr = descricao ? descricao.trim() : 'Transferência entre contas';
 
             // Saída da origem
-            await db.query(
+            const [saidaImediata] = await db.query(
                 `INSERT INTO lancamentos (user_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia, data_pagamento, status, created_at, updated_at) 
                  VALUES (?, ?, ?, 'transferencia', ?, ?, ?, ?, 'pago', NOW(), NOW())`,
                 [userId, origem_id, catId, `Transferência enviada para ${contaDestino.nome}${descricao && descricao.trim() ? ' - ' + descStr : ''}`, -val, dataComp, dataComp]
             );
 
             // Entrada no destino
-            await db.query(
+            const [entradaImediata] = await db.query(
                 `INSERT INTO lancamentos (user_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia, data_pagamento, status, created_at, updated_at) 
                  VALUES (?, ?, ?, 'transferencia', ?, ?, ?, ?, 'pago', NOW(), NOW())`,
                 [userId, destino_id, catId, `Transferência recebida de ${contaOrigem.nome}${descricao && descricao.trim() ? ' - ' + descStr : ''}`, val, dataComp, dataComp]
             );
 
+            // Liga as duas pernas (permite editar/excluir a transferencia inteira depois).
+            await db.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [entradaImediata.insertId, saidaImediata.insertId]);
+            await db.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [saidaImediata.insertId, entradaImediata.insertId]);
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.transferencia_realizada') };
         } catch (err) {
             console.error('Erro em contasController.transferir:', err);

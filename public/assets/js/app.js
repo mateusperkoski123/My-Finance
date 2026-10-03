@@ -655,3 +655,32 @@ document.addEventListener('DOMContentLoaded', function () {
     modal.classList.add('is-open');
   });
 })();
+
+// Editar transferencia entre contas: valor, data e situacao (as duas pernas juntas), a partir do botao [data-editar-transf].
+(function () {
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-editar-transf]');
+    if (!btn) return;
+    var d;
+    try { d = JSON.parse(btn.getAttribute('data-editar-transf')); } catch (e) { return; }
+    var modal = document.getElementById('modal-editar-transferencia');
+    var form = modal && modal.querySelector('[data-editar-form]');
+    if (!form) return;
+    var menu = btn.closest('details');
+    if (menu) menu.removeAttribute('open');
+
+    form.action = '/lancamentos/' + d.id + '/atualizar-transferencia';
+    modal.querySelector('[data-transf-descricao]').textContent = d.descricao || '';
+    form.elements.valor.value = window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(Number(d.valor) || 0) : String(d.valor);
+    form.elements.data_competencia.value = d.data_competencia || '';
+    form.elements.data_pagamento.value = d.data_pagamento || d.data_competencia || '';
+    var status = form.elements.status;
+    status.checked = d.status === 'pago';
+    status.dispatchEvent(new Event('change', { bubbles: true }));
+    var serie = form.querySelector('[data-ed-serie]');
+    serie.hidden = !d.serie;
+    var apenas = form.querySelector('input[name="escopo_serie"][value="apenas_esta"]');
+    if (apenas) apenas.checked = true;
+    modal.classList.add('is-open');
+  });
+})();

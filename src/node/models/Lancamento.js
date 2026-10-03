@@ -369,6 +369,66 @@ class Lancamento {
         }
     }
 
+    // Perna oposta de uma transferencia. As antigas (feitas na hora, sem transferencia_par_id) sao ligadas pelo valor oposto,
+    // mesma data e o id mais proximo; se achar, a ligacao e gravada para as proximas edicoes.
+    static async localizarParTransferencia(item, userId, conn = null) {
+        const q = (conn || db).query.bind(conn || db);
+        if (item.transferencia_par_id) {
+            const [r] = await q('SELECT * FROM lancamentos WHERE id = ? AND user_id = ? LIMIT 1', [item.transferencia_par_id, userId]);
+            return r[0] || null;
+        }
+        const [r] = await q(
+            `SELECT * FROM lancamentos WHERE user_id = ? AND tipo = 'transferencia' AND transferencia_par_id IS NULL AND id <> ?
+               AND data_competencia = ? AND valor = ? ORDER BY ABS(id - ?) ASC LIMIT 1`,
+            [userId, item.id, toLocalYMD(item.data_competencia), -parseFloat(item.valor), item.id]
+        );
+        const par = r[0] || null;
+        if (par) {
+            await q('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ? AND user_id = ?', [par.id, item.id, userId]);
+            await q('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ? AND user_id = ?', [item.id, par.id, userId]);
+        }
+        return par;
+    }
+
+    // Edita uma transferencia (as duas pernas juntas): valor, data e situacao. Em serie, o valor pode valer so para esta,
+    // para esta e as proximas ou para toda a serie; data e situacao valem sempre so para a ocorrencia editada.
+    static async atualizarTransferencia(id, userId, { valor, data, pago, dataPagamento = null, escopo = 'apenas_esta' }) {
+        const item = await this.buscarPorId(id, userId);
+        if (!item || item.tipo !== 'transferencia') return false;
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            const par = await this.localizarParTransferencia(item, userId, conn);
+            const ids = par ? [item.id, par.id] : [item.id];
+            const marcas = ids.map(() => '?').join(',');
+
+            // Valor: a perna de saida e negativa e a de entrada positiva.
+            const sinal = 'CASE WHEN valor < 0 THEN -? ELSE ? END';
+            if (item.serie_id && escopo === 'esta_e_proximas') {
+                await conn.query(`UPDATE lancamentos SET valor = ${sinal}, updated_at = NOW(3) WHERE user_id = ? AND tipo = 'transferencia' AND serie_id = ? AND data_competencia >= ?`,
+                    [valor, valor, userId, item.serie_id, toLocalYMD(item.data_competencia)]);
+            } else if (item.serie_id && escopo === 'toda_serie') {
+                await conn.query(`UPDATE lancamentos SET valor = ${sinal}, updated_at = NOW(3) WHERE user_id = ? AND tipo = 'transferencia' AND serie_id = ?`,
+                    [valor, valor, userId, item.serie_id]);
+            } else {
+                await conn.query(`UPDATE lancamentos SET valor = ${sinal}, updated_at = NOW(3) WHERE user_id = ? AND id IN (${marcas})`, [valor, valor, userId, ...ids]);
+            }
+
+            // Data e situacao da ocorrencia editada (as duas pernas).
+            await conn.query(
+                `UPDATE lancamentos SET data_competencia = ?, status = ?, data_pagamento = ?, updated_at = NOW(3) WHERE user_id = ? AND id IN (${marcas})`,
+                [data, pago ? 'pago' : 'pendente', pago ? (dataPagamento || data) : null, userId, ...ids]
+            );
+            await conn.commit();
+            return true;
+        } catch (err) {
+            await conn.rollback();
+            throw err;
+        } finally {
+            conn.release();
+        }
+    }
+
     static async excluir(id, userId, escopoSerie = 'apenas_esta') {
         const SyncExclusao = require('./SyncExclusao');
         const item = await this.buscarPorId(id, userId);

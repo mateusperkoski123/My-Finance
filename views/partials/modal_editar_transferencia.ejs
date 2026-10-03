@@ -1,0 +1,73 @@
+<%# Modal "Editar transferencia" entre contas: valor, data e situacao. Preenchido por public/assets/js/app.js (botao com data-editar-transf). %>
+<div class="modal-backdrop" id="modal-editar-transferencia" data-modal style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);">
+    <div class="modal card" style="max-width: 520px; border-radius: 20px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid var(--border); max-height: 92vh; overflow-y: auto;">
+        <div class="modal__header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--bg); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                    <i class="ph ph-arrows-left-right" style="color: var(--muted); font-size: 20px;"></i>
+                </div>
+                <h2 style="font-size: 18px; font-weight: 700; margin: 0;"><%= t('modal.editar_transferencia') %></h2>
+            </div>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
+        </div>
+
+        <form method="post" action="#" class="form" data-editar-form data-ajax style="display: flex; flex-direction: column; gap: 16px;">
+            <%- csrfCampo %>
+            <input type="hidden" name="voltar" value="<%= currentUrl %>">
+
+            <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;">
+                <strong data-transf-descricao style="display: block; font-size: 13.5px; overflow-wrap: anywhere;"></strong>
+                <span class="muted" style="font-size: 11.5px;"><%= t('modal.transf_aviso') %></span>
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label for="ed-transf-valor" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('modal.valor') %></label>
+                <input class="input" type="text" id="ed-transf-valor" name="valor" data-money inputmode="decimal" required style="border-radius: 12px; padding: 10px 14px; font-size: 16px; font-weight: 700;">
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label for="ed-transf-data" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('modal.data_competencia') %></label>
+                <input class="input" type="date" id="ed-transf-data" name="data_competencia" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+            </div>
+
+            <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
+                <div>
+                    <strong style="font-size: 13px; display: block;" data-status-title><%= t('modal.nao_foi_pago') %></strong>
+                    <span style="font-size: 11px; color: var(--muted);"><%= t('painel.status_pagamento') %></span>
+                </div>
+                <label class="toggle" style="margin: 0;">
+                    <input type="checkbox" name="status" value="pago" data-gf-status-toggle data-tipo="despesa">
+                    <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                </label>
+            </div>
+
+            <div class="form-group" style="margin: 0;">
+                <label for="ed-transf-pag" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;" data-status-date-label><%= t('modal.data_vencimento') %></label>
+                <input class="input" type="date" id="ed-transf-pag" name="data_pagamento" style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+            </div>
+
+            <div data-ed-serie hidden style="background: var(--bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border);">
+                <p style="font-weight: 600; font-size: 13px; margin: 0 0 8px 0;"><%= t('series.titulo') %></p>
+                <p class="muted" style="font-size: 11.5px; margin: 0 0 10px 0;"><%= t('modal.transf_escopo_dica') %></p>
+                <label style="display: block; margin-bottom: 6px; font-size: 12px;">
+                    <input type="radio" name="escopo_serie" value="apenas_esta" checked> <%= t('series.apenas_esta') %>
+                </label>
+                <label style="display: block; margin-bottom: 6px; font-size: 12px;">
+                    <input type="radio" name="escopo_serie" value="esta_e_proximas"> <%= t('series.esta_e_proximas') %>
+                </label>
+                <label style="display: block; font-size: 12px;">
+                    <input type="radio" name="escopo_serie" value="toda_serie"> <%= t('series.toda_serie') %>
+                </label>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+                <button type="submit" class="btn btn-primary" style="border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="ph ph-floppy-disk" style="font-size: 18px;"></i> <%= t('modal.salvar') %>
+                </button>
+                <button type="button" class="btn btn-outline" data-modal-close style="border-radius: 12px; padding: 10px; font-size: 13.5px; font-weight: 600; width: 100%;">
+                    <%= t('modal.cancelar') %>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
