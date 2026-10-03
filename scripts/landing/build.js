@@ -104,7 +104,7 @@ function montar(idioma, base) {
     // Links para o sistema (outro dominio) e para a propria pagina
     $('a[href]').each((_, el) => {
         const h = $(el).attr('href');
-        if (/^\/(cadastro|login|termos|privacidade)(\?|$)/.test(h)) $(el).attr('href', APP + h);
+        if (/^\/(cadastro|login|termos|privacidade)(\?|$)/.test(h)) $(el).attr('href', APP + h + (h.includes('?') ? '&' : '?') + 'lang=' + idioma.hreflang);
         else if (h === '/') $(el).attr('href', idioma.rota);
     });
 

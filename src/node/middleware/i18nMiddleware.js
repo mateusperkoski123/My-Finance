@@ -1,7 +1,12 @@
 const { t } = require('../core/i18n');
-const { IDIOMAS, detectarIdioma } = require('../core/idiomas');
+const { IDIOMAS, detectarIdioma, normalizarIdioma } = require('../core/idiomas');
 
 function i18nMiddleware(req, res, next) {
+    // Veio da landing (myfinance.systempy.com/es/ -> /cadastro?lang=es): o visitante segue no idioma que estava lendo.
+    if (!req.user && req.session && req.method === 'GET' && req.query && req.query.lang) {
+        const escolhido = normalizarIdioma(req.query.lang);
+        if (escolhido) req.session.idioma = escolhido;
+    }
     // Visitante (sem login): idioma escolhido no seletor, ou o do navegador, ou portugues.
     const lang = req.user ? req.user.idioma : (req.session?.idioma || detectarIdioma(req) || 'pt-BR');
     const currency = req.user ? req.user.moeda : 'PYG';
