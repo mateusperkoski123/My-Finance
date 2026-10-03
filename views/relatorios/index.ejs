@@ -225,12 +225,20 @@
         const _f1 = (v) => Math.abs(v).toFixed(1).replace('.', ',');
         // Variacao contra o periodo anterior. boaSubir: subir e bom (receitas, resultado) ou ruim (despesas).
         const _delta = (v, boaSubir) => {
-            if (v === null || v === undefined) return '<span class="muted">—</span>';
+            if (v === null || v === undefined) return '<span class="muted" title="' + t('est.sem_base') + '">—</span>';
             if (Math.abs(v) < 0.05) return '<span class="estado-delta muted">0,0%</span>';
             const subiu = v > 0;
             const bom = subiu === boaSubir;
             return '<span class="estado-delta ' + (bom ? 'estado-delta--bom' : 'estado-delta--ruim') + '">' + (subiu ? '▲' : '▼') + ' ' + _f1(v) + '%</span>';
         };
+        // Resultado: se o periodo anterior fechou em zero ou negativo, a % nao diz nada (ex.: de -382 mil para +3,8 mi = 1110%); mostra a diferenca em valor.
+        const _deltaRes = (atual, anterior) => {
+            if (anterior > 0) return _delta(((atual - anterior) / anterior) * 100, true);
+            const dif = atual - anterior;
+            if (Math.abs(dif) < 1) return '<span class="estado-delta muted">0</span>';
+            return '<span class="estado-delta ' + (dif > 0 ? 'estado-delta--bom' : 'estado-delta--ruim') + '" title="' + t('est.base_negativa') + '">' + (dif > 0 ? '▲ +' : '▼ −') + moeda(Math.abs(dif)) + '</span>';
+        };
+        const _ajustes = resumo.ajustes_periodo || 0;
         const _ant = formatDate(periodoAnt.inicio, 'DD/MM/YYYY') + ' – ' + formatDate(periodoAnt.fim, 'DD/MM/YYYY');
         %>
 
@@ -257,11 +265,21 @@
             <div class="estado-linha estado-linha--res">
                 <span class="estado-linha__rot">(=) <%= t('est.resultado') %>
                     <small><%= t('est.resultado_realizado') %> <b><%= moeda(X.realizado) %></b></small></span>
-                <span class="estado-linha__val" style="color: <%= X.total >= 0 ? 'var(--green)' : 'var(--red)' %>;"><%= X.total >= 0 ? '' : '−' %><%= moeda(Math.abs(X.total)) %> <%- _delta(X.variacao, true) %></span>
+                <span class="estado-linha__val" style="color: <%= X.total >= 0 ? 'var(--green)' : 'var(--red)' %>;"><%= X.total >= 0 ? '' : '−' %><%= moeda(Math.abs(X.total)) %> <%- _deltaRes(X.total, X.anterior) %></span>
             </div>
+            <% if (Math.abs(_ajustes) >= 1) { %>
+            <div class="estado-linha">
+                <span class="estado-linha__rot">(±) <%= t('est.ajustes') %><small><%= t('est.ajustes_dica') %></small></span>
+                <span class="estado-linha__val"><%= _ajustes >= 0 ? '+' : '−' %><%= moeda(Math.abs(_ajustes)) %></span>
+            </div>
+            <% } %>
             <div class="estado-linha estado-linha--proj">
-                <span class="estado-linha__rot"><%= t('est.saldo_projetado') %><small><%= t('est.saldo_projetado_dica') %></small></span>
+                <span class="estado-linha__rot">(=) <%= t('est.saldo_projetado') %><small><%= t('est.saldo_projetado_dica') %></small></span>
                 <span class="estado-linha__val"><%= moeda(resumo.saldo_previsto) %></span>
+            </div>
+            <div class="estado-linha estado-linha--real">
+                <span class="estado-linha__rot"><%= t('est.saldo_realizado') %><small><%= t('est.saldo_realizado_dica') %></small></span>
+                <span class="estado-linha__val"><%= moeda(resumo.saldo_disponivel) %></span>
             </div>
         </section>
 

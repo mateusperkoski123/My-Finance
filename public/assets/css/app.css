@@ -2177,3 +2177,5 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
   .estado-linha--res { margin: 4px -16px; padding: 12px 16px; }
   .estado-linha__val { font-size: 15px; }
 }
+.estado-linha--real .estado-linha__val { font-size: 14px; font-weight: 700; color: var(--muted); }
+.estado-linha--proj { border-top: 2px solid var(--border); }
