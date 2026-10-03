@@ -221,8 +221,51 @@
         <%
         const _lnk = (extra) => '/relatorios?' + new URLSearchParams(Object.assign({ aba: 'demonstrativo' }, periodoParams, extra)).toString();
         const _chip = (ativo, href, texto) => '<a href="' + href + '" class="btn btn-sm ' + (ativo ? 'btn-primary' : 'btn-outline') + '" style="border-radius: 20px;">' + texto + '</a>';
+        const R = estado.receitas, D = estado.despesas, X = estado.resultado;
+        const _f1 = (v) => Math.abs(v).toFixed(1).replace('.', ',');
+        // Variacao contra o periodo anterior. boaSubir: subir e bom (receitas, resultado) ou ruim (despesas).
+        const _delta = (v, boaSubir) => {
+            if (v === null || v === undefined) return '<span class="muted">—</span>';
+            if (Math.abs(v) < 0.05) return '<span class="estado-delta muted">0,0%</span>';
+            const subiu = v > 0;
+            const bom = subiu === boaSubir;
+            return '<span class="estado-delta ' + (bom ? 'estado-delta--bom' : 'estado-delta--ruim') + '">' + (subiu ? '▲' : '▼') + ' ' + _f1(v) + '%</span>';
+        };
+        const _ant = formatDate(periodoAnt.inicio, 'DD/MM/YYYY') + ' – ' + formatDate(periodoAnt.fim, 'DD/MM/YYYY');
         %>
-        <div class="card" style="border-radius: 16px; padding: 14px 18px; margin-top: 20px; display: flex; gap: 14px 24px; flex-wrap: wrap; align-items: center;">
+
+        <!-- Resultado do periodo (demonstracao de resultados) -->
+        <section class="card estado-resumo">
+            <div class="estado-resumo__cab">
+                <h3><%= t('est.resumo_titulo') %></h3>
+                <span class="muted"><%= t('est.vs', { periodo: _ant }) %></span>
+            </div>
+            <div class="estado-linha">
+                <span class="estado-linha__rot"><%= t('painel.saldo_anterior') %></span>
+                <span class="estado-linha__val"><%= moeda(resumo.saldo_anterior) %></span>
+            </div>
+            <div class="estado-linha estado-linha--rec">
+                <span class="estado-linha__rot">(+) <%= t('comum.receitas') %>
+                    <small><%= t('painel.recebido') %> <b><%= moeda(R.realizado) %></b> · <%= t('painel.a_receber') %> <b><%= moeda(R.pendente) %></b></small></span>
+                <span class="estado-linha__val"><%= moeda(R.total) %> <%- _delta(R.variacao, true) %></span>
+            </div>
+            <div class="estado-linha estado-linha--des">
+                <span class="estado-linha__rot">(−) <%= t('comum.despesas') %>
+                    <small><%= t('painel.pago') %> <b><%= moeda(D.realizado) %></b> · <%= t('painel.nao_pago') %> <b><%= moeda(D.pendente) %></b></small></span>
+                <span class="estado-linha__val"><%= moeda(D.total) %> <%- _delta(D.variacao, false) %></span>
+            </div>
+            <div class="estado-linha estado-linha--res">
+                <span class="estado-linha__rot">(=) <%= t('est.resultado') %>
+                    <small><%= t('est.resultado_realizado') %> <b><%= moeda(X.realizado) %></b></small></span>
+                <span class="estado-linha__val" style="color: <%= X.total >= 0 ? 'var(--green)' : 'var(--red)' %>;"><%= X.total >= 0 ? '' : '−' %><%= moeda(Math.abs(X.total)) %> <%- _delta(X.variacao, true) %></span>
+            </div>
+            <div class="estado-linha estado-linha--proj">
+                <span class="estado-linha__rot"><%= t('est.saldo_projetado') %><small><%= t('est.saldo_projetado_dica') %></small></span>
+                <span class="estado-linha__val"><%= moeda(resumo.saldo_previsto) %></span>
+            </div>
+        </section>
+
+        <div class="card" style="border-radius: 16px; padding: 14px 18px; margin-top: 16px; display: flex; gap: 14px 24px; flex-wrap: wrap; align-items: center;">
             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                 <span class="muted" style="font-size: 12px; font-weight: 600;"><%= t('comum.tipo') %></span>
                 <%- _chip(!tipoFiltro, _lnk(nivel ? { nivel } : {}), t('painel.filtro.todas')) %>
@@ -236,42 +279,97 @@
                 <%- _chip(nivel === 'sub', _lnk(Object.assign({ nivel: 'sub' }, tipoFiltro ? { tipo: tipoFiltro } : {})), t('graf.nivel_sub')) %>
             </div>
         </div>
-        <div class="card" style="border-radius: 16px; padding: 20px; margin-top: 16px;">
-            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;"><%= t('relatorios.aba_demonstrativo') %></h3>
-            <p class="muted" style="font-size: 12.5px; margin: 0 0 16px;"><%= t('graf.clique_categoria') %></p>
+
+        <%
+        const _numCel = (v) => moeda(v);
+        const _barraOrc = (x) => {
+            if (!x.orcado) return '<span class="muted">—</span>';
+            const uso = x.uso || 0;
+            const cls = uso > 100 ? 'estouro' : (uso >= 80 ? 'alerta' : 'ok');
+            return '<div class="orc"><div class="orc__txt"><span>' + moeda(x.orcado) + '</span><b class="orc--' + cls + '">' + Math.round(uso) + '%</b></div>' +
+                '<div class="orc__barra"><span class="orc--' + cls + '" style="width:' + Math.min(uso, 100).toFixed(0) + '%"></span></div></div>';
+        };
+        const _tem = R.cats.length + D.cats.length > 0;
+        %>
+        <% if (!_tem) { %>
+            <div class="card" style="border-radius: 16px; padding: 24px; margin-top: 16px;"><p class="muted" style="margin: 0;"><%= t('relatorios.demonstrativo_sem_dados') %></p></div>
+        <% } %>
+        <% [['receita', R, true], ['despesa', D, false]].forEach(([tp, S, boaSubir]) => {
+            if (tipoFiltro && tipoFiltro !== tp) return;
+            if (!S.cats.length) return;
+            const _cor = tp === 'receita' ? 'var(--green)' : 'var(--red)';
+            const _comOrc = tp === 'despesa' && orcamentoMult;
+            // Linhas a mostrar conforme o nivel: categorias com subcategorias embaixo, so categorias ou so subcategorias.
+            const _linhas = [];
+            if (nivel === 'sub') {
+                S.cats.forEach(c => c.subLista.filter(s => !s.direto).forEach(s => _linhas.push({ no: s, cat: c, sub: true })));
+                _linhas.sort((a, b) => b.no.total - a.no.total);
+            } else {
+                S.cats.forEach(c => {
+                    _linhas.push({ no: c, cat: c, sub: false });
+                    if (nivel !== 'cat') c.subLista.forEach(s => _linhas.push({ no: s, cat: c, sub: true, filho: true }));
+                });
+            }
+        %>
+        <section class="card estado-tabela" style="border-radius: 16px; padding: 20px; margin-top: 16px;">
+            <div class="estado-tabela__cab">
+                <h3 style="color: <%= _cor %>;"><%= tp === 'receita' ? t('comum.receitas') : t('comum.despesas') %></h3>
+                <strong style="color: <%= _cor %>;"><%= moeda(S.total) %></strong>
+            </div>
+            <p class="muted" style="font-size: 12px; margin: 0 0 12px;"><%= t('graf.clique_categoria') %><% if (tp === 'despesa' && !orcamentoMult) { %> · <%= t('est.orcado_so_mes') %><% } %></p>
             <div class="tabela-container">
-                <table class="tabela">
+                <table class="tabela estado-t">
                     <thead>
                         <tr>
                             <th><%= t('relatorios.demonstrativo_categoria_col') %></th>
-                            <th><%= t('comum.subcategoria') %></th>
-                            <th><%= t('comum.tipo') %></th>
-                            <th><%= t('relatorios.demonstrativo_total_geral') %></th>
+                            <th class="num"><%= t('est.realizado') %></th>
+                            <th class="num opc"><%= t('est.pendente') %></th>
+                            <th class="num"><%= t('est.total') %></th>
+                            <th class="num opc"><%= t('est.peso') %></th>
+                            <th class="num"><%= t('est.vs_ant') %></th>
+                            <% if (_comOrc) { %><th class="opc" title="<%= t('est.limite_dica') %>"><%= t('est.orcado') %></th><% } %>
                         </tr>
                     </thead>
                     <tbody>
-                        <% if (!demonstrativoLinhas || demonstrativoLinhas.length === 0) { %>
-                            <tr>
-                                <td colspan="4" class="tabela__vazio"><%= t('relatorios.demonstrativo_sem_dados') %></td>
+                        <% _linhas.forEach(L => {
+                            const x = L.no;
+                            const href = _lnk(Object.assign({ tipo: tp, categoria_id: L.cat.id }, (L.sub && x.id) ? { subcategoria_id: x.id } : {}));
+                            const nome = x.direto ? t('est.sem_subcategoria') : x.nome;
+                        %>
+                            <tr class="<%= L.filho ? 'estado-sub' : (L.sub ? 'estado-sub estado-sub--solo' : 'estado-cat') %>">
+                                <td>
+                                    <a href="<%= href %>" class="estado-nome">
+                                        <% if (!L.filho) { %><span class="estado-dot" style="background: <%= L.cat.cor || '#3b82f6' %>;"></span><% } %>
+                                        <span><%= L.sub && !L.filho ? L.cat.nome + ' / ' : '' %><%= nome %></span>
+                                    </a>
+                                </td>
+                                <td class="num"><%= _numCel(x.realizado) %></td>
+                                <td class="num opc"><%= _numCel(x.pendente) %></td>
+                                <td class="num"><strong><%= _numCel(x.total) %></strong></td>
+                                <td class="num opc"><%= _f1(x.pct) %>%</td>
+                                <td class="num"><%- _delta(x.variacao, boaSubir) %></td>
+                                <% if (_comOrc) { %><td class="opc"><%- L.filho ? (x.orcado ? _barraOrc(x) : '') : _barraOrc(x) %></td><% } %>
                             </tr>
-                        <% } else { %>
-                            <% demonstrativoLinhas.forEach(d => {
-                                const _href = _lnk(Object.assign({ tipo: d.tipo, categoria_id: d.categoria_id }, d.subcategoria_id ? { subcategoria_id: d.subcategoria_id } : {}));
-                            %>
-                                <tr>
-                                    <td><a href="<%= _href %>" style="color: inherit; text-decoration: none;"><strong><%= d.categoria || t('relatorios.sem_categoria') %></strong></a></td>
-                                    <td><% if (d.subcategoria) { %><a href="<%= _href %>" style="color: inherit; text-decoration: none;"><%= d.subcategoria %></a><% } else { %>—<% } %></td>
-                                    <td><%= t('lancamento.tipo.' + d.tipo) %></td>
-                                    <td style="font-weight: 600; color: <%= d.tipo === 'receita' ? 'var(--green)' : 'var(--red)' %>;">
-                                        <a href="<%= _href %>" style="color: inherit; text-decoration: none;"><%= moeda(d.total) %></a>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        <% } %>
+                        <% }) %>
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td><strong><%= t('est.total') %></strong></td>
+                            <td class="num"><strong><%= _numCel(S.realizado) %></strong></td>
+                            <td class="num opc"><strong><%= _numCel(S.pendente) %></strong></td>
+                            <td class="num"><strong><%= _numCel(S.total) %></strong></td>
+                            <td class="num opc">100%</td>
+                            <td class="num"><%- _delta(S.variacao, boaSubir) %></td>
+                            <% if (_comOrc) { %><td class="opc"></td><% } %>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
-        </div>
+        </section>
+        <% }) %>
+        <% if (_tem && !tipoFiltro && D.cats.length && orcamentoMult) { %>
+            <p class="muted" style="font-size: 12px; margin: 12px 4px 0;"><i class="ph ph-info"></i> <%= t('est.limite_dica') %> · <a href="/categorias"><%= t('est.definir_limites') %></a></p>
+        <% } %>
     <% } %>
 <% } else if (aba === 'demonstrativo_anual') { %>
     <div class="periodo-nav card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; margin-top: 20px; border-radius: 16px;">

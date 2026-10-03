@@ -8,6 +8,90 @@ const Categoria = require('../models/Categoria');
 
 const cleanVal = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '') ? String(v).trim() : null;
 
+// Periodo imediatamente anterior para comparar: mes -> mes anterior, ano -> ano anterior, outros -> mesma quantidade de dias antes.
+function periodoAnterior(preset, inicio, fim, mes, ano) {
+    if (preset === 'mes') {
+        return { inicio: toLocalYMD(new Date(ano, mes - 2, 1)), fim: toLocalYMD(new Date(ano, mes - 1, 0)) };
+    }
+    if (preset === 'anual') return { inicio: `${ano - 1}-01-01`, fim: `${ano - 1}-12-31` };
+    const [a, m, d] = inicio.split('-').map(Number);
+    const [a2, m2, d2] = fim.split('-').map(Number);
+    const ini = new Date(a, m - 1, d), end = new Date(a2, m2 - 1, d2);
+    const dias = Math.round((end - ini) / 86400000) + 1;
+    const fimAnt = new Date(ini); fimAnt.setDate(fimAnt.getDate() - 1);
+    const iniAnt = new Date(fimAnt); iniAnt.setDate(iniAnt.getDate() - (dias - 1));
+    return { inicio: toLocalYMD(iniAnt), fim: toLocalYMD(fimAnt) };
+}
+
+const num = (v) => parseFloat(v) || 0;
+const variacao = (atual, anterior) => (anterior > 0 ? ((atual - anterior) / anterior) * 100 : null);
+
+// Agrupa as linhas (tipo x categoria x subcategoria) em: por tipo -> categorias -> subcategorias, com percentuais,
+// variacao contra o periodo anterior e uso do limite (orcado) quando houver.
+function montarEstado(linhas, orcamentoMult) {
+    const novoNo = (id, nome, cor, limite) => ({ id, nome, cor, limite: limite === null || limite === undefined ? null : num(limite), realizado: 0, pendente: 0, total: 0, anterior: 0 });
+    const soma = (no, r) => { no.realizado += num(r.realizado); no.pendente += num(r.pendente); no.total += num(r.total); no.anterior += num(r.anterior); };
+    const base = { receita: new Map(), despesa: new Map() };
+
+    linhas.forEach((r) => {
+        const mapa = base[r.tipo];
+        if (!mapa) return;
+        let cat = mapa.get(r.categoria_id);
+        if (!cat) {
+            cat = novoNo(r.categoria_id, r.categoria, r.categoria_cor, r.cat_limite);
+            cat.subs = new Map();
+            mapa.set(r.categoria_id, cat);
+        }
+        soma(cat, r);
+        if (r.subcategoria_id) {
+            let sub = cat.subs.get(r.subcategoria_id);
+            if (!sub) { sub = novoNo(r.subcategoria_id, r.subcategoria, r.categoria_cor, r.sub_limite); cat.subs.set(r.subcategoria_id, sub); }
+            soma(sub, r);
+        }
+    });
+
+    const enriquecer = (no, totalTipo) => {
+        no.pct = totalTipo > 0 ? (no.total / totalTipo) * 100 : 0;
+        no.variacao = variacao(no.total, no.anterior);
+        no.orcado = orcamentoMult && no.limite ? no.limite * orcamentoMult : null;
+        no.uso = no.orcado ? (no.total / no.orcado) * 100 : null;
+        return no;
+    };
+    const ordem = (a, b) => (b.total - a.total) || (b.anterior - a.anterior);
+
+    const secao = (tipo) => {
+        const cats = [...base[tipo].values()];
+        const t = { realizado: 0, pendente: 0, total: 0, anterior: 0 };
+        cats.forEach((c) => { t.realizado += c.realizado; t.pendente += c.pendente; t.total += c.total; t.anterior += c.anterior; });
+        cats.sort(ordem).forEach((c) => {
+            enriquecer(c, t.total);
+            const subs = [...c.subs.values()];
+            const somaSubs = subs.reduce((s, x) => s + x.total, 0);
+            const antSubs = subs.reduce((s, x) => s + x.anterior, 0);
+            // O que foi lancado direto na categoria (sem subcategoria) aparece como linha propria quando ela tambem tem subcategorias.
+            if (subs.length && (c.total - somaSubs > 0.004 || c.anterior - antSubs > 0.004)) {
+                const direto = novoNo(null, null, c.cor, null);
+                direto.direto = true;
+                direto.realizado = c.realizado - subs.reduce((s, x) => s + x.realizado, 0);
+                direto.pendente = c.pendente - subs.reduce((s, x) => s + x.pendente, 0);
+                direto.total = c.total - somaSubs;
+                direto.anterior = c.anterior - antSubs;
+                subs.push(direto);
+            }
+            c.subLista = subs.sort(ordem).map((s) => enriquecer(s, t.total));
+            delete c.subs;
+        });
+        return Object.assign(t, { variacao: variacao(t.total, t.anterior), cats });
+    };
+
+    const receitas = secao('receita');
+    const despesas = secao('despesa');
+    const resultado = { total: receitas.total - despesas.total, realizado: receitas.realizado - despesas.realizado, anterior: receitas.anterior - despesas.anterior };
+    resultado.variacao = resultado.anterior !== 0 ? ((resultado.total - resultado.anterior) / Math.abs(resultado.anterior)) * 100 : null;
+    return { receitas, despesas, resultado };
+}
+
+
 const relatoriosController = {
     index: async (req, res) => {
         const userId = req.user.id;
@@ -108,37 +192,34 @@ const relatoriosController = {
             dadosLista = await Lancamento.buscarFiltrados(userId, periodo, filtros, ordenacao, pagina, porPagina, agrupamento, extra);
         }
 
-        // ---- Estado financeiro (resumo por categoria), com filtros de tipo e nivel ----
-        let demonstrativoLinhas = [];
+        // ---- Estado financeiro: resultado do periodo + categorias (realizado, pendente, total, %, vs periodo anterior, orcado) ----
         const tipoFiltro = ['receita', 'despesa'].includes(query.tipo) ? query.tipo : '';
         const nivel = ['cat', 'sub'].includes(query.nivel) ? query.nivel : '';
+        let estado = null;
+        const periodoAnt = periodoAnterior(preset, inicio, fim, mes, ano);
+        // Limite de gasto das categorias e mensal: vale ao ver um mes (x1) ou o ano (x12); em outros periodos nao se compara.
+        const orcamentoMult = preset === 'mes' ? 1 : (preset === 'anual' ? 12 : null);
         if (aba === 'demonstrativo' && !estadoPorCategoria) {
             const [linhas] = await db.query(
-                `SELECT
-                    COALESCE(p.id, c.id) AS categoria_id, IF(p.id IS NULL, c.nome, p.nome) AS categoria,
-                    IF(p.id IS NOT NULL, c.id, NULL) AS subcategoria_id, IF(p.id IS NOT NULL, c.nome, NULL) AS subcategoria,
-                    l.tipo, SUM(ABS(l.valor)) AS total
+                `SELECT l.tipo,
+                        COALESCE(p.id, c.id) AS categoria_id, IF(p.id IS NULL, c.nome, p.nome) AS categoria, IF(p.id IS NULL, c.cor, p.cor) AS categoria_cor,
+                        IF(p.id IS NULL, c.limite_gasto, p.limite_gasto) AS cat_limite,
+                        IF(p.id IS NOT NULL, c.id, NULL) AS subcategoria_id, IF(p.id IS NOT NULL, c.nome, NULL) AS subcategoria,
+                        IF(p.id IS NOT NULL, c.limite_gasto, NULL) AS sub_limite,
+                        SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? AND l.status = 'pago' THEN ABS(l.valor) ELSE 0 END) AS realizado,
+                        SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? AND l.status = 'pendente' THEN ABS(l.valor) ELSE 0 END) AS pendente,
+                        SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) ELSE 0 END) AS total,
+                        SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) ELSE 0 END) AS anterior
                  FROM lancamentos l
                  LEFT JOIN categorias c ON l.categoria_id = c.id
                  LEFT JOIN categorias p ON c.parent_id = p.id
-                 WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
-                 GROUP BY p.id, c.id, p.nome, c.nome, l.tipo
-                 ORDER BY l.tipo ASC, total DESC`,
-                [userId, inicio, fim]
+                 WHERE l.user_id = ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
+                   AND l.data_competencia BETWEEN ? AND ?
+                 GROUP BY l.tipo, p.id, c.id, p.nome, c.nome, p.cor, c.cor, p.limite_gasto, c.limite_gasto`,
+                [inicio, fim, inicio, fim, inicio, fim, periodoAnt.inicio, periodoAnt.fim, userId,
+                    inicio < periodoAnt.inicio ? inicio : periodoAnt.inicio, fim > periodoAnt.fim ? fim : periodoAnt.fim]
             );
-            demonstrativoLinhas = linhas.filter((r) => !tipoFiltro || r.tipo === tipoFiltro);
-            if (nivel === 'sub') {
-                demonstrativoLinhas = demonstrativoLinhas.filter((r) => r.subcategoria_id);
-            } else if (nivel === 'cat') {
-                // Soma as subcategorias na categoria pai.
-                const mapa = new Map();
-                demonstrativoLinhas.forEach((r) => {
-                    const k = r.tipo + ':' + r.categoria_id;
-                    if (!mapa.has(k)) mapa.set(k, { categoria_id: r.categoria_id, categoria: r.categoria, subcategoria_id: null, subcategoria: null, tipo: r.tipo, total: 0 });
-                    mapa.get(k).total += parseFloat(r.total) || 0;
-                });
-                demonstrativoLinhas = [...mapa.values()].sort((a, b) => (a.tipo === b.tipo ? b.total - a.total : (a.tipo < b.tipo ? 1 : -1)));
-            }
+            estado = montarEstado(linhas, orcamentoMult);
         }
 
         // ---- Graficos: totais por tipo, situacao, categoria e subcategoria (o navegador monta e filtra os 4 graficos) ----
@@ -242,7 +323,9 @@ const relatoriosController = {
             // estado financeiro / graficos / anual
             tipoFiltro,
             nivel,
-            demonstrativoLinhas,
+            estado,
+            periodoAnt,
+            orcamentoMult,
             graficosDados,
             frequencia,
             evolucao,
