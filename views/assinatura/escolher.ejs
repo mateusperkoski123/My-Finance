@@ -18,13 +18,18 @@
                 <% if (p.codigo === 'premium') { %><span class="plano-card__faixa plano-card__faixa--vendido"><i class="ph-bold ph-star" aria-hidden="true"></i> <%= t('assinatura.mais_vendido') %></span><% } else if (p.codigo === 'pro') { %><span class="plano-card__faixa plano-card__faixa--ouro"><i class="ph-bold ph-crown-simple" aria-hidden="true"></i> <%= t('assinatura.mais_completo') %></span><% } %>
                 <h3><%= t('plano.' + p.codigo + '.nome') %></h3>
                 <div class="muted plano-card__sub"><%= t('plano.' + p.codigo + '.sub') %></div>
-                <div class="muted plano-card__sub plano-card__cobranca"><%= t('teste.depois', { valor: fmt(p.preco_mensal) }) %> · <%= t('assinatura.sem_iva') %></div>
+                <div class="plano-card__preco"><span class="plano-card__moeda">Gs.</span> <span><%= fmt(p.preco_mensal) %></span><small>/<%= t('assinatura.mes') %></small></div>
+                <div class="muted plano-card__sub plano-card__cobranca"><%= t('assinatura.ou_anual', { valor: fmt(p.preco_anual) }) %> · <%= t('assinatura.sem_iva') %></div>
 
-                <form method="post" action="/teste/iniciar" class="plano-card__acoes">
+                <div class="plano-card__acoes">
+                <form method="post" action="/teste/iniciar" style="margin: 0;">
                     <%- csrfCampo %>
                     <input type="hidden" name="plano" value="<%= p.codigo %>">
-                    <button type="submit" class="btn <%= p.codigo === 'pro' ? 'btn-pro' : (p.codigo === 'premium' ? 'btn-primary' : 'btn-outline') %>"><%= t('teste.botao', { dias: _dias }) %></button>
+                    <button type="submit" class="btn <%= p.codigo === 'pro' ? 'btn-pro' : (p.codigo === 'premium' ? 'btn-primary' : 'btn-outline') %>"><i class="ph ph-gift" aria-hidden="true"></i> <%= t('teste.botao', { dias: _dias }) %></button>
                 </form>
+                <%# Comprar direto, logo abaixo do teste gratis: abre o pedido deste plano. %>
+                <a href="/assinatura?comprar=<%= p.codigo %>" class="btn btn-adquirir"><i class="ph-bold ph-shopping-cart-simple" aria-hidden="true"></i> <%= t('assinatura.adquirir', { valor: 'Gs. ' + fmt(p.preco_mensal) + ' / ' + t('assinatura.mes') }) %></a>
+                </div>
 
                 <%- include('_recursos', { p: p }) %>
             </article>

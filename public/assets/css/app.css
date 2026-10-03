@@ -2718,3 +2718,17 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
   .folha__item .selo-plano, .folha__item .selo-novidade { margin-left: auto; }
   .folha__item--sair, .folha__item--sair i { color: var(--red); }
 }
+
+/* ---- Planos: preco em destaque e botao "Adquirir por ..." ---- */
+.plano-card__preco { display: flex; align-items: baseline; gap: 6px; padding: 12px 14px; margin: 2px 0 4px; border-radius: 14px; background: var(--bg); border: 1px solid var(--border);
+  font-size: 40px; font-weight: 900; line-height: 1.05; letter-spacing: -.03em; flex-wrap: wrap; }
+.plano-card__moeda { font-size: 18px; font-weight: 800; letter-spacing: 0; opacity: .8; }
+.plano-card__preco small { font-size: 14px; font-weight: 700; letter-spacing: 0; color: var(--muted); }
+.plano-card--destaque .plano-card__preco { background: color-mix(in srgb, var(--blue) 9%, var(--card)); border-color: color-mix(in srgb, var(--blue) 35%, var(--border)); }
+.plano-card--pro .plano-card__preco { background: rgba(245, 197, 66, .08); border-color: rgba(245, 197, 66, .35); color: #f5c542; -webkit-background-clip: border-box; background-clip: border-box; }
+.plano-card--pro .plano-card__preco small { -webkit-text-fill-color: var(--nav-text-muted); color: var(--nav-text-muted); }
+.btn-adquirir { background: var(--green); color: var(--on-accent); border: 1px solid var(--green); font-weight: 800; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-adquirir:hover { filter: brightness(1.06); }
+.btn-adquirir [data-valor] { white-space: nowrap; }
+@media (max-width: 768px) { .plano-card__preco { font-size: 36px; } }
+@media (max-width: 360px) { .plano-card__preco { font-size: 32px; } .btn-adquirir { font-size: 13.5px; padding-left: 8px; padding-right: 8px; } }

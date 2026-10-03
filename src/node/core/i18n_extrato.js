@@ -132,6 +132,8 @@ module.exports = {
     // ---- Navegacao e painel (barra inferior, resumo do mes, nomes padronizados) ----
     'nav.visao_geral': ['Início', 'Inicio', 'Home'],
     'nav.contas_curto': ['Contas', 'Cuentas', 'Accounts'],
+    'assinatura.adquirir': ['Adquirir por {valor}', 'Adquirir por {valor}', 'Get it for {valor}'],
+    'assinatura.ou_anual': ['ou Gs. {valor} por ano', 'o Gs. {valor} por año', 'or Gs. {valor} per year'],
     'nav.mais': ['Mais', 'Más', 'More'],
     'nav.novo': ['Novo lançamento', 'Nuevo movimiento', 'New entry'],
     'nav.principal': ['Navegação principal', 'Navegación principal', 'Main navigation'],
