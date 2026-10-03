@@ -52,6 +52,8 @@
     </script>
     <%# Icones (Phosphor): so os tres pesos usados no sistema, em versao fixa e direto como folha de estilo
         (o carregador por script trazia seis pesos e so aplicava os icones depois de a pagina aparecer). %>
+    <%# Conexao com o CDN dos icones aberta antes de pedir os arquivos (os 3 estilos bloqueiam a primeira exibicao da pagina). %>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <% ['regular', 'bold', 'fill'].forEach(function (peso) { %><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/<%= peso %>/style.css" crossorigin="anonymous">
     <% }) %><link rel="stylesheet" href="/assets/css/app.css?v=<%= assetVersion %>">
 </head>

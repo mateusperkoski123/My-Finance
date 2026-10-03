@@ -108,13 +108,11 @@ const authController = {
             throw err;
         }
 
-        // E-mail de verificacao: se o envio falhar, o cadastro continua (da para reenviar depois).
-        try {
-            const link = `${req.protocol || 'https'}://${req.get('host')}/verificar-email/${userId.tokenVerificacao}`;
-            await require('../core/mailer').sendVerificationEmail(email, link, idioma);
-        } catch (err) {
-            console.error('Falha ao enviar e-mail de verificacao:', err.message);
-        }
+        // E-mail de verificacao: sai em segundo plano. A pessoa entra na hora; se o envio falhar ou demorar,
+        // o cadastro continua e da para reenviar depois (a falha e registrada no log com o motivo).
+        const link = `${req.protocol || 'https'}://${req.get('host')}/verificar-email/${userId.tokenVerificacao}`;
+        require('../core/mailer').sendVerificationEmail(email, link, idioma)
+            .catch((err) => console.error('Falha ao enviar e-mail de verificacao (cadastro):', err.code || '', err.message));
         await User.registrarLogin(userId.id, { email, ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
 
         req.session.idioma = idioma;
@@ -151,13 +149,11 @@ const authController = {
             const host = req.get('host');
             const magicLink = `${protocol}://${host}/redefinir-senha/${token}`;
 
-            // Se o envio falhar, a resposta continua igual (um erro so para e-mails existentes revelaria quem tem conta).
-            try {
-                const { sendResetPasswordEmail } = require('../core/mailer');
-                await sendResetPasswordEmail(user.email, magicLink, user.idioma);
-            } catch (err) {
-                console.error('Falha ao enviar e-mail de recuperacao de senha:', err.message);
-            }
+            // Em segundo plano: a resposta e sempre igual e rapida (um erro ou uma demora so para e-mails existentes
+            // revelaria quem tem conta). Se o envio falhar, o motivo vai para o log.
+            const { sendResetPasswordEmail } = require('../core/mailer');
+            sendResetPasswordEmail(user.email, magicLink, user.idioma)
+                .catch((err) => console.error('Falha ao enviar e-mail de recuperacao de senha:', err.code || '', err.message));
         }
 
         // Always show the same friendly message for security (prevents user enumeration)

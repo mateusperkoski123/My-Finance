@@ -15,7 +15,10 @@ async function enviar({ to, subject, html, textoLog }) {
     const from = process.env.SMTP_FROM || `"${NOME_APP}" <noreply@gestaofinanceira.com>`;
 
     if (host && user && pass) {
-        const transporter = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass } });
+        // Prazos curtos: se a hospedagem bloquear a saida SMTP ou o servidor de e-mail nao responder, falha em segundos
+        // (o padrao do nodemailer espera 30 s a 2 min) e o motivo vai para o log.
+        const transporter = nodemailer.createTransport({ host, port, secure: port === 465, auth: { user, pass },
+            connectionTimeout: 8000, greetingTimeout: 8000, socketTimeout: 15000 });
         await transporter.sendMail({ from, to, subject, html });
         console.log(`[MAILER] "${subject}" enviado via SMTP para: ${to}`);
     } else {

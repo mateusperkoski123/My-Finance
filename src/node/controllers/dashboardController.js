@@ -77,17 +77,17 @@ const dashboardController = {
         const pagina = Math.max(parseInt(query.pagina || '1', 10) || 1, 1);
         const porPagina = Math.min(Math.max(parseInt(query.por_pagina || '30', 10) || 30, 10), 200);
 
-        const contas = await Conta.buscarPorUsuario(userId, false);
-        await Categoria.garantirCategoriasBasicas(userId); // contas antigas sem categorias de despesa/receita
-        const categoriasArvore = await Categoria.buscarArvore(userId, false);
-        const resumo = await Lancamento.resumoPeriodo(userId, periodo);
-        
+        // As consultas abaixo nao dependem umas das outras: rodam juntas (antes eram uma de cada vez, e cada ida e volta
+        // ao banco somava; so as categorias precisam garantir as basicas antes de listar a arvore).
         // Saldo previsto (ate o fim do periodo) = disponivel + a receber - nao pago (calculado em resumoPeriodo)
-
-        const dadosLancamentos = await Lancamento.buscarFiltrados(userId, periodo, filtros, ordenacao, pagina, porPagina, agrupamento);
-
-        const pendenciasUrgentes = await Lancamento.pendentesUrgentes(userId, toLocalYMD(hojeLocal()));
-        const despesasPorCategoria = await Lancamento.resumoPorCategoriaPai(userId, periodo, 'despesa');
+        const [contas, categoriasArvore, resumo, dadosLancamentos, pendenciasUrgentes, despesasPorCategoria] = await Promise.all([
+            Conta.buscarPorUsuario(userId, false),
+            Categoria.garantirCategoriasBasicas(userId).then(() => Categoria.buscarArvore(userId, false)), // contas antigas sem categorias de despesa/receita
+            Lancamento.resumoPeriodo(userId, periodo),
+            Lancamento.buscarFiltrados(userId, periodo, filtros, ordenacao, pagina, porPagina, agrupamento),
+            Lancamento.pendentesUrgentes(userId, toLocalYMD(hojeLocal())),
+            Lancamento.resumoPorCategoriaPai(userId, periodo, 'despesa')
+        ]);
 
         // Comparativo com o periodo anterior: mes anterior (navegacao por mes) ou mesmo intervalo logo antes (periodo livre)
         let periodoAnt;
