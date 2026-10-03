@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const Lancamento = require('../models/Lancamento');
-const { toLocalYMD, hojeLocal } = require('../core/helpers');
+const { toLocalYMD, hojeLocal, formatDate } = require('../core/helpers');
 const { CONTA_ATIVA } = require('../models/Lancamento');
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
@@ -71,7 +71,11 @@ const relatoriosController = {
         const aba = query.aba || 'graficos';
         const anoAnual = parseInt(query.ano_anual || ano, 10);
         const ordenar = query.ordenar || 'data';
-        const agrupar = query.agrupar || 'categoria';
+        // Pendentes agrupa de verdade (categoria, subcategoria, vencimento, criacao ou sem agrupamento); as outras abas mantem o padrao.
+        const AGRUPAR_PENDENTES = ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao'];
+        const agrupar = aba === 'pendentes'
+            ? (AGRUPAR_PENDENTES.includes(query.agrupar) ? query.agrupar : 'categoria')
+            : (query.agrupar || 'categoria');
 
         // Dynamic ordering for pendentes & demonstrativo
         let orderSql = 'l.data_competencia DESC, l.id DESC';
@@ -121,6 +125,32 @@ const relatoriosController = {
              ORDER BY ${pendentesOrderSql}`,
             [userId, inicio, fim, inicio <= hoje && fim >= hoje ? 1 : 0, hoje]
         );
+
+        // Grupos da aba Pendentes (na ordem em que aparecem na lista ja ordenada), separados em ingresos e gastos.
+        const semCat = req.t('comum.sem_categoria');
+        const fmt = (v) => (v ? formatDate(v, 'DD/MM/YYYY') : '—');
+        const chaveGrupo = (p) => {
+            if (agrupar === 'categoria') return p.categoria_nome || semCat;
+            if (agrupar === 'subcategoria') return p.subcategoria_nome ? `${p.categoria_nome || semCat} / ${p.subcategoria_nome}` : (p.categoria_nome || semCat);
+            if (agrupar === 'vencimento') return fmt(p.data_competencia);
+            return fmt(p.created_at);
+        };
+        const agruparLista = (lista) => {
+            if (agrupar === 'sem_agrupamento') return null;
+            const mapa = new Map();
+            lista.forEach((p) => {
+                const k = chaveGrupo(p);
+                if (!mapa.has(k)) mapa.set(k, { key: k, itens: [], total: 0 });
+                const g = mapa.get(k);
+                g.itens.push(p);
+                g.total += Math.abs(parseFloat(p.valor) || 0);
+            });
+            return [...mapa.values()];
+        };
+        const pendentesGrupos = {
+            receita: agruparLista(pendentes.filter((p) => p.tipo === 'receita')),
+            despesa: agruparLista(pendentes.filter((p) => p.tipo === 'despesa'))
+        };
 
         // Fetch demonstrativo mensal
         const [demonstrativoLinhas] = await db.query(
@@ -188,6 +218,7 @@ const relatoriosController = {
             frequencia,
             evolucao,
             pendentes,
+            pendentesGrupos,
             demonstrativoLinhas,
             demonstrativoAnual,
             resumo

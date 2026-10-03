@@ -37,7 +37,7 @@
         <!-- Period presets -->
         <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
             <a href="/relatorios?aba=<%= aba %>&preset=hoje&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === 'hoje' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.hoje') %></a>
-            <a href="/relatorios?aba=<%= aba %>&preset=7dias&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === '7dias' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.7dias') %></a>
+            <a href="/relatorios?aba=<%= aba %>&preset=7dias&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === '7dias' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= aba === 'pendentes' ? t('filtro.proximos_7dias') : t('filtro.7dias') %></a>
             <a href="/relatorios?aba=<%= aba %>&preset=anual&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === 'anual' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.anual') %></a>
             <a href="/relatorios?aba=<%= aba %>&preset=mes&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === 'mes' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
         </div>
@@ -48,8 +48,15 @@
                 <div style="display: flex; align-items: center; gap: 6px;">
                     <label style="font-size: 12px; margin: 0; color: var(--muted); font-weight: 600;"><%= t('filtro.agrupar') %></label>
                     <select name="agrupar" class="input" style="padding: 4px 8px; font-size: 12px; width: auto; border-radius: 8px;" onchange="this.form.submit()">
+                        <% if (aba === 'pendentes') { %>
+                        <option value="sem_agrupamento" <%= agrupar === 'sem_agrupamento' ? 'selected' : '' %>><%= t('filtro.sem_agrupamento') %></option>
+                        <% } %>
                         <option value="categoria" <%= agrupar === 'categoria' ? 'selected' : '' %>><%= t('filtro.por_categoria') %></option>
                         <option value="subcategoria" <%= agrupar === 'subcategoria' ? 'selected' : '' %>><%= t('filtro.por_subcategoria') %></option>
+                        <% if (aba === 'pendentes') { %>
+                        <option value="vencimento" <%= agrupar === 'vencimento' ? 'selected' : '' %>><%= t('filtro.por_vencimento') %></option>
+                        <option value="criacao" <%= agrupar === 'criacao' ? 'selected' : '' %>><%= t('filtro.por_criacao') %></option>
+                        <% } %>
                     </select>
                 </div>
 
@@ -216,124 +223,8 @@
     
     <div style="display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px;">
         <!-- Ingresos (receitas) primeiro; os gastos vem logo abaixo, em largura total -->
-        <div class="card" style="border-radius: 16px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                <h3 style="font-size: 16px; font-weight: 700; color: var(--green); display: flex; align-items: center; gap: 8px; margin: 0;">
-                    <i class="ph ph-arrow-circle-up" style="font-size: 20px;"></i> <%= t('relatorios.ingresos_pendentes') %>
-                </h3>
-                <span class="badge" style="background: var(--green-bg); color: var(--green); font-weight: 600; font-size: 11px;"><%= t('relatorios.registros', { n: pendentesIngresos.length }) %></span>
-            </div>
-            <div class="tabela-container">
-                <table class="tabela tabela-pend">
-                    <thead>
-                        <tr>
-                            <th><%= t('comum.descricao_categoria') %></th>
-                            <th><%= t('comum.data') %></th>
-                            <th><%= t('comum.valor') %></th>
-                            <th><%= t('tabela.acoes') %></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% if (pendentesIngresos.length === 0) { %>
-                            <tr>
-                                <td colspan="4" class="tabela__vazio" style="text-align: center; color: var(--muted); padding: 20px;"><%= t('relatorios.pendentes_vazio') %></td>
-                            </tr>
-                        <% } else { %>
-                            <% pendentesIngresos.forEach(p => { %>
-                                <tr>
-                                    <td>
-                                        <strong title="<%= p.descricao %>" style="display: block; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><%= truncarTexto(p.descricao, 45) %></strong>
-                                        <div style="font-size: 11px; color: var(--muted); max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                            <%= p.categoria_nome || '—' %><%= p.subcategoria_nome ? ' / ' + p.subcategoria_nome : '' %> • <%= p.conta_nome || '—' %>
-                                        </div>
-                                    </td>
-                                    <td style="white-space: nowrap; font-size: 13px;"><%= formatDate(p.data_competencia, 'DD/MM/YYYY') %></td>
-                                    <td style="font-weight: 700; color: var(--green); white-space: nowrap;">
-                                        + <%= moeda(Math.abs(p.valor)) %>
-                                    </td>
-                                    <td>
-                                        <div style="display: flex; gap: 6px; align-items: center;">
-                                            <button type="button" class="btn-editar-linha" title="<%= t('acao.editar') %>" aria-label="<%= t('acao.editar') %>" data-editar-lanc="<%= JSON.stringify({ id: p.id, tipo: p.tipo, descricao: p.descricao, valor: Math.abs(parseFloat(p.valor)), conta_id: p.conta_id, categoria_id: p.categoria_id, data_competencia: formatDate(p.data_competencia, 'YYYY-MM-DD'), data_pagamento: '', status: p.status, serie: !!p.serie_id }) %>"><i class="ph ph-pencil-simple"></i></button>
-                                            <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" style="display:inline;" data-ajax>
-                                                <%- csrfCampo %>
-<input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                <input type="hidden" name="status" value="pago">
-                                                <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span><%= t('acao.receber') %></span></button>
-                                            </form>
-                                            <form method="post" action="/lancamentos/<%= p.id %>/excluir" data-ajax data-confirm="<%= t('painel.lancamento.confirmar_exclusao') %>" style="display:inline;">
-                                                <%- csrfCampo %>
-                                                <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                <button type="submit" class="icon-btn" title="<%= t('comum.excluir') %>" style="color: var(--red);"><i class="ph ph-trash"></i></button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        <% } %>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Coluna Direita: Egresos (Gastos) -->
-        <div class="card" style="border-radius: 16px; padding: 20px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
-                <h3 style="font-size: 16px; font-weight: 700; color: var(--red); display: flex; align-items: center; gap: 8px; margin: 0;">
-                    <i class="ph ph-arrow-circle-down" style="font-size: 20px;"></i> <%= t('relatorios.egresos_pendentes') %>
-                </h3>
-                <span class="badge" style="background: var(--red-bg); color: var(--red); font-weight: 600; font-size: 11px;"><%= t('relatorios.registros', { n: pendentesEgresos.length }) %></span>
-            </div>
-            <div class="tabela-container">
-                <table class="tabela tabela-pend">
-                    <thead>
-                        <tr>
-                            <th><%= t('comum.descricao_categoria') %></th>
-                            <th><%= t('comum.data') %></th>
-                            <th><%= t('comum.valor') %></th>
-                            <th><%= t('tabela.acoes') %></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% if (pendentesEgresos.length === 0) { %>
-                            <tr>
-                                <td colspan="4" class="tabela__vazio" style="text-align: center; color: var(--muted); padding: 20px;"><%= t('relatorios.pendentes_vazio') %></td>
-                            </tr>
-                        <% } else { %>
-                            <% pendentesEgresos.forEach(p => { %>
-                                <tr>
-                                    <td>
-                                        <strong title="<%= p.descricao %>" style="display: block; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><%= truncarTexto(p.descricao, 45) %></strong>
-                                        <div style="font-size: 11px; color: var(--muted); max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                                            <%= p.categoria_nome || '—' %><%= p.subcategoria_nome ? ' / ' + p.subcategoria_nome : '' %> • <%= p.conta_nome || '—' %>
-                                        </div>
-                                    </td>
-                                    <td style="white-space: nowrap; font-size: 13px;"><%= formatDate(p.data_competencia, 'DD/MM/YYYY') %></td>
-                                    <td style="font-weight: 700; color: var(--red); white-space: nowrap;">
-                                        - <%= moeda(Math.abs(p.valor)) %>
-                                    </td>
-                                    <td>
-                                        <div style="display: flex; gap: 6px; align-items: center;">
-                                            <button type="button" class="btn-editar-linha" title="<%= t('acao.editar') %>" aria-label="<%= t('acao.editar') %>" data-editar-lanc="<%= JSON.stringify({ id: p.id, tipo: p.tipo, descricao: p.descricao, valor: Math.abs(parseFloat(p.valor)), conta_id: p.conta_id, categoria_id: p.categoria_id, data_competencia: formatDate(p.data_competencia, 'YYYY-MM-DD'), data_pagamento: '', status: p.status, serie: !!p.serie_id }) %>"><i class="ph ph-pencil-simple"></i></button>
-                                            <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" style="display:inline;" data-ajax>
-                                                <%- csrfCampo %>
-<input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                <input type="hidden" name="status" value="pago">
-                                                <button type="submit" class="btn-pagar"><i class="ph ph-check-circle"></i><span><%= t('acao.pagar') %></span></button>
-                                            </form>
-                                            <form method="post" action="/lancamentos/<%= p.id %>/excluir" data-ajax data-confirm="<%= t('painel.lancamento.confirmar_exclusao') %>" style="display:inline;">
-                                                <%- csrfCampo %>
-                                                <input type="hidden" name="voltar" value="<%= currentUrl %>">
-                                                <button type="submit" class="icon-btn" title="<%= t('comum.excluir') %>" style="color: var(--red);"><i class="ph ph-trash"></i></button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            <% }) %>
-                        <% } %>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+        <%- include('_pendentes_coluna', { tipo: 'receita', lista: pendentesIngresos, grupos: (typeof pendentesGrupos !== 'undefined' && pendentesGrupos) ? pendentesGrupos.receita : null }) %>
+        <%- include('_pendentes_coluna', { tipo: 'despesa', lista: pendentesEgresos, grupos: (typeof pendentesGrupos !== 'undefined' && pendentesGrupos) ? pendentesGrupos.despesa : null }) %>
     </div>
 <% } else if (aba === 'demonstrativo') { %>
     <div class="card" style="border-radius: 16px; padding: 20px; margin-top: 20px;">

@@ -16,5 +16,8 @@ module.exports = {
     'extrato.limpar': ['Limpar filtros', 'Limpiar filtros', 'Clear filters'],
     'edicao.converter_dica': ['Ao ligar Fixa ou Repetir, as próximas ocorrências são criadas mês a mês a partir desta (pendentes).', 'Al activar Fija o Repetir, las próximas ocurrencias se crean mes a mes a partir de esta (pendientes).', 'Turning on Fixed or Repeat creates the next occurrences month by month from this one (pending).'],
     'flash.lancamento_convertido': ['Lançamento atualizado e repetido: {n} ocorrências no total.', 'Movimiento actualizado y repetido: {n} ocurrencias en total.', 'Transaction updated and repeated: {n} occurrences in total.'],
+    'filtro.proximos_7dias': ['Próximos 7 Dias', 'Próximos 7 Días', 'Next 7 Days'],
+    'filtro.por_vencimento': ['Por Vencimento', 'Por Vencimiento', 'By Due Date'],
+    'filtro.por_criacao': ['Por Data de Criação', 'Por Fecha de Creación', 'By Creation Date'],
     'extrato.periodo_todo': ['Todo o histórico', 'Todo el historial', 'Full history']
 };
