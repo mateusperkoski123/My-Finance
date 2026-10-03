@@ -23,11 +23,21 @@ class Lancamento {
         return rows[0] || null;
     }
 
-    static async buscarFiltrados(userId, periodo, filtros = {}, ordenacao = 'data', pagina = 1, porPagina = 30, agrupamento = 'sem_agrupamento') {
+    static async buscarFiltrados(userId, periodo, filtros = {}, ordenacao = 'data', pagina = 1, porPagina = 30, agrupamento = 'sem_agrupamento', extra = {}) {
         let where = 'WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND ' + CONTA_ATIVA;
         // Transferencia agendada tem duas pernas; na lista aparece so a de saida (a entrada continua no extrato da conta de destino).
         where += " AND NOT (l.tipo = 'transferencia' AND l.transferencia_par_id IS NOT NULL AND l.valor > 0)";
         const params = [userId, periodo.inicio, periodo.fim];
+
+        // extra.status ('pago'|'pendente'): so essa situacao. extra.atrasadas: alem do periodo, inclui o que venceu antes dele.
+        if (extra.status === 'pago' || extra.status === 'pendente') {
+            where += ' AND l.status = ?';
+            params.push(extra.status);
+        }
+        if (extra.atrasadas) {
+            where = where.replace('l.data_competencia BETWEEN ? AND ?', '(l.data_competencia BETWEEN ? AND ? OR l.data_competencia < ?)');
+            params.splice(3, 0, periodo.inicio);
+        }
 
         const fTipo = cleanParam(filtros.tipo);
         const fSub = cleanParam(filtros.subcategoria_id);
@@ -96,7 +106,9 @@ class Lancamento {
                     IF(c.parent_id IS NULL, c.nome, (SELECT p.nome FROM categorias p WHERE p.id = c.parent_id)) as categoria_nome,
                     IF(c.parent_id IS NULL, c.cor, (SELECT p.cor FROM categorias p WHERE p.id = c.parent_id)) as categoria_cor,
                     IF(c.parent_id IS NOT NULL, c.nome, NULL) as subcategoria_nome,
-                    cb.nome as conta_nome, cb.cor as conta_cor
+                    cb.nome as conta_nome, cb.cor as conta_cor,
+                    IF(l.serie_id IS NULL, NULL, (SELECT COUNT(*) FROM lancamentos s WHERE s.user_id = l.user_id AND s.serie_id = l.serie_id AND s.tipo = l.tipo AND (s.data_competencia < l.data_competencia OR (s.data_competencia = l.data_competencia AND s.id <= l.id)))) AS serie_pos,
+                    IF(l.serie_id IS NULL, NULL, (SELECT COUNT(*) FROM lancamentos s WHERE s.user_id = l.user_id AND s.serie_id = l.serie_id AND s.tipo = l.tipo)) AS serie_total
              FROM lancamentos l
              LEFT JOIN categorias c ON l.categoria_id = c.id
              LEFT JOIN contas cb ON l.conta_id = cb.id

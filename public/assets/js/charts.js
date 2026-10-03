@@ -57,14 +57,16 @@
   /* itens: [{nome, cor, valor}] -> rosca + legenda em lista com barra de proporcao */
   function rosca(canvasId, legendaId, itens, opcoes) {
     opcoes = opcoes || {};
-    var canvas = document.getElementById(canvasId), legenda = document.getElementById(legendaId);
+    // canvas/legenda podem ser o id ou o proprio elemento.
+    var canvas = typeof canvasId === 'string' ? document.getElementById(canvasId) : canvasId;
+    var legenda = typeof legendaId === 'string' ? document.getElementById(legendaId) : legendaId;
     if (!canvas) return;
     itens = itens.filter(function (i) { return i.valor > 0; }).sort(function (a, b) { return b.valor - a.valor; });
     var total = itens.reduce(function (a, i) { return a + i.valor; }, 0);
     var pal = paleta();
     itens.forEach(function (i, idx) { i.cor = i.cor || pal[idx % pal.length]; });
 
-    new Chart(canvas, {
+    var grafico = new Chart(canvas, {
       type: 'doughnut',
       data: {
         labels: itens.map(function (i) { return i.nome; }),
@@ -77,6 +79,9 @@
       options: {
         cutout: '74%', responsive: true, maintainAspectRatio: true, animation: { duration: 500 },
         layout: { padding: 6 },
+        // Clique numa fatia (opcional): chama aoClicar(item); o cursor vira "mao" sobre as fatias.
+        onClick: opcoes.aoClicar ? function (ev, els) { if (els.length) opcoes.aoClicar(itens[els[0].index]); } : undefined,
+        onHover: opcoes.aoClicar ? function (ev, els) { if (ev.native && ev.native.target) ev.native.target.style.cursor = els.length ? 'pointer' : 'default'; } : undefined,
         plugins: {
           legend: { display: false },
           gfCentro: { texto: moeda(total), rotulo: opcoes.rotulo || (window.GF_T && window.GF_T.total) || 'Total' },
@@ -96,14 +101,17 @@
     if (legenda) {
       legenda.innerHTML = itens.map(function (i) {
         var pct = total ? i.valor / total * 100 : 0;
-        return '<li class="gf-leg__item">' +
+        var conteudo =
           '<span class="gf-leg__linha"><span class="gf-leg__dot" style="background:' + esc(i.cor) + '"></span>' +
-          '<span class="gf-leg__nome">' + esc(i.nome) + '</span>' +
+          '<span class="gf-leg__nome">' + esc(i.nome) + (i.sub ? '<small class="gf-leg__sub">' + esc(i.sub) + '</small>' : '') + '</span>' +
           '<span class="gf-leg__valor">' + esc(moeda(i.valor)) + '</span>' +
           '<span class="gf-leg__pct">' + pct.toFixed(1).replace('.', ',') + '%</span></span>' +
-          '<span class="gf-leg__barra"><span style="width:' + pct.toFixed(1) + '%;background:' + esc(i.cor) + '"></span></span></li>';
+          '<span class="gf-leg__barra"><span style="width:' + pct.toFixed(1) + '%;background:' + esc(i.cor) + '"></span></span>';
+        // Com href, o item da legenda tambem leva ao detalhe da categoria.
+        return '<li class="gf-leg__item">' + (i.href ? '<a class="gf-leg__link" href="' + esc(i.href) + '">' + conteudo + '</a>' : conteudo) + '</li>';
       }).join('');
     }
+    return grafico;
   }
 
   /* dados: [{data:'YYYY-MM-DD', receitas, despesas}] -> colunas agrupadas */

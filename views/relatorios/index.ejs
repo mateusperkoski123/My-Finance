@@ -7,70 +7,34 @@
     </div>
 </div>
 
-<% const _per = periodo.preset === 'custom' ? '&data_inicio=' + periodo.inicio + '&data_fim=' + periodo.fim : ((periodo.preset === 'mes' || periodo.preset === 'anual') ? '&mes=' + periodo.mes + '&ano=' + periodo.ano : ''); %>
+<%# Parametros que identificam o periodo nos links entre abas e presets. %>
+<% const _qs = (extra) => new URLSearchParams(Object.assign({}, periodoParams, extra || {})).toString(); %>
+<% const _mesLink = (m, a) => '/relatorios?' + new URLSearchParams({ aba: aba, preset: 'mes', mes: m, ano: a }).toString(); %>
 <div class="contas-toolbar">
     <div class="tabs tabs--grade">
-        <a href="/relatorios?aba=graficos&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %><%= _per %>" class="tabs__item <%= aba === 'graficos' ? 'is-active' : '' %>"><i class="ph ph-chart-pie-slice"></i> <%= t('relatorios.aba_graficos') %></a>
-        <a href="/relatorios?aba=pendentes&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %><%= _per %>" class="tabs__item <%= aba === 'pendentes' ? 'is-active' : '' %>"><i class="ph ph-clock-countdown"></i> <%= t('relatorios.aba_pendentes') %></a>
-        <a href="/relatorios?aba=demonstrativo&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %><%= _per %>" class="tabs__item <%= aba === 'demonstrativo' ? 'is-active' : '' %>"><i class="ph ph-table"></i> <%= t('relatorios.aba_demonstrativo') %></a>
-        <a href="/relatorios?aba=demonstrativo_anual&preset=<%= periodo.preset %>&ordenar=<%= ordenar %>&agrupar=<%= agrupar %><%= _per %>" class="tabs__item <%= aba === 'demonstrativo_anual' ? 'is-active' : '' %>"><i class="ph ph-calendar-blank"></i> <%= t('relatorios.aba_demonstrativo_anual') %></a>
+        <a href="/relatorios?aba=graficos&<%= _qs() %>" class="tabs__item <%= aba === 'graficos' ? 'is-active' : '' %>"><i class="ph ph-chart-pie-slice"></i> <%= t('relatorios.aba_graficos') %></a>
+        <a href="/relatorios?aba=pendentes&<%= _qs() %>" class="tabs__item <%= aba === 'pendentes' ? 'is-active' : '' %>"><i class="ph ph-clock-countdown"></i> <%= t('relatorios.aba_pendentes') %></a>
+        <a href="/relatorios?aba=demonstrativo&<%= _qs() %>" class="tabs__item <%= aba === 'demonstrativo' ? 'is-active' : '' %>"><i class="ph ph-table"></i> <%= t('relatorios.aba_demonstrativo') %></a>
+        <a href="/relatorios?aba=demonstrativo_anual&<%= _qs() %>" class="tabs__item <%= aba === 'demonstrativo_anual' ? 'is-active' : '' %>"><i class="ph ph-calendar-blank"></i> <%= t('relatorios.aba_demonstrativo_anual') %></a>
     </div>
 </div>
 
-<!-- Global Filter Bar (Period presets, Grouping, Ordering) -->
+<!-- Barra de periodo (mes anterior/proximo, atalhos e periodo personalizado) -->
 <form method="get" action="/relatorios" class="card" style="margin-bottom: 20px; padding: 14px 18px;">
     <input type="hidden" name="aba" value="<%= aba %>">
-    <input type="hidden" name="preset" value="<%= periodo.preset %>">
-    <input type="hidden" name="mes" value="<%= periodo.mes %>">
-    <input type="hidden" name="ano" value="<%= periodo.ano %>">
-    <% const _base = '/relatorios?aba=' + aba + '&preset=mes&ordenar=' + ordenar + '&agrupar=' + agrupar; %>
     <div class="mes-nav">
-        <a class="btn btn-outline btn-sm" href="<%= _base %>&mes=<%= periodo.mes_anterior %>&ano=<%= periodo.ano_anterior %>" aria-label="<%= t('painel.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
+        <a class="btn btn-outline btn-sm" href="<%= _mesLink(periodo.mes_anterior, periodo.ano_anterior) %>" aria-label="<%= t('painel.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
         <div class="mes-nav__centro">
             <strong><%= periodo.preset === 'mes' ? t('painel.mes.' + periodo.mes) + ' ' + periodo.ano : t('comum.periodo') %></strong>
             <span class="muted"><%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> – <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></span>
         </div>
-        <a class="btn btn-outline btn-sm" href="<%= _base %>&mes=<%= periodo.mes_proximo %>&ano=<%= periodo.ano_proximo %>" aria-label="<%= t('painel.mes_proximo') %>"><i class="ph ph-caret-right"></i></a>
+        <a class="btn btn-outline btn-sm" href="<%= _mesLink(periodo.mes_proximo, periodo.ano_proximo) %>" aria-label="<%= t('painel.mes_proximo') %>"><i class="ph ph-caret-right"></i></a>
     </div>
-    <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
-        
-        <!-- Period presets -->
-        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-            <a href="/relatorios?aba=<%= aba %>&preset=hoje&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === 'hoje' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.hoje') %></a>
-            <a href="/relatorios?aba=<%= aba %>&preset=7dias&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === '7dias' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= aba === 'pendentes' ? t('filtro.proximos_7dias') : t('filtro.7dias') %></a>
-            <a href="/relatorios?aba=<%= aba %>&preset=anual&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === 'anual' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.anual') %></a>
-            <a href="/relatorios?aba=<%= aba %>&preset=mes&ordenar=<%= ordenar %>&agrupar=<%= agrupar %>" class="btn <%= periodo.preset === 'mes' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
-        </div>
-
-        <% if (aba !== 'graficos') { %>
-            <!-- Grouping & Ordering -->
-            <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <label style="font-size: 12px; margin: 0; color: var(--muted); font-weight: 600;"><%= t('filtro.agrupar') %></label>
-                    <select name="agrupar" class="input" style="padding: 4px 8px; font-size: 12px; width: auto; border-radius: 8px;" onchange="this.form.submit()">
-                        <% if (aba === 'pendentes') { %>
-                        <option value="sem_agrupamento" <%= agrupar === 'sem_agrupamento' ? 'selected' : '' %>><%= t('filtro.sem_agrupamento') %></option>
-                        <% } %>
-                        <option value="categoria" <%= agrupar === 'categoria' ? 'selected' : '' %>><%= t('filtro.por_categoria') %></option>
-                        <option value="subcategoria" <%= agrupar === 'subcategoria' ? 'selected' : '' %>><%= t('filtro.por_subcategoria') %></option>
-                        <% if (aba === 'pendentes') { %>
-                        <option value="vencimento" <%= agrupar === 'vencimento' ? 'selected' : '' %>><%= t('filtro.por_vencimento') %></option>
-                        <option value="criacao" <%= agrupar === 'criacao' ? 'selected' : '' %>><%= t('filtro.por_criacao') %></option>
-                        <% } %>
-                    </select>
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 6px;">
-                    <label style="font-size: 12px; margin: 0; color: var(--muted); font-weight: 600;"><%= t('filtro.ordenar') %></label>
-                    <select name="ordenar" class="input" style="padding: 4px 8px; font-size: 12px; width: auto; border-radius: 8px;" onchange="this.form.submit()">
-                        <option value="vencimento" <%= (ordenar === 'vencimento' || ordenar === 'data') ? 'selected' : '' %>><%= t('filtro.vencimento') %></option>
-                        <option value="preco" <%= (ordenar === 'preco' || ordenar === 'valor') ? 'selected' : '' %>><%= t('filtro.preco') %></option>
-                        <option value="criacao" <%= (ordenar === 'criacao' || ordenar === 'data_criacao') ? 'selected' : '' %>><%= t('filtro.criacao') %></option>
-                    </select>
-                </div>
-            </div>
-        <% } %>
-
+    <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+        <a href="/relatorios?aba=<%= aba %>&preset=hoje" class="btn <%= periodo.preset === 'hoje' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.hoje') %></a>
+        <a href="/relatorios?aba=<%= aba %>&preset=7dias" class="btn <%= periodo.preset === '7dias' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= aba === 'pendentes' ? t('filtro.proximos_7dias') : t('filtro.7dias') %></a>
+        <a href="/relatorios?aba=<%= aba %>&preset=anual&ano=<%= periodo.ano %>" class="btn <%= periodo.preset === 'anual' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.anual') %></a>
+        <a href="/relatorios?aba=<%= aba %>&preset=mes" class="btn <%= periodo.preset === 'mes' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
     </div>
 
     <!-- Periodo personalizado (recolhido por padrao) -->
@@ -136,25 +100,40 @@
             </div>
         </div>
     <% } %>
-    <div class="graficos-grid graficos-grid--duplo">
-        <div class="card grafico-card">
-            <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: var(--red);"></span><%= t('relatorios.grafico_despesas_titulo') %></h3>
-            <div id="wrapDespesas" class="grafico-card__corpo grafico-card__corpo--rosca">
-                <div class="grafico-card__canvas-wrap"><canvas id="chartDespesas"></canvas></div>
-                <ul class="gf-leg" id="legDespesas"></ul>
-            </div>
-            <p class="muted grafico-vazio" id="vazioDespesas" hidden><%= t('relatorios.sem_despesas_periodo') %></p>
+    <!-- Graficos de analise: receitas e despesas por categoria e por subcategoria (arraste para reordenar) -->
+    <section class="gf-analise" style="margin-top: 24px;">
+        <div class="gf-analise__cab">
+            <h2><%= t('graf.titulo') %></h2>
+            <p class="muted"><%= t('graf.dica') %></p>
         </div>
-
-        <div class="card grafico-card">
-            <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: var(--green);"></span><%= t('relatorios.grafico_receitas_titulo') %></h3>
-            <div id="wrapReceitas" class="grafico-card__corpo grafico-card__corpo--rosca">
-                <div class="grafico-card__canvas-wrap"><canvas id="chartReceitas"></canvas></div>
-                <ul class="gf-leg" id="legReceitas"></ul>
-            </div>
-            <p class="muted grafico-vazio" id="vazioReceitas" hidden><%= t('relatorios.sem_receitas_periodo') %></p>
+        <div class="gf-analise__grid" id="gfGrafGrid">
+            <% [
+                { id: 'rec-cat', tipo: 'receita', nivel: 'cat' },
+                { id: 'des-cat', tipo: 'despesa', nivel: 'cat' },
+                { id: 'rec-sub', tipo: 'receita', nivel: 'sub' },
+                { id: 'des-sub', tipo: 'despesa', nivel: 'sub' }
+            ].forEach(c => { const _rec = c.tipo === 'receita'; %>
+            <article class="card gf-card" data-card="<%= c.id %>" data-tipo="<%= c.tipo %>" data-nivel="<%= c.nivel %>">
+                <button type="button" class="gf-card__alca" aria-label="<%= t('graf.reordenar') %>" title="<%= t('graf.reordenar') %>"><i class="ph ph-dots-six-vertical"></i></button>
+                <h3 class="gf-card__titulo"><span class="gf-chip gf-chip--<%= _rec ? 'verde' : 'vermelho' %>"><%= _rec ? t('graf.receitas') : t('graf.despesas') %></span> <%= c.nivel === 'cat' ? t('graf.por_categoria') : t('graf.por_subcategoria') %></h3>
+                <div class="gf-card__periodo" data-periodo="<%= periodo.inicio %>|<%= periodo.fim %>"></div>
+                <select class="gf-card__filtro" aria-label="<%= t('graf.situacao') %>">
+                    <option value="todos"><%= t('graf.todos') %></option>
+                    <option value="pago"><%= _rec ? t('graf.recebidos') : t('graf.pagos') %></option>
+                    <option value="pendente"><%= t('graf.pendentes') %></option>
+                </select>
+                <div class="gf-card__corpo">
+                    <div class="gf-card__rosca"><canvas></canvas></div>
+                    <ul class="gf-leg gf-leg--rolavel"></ul>
+                    <p class="muted grafico-vazio" hidden><%= t('graf.sem_dados') %></p>
+                </div>
+                <a class="gf-card__rodape" href="/relatorios?<%= new URLSearchParams(Object.assign({ aba: 'demonstrativo', tipo: c.tipo, nivel: c.nivel }, periodoParams)).toString() %>">
+                    <%= c.nivel === 'cat' ? t('graf.ver_categorias') : t('graf.ver_subcategorias') %> <i class="ph ph-arrow-up-right"></i>
+                </a>
+            </article>
+            <% }) %>
         </div>
-    </div>
+    </section>
 
     <!-- Evolucao do saldo -->
     <div class="card grafico-card" style="margin-top: 20px;">
@@ -172,22 +151,21 @@
 
     <script src="/assets/js/charts.js?v=<%= Date.now() %>"></script>
     <script>
+    window.GF_GRAF = {
+        dados: <%- JSON.stringify(graficosDados || []) %>,
+        per: <%- JSON.stringify(new URLSearchParams(periodoParams).toString()) %>,
+        lang: <%- JSON.stringify(lang) %>,
+        t: {
+            semCategoria: <%- JSON.stringify(t('comum.sem_categoria')) %>,
+            total: <%- JSON.stringify(t('graf.total')) %>,
+            semDados: <%- JSON.stringify(t('graf.sem_dados')) %>
+        }
+    };
+    </script>
+    <script src="/assets/js/graficos.js?v=<%= Date.now() %>"></script>
+    <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const catData = <%- JSON.stringify(catData || []) %>;
         const freqData = <%- JSON.stringify(frequencia || []) %>;
-        const itens = (tipo) => catData.filter(d => d.tipo === tipo)
-            .map(d => ({ nome: d.nome || window.GF_T.sem_categoria, cor: d.cor, valor: Math.abs(parseFloat(d.total)) || 0 }));
-
-        [['Despesas', 'despesa'], ['Receitas', 'receita']].forEach(([nome, tipo]) => {
-            const lista = itens(tipo);
-            if (lista.some(i => i.valor > 0)) {
-                GFCharts.rosca('chart' + nome, 'leg' + nome, lista, { rotulo: window.GF_T.total });
-            } else {
-                document.getElementById('wrap' + nome).hidden = true;
-                document.getElementById('vazio' + nome).hidden = false;
-            }
-        });
-
         const evoData = <%- JSON.stringify(evolucao || []) %>;
         if (evoData.length > 1) {
             GFCharts.evolucao('chartEvolucao', evoData);
@@ -199,20 +177,16 @@
         if (freqData.length > 0) {
             GFCharts.frequencia('chartFrequencia', freqData);
         } else {
-            document.querySelector('.grafico-freq-card__canvas-wrap').hidden = true;
+            document.querySelector('#chartFrequencia').parentElement.hidden = true;
             document.getElementById('vazioFreq').hidden = false;
         }
     });
     </script>
 <% } else if (aba === 'pendentes') { %>
-    <% 
-        const pendentesIngresos = (pendentes || []).filter(p => p.tipo === 'receita' || p.tipo === 'ingreso');
-        const pendentesEgresos = (pendentes || []).filter(p => p.tipo === 'despesa' || p.tipo === 'gasto');
-    %>
     <p class="muted" style="font-size: 13px; margin-top: 16px; margin-bottom: 16px;"><%= t('relatorios.pendentes_ajuda') %></p>
 
-    <% if (typeof contas !== 'undefined' && contas && contas.length > 0) { %>
-    <!-- Adicionar ingreso / gasto sem sair desta tela (mesmos formularios do Painel) -->
+    <% if (contas && contas.length > 0) { %>
+    <!-- Adicionar ingreso / gasto sem sair desta tela (mesmos formularios da Visao geral) -->
     <div class="myfinance-action-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
         <button type="button" class="btn btn-primary" data-modal-open="modal-novo-receita" style="background: var(--green); border: none; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 14px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="ph ph-plus-circle" style="font-size: 20px;"></i> <%= t('painel.nova_receita') %></button>
         <button type="button" class="btn btn-primary" data-modal-open="modal-novo-despesa" style="background: var(--red); border: none; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 14px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="ph ph-minus-circle" style="font-size: 20px;"></i> <%= t('painel.nova_despesa') %></button>
@@ -220,56 +194,85 @@
     <% const dataHoje = formatDate(hojeLocal()); %>
     <%- include('../partials/modais_lancamento', { dataHoje, voltar: currentUrl }) %>
     <% } %>
-    
-    <div style="display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px;">
-        <!-- Ingresos (receitas) primeiro; os gastos vem logo abaixo, em largura total -->
-        <%- include('_pendentes_coluna', { tipo: 'receita', lista: pendentesIngresos, grupos: (typeof pendentesGrupos !== 'undefined' && pendentesGrupos) ? pendentesGrupos.receita : null }) %>
-        <%- include('_pendentes_coluna', { tipo: 'despesa', lista: pendentesEgresos, grupos: (typeof pendentesGrupos !== 'undefined' && pendentesGrupos) ? pendentesGrupos.despesa : null }) %>
-    </div>
+
+    <%# Mesma lista da Visao geral (busca, Todos/Gastos/Ingresos, agrupar, ordenar, paginacao), so com o que esta pendente. %>
+    <%- include('../partials/lista_lancamentos') %>
+    <%- include('../partials/modais_excluir_serie', { lancamentos }) %>
 <% } else if (aba === 'demonstrativo') { %>
-    <div class="card" style="border-radius: 16px; padding: 20px; margin-top: 20px;">
-        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px;"><%= t('relatorios.aba_demonstrativo') %></h3>
-        <div class="tabela-container">
-            <table class="tabela">
-                <thead>
-                    <tr>
-                        <th><%= t('relatorios.demonstrativo_categoria_col') %></th>
-                        <th><%= t('comum.subcategoria') %></th>
-                        <th><%= t('comum.tipo') %></th>
-                        <th><%= t('relatorios.demonstrativo_total_geral') %></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% if (!demonstrativoLinhas || demonstrativoLinhas.length === 0) { %>
-                        <tr>
-                            <td colspan="4" class="tabela__vazio"><%= t('relatorios.demonstrativo_sem_dados') %></td>
-                        </tr>
-                    <% } else { %>
-                        <% demonstrativoLinhas.forEach(d => { %>
-                            <tr>
-                                <td><strong><%= d.categoria || t('relatorios.sem_categoria') %></strong></td>
-                                <td><%= d.subcategoria || '—' %></td>
-                                <td><%= t('lancamento.tipo.' + d.tipo) %></td>
-                                <td style="font-weight: 600; color: <%= d.tipo === 'receita' ? 'var(--green)' : 'var(--red)' %>;">
-                                    <%= moeda(d.total) %>
-                                </td>
-                            </tr>
-                        <% }) %>
-                    <% } %>
-                </tbody>
-                <% if (demonstrativoLinhas && demonstrativoLinhas.length) {
-                    const _soma = (tp) => demonstrativoLinhas.filter(d => d.tipo === tp).reduce((acc, d) => acc + Number(d.total || 0), 0);
-                    const _rec = _soma('receita'); const _des = _soma('despesa'); const _res = _rec - _des;
-                %>
-                <tfoot>
-                    <tr><td colspan="3"><strong><%= t('relatorios.demonstrativo_total_receitas') %></strong></td><td style="font-weight: 700; color: var(--green);"><%= moeda(_rec) %></td></tr>
-                    <tr><td colspan="3"><strong><%= t('relatorios.demonstrativo_total_despesas') %></strong></td><td style="font-weight: 700; color: var(--red);"><%= moeda(_des) %></td></tr>
-                    <tr class="demonstrativo-resultado"><td colspan="3"><strong><%= t('relatorios.demonstrativo_resultado') %></strong></td><td style="font-weight: 800; color: <%= _res >= 0 ? 'var(--green)' : 'var(--red)' %>;"><%= (_res < 0 ? '-' : '') + moeda(Math.abs(_res)) %></td></tr>
-                </tfoot>
-                <% } %>
-            </table>
+    <% if (categoriaFiltro) { %>
+        <%# Transacoes da categoria escolhida (clique no grafico ou na tabela), no mesmo formato da Visao geral. %>
+        <div class="card" style="border-radius: 16px; padding: 16px 20px; margin: 20px 0 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: <%= categoriaFiltro.cor || '#3b82f6' %>; flex-shrink: 0;"></span>
+                <div style="min-width: 0;">
+                    <strong style="font-size: 16px; overflow-wrap: anywhere;"><%= categoriaFiltro.pai_nome ? categoriaFiltro.pai_nome + ' / ' + categoriaFiltro.nome : categoriaFiltro.nome %></strong>
+                    <div class="muted" style="font-size: 12px;"><%= t('relatorios.aba_demonstrativo') %> · <%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> – <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></div>
+                </div>
+            </div>
+            <a class="btn btn-outline btn-sm" href="<%= '/relatorios?' + new URLSearchParams(Object.assign({ aba: 'demonstrativo' }, periodoParams)).toString() %>"><i class="ph ph-arrow-left"></i> <%= t('graf.voltar_estado') %></a>
         </div>
-    </div>
+        <% if (contas && contas.length > 0) { %>
+            <% const dataHoje = formatDate(hojeLocal()); %>
+            <%- include('../partials/modais_lancamento', { dataHoje, voltar: currentUrl }) %>
+        <% } %>
+        <%- include('../partials/lista_lancamentos') %>
+        <%- include('../partials/modais_excluir_serie', { lancamentos }) %>
+    <% } else { %>
+        <%
+        const _lnk = (extra) => '/relatorios?' + new URLSearchParams(Object.assign({ aba: 'demonstrativo' }, periodoParams, extra)).toString();
+        const _chip = (ativo, href, texto) => '<a href="' + href + '" class="btn btn-sm ' + (ativo ? 'btn-primary' : 'btn-outline') + '" style="border-radius: 20px;">' + texto + '</a>';
+        %>
+        <div class="card" style="border-radius: 16px; padding: 14px 18px; margin-top: 20px; display: flex; gap: 14px 24px; flex-wrap: wrap; align-items: center;">
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                <span class="muted" style="font-size: 12px; font-weight: 600;"><%= t('comum.tipo') %></span>
+                <%- _chip(!tipoFiltro, _lnk(nivel ? { nivel } : {}), t('painel.filtro.todas')) %>
+                <%- _chip(tipoFiltro === 'receita', _lnk(Object.assign({ tipo: 'receita' }, nivel ? { nivel } : {})), t('painel.filtro.receitas')) %>
+                <%- _chip(tipoFiltro === 'despesa', _lnk(Object.assign({ tipo: 'despesa' }, nivel ? { nivel } : {})), t('painel.filtro.despesas')) %>
+            </div>
+            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+                <span class="muted" style="font-size: 12px; font-weight: 600;"><%= t('graf.nivel') %></span>
+                <%- _chip(!nivel, _lnk(tipoFiltro ? { tipo: tipoFiltro } : {}), t('graf.nivel_ambos')) %>
+                <%- _chip(nivel === 'cat', _lnk(Object.assign({ nivel: 'cat' }, tipoFiltro ? { tipo: tipoFiltro } : {})), t('graf.nivel_cat')) %>
+                <%- _chip(nivel === 'sub', _lnk(Object.assign({ nivel: 'sub' }, tipoFiltro ? { tipo: tipoFiltro } : {})), t('graf.nivel_sub')) %>
+            </div>
+        </div>
+        <div class="card" style="border-radius: 16px; padding: 20px; margin-top: 16px;">
+            <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 4px;"><%= t('relatorios.aba_demonstrativo') %></h3>
+            <p class="muted" style="font-size: 12.5px; margin: 0 0 16px;"><%= t('graf.clique_categoria') %></p>
+            <div class="tabela-container">
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th><%= t('relatorios.demonstrativo_categoria_col') %></th>
+                            <th><%= t('comum.subcategoria') %></th>
+                            <th><%= t('comum.tipo') %></th>
+                            <th><%= t('relatorios.demonstrativo_total_geral') %></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (!demonstrativoLinhas || demonstrativoLinhas.length === 0) { %>
+                            <tr>
+                                <td colspan="4" class="tabela__vazio"><%= t('relatorios.demonstrativo_sem_dados') %></td>
+                            </tr>
+                        <% } else { %>
+                            <% demonstrativoLinhas.forEach(d => {
+                                const _href = _lnk(Object.assign({ tipo: d.tipo, categoria_id: d.categoria_id }, d.subcategoria_id ? { subcategoria_id: d.subcategoria_id } : {}));
+                            %>
+                                <tr>
+                                    <td><a href="<%= _href %>" style="color: inherit; text-decoration: none;"><strong><%= d.categoria || t('relatorios.sem_categoria') %></strong></a></td>
+                                    <td><% if (d.subcategoria) { %><a href="<%= _href %>" style="color: inherit; text-decoration: none;"><%= d.subcategoria %></a><% } else { %>—<% } %></td>
+                                    <td><%= t('lancamento.tipo.' + d.tipo) %></td>
+                                    <td style="font-weight: 600; color: <%= d.tipo === 'receita' ? 'var(--green)' : 'var(--red)' %>;">
+                                        <a href="<%= _href %>" style="color: inherit; text-decoration: none;"><%= moeda(d.total) %></a>
+                                    </td>
+                                </tr>
+                            <% }) %>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    <% } %>
 <% } else if (aba === 'demonstrativo_anual') { %>
     <div class="periodo-nav card" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; margin-top: 20px; border-radius: 16px;">
         <a class="btn btn-outline btn-sm" href="/relatorios?aba=demonstrativo_anual&ano_anual=<%= anoAnual - 1 %>">← <%= anoAnual - 1 %></a>

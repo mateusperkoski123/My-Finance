@@ -2097,3 +2097,33 @@ tr.gf-prov-row td { border-bottom: 1px dashed var(--border); }
 
 .btn-editar-linha { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 8px; font-size: 16px; line-height: 1; }
 .btn-editar-linha:hover { color: var(--text); background: var(--bg); }
+
+/* Grupos recolhiveis (Painel e Pendentes): a seta gira ao abrir */
+details[data-grupo] > summary > div:first-child > .ph-caret-right { transition: transform 0.2s; }
+details[data-grupo][open] > summary > div:first-child > .ph-caret-right { transform: rotate(90deg); }
+
+/* Graficos de analise (Relatorios > Graficos): cards de rosca por categoria/subcategoria, reordenaveis ------------------- */
+.gf-analise__cab h2 { margin: 0 0 2px; font-size: 18px; }
+.gf-analise__cab p { margin: 0 0 14px; font-size: 13px; }
+.gf-analise__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; align-items: start; }
+.gf-card { position: relative; border-radius: 16px; padding: 18px 20px 0; display: flex; flex-direction: column; gap: 10px; overflow: hidden; transition: box-shadow .15s ease, opacity .15s ease; }
+.gf-card.is-arrastando { opacity: .55; box-shadow: 0 10px 30px rgba(0, 0, 0, .25); }
+.gf-card__alca { position: absolute; top: 12px; right: 12px; background: none; border: none; color: var(--muted); cursor: grab; padding: 4px; border-radius: 8px; font-size: 18px; line-height: 1; }
+.gf-card__alca:hover { color: var(--text); background: var(--bg); }
+.gf-card__alca:active { cursor: grabbing; }
+.gf-card__titulo { margin: 0; padding-right: 28px; font-size: 15px; font-weight: 600; }
+.gf-chip { display: inline-block; padding: 1px 8px; border-radius: 6px; font-weight: 700; }
+.gf-chip--verde { background: var(--green-bg); color: var(--green); }
+.gf-chip--vermelho { background: var(--red-bg); color: var(--red); }
+.gf-card__periodo { font-size: 12.5px; color: #2a78d6; }
+.gf-card__filtro { align-self: flex-start; padding: 6px 12px; font-size: 12.5px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); color: var(--text); cursor: pointer; }
+.gf-card__corpo { display: flex; flex-direction: column; gap: 14px; min-height: 120px; }
+.gf-card__rosca { width: 100%; max-width: 230px; margin: 4px auto 0; }
+.gf-card .gf-leg { max-height: 150px; min-width: 0; padding-right: 8px; gap: 10px; }
+.gf-leg__link { display: flex; flex-direction: column; gap: 5px; color: inherit; text-decoration: none; border-radius: 8px; }
+.gf-leg__link:hover .gf-leg__nome { text-decoration: underline; }
+.gf-leg__nome { display: flex; flex-direction: column; }
+.gf-leg__sub { font-size: 11px; font-weight: 400; color: var(--muted); overflow: hidden; text-overflow: ellipsis; }
+.gf-card__rodape { margin: 6px -20px 0; padding: 12px 20px; border-top: 1px solid var(--border); text-align: center; font-size: 12.5px; font-weight: 600; color: var(--text); text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 6px; }
+.gf-card__rodape:hover { background: var(--bg); }
+@media (max-width: 768px) { .gf-analise__grid { grid-template-columns: minmax(0, 1fr); } .gf-card__alca { display: none; } }

@@ -347,6 +347,8 @@ const ptBR = {
     'contas.total_consolidado': 'Total Consolidado',
 
     'painel.serie': 'Série',
+    'painel.fixo': 'Fixo',
+    'painel.parcela_titulo': 'Transação {n} de {total}',
     'painel.automatico': 'Automático',
     'painel.confirmar_exclusao': 'Tem certeza que deseja excluir este lançamento?',
 
@@ -740,6 +742,8 @@ const esPY = {
     'contas.total_consolidado': 'Total Consolidado',
 
     'painel.serie': 'Serie',
+    'painel.fixo': 'Fijo',
+    'painel.parcela_titulo': 'Transacción {n} de {total}',
     'painel.automatico': 'Automático',
     'painel.confirmar_exclusao': '¿Estás seguro de que deseas eliminar este movimiento?',
 

@@ -1,9 +1,12 @@
 const db = require('../config/db');
 const Lancamento = require('../models/Lancamento');
-const { toLocalYMD, hojeLocal, formatDate } = require('../core/helpers');
+const { toLocalYMD, hojeLocal } = require('../core/helpers');
 const { CONTA_ATIVA } = require('../models/Lancamento');
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
+
+
+const cleanVal = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '') ? String(v).trim() : null;
 
 const relatoriosController = {
     index: async (req, res) => {
@@ -12,14 +15,14 @@ const relatoriosController = {
 
         const hojeObj = hojeLocal();
         const hoje = toLocalYMD(hojeObj);
-        
+
         let mes = parseInt(query.mes || (hojeObj.getMonth() + 1), 10);
         let ano = parseInt(query.ano || hojeObj.getFullYear(), 10);
 
         let inicio, fim, preset = query.preset || 'mes';
 
         // Datas so valem como periodo personalizado quando vieram do botao "Aplicar" ou de um link com preset=custom/sem preset;
-        // os outros envios do formulario (ordenar/agrupar) carregam as datas so para exibir o periodo atual.
+        // os outros envios do formulario carregam as datas so para exibir o periodo atual.
         const usaDatas = query.data_inicio && query.data_fim && (query.aplicar || !query.preset || query.preset === 'custom');
         if (usaDatas) {
             inicio = query.data_inicio;
@@ -70,112 +73,107 @@ const relatoriosController = {
 
         const aba = query.aba || 'graficos';
         const anoAnual = parseInt(query.ano_anual || ano, 10);
-        const ordenar = query.ordenar || 'data';
-        // Pendentes agrupa de verdade (categoria, subcategoria, vencimento, criacao ou sem agrupamento); as outras abas mantem o padrao.
-        const AGRUPAR_PENDENTES = ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao'];
-        const agrupar = aba === 'pendentes'
-            ? (AGRUPAR_PENDENTES.includes(query.agrupar) ? query.agrupar : 'categoria')
-            : (query.agrupar || 'categoria');
 
-        // Dynamic ordering for pendentes & demonstrativo
-        let orderSql = 'l.data_competencia DESC, l.id DESC';
-        if (ordenar === 'preco' || ordenar === 'valor') {
-            orderSql = 'ABS(l.valor) DESC';
-        } else if (ordenar === 'data_criacao' || ordenar === 'criacao') {
-            orderSql = 'l.created_at DESC, l.id DESC';
-        } else if (ordenar === 'vencimento' || ordenar === 'data_vencimento') {
-            orderSql = 'l.data_competencia ASC';
+        // Parametros que identificam o periodo (links entre abas, lista compartilhada e graficos clicaveis).
+        const periodoParams = preset === 'custom'
+            ? { preset: 'custom', data_inicio: inicio, data_fim: fim }
+            : ((preset === 'mes' || preset === 'anual') ? { preset, mes, ano } : { preset });
+
+        // Contas e categorias dos formularios (novo / editar) nas abas que listam lancamentos.
+        const comLista = aba === 'pendentes' || aba === 'demonstrativo';
+        let contas = [], categoriasArvore = [];
+        if (comLista) {
+            contas = await Conta.buscarPorUsuario(userId, false);
+            await Categoria.garantirCategoriasBasicas(userId);
+            categoriasArvore = await Categoria.buscarArvore(userId, false);
         }
 
-        // Pendentes: respeita o periodo escolhido; se o periodo contem hoje, as atrasadas (de antes do periodo) tambem aparecem.
-        // "Vencimento" (padrao do seletor) ordena do mais proximo para o mais distante.
-        let pendentesOrderSql = 'l.data_competencia ASC, l.id ASC';
-        if (ordenar === 'preco' || ordenar === 'valor') {
-            pendentesOrderSql = 'ABS(l.valor) DESC, l.id ASC';
-        } else if (ordenar === 'data_criacao' || ordenar === 'criacao') {
-            pendentesOrderSql = 'l.created_at DESC, l.id DESC';
+        // ---- Lista no formato da Visao geral (Movimentos pendentes, ou Estado financeiro filtrado por categoria) ----
+        const filtros = {
+            tipo: cleanVal(query.tipo) || 'todas',
+            busca: cleanVal(query.busca) || '',
+            categoria_id: cleanVal(query.categoria_id),
+            subcategoria_id: cleanVal(query.subcategoria_id)
+        };
+        const ordenacao = cleanVal(query.ordenar) || (aba === 'pendentes' ? 'vencimento' : 'data');
+        const AGRUPAR_VALIDOS = ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'status'];
+        const agrupamento = AGRUPAR_VALIDOS.includes(query.agrupar) ? query.agrupar : 'sem_agrupamento';
+        const pagina = Math.max(parseInt(query.pagina || '1', 10) || 1, 1);
+        const porPagina = Math.min(Math.max(parseInt(query.por_pagina || '30', 10) || 30, 10), 200);
+
+        const estadoPorCategoria = aba === 'demonstrativo' && (filtros.categoria_id || filtros.subcategoria_id);
+        let dadosLista = null;
+        if (aba === 'pendentes' || estadoPorCategoria) {
+            const extra = aba === 'pendentes' ? { status: 'pendente', atrasadas: inicio <= hoje && fim >= hoje } : {};
+            dadosLista = await Lancamento.buscarFiltrados(userId, periodo, filtros, ordenacao, pagina, porPagina, agrupamento, extra);
         }
 
-        // Fetch category distribution for charts
-        // Regra: o total de uma categoria incorpora o de suas subcategorias.
-        const [catData] = await db.query(
-            `SELECT COALESCE(p.nome, c.nome) AS nome, COALESCE(p.cor, c.cor) AS cor, l.tipo, SUM(ABS(l.valor)) AS total
-             FROM lancamentos l
-             LEFT JOIN categorias c ON l.categoria_id = c.id
-             LEFT JOIN categorias p ON c.parent_id = p.id
-             WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
-             GROUP BY COALESCE(p.id, c.id), COALESCE(p.nome, c.nome), COALESCE(p.cor, c.cor), l.tipo`,
-            [userId, inicio, fim]
-        );
+        // ---- Estado financeiro (resumo por categoria), com filtros de tipo e nivel ----
+        let demonstrativoLinhas = [];
+        const tipoFiltro = ['receita', 'despesa'].includes(query.tipo) ? query.tipo : '';
+        const nivel = ['cat', 'sub'].includes(query.nivel) ? query.nivel : '';
+        if (aba === 'demonstrativo' && !estadoPorCategoria) {
+            const [linhas] = await db.query(
+                `SELECT
+                    COALESCE(p.id, c.id) AS categoria_id, IF(p.id IS NULL, c.nome, p.nome) AS categoria,
+                    IF(p.id IS NOT NULL, c.id, NULL) AS subcategoria_id, IF(p.id IS NOT NULL, c.nome, NULL) AS subcategoria,
+                    l.tipo, SUM(ABS(l.valor)) AS total
+                 FROM lancamentos l
+                 LEFT JOIN categorias c ON l.categoria_id = c.id
+                 LEFT JOIN categorias p ON c.parent_id = p.id
+                 WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
+                 GROUP BY p.id, c.id, p.nome, c.nome, l.tipo
+                 ORDER BY l.tipo ASC, total DESC`,
+                [userId, inicio, fim]
+            );
+            demonstrativoLinhas = linhas.filter((r) => !tipoFiltro || r.tipo === tipoFiltro);
+            if (nivel === 'sub') {
+                demonstrativoLinhas = demonstrativoLinhas.filter((r) => r.subcategoria_id);
+            } else if (nivel === 'cat') {
+                // Soma as subcategorias na categoria pai.
+                const mapa = new Map();
+                demonstrativoLinhas.forEach((r) => {
+                    const k = r.tipo + ':' + r.categoria_id;
+                    if (!mapa.has(k)) mapa.set(k, { categoria_id: r.categoria_id, categoria: r.categoria, subcategoria_id: null, subcategoria: null, tipo: r.tipo, total: 0 });
+                    mapa.get(k).total += parseFloat(r.total) || 0;
+                });
+                demonstrativoLinhas = [...mapa.values()].sort((a, b) => (a.tipo === b.tipo ? b.total - a.total : (a.tipo < b.tipo ? 1 : -1)));
+            }
+        }
 
-        // Daily frequency chart data
-        const frequencia = await Lancamento.frequenciaDiaria(userId, inicio, fim);
-
-        // Fetch pendentes
-        const [pendentes] = await db.query(
-            `SELECT l.*, 
-                    IF(c.parent_id IS NULL, c.nome, (SELECT p.nome FROM categorias p WHERE p.id = c.parent_id)) as categoria_nome,
-                    IF(c.parent_id IS NOT NULL, c.nome, NULL) as subcategoria_nome,
-                    cb.nome as conta_nome
-             FROM lancamentos l
-             LEFT JOIN categorias c ON l.categoria_id = c.id
-             LEFT JOIN contas cb ON l.conta_id = cb.id
-             WHERE l.user_id = ? AND l.status = 'pendente' AND ${CONTA_ATIVA}
-               AND (l.data_competencia BETWEEN ? AND ? OR (? AND l.data_competencia < ?))
-             ORDER BY ${pendentesOrderSql}`,
-            [userId, inicio, fim, inicio <= hoje && fim >= hoje ? 1 : 0, hoje]
-        );
-
-        // Grupos da aba Pendentes (na ordem em que aparecem na lista ja ordenada), separados em ingresos e gastos.
-        const semCat = req.t('comum.sem_categoria');
-        const fmt = (v) => (v ? formatDate(v, 'DD/MM/YYYY') : '—');
-        const chaveGrupo = (p) => {
-            if (agrupar === 'categoria') return p.categoria_nome || semCat;
-            if (agrupar === 'subcategoria') return p.subcategoria_nome ? `${p.categoria_nome || semCat} / ${p.subcategoria_nome}` : (p.categoria_nome || semCat);
-            if (agrupar === 'vencimento') return fmt(p.data_competencia);
-            return fmt(p.created_at);
-        };
-        const agruparLista = (lista) => {
-            if (agrupar === 'sem_agrupamento') return null;
-            const mapa = new Map();
-            lista.forEach((p) => {
-                const k = chaveGrupo(p);
-                if (!mapa.has(k)) mapa.set(k, { key: k, itens: [], total: 0 });
-                const g = mapa.get(k);
-                g.itens.push(p);
-                g.total += Math.abs(parseFloat(p.valor) || 0);
-            });
-            return [...mapa.values()];
-        };
-        const pendentesGrupos = {
-            receita: agruparLista(pendentes.filter((p) => p.tipo === 'receita')),
-            despesa: agruparLista(pendentes.filter((p) => p.tipo === 'despesa'))
-        };
-
-        // Fetch demonstrativo mensal
-        const [demonstrativoLinhas] = await db.query(
-            `SELECT 
-                IF(c.parent_id IS NULL, c.nome, (SELECT p.nome FROM categorias p WHERE p.id = c.parent_id)) as categoria,
-                IF(c.parent_id IS NOT NULL, c.nome, NULL) as subcategoria,
-                l.tipo, 
-                SUM(ABS(l.valor)) as total
-             FROM lancamentos l
-             LEFT JOIN categorias c ON l.categoria_id = c.id
-             WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
-             GROUP BY c.parent_id, l.categoria_id, l.tipo
-             ORDER BY ${orderSql}`,
-            [userId, inicio, fim]
-        );
-
-        // Fetch demonstrativo anual
-        const demonstrativoAnual = await Lancamento.demonstrativoAnual(userId, anoAnual);
-
-        // Fetch resumo do período
-        const resumo = await Lancamento.resumoPeriodo(userId, periodo);
-
-        // Evolucao do saldo dia a dia (saldo anterior + movimentos pagos acumulados; contas ativas)
+        // ---- Graficos: totais por tipo, situacao, categoria e subcategoria (o navegador monta e filtra os 4 graficos) ----
+        let graficosDados = [];
+        let frequencia = [];
         let evolucao = [];
+        let resumo = null;
         if (aba === 'graficos') {
+            const [dados] = await db.query(
+                `SELECT l.tipo, l.status,
+                        COALESCE(p.id, c.id) AS cat_id, IF(p.id IS NULL, c.nome, p.nome) AS cat_nome, IF(p.id IS NULL, c.cor, p.cor) AS cat_cor,
+                        IF(p.id IS NOT NULL, c.id, NULL) AS sub_id, IF(p.id IS NOT NULL, c.nome, NULL) AS sub_nome, IF(p.id IS NOT NULL, c.cor, NULL) AS sub_cor,
+                        SUM(ABS(l.valor)) AS total
+                 FROM lancamentos l
+                 LEFT JOIN categorias c ON l.categoria_id = c.id
+                 LEFT JOIN categorias p ON c.parent_id = p.id
+                 WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
+                 GROUP BY l.tipo, l.status, p.id, c.id, p.nome, c.nome, p.cor, c.cor`,
+                [userId, inicio, fim]
+            );
+            graficosDados = dados.map((r) => ({
+                tipo: r.tipo, status: r.status,
+                catId: r.cat_id, catNome: r.cat_nome, catCor: r.cat_cor,
+                subId: r.sub_id, subNome: r.sub_nome, subCor: r.sub_cor,
+                total: parseFloat(r.total) || 0
+            }));
+            frequencia = await Lancamento.frequenciaDiaria(userId, inicio, fim);
+        }
+
+        // Resumo do periodo (cartoes dos graficos) e evolucao do saldo
+        if (aba === 'graficos' || aba === 'demonstrativo') {
+            resumo = await Lancamento.resumoPeriodo(userId, periodo);
+        }
+        if (aba === 'graficos') {
+            // Evolucao do saldo dia a dia (saldo anterior + movimentos pagos acumulados; contas ativas)
             const [movs] = await db.query(
                 `SELECT l.data_competencia AS dia, SUM(l.valor) AS total
                  FROM lancamentos l JOIN contas c ON c.id = l.conta_id AND c.status = 'ativa'
@@ -196,30 +194,58 @@ const relatoriosController = {
             }
         }
 
-        // Aba Pendentes tem os botoes de novo ingreso/gasto: precisa das contas e categorias dos formularios.
-        let contas = [], categoriasArvore = [];
-        if (aba === 'pendentes') {
-            contas = await Conta.buscarPorUsuario(userId, false);
-            await Categoria.garantirCategoriasBasicas(userId);
-            categoriasArvore = await Categoria.buscarArvore(userId, false);
+        // Demonstrativo anual
+        const demonstrativoAnual = aba === 'demonstrativo_anual' ? await Lancamento.demonstrativoAnual(userId, anoAnual) : null;
+
+        // Categoria escolhida (cabecalho do Estado financeiro filtrado)
+        let categoriaFiltro = null;
+        if (estadoPorCategoria) {
+            const id = filtros.subcategoria_id || filtros.categoria_id;
+            const [cr] = await db.query(
+                `SELECT c.id, c.nome, c.cor, p.nome AS pai_nome FROM categorias c LEFT JOIN categorias p ON p.id = c.parent_id WHERE c.id = ? AND c.user_id = ? LIMIT 1`,
+                [id, userId]
+            );
+            categoriaFiltro = cr[0] || null;
         }
 
+        // Base da lista compartilhada: mantem aba e periodo nos links (busca, abas de tipo, agrupar, ordenar, paginacao).
+        const listaParams = Object.assign({ aba }, periodoParams);
+        const limparUrl = '/relatorios?' + new URLSearchParams(
+            aba === 'demonstrativo' ? Object.assign({ aba }, periodoParams, filtros.tipo !== 'todas' && ['receita', 'despesa'].includes(filtros.tipo) ? { tipo: filtros.tipo } : {}) : listaParams
+        ).toString();
+
         res.render('relatorios/index', {
-            contas,
-            categoriasArvore,
             title: req.t('pages.relatorios.titulo'),
             periodo,
+            periodoParams,
             aba,
             anoAnual,
             anoAtual: hojeObj.getFullYear(),
-            ordenar,
-            agrupar,
-            catData,
+            contas,
+            categoriasArvore,
+            // lista compartilhada (partials/lista_lancamentos)
+            filtros,
+            ordenacao,
+            agrupamento,
+            porPagina,
+            listaBase: '/relatorios',
+            listaParams,
+            limparUrl,
+            agruparOpcoes: ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao'].concat(aba === 'pendentes' ? [] : ['status']),
+            lancamentos: dadosLista ? dadosLista.lancamentos : [],
+            grupos: dadosLista ? dadosLista.grupos : null,
+            totalRegistros: dadosLista ? dadosLista.totalRegistros : 0,
+            somaFiltrada: dadosLista ? dadosLista.somaFiltrada : 0,
+            totalPaginas: dadosLista ? dadosLista.totalPaginas : 1,
+            paginaAtual: dadosLista ? dadosLista.paginaAtual : 1,
+            categoriaFiltro,
+            // estado financeiro / graficos / anual
+            tipoFiltro,
+            nivel,
+            demonstrativoLinhas,
+            graficosDados,
             frequencia,
             evolucao,
-            pendentes,
-            pendentesGrupos,
-            demonstrativoLinhas,
             demonstrativoAnual,
             resumo
         });

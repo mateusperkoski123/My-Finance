@@ -348,6 +348,8 @@ module.exports = {
     'contas.total_consolidado': 'Consolidated Total',
 
     'painel.serie': 'Series',
+    'painel.fixo': 'Fixed',
+    'painel.parcela_titulo': 'Transaction {n} of {total}',
     'painel.automatico': 'Automatic',
     'painel.confirmar_exclusao': 'Are you sure you want to delete this entry?',
 

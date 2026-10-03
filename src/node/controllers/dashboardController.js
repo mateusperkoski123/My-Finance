@@ -72,8 +72,8 @@ const dashboardController = {
 
         const ordenacao = cleanVal(query.ordenar) || 'data';
         const agrupamento = cleanVal(query.agrupar) || 'sem_agrupamento';
-        const pagina = parseInt(query.pagina || '1', 10);
-        const porPagina = parseInt(query.por_pagina || '30', 10);
+        const pagina = Math.max(parseInt(query.pagina || '1', 10) || 1, 1);
+        const porPagina = Math.min(Math.max(parseInt(query.por_pagina || '30', 10) || 30, 10), 200);
 
         const contas = await Conta.buscarPorUsuario(userId, false);
         await Categoria.garantirCategoriasBasicas(userId); // contas antigas sem categorias de despesa/receita
