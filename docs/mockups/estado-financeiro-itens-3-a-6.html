@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="pt-BR" data-tema="escuro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prévia — Estado Financeiro, itens 3 a 6</title>
+<!-- Prévia estática (dados de exemplo) com o mesmo CSS do sistema. Abra este arquivo no navegador. -->
+<link rel="stylesheet" href="../../public/assets/css/app.css">
+<style>
+  body { background: var(--bg); color: var(--text); margin: 0; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .pv { max-width: 1100px; margin: 0 auto; padding: 24px 20px 80px; }
+  .pv h1 { font-size: 22px; margin: 0 0 4px; }
+  .pv__aviso { font-size: 13px; color: var(--muted); margin: 0 0 22px; }
+  .pv__tema { float: right; }
+  .pv__item { border-radius: 16px; padding: 22px 24px; margin-top: 28px; }
+  .pv__item > header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  .pv__num { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 2px 9px; font-weight: 800; font-size: 13px; }
+  .pv__item h2 { margin: 0; font-size: 18px; }
+  .pv__nota { font-size: 12.5px; color: var(--muted); margin: 4px 0 16px; }
+  .pv__nota b { color: var(--text); }
+  .pv__grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+  .pv__kpi { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: var(--bg); }
+  .pv__kpi small { color: var(--muted); font-size: 11.5px; display: block; }
+  .pv__kpi strong { font-size: 19px; display: block; margin: 2px 0; }
+  .pv__kpi .linha { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+  .pv__kpi .linha b { color: var(--text); }
+  .pv__chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+  .pv__chips .rot { font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 4px; }
+  .pv__duo { display: grid; grid-template-columns: 1fr 1.25fr; gap: 14px; margin-top: 16px; }
+  .pv__lista { border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; }
+  .pv__lista h4 { margin: 0 0 8px; font-size: 13px; }
+  .pv__lista .it { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 5px 0; border-top: 1px solid var(--border); }
+  .pv__lista .it:first-of-type { border-top: none; }
+  .barra2 { display: flex; flex-direction: column; gap: 3px; min-width: 130px; }
+  .barra2 i { display: block; height: 6px; border-radius: 4px; }
+  .badge-ok { background: var(--green-bg); color: var(--green); }
+  .pv__alertas { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0 0; }
+  .pv__alertas .badge { font-size: 12px; padding: 6px 10px; }
+  .pv__btns { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+  .pv__pagina { background: #fff; color: #1b1f27; border-radius: 6px; padding: 30px 28px; font-size: 12px; box-shadow: 0 6px 24px rgba(0,0,0,.35); max-width: 760px; margin: 0 auto; font-size: 12.5px; }
+  .pv__pagina h3 { margin: 0; font-size: 18px; }
+  .pv__pagina .sub { color: #5a6270; margin: 2px 0 14px; }
+  .pv__pagina table { width: 100%; border-collapse: collapse; margin: 6px 0 14px; }
+  .pv__pagina th, .pv__pagina td { padding: 5px 6px; border-bottom: 1px solid #e3e6ec; text-align: right; white-space: nowrap; }
+  .pv__pagina th:first-child, .pv__pagina td:first-child { text-align: left; }
+  .pv__pagina th { font-size: 10.5px; text-transform: uppercase; color: #5a6270; }
+  .pv__pagina .tot td { font-weight: 800; border-top: 2px solid #1b1f27; }
+  .pv__pagina .assin { display: flex; gap: 40px; margin-top: 34px; }
+  .pv__pagina .assin div { flex: 1; border-top: 1px solid #1b1f27; padding-top: 4px; text-align: center; color: #5a6270; }
+  .pv pre { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px; font-size: 11.5px; overflow-x: auto; margin: 0; }
+  .pv__opcoes { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+  .pv__opcoes label { display: flex; align-items: center; gap: 8px; }
+  /* tabela por conta compacta: cabe sem rolagem lateral */
+  #c5tab th, #c5tab td { padding: 10px 7px; font-size: 12.5px; }
+  #c5tab th { white-space: normal; line-height: 1.2; }
+  @media (max-width: 800px) { .pv__grid3, .pv__duo { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="pv">
+  <button class="btn btn-outline btn-sm pv__tema" onclick="var h=document.documentElement;h.setAttribute('data-tema',h.getAttribute('data-tema')==='escuro'?'claro':'escuro')"><i class="ph ph-moon"></i> Claro / escuro</button>
+  <h1>Estado Financeiro — prévia dos itens 3 a 6</h1>
+  <p class="pv__aviso">Dados de exemplo para outubro/2026, coerentes com os seus: receitas 6.393.000, despesas 2.533.120, saldo anterior 4.920.596 e saldo realizado 5.029.462. Nada disto foi implementado ainda.</p>
+
+  <!-- ================= ITEM 3 ================= -->
+  <section class="card pv__item" id="item3">
+    <header><span class="pv__num">3</span><h2>Comparativo de períodos</h2></header>
+    <p class="pv__nota">Hoje a comparação é sempre "contra o período anterior". Aqui você <b>escolhe com o que comparar</b> e vê a <b>diferença em valor</b> (não só em %), mais as <b>maiores altas e quedas</b>. Dados: os mesmos lançamentos, lidos em dois intervalos.</p>
+    <div class="pv__chips">
+      <span class="rot">Comparar com</span>
+      <span class="btn btn-sm btn-primary" style="border-radius:20px">Período anterior (set/2026)</span>
+      <span class="btn btn-sm btn-outline" style="border-radius:20px">Mesmo mês do ano passado (out/2025)</span>
+      <span class="btn btn-sm btn-outline" style="border-radius:20px"><i class="ph ph-calendar-blank"></i> Personalizado…</span>
+    </div>
+    <div class="pv__grid3" id="c3kpis"></div>
+    <div class="tabela-container" style="margin-top:16px">
+      <table class="tabela estado-t" id="c3tab"></table>
+    </div>
+    <div class="pv__duo">
+      <div class="pv__lista"><h4>▲ Maiores altas de gasto</h4><div id="c3altas"></div></div>
+      <div class="pv__lista"><h4>▼ Maiores quedas de gasto</h4><div id="c3quedas"></div></div>
+    </div>
+  </section>
+
+  <!-- ================= ITEM 4 ================= -->
+  <section class="card pv__item" id="item4">
+    <header><span class="pv__num">4</span><h2>Fluxo de caixa e previsão</h2></header>
+    <p class="pv__nota">Responde <b>"vou fechar o mês no azul?"</b>. Entradas e saídas por semana (barras cheias = já realizado; listradas = previsto, ou seja, os pendentes) e a linha do <b>saldo acumulado</b>. Dados: lançamentos pagos + pendentes por data, partindo do saldo anterior + ajustes.</p>
+    <div id="c4svg"></div>
+    <div class="tabela-container" style="margin-top:8px">
+      <table class="tabela estado-t" id="c4tab"></table>
+    </div>
+    <div class="pv__alertas" id="c4alertas"></div>
+  </section>
+
+  <!-- ================= ITEM 5 ================= -->
+  <section class="card pv__item" id="item5">
+    <header><span class="pv__num">5</span><h2>Visão por conta</h2></header>
+    <p class="pv__nota">Quanto entrou e saiu de <b>cada conta</b> no período e onde o dinheiro está. A linha de baixo fecha com o saldo realizado do Painel (5.029.462) e o projetado. Clicar numa conta abre o extrato dela já filtrado no mesmo período.</p>
+    <div class="tabela-container">
+      <table class="tabela estado-t" id="c5tab"></table>
+    </div>
+  </section>
+
+  <!-- ================= ITEM 6 ================= -->
+  <section class="card pv__item" id="item6">
+    <header><span class="pv__num">6</span><h2>Exportar para o contador</h2></header>
+    <p class="pv__nota">Botões no cabeçalho do Estado Financeiro. O <b>PDF</b> sai pronto para imprimir/assinar; o <b>CSV/Excel</b> traz uma linha por categoria e subcategoria para abrir em planilha.</p>
+    <div class="pv__btns">
+      <span class="btn btn-primary btn-sm"><i class="ph ph-file-pdf"></i> Baixar PDF</span>
+      <span class="btn btn-outline btn-sm"><i class="ph ph-file-csv"></i> CSV</span>
+      <span class="btn btn-outline btn-sm"><i class="ph ph-microsoft-excel-logo"></i> Excel (.xlsx)</span>
+    </div>
+    <div class="pv__duo" style="margin-top:0">
+      <div>
+        <div class="pv__lista" style="margin-bottom:14px">
+          <h4>Opções da exportação</h4>
+          <div class="pv__opcoes">
+            <label><input type="checkbox" checked> Incluir comparativo com o período anterior</label>
+            <label><input type="checkbox" checked> Incluir orçado × realizado</label>
+            <label><input type="checkbox"> Incluir as transações de cada categoria (anexo)</label>
+            <label><input type="checkbox"> Separar "Empresa" × "Pessoal" (por categoria)</label>
+          </div>
+        </div>
+        <div class="pv__lista"><h4>Prévia do CSV</h4>
+<pre id="c6csv"></pre></div>
+      </div>
+      <div class="pv__pagina" id="c6pdf"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+var fmt = function (v) { return (v < 0 ? '−' : '') + 'Gs. ' + Math.abs(Math.round(v)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); };
+var pct = function (v) { return Math.abs(v).toFixed(1).replace('.', ',') + '%'; };
+var delta = function (atual, ant, boaSubir, mostrarValor) {
+  var dif = atual - ant;
+  if (Math.abs(dif) < 1) return '<span class="muted">0</span>';
+  var bom = (dif > 0) === boaSubir;
+  var txt = ant > 0 ? pct(dif / ant * 100) : fmt(Math.abs(dif));
+  return '<span class="estado-delta ' + (bom ? 'estado-delta--bom' : 'estado-delta--ruim') + '">' + (dif > 0 ? '▲ ' : '▼ ') + txt + '</span>';
+};
+
+/* ---------- DADOS DE EXEMPLO (despesas por categoria: [nome, out/2026, set/2026]) ---------- */
+var CATS = [
+  ['Educação', 770000, 770000], ['Casa', 566415, 540000], ['Assinaturas', 539373, 512000], ['Renda extra', 264263, 250000],
+  ['Empresa', 150000, 150000], ['Prestamos', 143217, 143217], ['Gasolina', 88852, 70500], ['Alimentação', 11000, 25000]
+];
+var DES = { atual: CATS.reduce(function (s, c) { return s + c[1]; }, 0), ant: CATS.reduce(function (s, c) { return s + c[2]; }, 0) };
+var REC = { atual: 6393000, ant: 5980000 };
+
+/* ---------- ITEM 3 ---------- */
+(function () {
+  var rec = REC, des = DES;
+  var res = { atual: rec.atual - des.atual, ant: rec.ant - des.ant };
+  var kp = function (tit, o, boa, cor) {
+    var dif = o.atual - o.ant;
+    return '<div class="pv__kpi"><small>' + tit + '</small><strong style="color:' + cor + '">' + fmt(o.atual) + '</strong>' +
+      '<div class="linha"><span>set/2026</span><b>' + fmt(o.ant) + '</b></div>' +
+      '<div class="linha"><span>Diferença</span><b>' + (dif >= 0 ? '+' : '−') + fmt(Math.abs(dif)).replace('−', '') + ' ' + delta(o.atual, o.ant, boa) + '</b></div></div>';
+  };
+  document.getElementById('c3kpis').innerHTML = kp('Receitas · out/2026', rec, true, 'var(--green)') + kp('Despesas · out/2026', des, false, 'var(--red)') + kp('Resultado · out/2026', res, true, 'var(--text)');
+  var cats = CATS.slice().sort(function (a, b) { return b[1] - a[1]; });
+  var max = Math.max.apply(null, cats.map(function (c) { return Math.max(c[1], c[2]); }));
+  var h = '<thead><tr><th>Categoria (despesas)</th><th class="num">Out/2026</th><th class="num">Set/2026</th><th class="num">Diferença</th><th class="num">Variação</th><th>Atual × comparação</th></tr></thead><tbody>';
+  cats.forEach(function (c) {
+    var dif = c[1] - c[2];
+    h += '<tr><td><strong>' + c[0] + '</strong></td><td class="num">' + fmt(c[1]) + '</td><td class="num">' + fmt(c[2]) + '</td><td class="num">' + (dif === 0 ? '<span class="muted">—</span>' : (dif > 0 ? '+' : '−') + fmt(Math.abs(dif)).replace('−', '')) + '</td><td class="num">' + delta(c[1], c[2], false) + '</td>' +
+      '<td><div class="barra2"><i style="width:' + (c[1] / max * 100).toFixed(0) + '%;background:var(--red)"></i><i style="width:' + (c[2] / max * 100).toFixed(0) + '%;background:var(--muted);opacity:.55"></i></div></td></tr>';
+  });
+  h += '</tbody><tfoot><tr><td><strong>Total</strong></td><td class="num"><strong>' + fmt(des.atual) + '</strong></td><td class="num"><strong>' + fmt(des.ant) + '</strong></td><td class="num">+' + fmt(des.atual - des.ant).replace('−', '') + '</td><td class="num">' + delta(des.atual, des.ant, false) + '</td><td></td></tr></tfoot>';
+  document.getElementById('c3tab').innerHTML = h;
+  var difs = cats.map(function (c) { return { n: c[0], d: c[1] - c[2], a: c[2], v: c[1] }; });
+  var lista = function (arr) { return arr.map(function (x) { return '<div class="it"><span>' + x.n + '</span><span>' + (x.d >= 0 ? '+' : '−') + fmt(Math.abs(x.d)).replace('−', '') + ' ' + delta(x.v, x.a, false) + '</span></div>'; }).join(''); };
+  document.getElementById('c3altas').innerHTML = lista(difs.filter(function (x) { return x.d > 0; }).sort(function (a, b) { return b.d - a.d; }).slice(0, 3));
+  document.getElementById('c3quedas').innerHTML = lista(difs.filter(function (x) { return x.d < 0; }).sort(function (a, b) { return a.d - b.d; }).slice(0, 3));
+})();
+
+/* ---------- ITEM 4 ---------- */
+(function () {
+  var sem = [
+    { n: 'Sem 1', p: '01–07/10', ent: 4745000, entR: 320000, sai: 1620000, saiR: 283392 },
+    { n: 'Sem 2', p: '08–14/10', ent: 391000, entR: 0, sai: 230000, saiR: 0 },
+    { n: 'Sem 3', p: '15–21/10', ent: 1012000, entR: 0, sai: 410120, saiR: 0 },
+    { n: 'Sem 4', p: '22–28/10', ent: 220000, entR: 0, sai: 223000, saiR: 0 },
+    { n: 'Sem 5', p: '29–31/10', ent: 25000, entR: 0, sai: 50000, saiR: 0 }
+  ];
+  var saldo = 4920596 + 72258; var pontos = [saldo];
+  sem.forEach(function (s) { saldo += s.ent - s.sai; s.fim = saldo; pontos.push(saldo); });
+  var W = 1000, H = 300, pl = 70, pr = 80, pt = 20, pb = 40, n = sem.length, cw = (W - pl - pr) / n;
+  var maxBar = 5000000, maxSaldo = 10000000;
+  var yB = function (v) { return H - pb - (v / maxBar) * (H - pb - pt); };
+  var yS = function (v) { return H - pb - (v / maxSaldo) * (H - pb - pt); };
+  var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Fluxo de caixa por semana">' +
+    '<defs><pattern id="listraV" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="6" style="fill: var(--green)" opacity=".7"/></pattern>' +
+    '<pattern id="listraR" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="6" style="fill: var(--red)" opacity=".7"/></pattern></defs>';
+  [0, 1250000, 2500000, 3750000, 5000000].forEach(function (v) {
+    svg += '<line x1="' + pl + '" x2="' + (W - pr) + '" y1="' + yB(v) + '" y2="' + yB(v) + '" stroke="var(--border)"/><text x="' + (pl - 8) + '" y="' + (yB(v) + 4) + '" text-anchor="end" font-size="11" fill="var(--muted)">' + (v / 1000000).toFixed(1).replace('.', ',') + ' mi</text>';
+  });
+  sem.forEach(function (s, i) {
+    var x0 = pl + i * cw + cw * 0.18, bw = cw * 0.3;
+    var barra = function (x, v, vr, cor, pad) {
+      var out = '';
+      out += '<rect x="' + x + '" y="' + yB(v) + '" width="' + bw + '" height="' + (yB(0) - yB(v)) + '" rx="4" fill="url(#' + pad + ')" style="stroke: ' + cor + '" stroke-opacity=".7"/>';
+      if (vr > 0) out += '<rect x="' + x + '" y="' + yB(vr) + '" width="' + bw + '" height="' + (yB(0) - yB(vr)) + '" rx="4" fill="' + cor + '"/>';
+      return out;
+    };
+    svg += barra(x0, s.ent, s.entR, 'var(--green)', 'listraV') + barra(x0 + bw + 6, s.sai, s.saiR, 'var(--red)', 'listraR');
+    svg += '<text x="' + (pl + i * cw + cw / 2) + '" y="' + (H - 18) + '" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600">' + s.n + '</text><text x="' + (pl + i * cw + cw / 2) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="10.5" fill="var(--muted)">' + s.p + '</text>';
+  });
+  var linha = pontos.map(function (v, i) { return (pl + i * cw - (i === 0 ? 0 : cw / 2) + (i === 0 ? 0 : 0)).toFixed(0) + ',' + yS(v).toFixed(0); });
+  // linha do saldo: ponto no fim de cada semana (centro do bloco), comecando no saldo inicial
+  // eixo direito (azul): escala do saldo acumulado, diferente da escala das barras
+  [0, 2500000, 5000000, 7500000, 10000000].forEach(function (v) {
+    svg += '<text x="' + (W - pr + 8) + '" y="' + (yS(v) + 4) + '" font-size="11" fill="#2a78d6">' + (v / 1000000).toFixed(1).replace('.', ',') + ' mi</text>';
+  });
+  var xs = [pl].concat(sem.map(function (s, i) { return pl + i * cw + cw / 2; }));
+  var pts = xs.map(function (x, i) { return x.toFixed(0) + ',' + yS(pontos[i]).toFixed(0); }).join(' ');
+  svg += '<polyline points="' + pts + '" fill="none" stroke="#2a78d6" stroke-width="2.5"/>';
+  xs.forEach(function (x, i) { svg += '<circle cx="' + x + '" cy="' + yS(pontos[i]) + '" r="4" fill="#2a78d6"/>'; });
+  svg += '<text x="' + (xs[xs.length - 1]) + '" y="' + (yS(pontos[pontos.length - 1]) - 12) + '" text-anchor="middle" font-size="12" font-weight="700" fill="#2a78d6">' + fmt(pontos[pontos.length - 1]) + '</text>';
+  svg += '</svg>' +
+    '<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:4px"><span><b style="color:var(--green)">■</b> Entradas</span><span><b style="color:var(--red)">■</b> Saídas</span><span>▨ listrado = previsto (pendente)</span><span><b style="color:#2a78d6">●</b> Saldo acumulado (eixo azul, à direita)</span></div>';
+  document.getElementById('c4svg').innerHTML = svg;
+  var h = '<thead><tr><th>Semana</th><th class="num">Entradas</th><th class="num">Saídas</th><th class="num">Líquido</th><th class="num">Saldo ao final</th></tr></thead><tbody>' +
+    '<tr class="estado-sub estado-sub--solo"><td>Saldo inicial (anterior + ajustes)</td><td></td><td></td><td></td><td class="num">' + fmt(pontos[0]) + '</td></tr>';
+  var ET = 0, ST = 0;
+  sem.forEach(function (s) {
+    ET += s.ent; ST += s.sai;
+    h += '<tr><td><strong>' + s.n + '</strong> <span class="muted" style="font-size:11.5px">' + s.p + '</span></td><td class="num" style="color:var(--green)">' + fmt(s.ent) + '</td><td class="num" style="color:var(--red)">' + fmt(s.sai) + '</td><td class="num"><strong>' + (s.ent - s.sai >= 0 ? '+' : '') + fmt(s.ent - s.sai) + '</strong></td><td class="num"><strong>' + fmt(s.fim) + '</strong></td></tr>';
+  });
+  h += '</tbody><tfoot><tr><td><strong>Mês</strong></td><td class="num">' + fmt(ET) + '</td><td class="num">' + fmt(ST) + '</td><td class="num">+' + fmt(ET - ST) + '</td><td class="num">' + fmt(saldo) + '</td></tr></tfoot>';
+  document.getElementById('c4tab').innerHTML = h;
+  document.getElementById('c4alertas').innerHTML =
+    '<span class="badge badge-ok"><i class="ph ph-check-circle"></i> Fecha o mês no azul: ' + fmt(saldo) + '</span>' +
+    '<span class="badge badge-neutro"><i class="ph ph-arrow-down"></i> Menor saldo previsto: ' + fmt(Math.min.apply(null, pontos)) + ' (início do mês)</span>' +
+    '<span class="badge badge-neutro"><i class="ph ph-calendar-check"></i> Maior saída: Fundo de emergência — Gs. 1.000.000 em 05/10</span>' +
+    '<span class="badge badge-alerta"><i class="ph ph-warning"></i> Semana 4 fecha com saída maior que a entrada (−3.000)</span>';
+})();
+
+/* ---------- ITEM 5 ---------- */
+(function () {
+  // [conta, saldo final realizado, entradas, saidas, transf. liquidas, ajustes, a receber, a pagar]
+  var contas = [
+    ['Ueno', 1917914, 0, 283392, -200000, 72258, 1723000, 1499728],
+    ['Carteira Física', 641000, 320000, 0, 0, 0, 4350000, 750000],
+    ['Conta de Emergência', 2000000, 0, 0, 0, 0, 0, 0],
+    ['Continental', 445310, 0, 0, 200000, 0, 0, 0],
+    ['Familiar', 25039, 0, 0, 0, 0, 0, 0],
+    ['Billetera Mango', 154, 0, 0, 0, 0, 0, 0],
+    ['Atlas', 45, 0, 0, 0, 0, 0, 0],
+    ['Nubank', 0, 0, 0, 0, 0, 0, 0]
+  ];
+  var tot = { ini: 0, ent: 0, sai: 0, aj: 0, fim: 0, pend: 0 };
+  var cel = function (v, cor, sinal) { return '<td class="num"' + (cor && v ? ' style="color:' + cor + '"' : '') + '>' + (v ? (sinal && v > 0 ? '+' : '') + fmt(v) : '<span class="muted">—</span>') + '</td>'; };
+  var h = '<thead><tr><th>Conta</th><th class="num opc">Saldo inicial</th><th class="num">Entradas</th><th class="num">Saídas</th><th class="num opc" title="Transferências entre contas e ajustes de saldo">Transf. e ajustes</th><th class="num">Saldo realizado</th><th class="num opc" title="A receber menos a pagar">Pendente líquido</th><th class="num">Saldo projetado</th></tr></thead><tbody>';
+  contas.forEach(function (c) {
+    var ajtr = c[4] + c[5];
+    var ini = c[1] - c[2] + c[3] - ajtr;
+    var pend = c[6] - c[7];
+    tot.ini += ini; tot.ent += c[2]; tot.sai += c[3]; tot.aj += ajtr; tot.fim += c[1]; tot.pend += pend;
+    h += '<tr><td><a href="#" class="estado-nome"><span class="estado-dot" style="background:#2563eb"></span>' + c[0] + '</a></td>' +
+      '<td class="num opc">' + (ini ? fmt(ini) : '<span class="muted">—</span>') + '</td>' + cel(c[2], 'var(--green)') + cel(c[3], 'var(--red)') +
+      cel(ajtr, null, true).replace('<td class="num">', '<td class="num opc">') + '<td class="num"><strong>' + fmt(c[1]) + '</strong></td>' +
+      cel(pend, pend > 0 ? 'var(--green)' : 'var(--red)', true).replace('<td class="num"', '<td class="num opc"') + '<td class="num"><strong>' + fmt(c[1] + pend) + '</strong></td></tr>';
+  });
+  h += '</tbody><tfoot><tr><td><strong>Total</strong></td><td class="num opc">' + fmt(tot.ini) + '</td><td class="num">' + fmt(tot.ent) + '</td><td class="num">' + fmt(tot.sai) + '</td><td class="num opc">+' + fmt(tot.aj) + '</td><td class="num"><strong>' + fmt(tot.fim) + '</strong></td><td class="num opc">+' + fmt(tot.pend) + '</td><td class="num"><strong>' + fmt(tot.fim + tot.pend) + '</strong></td></tr></tfoot>';
+  document.getElementById('c5tab').innerHTML = h;
+})();
+
+/* ---------- ITEM 6 ---------- */
+(function () {
+  var csv = ['tipo;categoria;subcategoria;realizado;pendente;total;anterior;variacao_pct',
+    'receita;Salario;;320000;4030000;4350000;4350000;0,0',
+    'receita;Renda Extra;Spotify;0;420000;420000;300000;40,0'];
+  CATS.slice(0, 3).forEach(function (c) { csv.push('despesa;' + c[0] + ';;0;' + c[1] + ';' + c[1] + ';' + c[2] + ';' + ((c[1] - c[2]) / c[2] * 100).toFixed(1).replace('.', ',')); });
+  csv.push('resultado;;;36608;3823272;' + (REC.atual - DES.atual) + ';' + (REC.ant - DES.ant) + ';');
+  document.getElementById('c6csv').textContent = csv.join('\n');
+  document.getElementById('c6pdf').innerHTML =
+    '<h3>Demonstrativo de Resultados</h3><div class="sub">MyFinance · Mateus Perkoski · Outubro/2026 (01/10 a 31/10) · gerado em 03/10/2026</div>' +
+    '<table><tr><th>Resumo</th><th>Realizado</th><th>Pendente</th><th>Total</th></tr>' +
+    '<tr><td>Saldo anterior</td><td></td><td></td><td>' + fmt(4920596) + '</td></tr>' +
+    '<tr><td>(+) Receitas</td><td>' + fmt(320000) + '</td><td>' + fmt(6073000) + '</td><td>' + fmt(6393000) + '</td></tr>' +
+    '<tr><td>(−) Despesas</td><td>' + fmt(283392) + '</td><td>' + fmt(2249728) + '</td><td>' + fmt(2533120) + '</td></tr>' +
+    '<tr class="tot"><td>(=) Resultado do período</td><td>' + fmt(36608) + '</td><td>' + fmt(3823272) + '</td><td>' + fmt(3859880) + '</td></tr>' +
+    '<tr><td>(±) Ajustes de saldo</td><td></td><td></td><td>' + fmt(72258) + '</td></tr>' +
+    '<tr class="tot"><td>Saldo final projetado</td><td></td><td></td><td>' + fmt(8852734) + '</td></tr></table>' +
+    '<table><tr><th>Despesas por categoria</th><th>Total</th><th>% do total</th><th>vs. set/26</th></tr>' +
+    CATS.slice().sort(function (a, b) { return b[1] - a[1]; }).slice(0, 4).map(function (c) {
+      var v = (c[1] - c[2]) / c[2] * 100;
+      return '<tr><td>' + c[0] + '</td><td>' + fmt(c[1]) + '</td><td>' + pct(c[1] / DES.atual * 100) + '</td><td>' + (v > 0.05 ? '+' + pct(v) : (v < -0.05 ? '−' + pct(v) : '0,0%')) + '</td></tr>';
+    }).join('') +
+    '<tr><td>…demais categorias</td><td></td><td></td><td></td></tr>' +
+    '<tr class="tot"><td>Total</td><td>' + fmt(DES.atual) + '</td><td>100%</td><td>+' + pct((DES.atual - DES.ant) / DES.ant * 100) + '</td></tr></table>' +
+    '<div class="assin"><div>Responsável</div><div>Contador</div></div>';
+})();
+/* ?item=4 mostra so aquele item */
+(function () { var q = new URLSearchParams(location.search).get('item'); if (q) document.querySelectorAll('.pv__item').forEach(function (e) { e.hidden = e.id !== 'item' + q; }); })();
+</script>
+</body>
+</html>
