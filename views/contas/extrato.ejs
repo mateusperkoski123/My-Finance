@@ -124,56 +124,14 @@ const _presets = [['hoje', t('filtro.hoje')], ['7dias', t('filtro.7dias')], ['me
                             <td class="td-acoes"><%- include('../partials/acoes_lancamento', { l: l, modalSerie: false }) %></td>
                         </tr>
 
-                        <!-- Modal Editar do Extrato -->
-                        <div class="modal-backdrop" id="modal-editar-<%= l.id %>">
-                            <div class="modal card">
-                                <div class="modal__header">
-                                    <h3><%= l.tipo === 'receita' ? t('modal.editar_receita') : t('modal.editar_despesa') %></h3>
-                                    <button type="button" class="modal__close" data-modal-close>&times;</button>
-                                </div>
-                                <form method="post" action="/lancamentos/<%= l.id %>/atualizar" class="form">
-                                    <%- csrfCampo %>
-<input type="hidden" name="voltar" value="<%= currentUrl %>">
-
-                                    <div class="form-group">
-                                        <label><%= t('modal.descricao') %></label>
-                                        <input class="input" type="text" name="descricao" value="<%= l.descricao %>" required>
-                                    </div>
-
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label><%= t('modal.valor') %></label>
-                                            <input class="input" type="text" name="valor" value="<%= l.valor %>" data-money required>
-                                        </div>
-                                        <div class="form-group">
-                                            <label><%= t('modal.conta') %></label>
-                                            <input class="input" type="text" value="<%= conta.nome %>" readonly disabled>
-                                            <input type="hidden" name="conta_id" value="<%= conta.id %>">
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label><%= t('modal.data_competencia') %></label>
-                                        <input class="input" type="date" name="data_competencia" value="<%= formatDate(l.data_competencia, 'YYYY-MM-DD') %>" required>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label class="checkbox-linha">
-                                            <input type="checkbox" name="status" value="pago" <%= l.status === 'pago' ? 'checked' : '' %>>
-                                            <%= l.tipo === 'receita' ? t('modal.foi_recebida') : t('modal.foi_pago') %>
-                                        </label>
-                                    </div>
-
-                                    <div class="modal__actions">
-                                        <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
-                                        <button type="submit" class="btn btn-primary"><%= t('modal.salvar') %></button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
                     <% }) %>
                 <% } %>
             </tbody>
         </table>
     </div>
 </div>
+
+<% if (contas && contas.length > 0) { %>
+<% const dataHoje = formatDate(hojeLocal()); %>
+<%- include('../partials/modais_lancamento', { dataHoje, voltar: currentUrl }) %>
+<% } %>

@@ -1,0 +1,177 @@
+<%# Modal "Editar receita/despesa": o mesmo formulario do cadastro, preenchido por public/assets/js/app.js (botao com data-editar-lanc).
+   Uma instancia por tipo. Espera: tipo ('receita'|'despesa'), contas, categoriasArvore, currentUrl. %>
+<% const _ehReceita = tipo === 'receita'; const _cor = _ehReceita ? 'var(--green)' : 'var(--red)'; const _corBg = _ehReceita ? 'var(--green-bg)' : 'var(--red-bg)'; const _p = 'ed-' + tipo; %>
+<div class="modal-backdrop" id="modal-editar-<%= tipo %>" data-modal data-editar-modal="<%= tipo %>" style="background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(4px);">
+    <div class="modal card" style="max-width: 520px; border-radius: 20px; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.15); border: 1px solid var(--border); max-height: 92vh; overflow-y: auto;">
+        <div class="modal__header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 36px; height: 36px; border-radius: 50%; background: <%= _corBg %>; display: flex; align-items: center; justify-content: center;">
+                    <i class="ph <%= _ehReceita ? 'ph-trend-up' : 'ph-trend-down' %>" style="color: <%= _cor %>; font-size: 20px;"></i>
+                </div>
+                <h2 style="font-size: 18px; font-weight: 700; margin: 0;"><%= _ehReceita ? t('modal.editar_receita') : t('modal.editar_despesa') %></h2>
+            </div>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
+        </div>
+
+        <form method="post" action="#" class="form" data-editar-form style="display: flex; flex-direction: column; gap: 16px;">
+            <%- csrfCampo %>
+            <input type="hidden" name="voltar" value="<%= currentUrl %>">
+
+            <div>
+                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;"><%= t('modal.inf_basicas') %></h4>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="<%= _p %>-descricao" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('modal.descricao') %></label>
+                    <input class="input" type="text" id="<%= _p %>-descricao" name="descricao" required style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="<%= _p %>-valor" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('modal.valor') %></label>
+                    <input class="input" type="text" id="<%= _p %>-valor" name="valor" data-money inputmode="decimal" required style="border-radius: 12px; padding: 10px 14px; font-size: 16px; font-weight: 700;">
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="<%= _p %>-categoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('comum.categoria') %> *</label>
+                    <select class="input" id="<%= _p %>-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="" required style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
+                        <option value=""><%= t('modal.escolha_cat') %></option>
+                        <% (categoriasArvore || []).filter(cat => !cat.sistema).forEach(cat => { %>
+                            <option value="<%= cat.id %>"><%= cat.nome %></option>
+                        <% }) %>
+                    </select>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 14px;">
+                    <label for="<%= _p %>-subcategoria" style="font-size: 13px; font-weight: 600; margin-bottom: 4px; display: block;"><%= t('comum.subcategoria') %></label>
+                    <select class="input" id="<%= _p %>-subcategoria" name="subcategoria_id" data-gf-subcategoria-select disabled style="border-radius: 12px; padding: 10px 14px; font-size: 13.5px;">
+                        <option value=""><%= t('modal.sel_cat_primeiro') %></option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <h4 style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); font-weight: 700; margin-bottom: 12px;"><%= t('modal.config_transacao') %></h4>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: <%= _corBg %>; display: flex; align-items: center; justify-content: center;" data-status-icon-box>
+                                <i class="ph ph-trend-down" style="font-size: 18px; color: var(--red);" data-status-icon></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;" data-status-title><%= _ehReceita ? t('modal.nao_foi_recebida') : t('modal.nao_foi_pago') %></strong>
+                                <span style="font-size: 11px; color: var(--muted);"><%= t('painel.status_pagamento') %></span>
+                            </div>
+                        </div>
+                        <label class="toggle" style="margin: 0;">
+                            <input type="checkbox" name="status" value="pago" data-gf-status-toggle data-tipo="<%= tipo %>">
+                            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                        </label>
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-calendar" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;" data-status-date-label><%= t('modal.data_vencimento') %></strong>
+                            </div>
+                        </div>
+                        <input class="input" type="date" name="data_pagamento" style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-bank" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;"><%= t('modal.conta') %></strong>
+                            </div>
+                        </div>
+                        <select class="input" id="<%= _p %>-conta" name="conta_id" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+                            <% (contas || []).forEach(c => { %>
+                                <option value="<%= c.id %>"><%= c.nome %></option>
+                            <% }) %>
+                        </select>
+                    </div>
+
+                    <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; background: var(--bg);">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 8px;">
+                            <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                <i class="ph ph-calendar-blank" style="font-size: 18px; color: var(--muted);"></i>
+                            </div>
+                            <div>
+                                <strong style="font-size: 13px; display: block;"><%= t('modal.data_competencia') %></strong>
+                            </div>
+                        </div>
+                        <input class="input" type="date" name="data_competencia" required style="border-radius: 10px; padding: 8px 12px; font-size: 13px;">
+                    </div>
+
+                    <%# Transacao avulsa: pode virar fixa ou parcelada (repete mes a mes a partir desta). %>
+                    <div data-ed-novo-serie style="display: flex; flex-direction: column; gap: 10px;">
+                        <p class="muted" style="font-size: 11.5px; margin: 2px 2px 0;"><%= t('edicao.converter_dica') %></p>
+                        <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                    <i class="ph ph-push-pin" style="font-size: 18px; color: var(--muted);"></i>
+                                </div>
+                                <div>
+                                    <strong style="font-size: 13px; display: block;"><%= _ehReceita ? t('modal.receita_fixa') : t('modal.despesa_fixa') %></strong>
+                                </div>
+                            </div>
+                            <label class="toggle" style="margin: 0;">
+                                <input type="checkbox" name="e_fixo" value="1">
+                                <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                            </label>
+                        </div>
+
+                        <div style="border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; background: var(--bg);">
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: var(--card); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;">
+                                    <i class="ph ph-arrows-clockwise" style="font-size: 18px; color: var(--muted);"></i>
+                                </div>
+                                <div>
+                                    <strong style="font-size: 13px; display: block;"><%= t('modal.repetir') %></strong>
+                                </div>
+                            </div>
+                            <label class="toggle" style="margin: 0;">
+                                <input type="checkbox" name="repetir" value="1" data-gf-toggle-repetir>
+                                <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                            </label>
+                        </div>
+
+                        <div class="form-group" data-gf-repetir-alvo hidden style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg);">
+                            <label for="<%= _p %>-qtd" style="font-size: 12px; font-weight: 600;"><%= t('modal.qtd_repeticoes') %></label>
+                            <input class="input" type="number" id="<%= _p %>-qtd" name="quantidade_repeticoes" min="2" max="60" value="12" style="border-radius: 8px; padding: 6px 10px; font-size: 13px; width: 100px;">
+                        </div>
+                    </div>
+
+                    <%# Transacao que ja faz parte de uma serie: escolhe quais ocorrencias recebem a alteracao. %>
+                    <div data-ed-serie hidden style="background: var(--bg); padding: 14px; border-radius: 12px; border: 1px solid var(--border);">
+                        <p style="font-weight: 600; font-size: 13px; margin: 0 0 8px 0;"><%= t('series.titulo') %></p>
+                        <p class="muted" style="font-size: 11.5px; margin: 0 0 10px 0;"><%= t('series.atencao') %></p>
+                        <label style="display: block; margin-bottom: 6px; font-size: 12px;">
+                            <input type="radio" name="escopo_serie" value="apenas_esta" checked> <%= t('series.apenas_esta') %>
+                        </label>
+                        <label style="display: block; margin-bottom: 6px; font-size: 12px;">
+                            <input type="radio" name="escopo_serie" value="esta_e_proximas"> <%= t('series.esta_e_proximas') %>
+                        </label>
+                        <label style="display: block; font-size: 12px;">
+                            <input type="radio" name="escopo_serie" value="toda_serie"> <%= t('series.toda_serie') %>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+                <button type="submit" class="btn" style="background: <%= _cor %>; color: var(--on-accent); border: none; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 700; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="ph ph-floppy-disk" style="font-size: 18px;"></i> <%= t('modal.salvar') %>
+                </button>
+                <button type="button" class="btn btn-outline" data-modal-close style="border-radius: 12px; padding: 10px; font-size: 13.5px; font-weight: 600; width: 100%;">
+                    <%= t('modal.cancelar') %>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

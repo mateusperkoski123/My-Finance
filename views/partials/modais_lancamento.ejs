@@ -316,6 +316,9 @@
     </div>
 </div>
 
+<%- include('./modal_editar_lancamento', { tipo: 'receita' }) %>
+<%- include('./modal_editar_lancamento', { tipo: 'despesa' }) %>
+
 <script>
 window.gfCategoriasArvore = <%- JSON.stringify(categoriasArvore || []) %>;
 </script>

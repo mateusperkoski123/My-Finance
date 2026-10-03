@@ -587,3 +587,61 @@ document.addEventListener('DOMContentLoaded', function () {
     if (modal) modal.classList.add('is-open');
   });
 })();
+
+// Editar lancamento: o mesmo formulario do cadastro (um modal por tipo), preenchido a partir do botao [data-editar-lanc].
+// Transacao avulsa pode virar fixa ou repetida (parcelas); transacao de uma serie escolhe quais ocorrencias alterar.
+(function () {
+  function disparar(el, nome) { el.dispatchEvent(new Event(nome, { bubbles: true })); }
+
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-editar-lanc]');
+    if (!btn) return;
+    var d;
+    try { d = JSON.parse(btn.getAttribute('data-editar-lanc')); } catch (e) { return; }
+    var modal = document.getElementById('modal-editar-' + d.tipo);
+    var form = modal && modal.querySelector('[data-editar-form]');
+    if (!form) return;
+
+    var menu = btn.closest('details');
+    if (menu) menu.removeAttribute('open');
+
+    form.action = '/lancamentos/' + d.id + '/atualizar';
+    form.elements.descricao.value = d.descricao || '';
+    var valor = form.elements.valor;
+    valor.value = window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(Number(d.valor) || 0) : String(d.valor);
+
+    // Categoria/subcategoria: o lancamento guarda so um id (da subcategoria quando existe); acha o pai na arvore.
+    var arvore = window.gfCategoriasArvore || [];
+    var catId = '', subId = '';
+    arvore.forEach(function (c) {
+      if (c.id === d.categoria_id) catId = c.id;
+      (c.subcategorias || []).forEach(function (s) { if (s.id === d.categoria_id) { catId = c.id; subId = s.id; } });
+    });
+    var selCat = form.elements.categoria_id, selSub = form.elements.subcategoria_id;
+    selCat.value = catId;
+    disparar(selCat, 'change');
+    if (subId) selSub.value = subId;
+
+    form.elements.conta_id.value = d.conta_id;
+    form.elements.data_competencia.value = d.data_competencia || '';
+    form.elements.data_pagamento.value = d.data_pagamento || d.data_competencia || '';
+
+    var status = form.elements.status;
+    status.checked = d.status === 'pago';
+    disparar(status, 'change');
+
+    // Fixa/Repetir: so para transacao avulsa; em serie aparece a escolha do escopo.
+    var fixo = form.elements.e_fixo, repetir = form.elements.repetir;
+    fixo.checked = false;
+    repetir.checked = false;
+    disparar(repetir, 'change');
+    form.elements.quantidade_repeticoes.value = 12;
+    var novo = form.querySelector('[data-ed-novo-serie]'), serie = form.querySelector('[data-ed-serie]');
+    novo.hidden = !!d.serie;
+    serie.hidden = !d.serie;
+    var apenas = form.querySelector('input[name="escopo_serie"][value="apenas_esta"]');
+    if (apenas) apenas.checked = true;
+
+    modal.classList.add('is-open');
+  });
+})();

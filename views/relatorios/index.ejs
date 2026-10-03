@@ -253,6 +253,7 @@
                                     </td>
                                     <td>
                                         <div style="display: flex; gap: 6px; align-items: center;">
+                                            <button type="button" class="btn-editar-linha" title="<%= t('acao.editar') %>" aria-label="<%= t('acao.editar') %>" data-editar-lanc="<%= JSON.stringify({ id: p.id, tipo: p.tipo, descricao: p.descricao, valor: Math.abs(parseFloat(p.valor)), conta_id: p.conta_id, categoria_id: p.categoria_id, data_competencia: formatDate(p.data_competencia, 'YYYY-MM-DD'), data_pagamento: '', status: p.status, serie: !!p.serie_id }) %>"><i class="ph ph-pencil-simple"></i></button>
                                             <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" style="display:inline;" data-ajax>
                                                 <%- csrfCampo %>
 <input type="hidden" name="voltar" value="<%= currentUrl %>">
@@ -312,6 +313,7 @@
                                     </td>
                                     <td>
                                         <div style="display: flex; gap: 6px; align-items: center;">
+                                            <button type="button" class="btn-editar-linha" title="<%= t('acao.editar') %>" aria-label="<%= t('acao.editar') %>" data-editar-lanc="<%= JSON.stringify({ id: p.id, tipo: p.tipo, descricao: p.descricao, valor: Math.abs(parseFloat(p.valor)), conta_id: p.conta_id, categoria_id: p.categoria_id, data_competencia: formatDate(p.data_competencia, 'YYYY-MM-DD'), data_pagamento: '', status: p.status, serie: !!p.serie_id }) %>"><i class="ph ph-pencil-simple"></i></button>
                                             <form method="post" action="/lancamentos/<%= p.id %>/marcar-pago" style="display:inline;" data-ajax>
                                                 <%- csrfCampo %>
 <input type="hidden" name="voltar" value="<%= currentUrl %>">

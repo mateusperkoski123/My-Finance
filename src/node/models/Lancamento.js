@@ -336,6 +336,39 @@ class Lancamento {
         return true;
     }
 
+    // Transacao avulsa que vira fixa (24 meses) ou repetida (N vezes, parcelas): esta continua como esta e as proximas
+    // ocorrencias, ja pendentes, sao criadas mes a mes. Nao mexe em transacao que ja faz parte de uma serie.
+    static async converterEmSerie(id, userId, { fixo = false, quantidade = 1 } = {}) {
+        const item = await this.buscarPorId(id, userId);
+        if (!item || item.serie_id || (item.tipo !== 'receita' && item.tipo !== 'despesa')) return 0;
+        const total = fixo ? MESES_FIXO : Math.min(Math.max(parseInt(quantidade, 10) || 1, 1), 60);
+        if (total <= 1) return 0;
+        const serieId = uuidv4();
+        const dataBase = toLocalYMD(item.data_competencia);
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            await conn.query('UPDATE lancamentos SET serie_id = ?, recorrente = ?, updated_at = NOW(3) WHERE id = ? AND user_id = ?', [serieId, fixo ? 1 : 0, id, userId]);
+            for (let i = 1; i < total; i++) {
+                await conn.query(
+                    `INSERT INTO lancamentos
+                     (user_id, serie_id, conta_id, categoria_id, tipo, descricao, valor,
+                      data_competencia, data_pagamento, status, recorrente, observacoes, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 'pendente', ?, ?, NOW(3), NOW(3))`,
+                    [userId, serieId, item.conta_id, item.categoria_id, item.tipo, item.descricao, item.valor,
+                     addMonthsYMD(dataBase, i), fixo ? 1 : 0, item.observacoes || null]
+                );
+            }
+            await conn.commit();
+            return total;
+        } catch (err) {
+            await conn.rollback();
+            throw err;
+        } finally {
+            conn.release();
+        }
+    }
+
     static async excluir(id, userId, escopoSerie = 'apenas_esta') {
         const SyncExclusao = require('./SyncExclusao');
         const item = await this.buscarPorId(id, userId);

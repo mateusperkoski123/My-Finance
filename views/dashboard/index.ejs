@@ -435,93 +435,9 @@ function gfAtualizarParam(chave, valor) {
     </div>
 </div>
 
-<!-- Modais Editar e Excluir Série -->
+<!-- Modais Excluir Série (a edição usa o modal compartilhado de partials/modais_lancamento) -->
 <% if (lancamentos && lancamentos.length > 0) { %>
     <% lancamentos.filter(l => l.tipo === 'receita' || l.tipo === 'despesa' || (l.tipo === 'transferencia' && l.transferencia_par_id)).forEach(l => { %>
-        <% if (l.tipo === 'receita' || l.tipo === 'despesa') { %>
-        <div class="modal-backdrop" id="modal-editar-<%= l.id %>">
-            <div class="modal card">
-                <div class="modal__header">
-                    <h3><%= l.tipo === 'receita' ? t('modal.editar_receita') : t('modal.editar_despesa') %></h3>
-                    <button type="button" class="modal__close" data-modal-close>&times;</button>
-                </div>
-                <form method="post" action="/lancamentos/<%= l.id %>/atualizar" class="form">
-                    <%- csrfCampo %>
-<input type="hidden" name="voltar" value="<%= currentUrl %>">
-
-                    <div class="form-group">
-                        <label><%= t('modal.descricao') %></label>
-                        <input class="input" type="text" name="descricao" value="<%= l.descricao %>" required>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label><%= t('modal.valor') %></label>
-                            <input class="input" type="text" name="valor" value="<%= Math.abs(parseFloat(l.valor)) %>" data-money required>
-                        </div>
-                        <div class="form-group">
-                            <label><%= t('modal.conta') %></label>
-                            <select class="input" name="conta_id" required>
-                                <% contas.forEach(c => { %>
-                                    <option value="<%= c.id %>" <%= c.id === l.conta_id ? 'selected' : '' %>><%= c.nome %></option>
-                                <% }) %>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label><%= t('modal.categoria') %> *</label>
-                            <select class="input" name="categoria_id" required>
-                                <option value=""><%= t('modal.escolha_cat') %></option>
-                                <% categoriasArvore.filter(c => !c.sistema).forEach(c => { %>
-                                    <option value="<%= c.id %>" <%= c.id === l.categoria_id ? 'selected' : '' %>><%= c.nome %></option>
-                                    <% (c.subcategorias || []).forEach(sc => { %>
-                                        <option value="<%= sc.id %>" <%= sc.id === l.categoria_id ? 'selected' : '' %>>&nbsp;&nbsp;↳ <%= sc.nome %></option>
-                                    <% }) %>
-                                <% }) %>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label><%= t('modal.data_competencia') %></label>
-                            <input class="input" type="date" name="data_competencia" value="<%= formatDate(l.data_competencia, 'YYYY-MM-DD') %>" required>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="checkbox-linha">
-                            <input type="checkbox" name="status" value="pago" <%= l.status === 'pago' ? 'checked' : '' %>>
-                            <%= l.tipo === 'receita' ? t('modal.foi_recebida') : t('modal.foi_pago') %>
-                        </label>
-                    </div>
-
-                    <% if (l.serie_id) { %>
-                        <div style="background: var(--bg); padding: 14px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
-                            <p style="font-weight: 600; font-size: 13px; margin: 0 0 8px 0;"><%= t('series.titulo') %></p>
-                            <p class="muted" style="font-size: 11.5px; margin: 0 0 10px 0;"><%= t('series.atencao') %></p>
-
-                            <label style="display: block; margin-bottom: 6px; font-size: 12px;">
-                                <input type="radio" name="escopo_serie" value="apenas_esta" checked> <%= t('series.apenas_esta') %>
-                            </label>
-                            <label style="display: block; margin-bottom: 6px; font-size: 12px;">
-                                <input type="radio" name="escopo_serie" value="esta_e_proximas"> <%= t('series.esta_e_proximas') %>
-                            </label>
-                            <label style="display: block; font-size: 12px;">
-                                <input type="radio" name="escopo_serie" value="toda_serie"> <%= t('series.toda_serie') %>
-                            </label>
-                        </div>
-                    <% } %>
-
-                    <div class="modal__actions">
-                        <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
-                        <button type="submit" class="btn btn-primary"><%= t('modal.salvar') %></button>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <% } %>
-
         <% if (l.serie_id) { %>
             <div class="modal-backdrop" id="modal-excluir-<%= l.id %>">
                 <div class="modal card">

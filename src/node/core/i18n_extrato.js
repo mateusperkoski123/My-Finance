@@ -14,5 +14,7 @@ module.exports = {
     'extrato.resultado': ['Resultado', 'Resultado', 'Net'],
     'extrato.sem_resultados': ['Nenhum movimento com estes filtros.', 'Ningún movimiento con estos filtros.', 'No transactions match these filters.'],
     'extrato.limpar': ['Limpar filtros', 'Limpiar filtros', 'Clear filters'],
+    'edicao.converter_dica': ['Ao ligar Fixa ou Repetir, as próximas ocorrências são criadas mês a mês a partir desta (pendentes).', 'Al activar Fija o Repetir, las próximas ocurrencias se crean mes a mes a partir de esta (pendientes).', 'Turning on Fixed or Repeat creates the next occurrences month by month from this one (pending).'],
+    'flash.lancamento_convertido': ['Lançamento atualizado e repetido: {n} ocorrências no total.', 'Movimiento actualizado y repetido: {n} ocurrencias en total.', 'Transaction updated and repeated: {n} occurrences in total.'],
     'extrato.periodo_todo': ['Todo o histórico', 'Todo el historial', 'Full history']
 };

@@ -209,7 +209,17 @@ const dashboardController = {
             }
             throw err;
         }
-        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.lancamento_atualizado') };
+        // Transacao avulsa marcada como fixa ou repetida: cria as proximas ocorrencias a partir desta.
+        const querFixo = b.e_fixo === '1' || b.e_fixo === true;
+        const querRepetir = !querFixo && (b.repetir === '1' || b.repetir === true);
+        let totalSerie = 0;
+        if (querFixo || querRepetir) {
+            totalSerie = await Lancamento.converterEmSerie(id, userId, { fixo: querFixo, quantidade: b.quantidade_repeticoes });
+        }
+        req.session.flash = {
+            tipo: 'sucesso',
+            mensagem: totalSerie > 1 ? req.t('flash.lancamento_convertido', { n: totalSerie }) : req.t('flash.lancamento_atualizado')
+        };
         res.redirect(destinoRetorno(req));
     },
 

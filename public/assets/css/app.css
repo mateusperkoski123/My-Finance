@@ -2094,3 +2094,6 @@ tr.gf-prov-row td { border-bottom: 1px dashed var(--border); }
   .tabela-pend td:nth-child(2), .tabela-pend td:nth-child(3) { white-space: nowrap; }
   .tabela-pend th:last-child, .tabela-pend td:last-child { width: 1%; white-space: nowrap; }
 }
+
+.btn-editar-linha { background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; border-radius: 8px; font-size: 16px; line-height: 1; }
+.btn-editar-linha:hover { color: var(--text); background: var(--bg); }

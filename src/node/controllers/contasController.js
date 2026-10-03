@@ -319,6 +319,8 @@ const contasController = {
                 ordenar: ['vencimento', 'valor'].includes(q.ordenar) ? q.ordenar : ''
             };
             const itens = await Conta.extrato(id, userId, { inicio, fim, ...filtros });
+            const contas = await Conta.buscarPorUsuario(userId, false);
+            const categoriasArvore = await Categoria.buscarArvore(userId, false);
             const somar = (fn) => itens.reduce((s, l) => s + (fn(parseFloat(l.valor) || 0) ? Math.abs(parseFloat(l.valor) || 0) : 0), 0);
             const totais = { entradas: somar((v) => v > 0), saidas: somar((v) => v < 0) };
             totais.resultado = totais.entradas - totais.saidas;
@@ -326,6 +328,8 @@ const contasController = {
                 title: `${req.t('contas.extrato.titulo')} - ${conta.nome}`,
                 conta,
                 lancamentos: itens,
+                contas,
+                categoriasArvore,
                 periodo,
                 filtros,
                 totais

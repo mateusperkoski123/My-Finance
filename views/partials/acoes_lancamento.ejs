@@ -16,7 +16,7 @@ const _rotuloPagar = l.tipo === 'receita' ? t('acao.receber') : t('acao.pagar');
         <details class="menu-acoes">
             <summary aria-label="<%= t('acao.mais') %>" title="<%= t('acao.mais') %>"><i class="ph ph-dots-three-vertical"></i></summary>
             <div class="menu-acoes__lista">
-                <% if (_editavel) { %><button type="button" data-modal-open="modal-editar-<%= l.id %>"><i class="ph ph-pencil-simple"></i> <%= t('acao.editar') %></button><% } %>
+                <% if (_editavel) { %><button type="button" data-editar-lanc="<%= JSON.stringify({ id: l.id, tipo: l.tipo, descricao: l.descricao, valor: Math.abs(parseFloat(l.valor)), conta_id: l.conta_id, categoria_id: l.categoria_id, data_competencia: formatDate(l.data_competencia, 'YYYY-MM-DD'), data_pagamento: l.data_pagamento ? formatDate(l.data_pagamento, 'YYYY-MM-DD') : '', status: l.status, serie: !!l.serie_id }) %>"><i class="ph ph-pencil-simple"></i> <%= t('acao.editar') %></button><% } %>
                 <% if (l.status === 'pago') { %>
                     <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" data-ajax>
                         <%- csrfCampo %>
