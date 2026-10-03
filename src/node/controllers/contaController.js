@@ -23,7 +23,10 @@ const contaController = {
         try {
             const token = await User.gerarTokenVerificacao(req.user.id);
             const link = `${req.protocol || 'https'}://${req.get('host')}/verificar-email/${token}`;
-            await sendVerificationEmail(req.user.email, link, req.user.idioma);
+            // Espera o envio por no maximo 12 s: com o SMTP sem resposta a requisicao nao fica pendurada ate o proxy derrubar.
+            const envio = sendVerificationEmail(req.user.email, link, req.user.idioma);
+            envio.catch(() => {});
+            await Promise.race([envio, new Promise((_, rej) => setTimeout(() => rej(new Error('tempo esgotado ao enviar')), 12000))]);
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.verificacao_reenviada') };
         } catch (err) {
             console.error('Falha ao reenviar verificacao:', err.message);
