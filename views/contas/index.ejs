@@ -54,13 +54,19 @@
                     <% if (!abaArquivadas) { %>
                         <a href="/contas/<%= c.id %>/extrato" class="btn btn-outline btn-sm"><%= t('contas.extrato') %></a>
                         <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-transferir" onclick="prepararTransferenciaOrigem('<%= c.id %>')"><%= t('contas.transferir') %></button>
-                        <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-ajustar-<%= c.id %>"><%= t('contas.ajustar_saldo') %></button>
-                        <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-editar-<%= c.id %>"><%= t('contas.editar') %></button>
-                        <form method="post" action="/contas/<%= c.id %>/arquivar" style="display:inline;">
-                            <%- csrfCampo %>
-                            <button type="submit" class="btn btn-outline btn-sm" title="<%= t('contas.arquivar') %>" aria-label="<%= t('contas.arquivar') %>"><i class="ph ph-archive"></i></button>
-                        </form>
-                        <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-excluir-<%= c.id %>" title="<%= t('contas.eliminar_titulo') %>" aria-label="<%= t('contas.eliminar_titulo') %>"><i class="ph ph-trash"></i></button>
+                        <%# O resto das acoes fica no menu (o mesmo ⋮ da lista de lancamentos). %>
+                        <details class="menu-acoes menu-acoes--conta" style="margin-left: auto;">
+                            <summary aria-label="<%= t('contas.mais_acoes') %>" title="<%= t('contas.mais_acoes') %>"><i class="ph ph-dots-three-vertical"></i></summary>
+                            <div class="menu-acoes__lista">
+                                <button type="button" data-modal-open="modal-ajustar-<%= c.id %>"><i class="ph ph-scales"></i> <%= t('contas.ajustar_saldo') %></button>
+                                <button type="button" data-modal-open="modal-editar-<%= c.id %>"><i class="ph ph-pencil-simple"></i> <%= t('contas.editar') %></button>
+                                <form method="post" action="/contas/<%= c.id %>/arquivar">
+                                    <%- csrfCampo %>
+                                    <button type="submit"><i class="ph ph-archive"></i> <%= t('contas.arquivar') %></button>
+                                </form>
+                                <button type="button" class="perigo" data-modal-open="modal-excluir-<%= c.id %>"><i class="ph ph-trash"></i> <%= t('contas.eliminar_titulo') %></button>
+                            </div>
+                        </details>
                     <% } else { %>
                         <form method="post" action="/contas/<%= c.id %>/restaurar" style="display:inline;">
                             <%- csrfCampo %>

@@ -2566,7 +2566,7 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
    ========================================================================== */
 
 /* Selo pequeno do plano que inclui o recurso (abas, botoes, itens de menu) */
-.selo-plano { display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 800; line-height: 1.3; letter-spacing: .02em; white-space: nowrap; vertical-align: middle; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+.selo-plano { position: relative; display: inline-flex; align-items: center; gap: 3px; padding: 2px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 800; line-height: 1.3; letter-spacing: .02em; white-space: nowrap; vertical-align: middle; background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
 .selo-plano .ph-fill { font-size: 11px; margin: 0; }
 .selo-plano--premium { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
 :root[data-tema="escuro"] .selo-plano { background: #3b2f0b; color: #fcd34d; border-color: #6b5310; }
@@ -2632,4 +2632,89 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
   .teste-fim { padding: 16px; }
   .teste-fim h1 { font-size: 18px; }
   .navbar__sair span { display: inline; }
+}
+
+/* ==========================================================================
+   Navegacao e painel: barra inferior (celular), painel em duas colunas, blocos recolhiveis,
+   faixa unica do topo, abas de Informes numa linha e menu das contas
+   ========================================================================== */
+
+/* Painel: no computador, saldo + resumo + botoes a esquerda e as pendencias a direita */
+.painel-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 16px; align-items: start; }
+.painel-grid__esq, .painel-grid__dir { min-width: 0; }
+@media (min-width: 900px) {
+  .painel-grid:not(.painel-grid--uma) { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
+  .painel-grid:not(.painel-grid--uma) .pendencias { margin-top: 0; }
+}
+.painel-tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
+.painel-tres > div { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 10px 12px; min-width: 0; }
+.painel-tres small { display: block; font-size: 11.5px; color: var(--muted); font-weight: 600; }
+.painel-tres b { display: block; font-size: 15px; overflow-wrap: anywhere; }
+.painel-tres .verde { color: var(--green); } .painel-tres .vermelho { color: var(--red); }
+@media (max-width: 400px) { .painel-tres b { font-size: 13px; } .painel-tres > div { padding: 8px; } }
+
+/* Blocos recolhiveis (comparativo e grafico do painel) */
+.recolhivel > summary { list-style: none; cursor: pointer; }
+.recolhivel > summary::-webkit-details-marker { display: none; }
+.recolhivel__titulo { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; font-weight: 700; min-height: 28px; }
+.recolhivel__titulo small { font-weight: 600; color: var(--muted); }
+.recolhivel__titulo small::after { content: " ▾"; }
+.recolhivel[open] > .recolhivel__titulo { margin-bottom: 12px; }
+.recolhivel[open] > .recolhivel__titulo small::after { content: " ▴"; }
+.comp-card.recolhivel { display: block; }
+
+/* Faixa unica (teste + e-mail por confirmar) */
+.faixa-conta__link { display: inline; margin: 0; }
+.faixa-conta__link button { font: inherit; background: none; border: 0; padding: 0; color: var(--pendente); text-decoration: underline; cursor: pointer; }
+
+/* Abas de Informes: uma linha que rola para o lado (celular) */
+@media (max-width: 768px) {
+  .tabs.tabs--grade { display: flex !important; flex-wrap: nowrap; gap: 6px !important; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px;
+    -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); padding-right: 20px; }
+  .tabs.tabs--grade::-webkit-scrollbar { display: none; }
+  .tabs--grade .tabs__item { white-space: nowrap; flex-shrink: 0; min-height: 40px; padding: 8px 14px; border-radius: 999px; }
+  .contas-toolbar { min-width: 0; }
+  .contas-toolbar > .tabs--grade { flex: 1 1 0; min-width: 0; max-width: 100%; }
+  .tabs--grade .tabs__item.is-active { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
+}
+
+/* Contas: Extrato e Transferir a vista, o resto no menu */
+.conta-card__footer .menu-acoes > summary { border: 1px solid var(--border); width: 38px; height: 38px; }
+@media (max-width: 768px) {
+  .conta-card__footer .btn { flex: 1 1 auto; justify-content: center; }
+  .conta-card__footer .menu-acoes { margin-left: 0 !important; flex: 0 0 auto; }
+  .page-header__botoes { display: grid; grid-template-columns: 1fr 1fr; }
+  .page-header__botoes .btn-primary { grid-column: 1 / -1; }
+}
+
+/* ---- Barra inferior (so no celular) ---- */
+.barra-inf, .folha, .folha-fundo { display: none; }
+@media (max-width: 768px) {
+  .fab, .fab-fundo { display: none !important; }
+  .navbar__hamb { display: none !important; }
+  .container { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+  .gf-toast { bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .barra-inf { display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; position: fixed; left: 0; right: 0; bottom: 0; z-index: 90;
+    height: calc(62px + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom); background: var(--card); border-top: 1px solid var(--border); }
+  .barra-inf > a, .barra-inf > button:not(.barra-inf__novo) { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; position: relative; height: 100%;
+    font: inherit; font-size: 10.5px; font-weight: 600; color: var(--muted); text-decoration: none; background: none; border: 0; cursor: pointer; padding: 0; min-width: 0; }
+  .barra-inf > a i, .barra-inf > button i { font-size: 23px; line-height: 1; }
+  .barra-inf > a span, .barra-inf > button span:not(.barra-inf__ponto) { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .barra-inf .is-active { color: var(--text); font-weight: 800; }
+  .barra-inf .is-active::before { content: ""; position: absolute; top: 0; width: 28px; height: 3px; border-radius: 0 0 3px 3px; background: var(--text); }
+  .barra-inf__novo { justify-self: center; width: 48px; height: 48px; margin-top: -18px; border-radius: 50%; border: 0; cursor: pointer; display: grid; place-items: center;
+    background: var(--primary); color: var(--primary-text); font-size: 24px; box-shadow: 0 6px 16px rgba(0, 0, 0, .28); }
+  .barra-inf__ponto { position: absolute; top: 8px; left: calc(50% + 6px); width: 9px; height: 9px; border-radius: 50%; background: var(--red); box-shadow: 0 0 0 2px var(--card); }
+  .folha-fundo { display: block; position: fixed; inset: 0; z-index: 91; background: rgba(0, 0, 0, .35); }
+  .folha { display: flex; flex-direction: column; position: fixed; left: 8px; right: 8px; bottom: calc(70px + env(safe-area-inset-bottom)); z-index: 92; padding: 8px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 -8px 28px rgba(0, 0, 0, .22); max-height: 70vh; overflow-y: auto; }
+  .folha[hidden], .folha-fundo[hidden] { display: none; }
+  .folha hr { border: 0; border-top: 1px solid var(--border); margin: 4px 0; width: 100%; }
+  .folha form { margin: 0; }
+  .folha__item { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 10px; min-height: 48px; border-radius: 10px; border: 0; background: none; cursor: pointer;
+    font: inherit; font-size: 15px; font-weight: 600; color: var(--text); text-decoration: none; text-align: left; }
+  .folha__item i { font-size: 21px; color: var(--muted); }
+  .folha__item.is-active { background: var(--bg); }
+  .folha__item .selo-plano, .folha__item .selo-novidade { margin-left: auto; }
+  .folha__item--sair, .folha__item--sair i { color: var(--red); }
 }

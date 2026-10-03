@@ -68,9 +68,6 @@
         <% const _mostrarIa = Boolean(usuarioLogado && (_adm || !_planoTemIa || usuarioLogado.ia_habilitada)); %>
         <% const _seloIa = !_adm && !_planoTemIa; %>
         <div style="display: flex; align-items: center; gap: 10px;">
-            <% if (usuarioLogado && !_bloq) { %>
-            <button type="button" id="btn-hamburguer" class="navbar__hamb" aria-label="<%= t('nav.menu') %>"><i class="ph ph-list"></i><% if (novidadesNovas > 0) { %><span class="selo-novidade selo-novidade--ponto" aria-hidden="true"></span><% } %></button>
-            <% } %>
             <a href="/" class="navbar__brand" style="display: flex; align-items: center; gap: 6px;">
                 <i class="ph-fill ph-hands-clapping" style="font-size: 22px;"></i>
                 <span style="font-size: 11px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em;">MyFinance</span>
@@ -192,11 +189,16 @@
         <% if (_st === 'vencida' || _st === 'cancelada') { %>
             <div class="alert alert-erro faixa-conta"><i class="ph ph-lock-simple"></i> <span><%= t('faixa.somente_leitura') %></span> <a href="/assinatura" class="btn btn-sm btn-primary"><%= t('faixa.ver_planos') %></a></div>
         <% } else if (_st === 'trial' && currentRoute !== '/assinatura') { %>
+            <% if (emailNaoVerificado) { %>
+            <%# Teste e e-mail por confirmar: uma faixa so (antes eram duas e empurravam o conteudo para baixo). %>
+            <div class="alert alert-aviso faixa-conta faixa-conta--junta"><i class="ph ph-gift"></i> <span><b><%= assinatura.teste_plano ? t('faixa.trial_curto_plano', { plano: t('plano.' + assinatura.plano_codigo + '.curto'), dias: assinatura.dias_restantes }) : t('faixa.trial_curto', { dias: assinatura.dias_restantes }) %></b> · <form method="post" action="/verificar-email/reenviar" class="faixa-conta__link"><%- csrfCampo %><button type="submit" title="<%= t('conta.reenviar') %>"><%= t('faixa.confirmar_email_curto') %></button></form></span> <a href="/assinatura" class="btn btn-sm btn-outline"><%= t('faixa.ver_planos') %></a></div>
+            <% } else { %>
             <div class="alert alert-aviso faixa-conta"><i class="ph ph-gift"></i> <span><%= assinatura.teste_plano ? t('faixa.trial_plano', { plano: t('plano.' + assinatura.plano_codigo + '.nome'), dias: assinatura.dias_restantes }) : t('faixa.trial', { dias: assinatura.dias_restantes }) %></span> <a href="/assinatura" class="btn btn-sm btn-outline"><%= t('faixa.ver_planos') %></a></div>
+            <% } %>
         <% } else if (_st === 'ativa' && assinatura.dias_restantes <= 5) { %>
             <div class="alert alert-aviso faixa-conta"><i class="ph ph-clock-countdown"></i> <span><%= t('faixa.renovar', { dias: assinatura.dias_restantes }) %></span> <a href="/assinatura" class="btn btn-sm btn-outline"><%= t('faixa.renovar_botao') %></a></div>
         <% } %>
-        <% if (emailNaoVerificado) { %>
+        <% if (emailNaoVerificado && !(_st === 'trial' && currentRoute !== '/assinatura')) { %>
             <div class="alert alert-aviso faixa-conta"><i class="ph ph-envelope-simple"></i> <span><%= t('faixa.verificar_email') %></span>
                 <form method="post" action="/verificar-email/reenviar" style="display: inline;"><%- csrfCampo %><button type="submit" class="btn btn-sm btn-outline"><%= t('conta.reenviar') %></button></form></div>
         <% } %>
@@ -208,82 +210,30 @@
 </main>
 
 <% if (usuarioLogado && !_bloq) { %>
-
-    <!-- Mobile Drawer Overlay & Menu Panel -->
-    <div class="drawer-backdrop" id="mobile-drawer-backdrop" style="display: none;" onclick="fecharMenuMobile()">
-        <div class="drawer-panel" onclick="event.stopPropagation()">
-            <div class="drawer-header">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="ph-fill ph-hands-clapping" style="font-size: 24px; color: var(--green);"></i>
-                    <strong style="font-size: 16px;">MyFinance</strong>
-                </div>
-                <button type="button" class="drawer-close-btn" onclick="fecharMenuMobile()">&times;</button>
-            </div>
-            
-            <div class="drawer-user-info">
-                <div class="drawer-user-avatar js-avatar" data-inicial="<%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %>"><%- include('partials/avatar') %></div>
-                <div style="min-width: 0; flex: 1;">
-                    <div style="font-weight: 700; font-size: 14px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= usuarioLogado.nome %></div>
-                    <div style="font-size: 11px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><%= usuarioLogado.email || '' %></div>
-                </div>
-            </div>
-
-            <nav class="drawer-links">
-                <a href="/" class="drawer-link <%= currentRoute === '/' ? 'is-active' : '' %>">
-                    <i class="ph ph-squares-four"></i>
-                    <span><%= t('nav.visao_geral') %></span>
-                </a>
-                <a href="/relatorios" class="drawer-link <%= currentRoute === '/relatorios' ? 'is-active' : '' %>">
-                    <i class="ph ph-chart-bar"></i>
-                    <span><%= t('nav.relatorios') %></span>
-                </a>
-                <a href="/categorias" class="drawer-link <%= currentRoute === '/categorias' ? 'is-active' : '' %>">
-                    <i class="ph ph-tag"></i>
-                    <span><%= t('nav.categorias') %></span>
-                </a>
-                <a href="/contas" class="drawer-link <%= currentRoute === '/contas' ? 'is-active' : '' %>">
-                    <i class="ph ph-bank"></i>
-                    <span><%= t('nav.contas') %></span>
-                </a>
-                <% if (typeof ehAdmin !== 'undefined' && ehAdmin) { %>
-                <a href="/admin" class="drawer-link <%= currentRoute.startsWith('/admin') ? 'is-active' : '' %>">
-                    <i class="ph ph-shield-star"></i>
-                    <span><%= t('nav.admin') %></span>
-                </a>
-                <% } %>
-                <% if (_mostrarIa) { %>
-                <a href="/ia" class="drawer-link <%= currentRoute.startsWith('/ia') ? 'is-active' : '' %>">
-                    <i class="ph ph-sparkle"></i>
-                    <span><%= t('nav.ia') %></span>
-                    <% if (_seloIa) { %><%- include('partials/selo_plano', { plano: 'premium' }) %><% } %>
-                </a>
-                <% } %>
-                <a href="/comunidade" class="drawer-link <%= currentRoute.startsWith('/comunidade') ? 'is-active' : '' %>">
-                    <i class="ph ph-users-three"></i>
-                    <span><%= t('nav.comunidad') %></span>
-                    <% if (novidadesNovas > 0) { %><span class="selo-novidade" title="<%= t('novidades.selo_titulo', { n: novidadesNovas }) %>"><%= novidadesNovas > 9 ? '9+' : novidadesNovas %></span><% } %>
-                </a>
-                <a href="/assinatura" class="drawer-link <%= currentRoute === '/assinatura' ? 'is-active' : '' %>">
-                    <i class="ph ph-crown-simple"></i>
-                    <span><%= t('config.menu.assinatura') %></span>
-                </a>
-                <a href="/configuracoes" class="drawer-link <%= currentRoute.startsWith('/configuracoes') ? 'is-active' : '' %>">
-                    <i class="ph ph-gear"></i>
-                    <span><%= t('nav.configuracoes') %></span>
-                </a>
-            </nav>
-
-            <div class="drawer-footer">
-                <form method="post" action="/logout" style="width: 100%;">
-                    <%- csrfCampo %>
-                    <button type="submit" class="btn btn-outline btn-block" style="color: var(--red); border-color: var(--red-bg); justify-content: flex-start; gap: 8px;">
-                        <i class="ph ph-sign-out" style="font-size: 18px;"></i>
-                        <span><%= t('nav.sair') %></span>
-                    </button>
-                </form>
-            </div>
-        </div>
+    <%# Celular: barra de navegacao fixa embaixo. O + abre Receita/Despesa; "Mais" abre o resto (a faixa do topo so tem a marca e o perfil). %>
+    <% const _rota = currentRoute || ''; const _principal = _rota === '/' || _rota.startsWith('/relatorios') || _rota.startsWith('/contas'); %>
+    <div class="folha-fundo" id="folha-fundo" hidden></div>
+    <div class="folha" id="folha-novo" role="menu" hidden>
+        <button type="button" role="menuitem" class="folha__item" data-novo="receita"><i class="ph ph-arrow-circle-up" style="color: var(--green);"></i> <%= t('painel.nova_receita') %></button>
+        <button type="button" role="menuitem" class="folha__item" data-novo="despesa"><i class="ph ph-arrow-circle-down" style="color: var(--red);"></i> <%= t('painel.nova_despesa') %></button>
     </div>
+    <div class="folha" id="folha-mais" role="menu" hidden>
+        <a role="menuitem" class="folha__item <%= _rota.startsWith('/categorias') ? 'is-active' : '' %>" href="/categorias"><i class="ph ph-tag"></i> <%= t('nav.categorias') %></a>
+        <a role="menuitem" class="folha__item <%= _rota.startsWith('/comunidade') ? 'is-active' : '' %>" href="/comunidade"><i class="ph ph-users-three"></i> <%= t('nav.comunidad') %><% if (novidadesNovas > 0) { %> <span class="selo-novidade" title="<%= t('novidades.selo_titulo', { n: novidadesNovas }) %>"><%= novidadesNovas > 9 ? '9+' : novidadesNovas %></span><% } %></a>
+        <% if (_mostrarIa) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/ia') ? 'is-active' : '' %>" href="/ia"><i class="ph ph-sparkle"></i> <%= t('nav.ia') %><% if (_seloIa) { %> <%- include('partials/selo_plano', { plano: 'premium' }) %><% } %></a><% } %>
+        <% if (_adm) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/admin') ? 'is-active' : '' %>" href="/admin"><i class="ph ph-shield-star"></i> <%= t('nav.admin') %></a><% } %>
+        <a role="menuitem" class="folha__item <%= _rota === '/assinatura' ? 'is-active' : '' %>" href="/assinatura"><i class="ph ph-crown-simple"></i> <%= t('config.menu.assinatura') %></a>
+        <a role="menuitem" class="folha__item <%= _rota.startsWith('/configuracoes') ? 'is-active' : '' %>" href="/configuracoes"><i class="ph ph-gear"></i> <%= t('nav.configuracoes') %></a>
+        <hr>
+        <form method="post" action="/logout"><%- csrfCampo %><button type="submit" role="menuitem" class="folha__item folha__item--sair"><i class="ph ph-sign-out"></i> <%= t('nav.sair') %></button></form>
+    </div>
+    <nav class="barra-inf" aria-label="<%= t('nav.principal') %>">
+        <a href="/" class="<%= _rota === '/' ? 'is-active' : '' %>"><i class="ph<%= _rota === '/' ? '-fill' : '' %> ph-house"></i><span><%= t('nav.visao_geral') %></span></a>
+        <a href="/relatorios" class="<%= _rota.startsWith('/relatorios') ? 'is-active' : '' %>"><i class="ph<%= _rota.startsWith('/relatorios') ? '-fill' : '' %> ph-chart-bar"></i><span><%= t('nav.relatorios') %></span></a>
+        <button type="button" class="barra-inf__novo" id="barra-novo" aria-haspopup="menu" aria-expanded="false" aria-label="<%= t('nav.novo') %>"><i class="ph ph-plus"></i></button>
+        <a href="/contas" class="<%= _rota.startsWith('/contas') ? 'is-active' : '' %>"><i class="ph<%= _rota.startsWith('/contas') ? '-fill' : '' %> ph-bank"></i><span><%= t('nav.contas_curto') %></span></a>
+        <button type="button" id="barra-mais" class="<%= !_principal ? 'is-active' : '' %>" aria-haspopup="menu" aria-expanded="false"><i class="ph<%= !_principal ? '-fill' : '' %> ph-dots-three-outline"></i><span><%= t('nav.mais') %></span><% if (novidadesNovas > 0) { %><span class="barra-inf__ponto" aria-hidden="true"></span><% } %></button>
+    </nav>
 <% } %>
 
 <script>
@@ -298,19 +248,20 @@ window.gfMoeda = {
     separadorDecimal: '<%= currency === "USD" ? "." : "," %>'
 };
 
-function abrirMenuMobile() {
-    
-    const backdrop = document.getElementById('mobile-drawer-backdrop');
-    if (backdrop) {
-        backdrop.style.display = 'block';
-        setTimeout(() => backdrop.classList.add('is-open'), 10);
-    }
+// Barra inferior (celular): "+" e "Mais" abrem uma folha; tocar fora ou em Esc fecha.
+function fecharFolhas() {
+    ['folha-novo', 'folha-mais', 'folha-fundo'].forEach((id) => { const el = document.getElementById(id); if (el) el.hidden = true; });
+    ['barra-novo', 'barra-mais'].forEach((id) => { const el = document.getElementById(id); if (el) el.setAttribute('aria-expanded', 'false'); });
 }
-function fecharMenuMobile() {
-    const backdrop = document.getElementById('mobile-drawer-backdrop');
-    if (backdrop) {
-        backdrop.classList.remove('is-open');
-        setTimeout(() => { backdrop.style.display = 'none'; }, 200);
+function alternarFolha(folhaId, botaoId) {
+    const folha = document.getElementById(folhaId);
+    if (!folha) return;
+    const abrir = folha.hidden;
+    fecharFolhas();
+    if (abrir) {
+        folha.hidden = false;
+        document.getElementById('folha-fundo').hidden = false;
+        document.getElementById(botaoId).setAttribute('aria-expanded', 'true');
     }
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -322,8 +273,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const marcar = () => faixa.classList.toggle('tem-mais', faixa.scrollWidth - faixa.clientWidth - faixa.scrollLeft > 4);
         marcar(); faixa.addEventListener('scroll', marcar, { passive: true }); window.addEventListener('resize', marcar);
     }
-    const hamb = document.getElementById('btn-hamburguer');
-    if (hamb) hamb.addEventListener('click', (e) => { e.stopPropagation(); abrirMenuMobile(); });
+    const bNovo = document.getElementById('barra-novo');
+    const bMais = document.getElementById('barra-mais');
+    if (bNovo) bNovo.addEventListener('click', () => alternarFolha('folha-novo', 'barra-novo'));
+    if (bMais) bMais.addEventListener('click', () => alternarFolha('folha-mais', 'barra-mais'));
+    const fundo = document.getElementById('folha-fundo');
+    if (fundo) fundo.addEventListener('click', fecharFolhas);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharFolhas(); });
+    // Novo lancamento: abre o formulario desta pagina; nas paginas sem formulario, vai para o painel com ele aberto.
+    document.querySelectorAll('[data-novo]').forEach((btn) => btn.addEventListener('click', () => {
+        const tipo = btn.getAttribute('data-novo');
+        const modal = document.getElementById('modal-novo-' + tipo);
+        fecharFolhas();
+        if (modal) modal.classList.add('is-open'); else window.location.href = '/?action=' + tipo;
+    }));
 });
 </script>
 <% if (usuarioLogado) { %>

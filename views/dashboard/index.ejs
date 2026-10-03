@@ -55,6 +55,10 @@ const nomesMeses = {
     </div>
 <% } else { %>
 
+<% const _temPend = Boolean(pendenciasUrgentes && pendenciasUrgentes.total > 0); %>
+<%# Duas colunas no computador: saldo, resumo do mes e botoes a esquerda; o que vence agora a direita (sem rolar para achar). %>
+<div class="painel-grid<%= _temPend ? '' : ' painel-grid--uma' %>">
+<div class="painel-grid__esq">
 <!-- Card Principal: Saldo Disponível -->
 <div class="card resumo-card" style="border-radius: 20px; padding: 22px 24px; margin-bottom: 16px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
@@ -74,10 +78,18 @@ const nomesMeses = {
     </div>
     <% } %>
 </div>
+<%# Resumo do mes: so o que ja foi recebido e pago no periodo (o que falta aparece em "Saldo previsto"). %>
+<% const _entrou = Number(resumo.receitas_recebidas) || 0, _saiu = Number(resumo.despesas_pagas) || 0, _sobrou = _entrou - _saiu; %>
+<div class="painel-tres" title="<%= t('painel.resumo_dica') %>">
+    <div><small><%= t('painel.entrou') %></small><b class="verde" data-saldo-oculta><%= moeda(_entrou) %></b></div>
+    <div><small><%= t('painel.saiu') %></small><b class="vermelho" data-saldo-oculta><%= moeda(_saiu) %></b></div>
+    <div><small><%= t('painel.sobrou') %></small><b style="color: <%= _sobrou >= 0 ? 'var(--green)' : 'var(--red)' %>;" data-saldo-oculta><%= (_sobrou < 0 ? '-' : '') + moeda(Math.abs(_sobrou)) %></b></div>
+</div>
 <%# Botoes de acao logo abaixo do saldo: no computador ficam a vista sem rolar a pagina (no celular o botao flutuante "+" faz esse papel). %>
 <div class="myfinance-action-buttons">
     <button type="button" class="btn btn-acao btn-acao--receita" data-modal-open="modal-novo-receita"><i class="ph ph-plus-circle"></i> <%= t('painel.nova_receita') %></button>
     <button type="button" class="btn btn-acao btn-acao--despesa" data-modal-open="modal-novo-despesa"><i class="ph ph-minus-circle"></i> <%= t('painel.nova_despesa') %></button>
+</div>
 </div>
 <script>
 // Ocultar/mostrar os valores. Alem do carregamento, roda quando a pagina troca o conteudo sem recarregar
@@ -106,7 +118,8 @@ const nomesMeses = {
 })();
 </script>
 
-<% if (pendenciasUrgentes && pendenciasUrgentes.total > 0) { %>
+<% if (_temPend) { %>
+<div class="painel-grid__dir">
 <!-- Pendencias vencidas ou que vencem hoje -->
 <section class="card pendencias" aria-label="<%= t('painel.pendencias') %>">
     <div class="pendencias__topo">
@@ -133,7 +146,9 @@ const nomesMeses = {
         <% }) %>
     </div>
 </section>
+</div>
 <% } %>
+</div>
 
 <div class="painel-resumo">
 <!-- Comparativo: periodo anterior x atual (fixos/variaveis) -->
@@ -148,8 +163,8 @@ const linhasCmp = [
     { k: 'saldo_total', bomSobe: true, total: true }
 ];
 %>
-<section class="card comp-card">
-    <h3 class="comp-card__titulo"><%= t('painel.comp.titulo') %></h3>
+<details class="card comp-card recolhivel">
+    <summary class="recolhivel__titulo"><span><%= t('painel.comp.titulo') %></span><small><%= t('painel.abrir') %></small></summary>
     <div class="comp-grid comp-grid--cab">
         <span></span>
         <span class="comp-col"><%= rotAnt %></span>
@@ -179,23 +194,29 @@ const linhasCmp = [
         </span>
     </div>
     <% }) %>
-</section>
+</details>
 
 <% if (despesasPorCategoria && despesasPorCategoria.length > 0) { %>
-<section class="card grafico-card" style="margin-bottom: 16px;">
-    <h3 class="grafico-card__titulo"><span class="grafico-card__marca" style="background: var(--red);"></span><%= t('relatorios.grafico_despesas_titulo') %></h3>
+<details class="card grafico-card recolhivel" id="det-despesas-painel" style="margin-bottom: 16px;">
+    <summary class="recolhivel__titulo"><span><span class="grafico-card__marca" style="background: var(--red);"></span><%= t('relatorios.grafico_despesas_titulo') %></span><small><%= t('painel.abrir') %></small></summary>
     <div class="grafico-card__corpo grafico-card__corpo--rosca">
         <div class="grafico-card__canvas-wrap"><canvas id="chartDespesasPainel"></canvas></div>
         <ul class="gf-leg" id="legDespesasPainel"></ul>
     </div>
-</section>
+</details>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
 <script src="/assets/js/charts.js?v=<%= assetVersion %>"></script>
 <script>
 (function () {
     var dados = <%- jsonScript(despesasPorCategoria) %>;
-    function desenhar() { if (window.Chart && window.GFCharts) GFCharts.rosca('chartDespesasPainel', 'legDespesasPainel', dados, { rotulo: (window.GF_T || {}).despesas || 'Despesas' }); }
-    if (window.Chart && window.GFCharts) { desenhar(); } else { window.addEventListener('load', desenhar); }
+    var det = document.getElementById('det-despesas-painel');
+    var feito = false;
+    function desenhar() {
+        if (feito || !det.open || !window.Chart || !window.GFCharts) return;
+        feito = true;
+        GFCharts.rosca('chartDespesasPainel', 'legDespesasPainel', dados, { rotulo: (window.GF_T || {}).despesas || 'Despesas' });
+    }
+    det.addEventListener('toggle', function () { if (window.Chart && window.GFCharts) desenhar(); else window.addEventListener('load', desenhar); });
 })();
 </script>
 <% } %>
