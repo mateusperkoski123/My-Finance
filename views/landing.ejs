@@ -3,8 +3,15 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title id="meta-title">MyFinance - Gestão Financeira Inteligente</title>
-    <meta name="description" content="Controle financeiro completo: contas bancárias, lançamentos parcelados, relatórios DRE, inteligência artificial por texto, foto e áudio, e aplicativo offline.">
+    <script>
+        /* Tema antes da pintura (evita piscar): escolha salva ou preferencia do sistema. */
+        try { var t = localStorage.getItem('gf_tema') || (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro'); document.documentElement.setAttribute('data-tema', t); } catch (e) {}
+    </script>
+    <title id="meta-title">MyFinance: controle financeiro com IA para contas e parcelas</title>
+    <meta name="description" content="Organize contas, parcelas e gastos num só lugar. A IA registra por texto, foto ou voz. Teste grátis por 3 dias, sem cartão. Para Gs., R$, US$ e €.">
+    <link rel="canonical" href="https://myfinance.systempy.com/">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#4338ca">
     <link rel="icon" type="image/png" href="/assets/icons/icon-192.png">
     
     <!-- Phosphor Icons -->
@@ -22,8 +29,9 @@
             --nav-text-muted: #9aa0aa;
             --primary: #111827;
             --primary-text: #ffffff;
-            --green: #15803d;
-            --green-bg: #e7f7ee;
+            --accent: #4338ca;
+            --accent-solid: #4338ca;
+            --accent-bg: #eef2ff;
             --red: #c81e1e;
             --red-bg: #fdecec;
             --blue: #2563eb;
@@ -46,8 +54,9 @@
             --nav-text-muted: #8b909b;
             --primary: #e7e9ee;
             --primary-text: #14161b;
-            --green: #34d399;
-            --green-bg: #113127;
+            --accent: #a5b4fc;
+            --accent-solid: #6366f1;
+            --accent-bg: #1f2147;
             --red: #f87171;
             --red-bg: #3a1618;
             --blue: #60a5fa;
@@ -60,6 +69,8 @@
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
+        i[class*="ph"] { font-style: normal; display: inline-flex; vertical-align: -0.125em; }
+        i[class*="ph"] > svg { width: 1em; height: 1em; fill: currentColor; display: block; }
         body {
             background: var(--bg);
             color: var(--text);
@@ -108,7 +119,7 @@
             width: 34px;
             height: 34px;
             border-radius: 10px;
-            background: var(--green);
+            background: var(--accent-solid);
             color: #ffffff;
             font-size: 20px;
         }
@@ -173,14 +184,14 @@
             background: var(--bg);
             border-color: var(--muted);
         }
-        .btn-green {
-            background: var(--green);
+        .btn-accent {
+            background: var(--accent-solid);
             color: #ffffff;
         }
-        .btn-green:hover {
+        .btn-accent:hover {
             opacity: 0.92;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(21, 128, 61, 0.25);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
         }
         .btn-pro {
             background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
@@ -212,14 +223,21 @@
             font-size: 12px;
             font-weight: 600;
         }
-        .badge-green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(21, 128, 61, 0.2); }
+        .badge-accent { background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(99, 102, 241, 0.25); }
         .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(37, 99, 235, 0.2); }
         .badge-ouro { background: var(--ouro-bg); color: var(--ouro); border: 1px solid rgba(217, 119, 6, 0.2); }
 
         /* Hero */
         .hero {
-            padding: 60px 0 80px;
+            padding: 64px 0 84px;
+            background:
+                radial-gradient(760px 380px at 88% -8%, var(--accent-bg), transparent 62%),
+                radial-gradient(620px 320px at -6% 108%, var(--ouro-bg), transparent 66%);
         }
+        .hero-chips { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13.5px; color: var(--muted); }
+        .hero-chips span { display: inline-flex; align-items: center; gap: 6px; }
+        .hero-chips i { color: var(--accent); font-size: 16px; }
+        .hero h1 em { font-style: normal; color: var(--accent); }
         .hero-grid {
             display: grid;
             grid-template-columns: 1.15fr 0.85fr;
@@ -279,7 +297,7 @@
         .saldo-display {
             font-size: 34px;
             font-weight: 800;
-            color: var(--green);
+            color: var(--accent);
             letter-spacing: -0.02em;
             margin-top: 4px;
         }
@@ -297,7 +315,7 @@
         }
         .resumo-box small { font-size: 11px; color: var(--muted); display: block; }
         .resumo-box strong { font-size: 16px; font-weight: 700; margin-top: 2px; display: block; }
-        .val-receita { color: var(--green); }
+        .val-receita { color: var(--accent); }
         .val-despesa { color: var(--red); }
 
         .transacao-item {
@@ -356,7 +374,7 @@
         }
         .feature-card:hover {
             transform: translateY(-3px);
-            border-color: var(--green);
+            border-color: var(--accent);
         }
         .feature-icon {
             width: 46px;
@@ -411,7 +429,7 @@
             color: var(--primary-text);
         }
         .planos-ciclo button small {
-            color: var(--green);
+            color: var(--accent);
             font-weight: 700;
             margin-left: 4px;
         }
@@ -438,8 +456,8 @@
             transform: translateY(-4px);
         }
         .plano-card--destaque {
-            border: 2px solid var(--green);
-            box-shadow: 0 8px 26px rgba(21, 128, 61, 0.15);
+            border: 2px solid var(--accent);
+            box-shadow: 0 8px 26px rgba(79, 70, 229, 0.18);
         }
         .plano-card--pro {
             border: 2px solid var(--ouro);
@@ -458,7 +476,7 @@
             letter-spacing: 0.04em;
             white-space: nowrap;
         }
-        .plano-faixa--green { background: var(--green); color: #ffffff; }
+        .plano-faixa--accent { background: var(--accent-solid); color: #ffffff; }
         .plano-faixa--ouro { background: var(--ouro); color: #ffffff; }
 
         .plano-card h3 { font-size: 22px; font-weight: 800; }
@@ -505,7 +523,7 @@
             line-height: 1.45;
         }
         .plano-recursos li i { font-size: 16px; margin-top: 2px; flex-shrink: 0; }
-        .plano-recursos li.is-on i { color: var(--green); }
+        .plano-recursos li.is-on i { color: var(--accent); }
         .plano-recursos li.is-off { color: var(--muted); opacity: 0.55; }
         .plano-recursos li.is-off i { color: var(--muted); }
 
@@ -582,8 +600,105 @@
         }
         .footer-links a:hover { color: #ffffff; }
 
+        /* Dores (problema) */
+        .dores-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .dor-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--red);
+            border-radius: 14px;
+            padding: 22px 22px 20px;
+            box-shadow: var(--shadow);
+        }
+        .dor-card i { font-size: 26px; color: var(--red); display: block; margin-bottom: 10px; }
+        .dor-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+        .dor-card p { font-size: 14px; color: var(--muted); line-height: 1.55; }
+        .dores-fecho {
+            text-align: center;
+            margin: 34px auto 0;
+            max-width: 640px;
+            font-size: 17px;
+            font-weight: 600;
+        }
+        .dores-fecho em { font-style: normal; color: var(--accent); }
+
+        /* Casos de uso */
+        .casos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+        .caso-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .caso-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .caso-topo { display: flex; align-items: center; gap: 12px; }
+        .caso-icone {
+            width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 23px;
+            background: var(--accent-bg); color: var(--accent);
+        }
+        .caso-quem { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+        .caso-card h3 { font-size: 18px; font-weight: 800; line-height: 1.25; }
+        .caso-bloco { font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+        .caso-bloco b { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; color: var(--text); }
+        .caso-bloco--solucao { color: var(--text); }
+        .caso-bloco--solucao b { color: var(--accent); }
+        .caso-plano {
+            margin-top: auto; padding-top: 14px; border-top: 1px dashed var(--border);
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            font-size: 12.5px; color: var(--muted);
+        }
+        .caso-plano a { font-weight: 700; color: var(--accent); white-space: nowrap; }
+        .caso-plano a:hover { text-decoration: underline; }
+
+        /* Como funciona */
+        .passos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; counter-reset: passo; }
+        .passo {
+            position: relative;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px 24px 24px;
+            box-shadow: var(--shadow);
+        }
+        .passo::before {
+            counter-increment: passo;
+            content: counter(passo);
+            position: absolute; top: -16px; left: 22px;
+            width: 34px; height: 34px; border-radius: 50%;
+            background: var(--accent-solid); color: #ffffff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 16px;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        .passo h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+        .passo p { font-size: 14px; color: var(--muted); line-height: 1.55; }
+
+        /* CTA final */
+        .cta-final {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4338ca 100%);
+            color: #ffffff;
+            border-radius: 24px;
+            padding: 52px 32px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+        .cta-final h2 { font-size: 34px; font-weight: 800; letter-spacing: -0.01em; max-width: 700px; margin: 0 auto 12px; line-height: 1.2; }
+        .cta-final p { font-size: 16.5px; color: rgba(255,255,255,0.8); max-width: 620px; margin: 0 auto 26px; }
+        .cta-final .btn-cta { background: #ffffff; color: #312e81; font-weight: 800; }
+        .cta-final .btn-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+        .cta-final small { display: block; margin-top: 14px; font-size: 13px; color: rgba(255,255,255,0.7); }
+
         /* Responsive */
         @media (max-width: 960px) {
+            .dores-grid, .casos-grid, .passos-grid { grid-template-columns: 1fr; }
+            .passos-grid { gap: 30px; }
+            .cta-final h2 { font-size: 26px; }
             .hero-grid { grid-template-columns: 1fr; gap: 36px; }
             .hero h1 { font-size: 34px; }
             .features-grid { grid-template-columns: 1fr; }
@@ -595,7 +710,7 @@
         @media (max-width: 600px) {
             .navbar__brand > span:not(.navbar__logo) { display: none; }
             .navbar__inner > div:last-child { gap: 6px !important; }
-            .navbar__inner a[href="/cadastro"] { display: none; }
+            .navbar__inner a[href$="/cadastro"] { display: none; }
             .ia-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
             .ia-grid > * { min-width: 0; }
             #ia .card { padding: 22px 16px !important; }
@@ -613,7 +728,8 @@
                 <span>MyFinance</span>
             </a>
 
-            <nav class="navbar__links">
+            <nav class="navbar__links" aria-label="Principal">
+                <a href="#casos" class="navbar__link" data-i18n="nav_casos">Casos de uso</a>
                 <a href="#recursos" class="navbar__link" data-i18n="nav_recursos">Recursos</a>
                 <a href="#ia" class="navbar__link" data-i18n="nav_ia">Assistente IA</a>
                 <a href="#planos" class="navbar__link" data-i18n="nav_planos">Planos</a>
@@ -625,6 +741,7 @@
                 <select id="lang-toggle" class="lang-select" aria-label="Idioma">
                     <option value="pt-BR">🇧🇷 PT</option>
                     <option value="es-PY">🇵🇾 ES</option>
+                    <option value="en-US">🇺🇸 EN</option>
                 </select>
 
                 <!-- Botao Tema Claro/Escuro -->
@@ -634,12 +751,14 @@
                 <a href="/login" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #ffffff;" data-i18n="nav_entrar">
                     <i class="ph ph-sign-in"></i> Entrar
                 </a>
-                <a href="/cadastro" class="btn btn-green btn-sm" data-i18n="nav_cadastro">
+                <a href="/cadastro" class="btn btn-accent btn-sm" data-i18n="nav_cadastro">
                     <i class="ph ph-sparkle"></i> Teste Grátis
                 </a>
             </div>
         </div>
     </header>
+
+    <main id="conteudo">
 
     <!-- Hero Section -->
     <section class="hero">
@@ -648,18 +767,18 @@
                 
                 <!-- Left: Headline -->
                 <div>
-                    <span class="badge badge-green">
+                    <span class="badge badge-accent">
                         <i class="ph-fill ph-check-circle"></i> <span data-i18n="hero_badge">3 dias de teste grátis no plano que você escolher, sem cartão</span>
                     </span>
 
-                    <h1 data-i18n="hero_titulo">Gestão financeira simples, inteligente e completa.</h1>
+                    <h1 data-i18n="hero_titulo">Pare de se perguntar <em>para onde foi o seu dinheiro.</em></h1>
 
                     <p data-i18n="hero_sub">
-                        Controle suas contas bancárias, lançamentos parcelados, relatórios DRE e automatize sua rotina com a Inteligência Artificial integrada por texto, foto e voz.
+                        O MyFinance reúne suas contas, parcelas e gastos em um só lugar, e a Inteligência Artificial registra tudo por você: por texto, foto do recibo ou voz. Em minutos você enxerga o mês inteiro com clareza.
                     </p>
 
                     <div class="hero-actions">
-                        <a href="/cadastro" class="btn btn-green btn-lg">
+                        <a href="/cadastro" class="btn btn-accent btn-lg">
                             <span data-i18n="hero_cta">Começar Teste Grátis (3 Dias)</span>
                             <i class="ph-bold ph-arrow-right"></i>
                         </a>
@@ -668,15 +787,10 @@
                         </a>
                     </div>
 
-                    <div class="stars">
-                        <i class="ph-fill ph-star"></i>
-                        <i class="ph-fill ph-star"></i>
-                        <i class="ph-fill ph-star"></i>
-                        <i class="ph-fill ph-star"></i>
-                        <i class="ph-fill ph-star"></i>
-                        <span style="margin-left: 8px; font-size: 13.5px; color: var(--muted);">
-                            <b>4.9 / 5</b> · <span data-i18n="hero_satisfacao">Plataforma multi-moeda e multi-idioma (Gs., R$, $)</span>
-                        </span>
+                    <div class="hero-chips">
+                        <span><i class="ph-bold ph-credit-card"></i> <span data-i18n="hero_chip1">Sem cartão de crédito</span></span>
+                        <span><i class="ph-bold ph-coins"></i> <span data-i18n="hero_chip2">Guaranies, reais, dólares, euros ou pesos</span></span>
+                        <span><i class="ph-bold ph-device-mobile"></i> <span data-i18n="hero_chip3">No navegador e no celular (app instalável)</span></span>
                     </div>
                 </div>
 
@@ -685,7 +799,7 @@
                     <div class="mockup-card">
                         <div class="mockup-header">
                             <span class="mockup-tag"><i class="ph ph-wallet"></i> <span data-i18n="mock_saldo_disp">Saldo Disponível</span></span>
-                            <span style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;">Outubro 2026</span>
+                            <span style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;" data-i18n="mock_mes">Exemplo</span>
                         </div>
 
                         <div style="font-size: 13px; color: var(--muted);" data-i18n="mock_total_cons">Total Consolidado</div>
@@ -693,7 +807,7 @@
 
                         <div class="resumo-duplo">
                             <div class="resumo-box">
-                                <small><i class="ph-bold ph-arrow-down-left" style="color: var(--green);"></i> <span data-i18n="mock_receitas">Receitas</span></small>
+                                <small><i class="ph-bold ph-arrow-down-left" style="color: var(--accent);"></i> <span data-i18n="mock_receitas">Receitas</span></small>
                                 <strong class="val-receita">+ Gs. 18.200.000</strong>
                             </div>
                             <div class="resumo-box">
@@ -710,7 +824,7 @@
 
                             <div class="transacao-item">
                                 <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div class="transacao-icone" style="background: var(--green-bg); color: var(--green);">
+                                    <div class="transacao-icone" style="background: var(--accent-bg); color: var(--accent);">
                                         <i class="ph-bold ph-arrow-down-left"></i>
                                     </div>
                                     <div>
@@ -727,7 +841,7 @@
                                         <i class="ph-bold ph-shopping-cart"></i>
                                     </div>
                                     <div>
-                                        <div style="font-weight: 600;">Supermercado <span class="badge badge-ouro" style="font-size: 10px; padding: 1px 6px;">IA</span></div>
+                                        <div style="font-weight: 600;"><span data-i18n="mock_super">Supermercado</span> <span class="badge badge-ouro" style="font-size: 10px; padding: 1px 6px;">IA</span></div>
                                         <div style="font-size: 11.5px; color: var(--muted);" data-i18n="mock_foto_recibo">Registrado por Foto de Recibo</div>
                                     </div>
                                 </div>
@@ -742,8 +856,142 @@
         </div>
     </section>
 
+    <!-- Dores -->
+    <section id="dores" class="section" style="background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-ouro"><i class="ph-fill ph-warning"></i> <span data-i18n="dores_badge">Você se reconhece?</span></span>
+                <h2 data-i18n="dores_titulo">Sem controle, o dinheiro escapa sem você perceber</h2>
+                <p data-i18n="dores_sub">Não é falta de renda. É falta de visão. Estes três problemas custam caro todos os meses:</p>
+            </div>
+            <div class="dores-grid">
+                <div class="dor-card">
+                    <i class="ph-bold ph-question"></i>
+                    <h3 data-i18n="dor1_tit">"Para onde foi o meu salário?"</h3>
+                    <p data-i18n="dor1_desc">Pequenos gastos do dia a dia somam muito, e sem registro você só descobre isso quando o saldo já acabou.</p>
+                </div>
+                <div class="dor-card">
+                    <i class="ph-bold ph-calendar-x"></i>
+                    <h3 data-i18n="dor2_tit">Parcelas e contas que viram surpresa</h3>
+                    <p data-i18n="dor2_desc">Compras parceladas e contas fixas acumulam. Esquecer um vencimento significa multa, juros e estresse.</p>
+                </div>
+                <div class="dor-card">
+                    <i class="ph-bold ph-table"></i>
+                    <h3 data-i18n="dor3_tit">Planilha que ninguém mantém</h3>
+                    <p data-i18n="dor3_desc">Começa animado, vira obrigação e é abandonada em semanas. No fim, você volta a decidir no escuro.</p>
+                </div>
+            </div>
+            <p class="dores-fecho" data-i18n="dores_fecho">O MyFinance resolve os três: você registra em segundos e o sistema <em>faz as contas, mostra o que está pendente e avisa o que vence</em> para você decidir com segurança.</p>
+        </div>
+    </section>
+
+    <!-- Casos de uso -->
+    <section id="casos" class="section">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-accent"><i class="ph ph-users-three"></i> <span data-i18n="casos_badge">Casos de uso</span></span>
+                <h2 data-i18n="casos_titulo">Feito para a sua rotina, seja ela qual for</h2>
+                <p data-i18n="casos_sub">Veja como pessoas como você usam o MyFinance para ter o controle que faltava.</p>
+            </div>
+            <div class="casos-grid">
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-house-line"></i></span>
+                        <span class="caso-quem" data-i18n="c1_quem">Famílias</span>
+                    </div>
+                    <h3 data-i18n="c1_tit">Fechar o mês no azul, sem susto</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situação</b> <span data-i18n="c1_sit">O salário entra e, por volta do dia 20, o dinheiro acaba sem ninguém saber em quê.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Com o MyFinance</b> <span data-i18n="c1_sol">Você define um limite por categoria (mercado, escola, lazer) e acompanha quanto já gastou e quanto ainda pode gastar em cada uma.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal">Plano ideal: <b>Premium</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plano →</a></div>
+                </article>
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-briefcase"></i></span>
+                        <span class="caso-quem" data-i18n="c2_quem">Autônomos e freelancers</span>
+                    </div>
+                    <h3 data-i18n="c2_tit">Separar o pessoal do negócio</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situação</b> <span data-i18n="c2_sit">Tudo cai na mesma conta e, no fim do ano, você não sabe se realmente lucrou.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Com o MyFinance</b> <span data-i18n="c2_sol">Contas ilimitadas, transferências entre elas com contrapartida automática, fluxo de caixa e demonstrativo anual para ver o resultado real e exportar para o seu contador.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal_pro">Plano ideal: <b>Pro</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plano →</a></div>
+                </article>
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-storefront"></i></span>
+                        <span class="caso-quem" data-i18n="c3_quem">Pequenos comerciantes</span>
+                    </div>
+                    <h3 data-i18n="c3_tit">Anotar no balcão, mesmo sem sinal</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situação</b> <span data-i18n="c3_sit">Entra e sai dinheiro o dia todo, e o que não é anotado na hora se perde.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Com o MyFinance</b> <span data-i18n="c3_sol">Instale o app no celular e registre no ato, mesmo sem internet: tudo sincroniza quando o sinal volta. Com internet, fotografe o recibo e a IA faz o lançamento.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal">Plano ideal: <b>Premium</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plano →</a></div>
+                </article>
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-credit-card"></i></span>
+                        <span class="caso-quem" data-i18n="c4_quem">Quem compra parcelado</span>
+                    </div>
+                    <h3 data-i18n="c4_tit">Parcelas que nunca mais viram surpresa</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situação</b> <span data-i18n="c4_sit">Três compras em 10 vezes e você perde a conta do que ainda vai pagar nos próximos meses.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Com o MyFinance</b> <span data-i18n="c4_sol">Lance a compra uma vez e o sistema cria todas as parcelas. A lista de pendentes mostra o que vence e você navega pelos meses para ver o peso de cada um.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal_basico">Já a partir do <b>Básico</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plano →</a></div>
+                </article>
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-globe-hemisphere-west"></i></span>
+                        <span class="caso-quem" data-i18n="c5_quem">Vida entre dois países</span>
+                    </div>
+                    <h3 data-i18n="c5_tit">Na sua moeda e no seu idioma</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situação</b> <span data-i18n="c5_sit">Você vive, trabalha ou viaja entre países, e o sistema que usa não fala a sua língua nem a sua moeda.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Com o MyFinance</b> <span data-i18n="c5_sol">Escolha a moeda (guarani, real, dólar, euro ou peso argentino) e o idioma (português, espanhol ou inglês) e use tudo do seu jeito, no computador e no celular.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal_basico">Já a partir do <b>Básico</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plano →</a></div>
+                </article>
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-sparkle"></i></span>
+                        <span class="caso-quem" data-i18n="c6_quem">Quem não tem tempo</span>
+                    </div>
+                    <h3 data-i18n="c6_tit">Registrar um gasto em 5 segundos</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situação</b> <span data-i18n="c6_sit">Você sabe que deveria anotar tudo, mas na correria ninguém abre uma planilha.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Com o MyFinance</b> <span data-i18n="c6_sol">Escreva "gastei 45 mil no almoço", mande a foto da nota ou um áudio. A IA escolhe valor, data e categoria, e você tem 10 segundos para desfazer.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal">Plano ideal: <b>Premium</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plano →</a></div>
+                </article>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Como funciona -->
+    <section id="como" class="section" style="background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-blue"><i class="ph ph-path"></i> <span data-i18n="como_badge">Como funciona</span></span>
+                <h2 data-i18n="como_titulo">Do cadastro ao controle em poucos minutos</h2>
+                <p data-i18n="como_sub">Sem instalação complicada, sem configuração demorada.</p>
+            </div>
+            <div class="passos-grid">
+                <div class="passo">
+                    <h3 data-i18n="passo1_tit">Crie sua conta</h3>
+                    <p data-i18n="passo1_desc">Escolha o plano que quer testar e use-o por 3 dias, de graça e sem cartão. Durante o teste você pode trocar de plano.</p>
+                </div>
+                <div class="passo">
+                    <h3 data-i18n="passo2_tit">Registre do jeito mais fácil</h3>
+                    <p data-i18n="passo2_desc">Digite, fotografe o recibo ou fale com a IA. Parcelas e contas fixas são criadas de uma vez só.</p>
+                </div>
+                <div class="passo">
+                    <h3 data-i18n="passo3_tit">Veja a verdade dos números</h3>
+                    <p data-i18n="passo3_desc">Painel do mês, gráficos, pendentes e demonstrativo anual sempre atualizados, para decidir com clareza.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Features Section -->
-    <section id="recursos" class="section" style="background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+    <section id="recursos" class="section">
         <div class="container">
             <div class="section-header">
                 <span class="badge badge-blue"><i class="ph ph-squares-four"></i> <span data-i18n="feat_badge">Funcionalidades do Sistema</span></span>
@@ -758,15 +1006,15 @@
                         <i class="ph-bold ph-bank"></i>
                     </div>
                     <h3 data-i18n="f1_tit">Contas Bancárias & Transferências</h3>
-                    <p data-i18n="f1_desc">Criação ilimitada de contas, transferências entre bancos com lançamento automático de contrapartida e ajuste manual de saldo com extrato detalhado.</p>
+                    <p data-i18n="f1_desc">Contas de 2 a ilimitadas, conforme o plano, transferências entre bancos com lançamento automático de contrapartida (inclusive agendadas) e ajuste de saldo com extrato detalhado.</p>
                 </div>
 
                 <div class="feature-card">
-                    <div class="feature-icon" style="background: var(--green-bg); color: var(--green);">
+                    <div class="feature-icon" style="background: var(--accent-bg); color: var(--accent);">
                         <i class="ph-bold ph-tag"></i>
                     </div>
                     <h3 data-i18n="f2_tit">Categorias com Cores e Hierarquia</h3>
-                    <p data-i18n="f2_desc">Organize receitas e despesas em 2 níveis (categorias e subcategorias), cores personalizadas e limites de gastos por categoria.</p>
+                    <p data-i18n="f2_desc">Organize receitas e despesas em 2 níveis (categorias e subcategorias), com cores personalizadas e limite de gasto por categoria.</p>
                 </div>
 
                 <div class="feature-card">
@@ -778,11 +1026,11 @@
                 </div>
 
                 <div class="feature-card">
-                    <div class="feature-icon" style="background: var(--green-bg); color: var(--green);">
+                    <div class="feature-icon" style="background: var(--accent-bg); color: var(--accent);">
                         <i class="ph-bold ph-table"></i>
                     </div>
-                    <h3 data-i18n="f4_tit">Demonstrativo DRE Anual</h3>
-                    <p data-i18n="f4_desc">Demonstrativo contábil mensal e anual estruturado em formato de planilha com colunas sticky fixas para análise estratégica.</p>
+                    <h3 data-i18n="f4_tit">Demonstrativo Anual</h3>
+                    <p data-i18n="f4_desc">Resultado mensal e anual em formato de planilha, com a coluna das categorias fixa enquanto você rola os meses. Do Premium em diante, com demonstrativo financeiro e orçamento por categoria.</p>
                 </div>
 
                 <div class="feature-card">
@@ -790,15 +1038,39 @@
                         <i class="ph-bold ph-device-mobile"></i>
                     </div>
                     <h3 data-i18n="f5_tit">App Mobile com Modo Offline</h3>
-                    <p data-i18n="f5_desc">Instale como aplicativo (PWA) no iPhone ou Android. Lance gastos mesmo sem internet que o sistema sincroniza ao reconectar.</p>
+                    <p data-i18n="f5_desc">Instale como aplicativo (PWA) no iPhone ou Android. Nos planos Premium e Pro, lance gastos mesmo sem internet: o sistema sincroniza quando você reconectar.</p>
                 </div>
 
                 <div class="feature-card">
                     <div class="feature-icon" style="background: var(--ouro-bg); color: var(--ouro);">
                         <i class="ph-bold ph-download-simple"></i>
                     </div>
-                    <h3 data-i18n="f6_tit">Backup JSON & Exportação CSV</h3>
-                    <p data-i18n="f6_desc">Exporte todos os seus dados a qualquer momento e restaure com mesclagem inteligente sem riscos de perda de informações.</p>
+                    <h3 data-i18n="f6_tit">Exportação e Backup (Pro)</h3>
+                    <p data-i18n="f6_desc">No plano Pro, exporte relatórios em CSV e PDF e faça backup completo dos seus dados em JSON, com restauração quando precisar.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--blue-bg); color: var(--blue);">
+                        <i class="ph-bold ph-bell-ringing"></i>
+                    </div>
+                    <h3 data-i18n="f7_tit">Lembretes de Vencimento</h3>
+                    <p data-i18n="f7_desc">Receba uma notificação com as despesas que vencem, mesmo com o app fechado, no horário que você escolher.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--accent-bg); color: var(--accent);">
+                        <i class="ph-bold ph-chats-circle"></i>
+                    </div>
+                    <h3 data-i18n="f8_tit">Comunidade e Novidades</h3>
+                    <p data-i18n="f8_desc">Sugira melhorias, vote nas ideias de outros usuários e acompanhe as novidades do sistema.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--ouro-bg); color: var(--ouro);">
+                        <i class="ph-bold ph-translate"></i>
+                    </div>
+                    <h3 data-i18n="f9_tit">Seu Idioma e Sua Moeda</h3>
+                    <p data-i18n="f9_desc">Português, espanhol e inglês; guaranies, reais, dólares, euros ou pesos argentinos; tema claro e escuro.</p>
                 </div>
 
             </div>
@@ -818,19 +1090,19 @@
                         </p>
                         <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 14px;">
                             <li style="display: flex; align-items: center; gap: 10px;">
-                                <i class="ph-bold ph-check-circle" style="color: var(--green); font-size: 18px;"></i>
+                                <i class="ph-bold ph-check-circle" style="color: var(--accent); font-size: 18px;"></i>
                                 <span data-i18n="ia_item1"><b>Registro por Texto Direto:</b> Basta digitar <i>"Gastei 45.000 em almoço"</i>.</span>
                             </li>
                             <li style="display: flex; align-items: center; gap: 10px;">
-                                <i class="ph-bold ph-check-circle" style="color: var(--green); font-size: 18px;"></i>
+                                <i class="ph-bold ph-check-circle" style="color: var(--accent); font-size: 18px;"></i>
                                 <span data-i18n="ia_item2"><b>Registro por Foto & Áudio:</b> Envie fotos de recibos fiscais ou áudios de voz.</span>
                             </li>
                             <li style="display: flex; align-items: center; gap: 10px;">
-                                <i class="ph-bold ph-check-circle" style="color: var(--green); font-size: 18px;"></i>
-                                <span data-i18n="ia_item3"><b>IA Nível 2 Avançada:</b> Marca previstos como pagos, altera categorias e consulta relatórios.</span>
+                                <i class="ph-bold ph-check-circle" style="color: var(--accent); font-size: 18px;"></i>
+                                <span data-i18n="ia_item3"><b>IA avançada (Pro):</b> marca como pago o que estava previsto, edita lançamentos, cria categorias e faz transferências.</span>
                             </li>
                             <li style="display: flex; align-items: center; gap: 10px;">
-                                <i class="ph-bold ph-check-circle" style="color: var(--green); font-size: 18px;"></i>
+                                <i class="ph-bold ph-check-circle" style="color: var(--accent); font-size: 18px;"></i>
                                 <span data-i18n="ia_item4"><b>Botão de Desfazer em 10s:</b> Controle total e segurança em cada ação gerada pela IA.</span>
                             </li>
                         </ul>
@@ -841,7 +1113,7 @@
                             <span style="background: var(--ouro-bg); color: var(--ouro); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;"><i class="ph-fill ph-sparkle"></i></span>
                             <div>
                                 <strong style="font-size: 14px; display: block;" data-i18n="ia_chat_tit">Chat IA MyFinance</strong>
-                                <span style="font-size: 11px; color: var(--green);">● Online</span>
+                                <span style="font-size: 11px; color: var(--accent);">● Online</span>
                             </div>
                         </div>
 
@@ -849,8 +1121,8 @@
                             <div style="background: var(--bg); padding: 10px 14px; border-radius: 12px; align-self: flex-end; max-width: 85%;" data-i18n="ia_chat_user">
                                 📸 [Foto de Nota Fiscal de Combustível Gs. 180.000]
                             </div>
-                            <div style="background: var(--green-bg); color: var(--green); padding: 10px 14px; border-radius: 12px; align-self: flex-start; max-width: 90%; border: 1px solid rgba(21, 128, 61, 0.2);" data-i18n="ia_chat_bot">
-                                ✨ Identifiquei: <b>Posto Petrobras - Gs. 180.000</b> na categoria <b>Transporte / Combustível</b>. Lançamento registrado com sucesso! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Desfazer (10s)]</span>
+                            <div style="background: var(--accent-bg); color: var(--accent); padding: 10px 14px; border-radius: 12px; align-self: flex-start; max-width: 90%; border: 1px solid rgba(99, 102, 241, 0.25);" data-i18n="ia_chat_bot">
+                                ✨ Identifiquei: <b>Posto de combustível - Gs. 180.000</b> na categoria <b>Transporte / Combustível</b>. Lançamento registrado com sucesso! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Desfazer (10s)]</span>
                             </div>
                         </div>
                     </div>
@@ -864,9 +1136,9 @@
         <div class="container">
             
             <div class="planos-topo">
-                <span class="badge badge-green"><i class="ph ph-crown-simple"></i> <span data-i18n="planos_badge">Nossos Planos</span></span>
+                <span class="badge badge-accent"><i class="ph ph-crown-simple"></i> <span data-i18n="planos_badge">Nossos Planos</span></span>
                 <h2 style="font-size: 34px; font-weight: 800; margin: 10px 0;" data-i18n="planos_titulo">Escolha o plano ideal para você</h2>
-                <p style="color: var(--muted); font-size: 15px;" data-i18n="planos_sub">Sem taxas ocultas. Cancele ou altere seu plano quando desejar.</p>
+                <p style="color: var(--muted); font-size: 15px;" data-i18n="planos_sub">Teste 3 dias grátis em qualquer plano. Depois, pague por transferência ou Tigo Money e ativamos a sua assinatura.</p>
 
                 <!-- Ciclo Switcher (Mensal / Anual) -->
                 <div class="planos-ciclo" role="group">
@@ -889,7 +1161,7 @@
                         </div>
                         <div class="plano-cobranca" 
                              data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 299.900 por ano · economize Gs. 59.980"
-                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 299.900 por año · ahorre Gs. 59.980">
+                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 299.900 por año · ahorre Gs. 59.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 299.900 per year · save Gs. 59.980">
                             cobrado todo mês
                         </div>
 
@@ -917,7 +1189,7 @@
                         </div>
                         <ul class="plano-recursos">
                             <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_chat_ia">Chat IA para consultas</span></li>
-                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_ia_texto">Registro direto por texto</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_ia_texto">Registro direto por texto (com 10 s para desfazer)</span></li>
                             <li class="is-off"><i class="ph-bold ph-x"></i> <span data-i18n="r_ia_midia">Registro por foto e voz</span></li>
                         </ul>
 
@@ -944,7 +1216,7 @@
 
                 <!-- 2. Plano Premium (Melhor Custo-Benefício) -->
                 <article class="plano-card plano-card--destaque">
-                    <span class="plano-faixa plano-faixa--green"><i class="ph-bold ph-star"></i> <span data-i18n="faixa_vendido">Melhor Custo-Benefício</span></span>
+                    <span class="plano-faixa plano-faixa--accent"><i class="ph-bold ph-star"></i> <span data-i18n="faixa_vendido">Melhor Custo-Benefício</span></span>
                     <div>
                         <h3 data-i18n="p_premium_nome">Plano Premium</h3>
                         <div class="plano-sub" data-i18n="p_premium_sub">Analise e planeje: demonstrativo financeiro, orçamento, IA e registro offline.</div>
@@ -954,11 +1226,11 @@
                         </div>
                         <div class="plano-cobranca" 
                              data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 499.900 por ano · economize Gs. 99.980"
-                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 499.900 por año · ahorre Gs. 99.980">
+                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 499.900 por año · ahorre Gs. 99.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 499.900 per year · save Gs. 99.980">
                             cobrado todo mês
                         </div>
 
-                        <a href="/cadastro?plano=premium" class="btn btn-green" style="width: 100%;" data-i18n="btn_quero_plano">Quero este plano</a>
+                        <a href="/cadastro?plano=premium" class="btn btn-accent" style="width: 100%;" data-i18n="btn_quero_plano">Quero este plano</a>
 
                         <!-- Finanças -->
                         <div class="plano-grupo-header">
@@ -1019,7 +1291,7 @@
                         </div>
                         <div class="plano-cobranca" 
                              data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 849.900 por ano · economize Gs. 169.980"
-                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 849.900 por año · ahorre Gs. 169.980">
+                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 849.900 por año · ahorre Gs. 169.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 849.900 per year · save Gs. 169.980">
                             cobrado todo mês
                         </div>
 
@@ -1077,7 +1349,7 @@
             <!-- Trial Banner -->
             <div class="trial-banner">
                 <div style="display: flex; align-items: center; gap: 14px;">
-                    <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--green-bg); color: var(--green); display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--accent-bg); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 24px;">
                         <i class="ph-fill ph-gift"></i>
                     </div>
                     <div>
@@ -1085,7 +1357,7 @@
                         <span style="font-size: 13.5px; color: var(--muted);" data-i18n="trial_banner_sub">Escolha um plano e use-o <b>grátis por 3 dias</b>, sem cadastrar cartão. Durante o teste você pode trocar de plano.</span>
                     </div>
                 </div>
-                <a href="/cadastro" class="btn btn-green" data-i18n="trial_banner_btn">Criar Conta Gratuita</a>
+                <a href="/cadastro" class="btn btn-accent" data-i18n="trial_banner_btn">Criar Conta Gratuita</a>
             </div>
 
         </div>
@@ -1095,13 +1367,13 @@
     <section id="faq" class="section">
         <div class="container">
             <div class="section-header">
-                <span class="badge badge-green"><i class="ph ph-question"></i> <span data-i18n="faq_badge">Dúvidas Comuns</span></span>
+                <span class="badge badge-accent"><i class="ph ph-question"></i> <span data-i18n="faq_badge">Dúvidas Comuns</span></span>
                 <h2 data-i18n="faq_titulo">Perguntas Frequentes</h2>
             </div>
 
             <div class="faq-list">
                 <div class="faq-item">
-                    <button class="faq-question" type="button">
+                    <button class="faq-question" type="button" aria-expanded="false">
                         <span data-i18n="faq_q1">Como funciona o teste grátis de 3 dias?</span>
                         <i class="ph-bold ph-caret-down"></i>
                     </button>
@@ -1111,7 +1383,7 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question" type="button">
+                    <button class="faq-question" type="button" aria-expanded="false">
                         <span data-i18n="faq_q2">Como funciona a Inteligência Artificial no sistema?</span>
                         <i class="ph-bold ph-caret-down"></i>
                     </button>
@@ -1121,37 +1393,66 @@
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question" type="button">
+                    <button class="faq-question" type="button" aria-expanded="false">
                         <span data-i18n="faq_q3">Como funciona o modo offline?</span>
                         <i class="ph-bold ph-caret-down"></i>
                     </button>
-                    <div class="faq-answer" data-i18n="faq_a3">
-                        Ao instalar o MyFinance como App no celular (iOS/Android), você pode registrar seus lançamentos mesmo em locais sem sinal de internet. Quando seu telefone reconectar, tudo sincroniza automaticamente.
-                    </div>
+                    <div class="faq-answer" data-i18n="faq_a3">Nos planos Premium e Pro, ao instalar o MyFinance como app no celular (iOS/Android), você registra lançamentos mesmo sem sinal de internet. Quando o telefone reconectar, tudo sincroniza automaticamente.</div>
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question" type="button">
+                    <button class="faq-question" type="button" aria-expanded="false">
                         <span data-i18n="faq_q4">Quais moedas são suportadas?</span>
                         <i class="ph-bold ph-caret-down"></i>
                     </button>
-                    <div class="faq-answer" data-i18n="faq_a4">
-                        O MyFinance suporta Guaranies (Gs. PYG), Real (R$ BRL), Dólar ($ USD) e Euro (€ EUR), além de suporte nativo aos idiomas Português e Espanhol.
+                    <div class="faq-answer" data-i18n="faq_a4">O MyFinance trabalha com Guaranies (Gs. PYG), Real (R$ BRL), Dólar ($ USD), Peso argentino (ARS) e Euro (€ EUR). Você escolhe a moeda em Configurações, e o sistema está disponível em português, espanhol e inglês.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button" aria-expanded="false">
+                        <span data-i18n="faq_q5">Meus dados ficam seguros?</span>
+                        <i class="ph-bold ph-caret-down"></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a5">Sim. Cada conta só enxerga os próprios dados, as senhas são guardadas com hash, a conexão usa HTTPS e as ações são protegidas contra CSRF. No plano Pro você ainda exporta um backup em JSON quando quiser, e pode excluir a sua conta e os seus dados a qualquer momento.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button" aria-expanded="false">
+                        <span data-i18n="faq_q6">Qual plano devo escolher?</span>
+                        <i class="ph-bold ph-caret-down"></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a6">
+                        O <b>Básico</b> serve para registrar e acompanhar o mês (até 2 contas). O <b>Premium</b> acrescenta orçamento por categoria, IA e registro offline, e tem o melhor custo-benefício. O <b>Pro</b> inclui contas ilimitadas, fluxo de caixa, exportação e mais registros por foto e áudio. Como o teste de 3 dias vale para qualquer plano e dá para trocar durante ele, o melhor jeito de decidir é experimentar.
                     </div>
                 </div>
 
                 <div class="faq-item">
-                    <button class="faq-question" type="button">
-                        <span data-i18n="faq_q5">Meus dados ficam seguros?</span>
+                    <button class="faq-question" type="button" aria-expanded="false">
+                        <span data-i18n="faq_q7">Como contrato e pago um plano?</span>
                         <i class="ph-bold ph-caret-down"></i>
                     </button>
-                    <div class="faq-answer" data-i18n="faq_a5">
-                        Sim. Utilizamos isolamento rigoroso multi-tenant por usuário, criptografia de ponta a ponta e proteção CSRF nativa. Além disso, você pode exportar um backup JSON de todas as suas contas e lançamentos quando desejar.
-                    </div>
+                    <div class="faq-answer" data-i18n="faq_a7">Escolha o plano na tela de assinatura e faça a solicitação. Nós entramos em contato com os dados de pagamento (transferência bancária ou Tigo Money) e ativamos a sua assinatura assim que confirmarmos o pagamento.</div>
                 </div>
             </div>
         </div>
     </section>
+
+    <!-- CTA final -->
+    <section class="section" style="padding-top: 0;">
+        <div class="container">
+            <div class="cta-final">
+                <h2 data-i18n="cta_titulo">Cada mês sem controle é dinheiro que escapa</h2>
+                <p data-i18n="cta_sub">Comece hoje. Em poucos minutos você sabe exatamente para onde vai cada guarani e passa a decidir com segurança.</p>
+                <a href="/cadastro" class="btn btn-lg btn-cta">
+                    <span data-i18n="cta_btn">Começar meu teste grátis de 3 dias</span>
+                    <i class="ph-bold ph-arrow-right"></i>
+                </a>
+                <small data-i18n="cta_nota">Sem cartão de crédito. Você escolhe o plano e pode trocar durante o teste.</small>
+            </div>
+        </div>
+    </section>
+
+    </main>
 
     <!-- Footer -->
     <footer class="footer">
@@ -1183,11 +1484,8 @@
                 nav_entrar: 'Entrar',
                 nav_cadastro: 'Teste Grátis',
                 hero_badge: '3 dias de teste grátis no plano que você escolher, sem cartão',
-                hero_titulo: 'Gestão financeira simples, inteligente e completa.',
-                hero_sub: 'Controle suas contas bancárias, lançamentos parcelados, relatórios DRE e automatize sua rotina com a Inteligência Artificial integrada por texto, foto e voz.',
                 hero_cta: 'Começar Teste Grátis (3 Dias)',
                 hero_ver_planos: 'Ver Planos',
-                hero_satisfacao: 'Plataforma multi-moeda e multi-idioma (Gs., R$, $)',
                 mock_saldo_disp: 'Saldo Disponível',
                 mock_total_cons: 'Total Consolidado',
                 mock_receitas: 'Receitas',
@@ -1200,30 +1498,38 @@
                 feat_titulo: 'Tudo o que você precisa em um só lugar',
                 feat_sub: 'Desenvolvido pensando em simplicidade, segurança e controle contábil profissional.',
                 f1_tit: 'Contas Bancárias & Transferências',
-                f1_desc: 'Criação ilimitada de contas, transferências entre bancos com lançamento automático de contrapartida e ajuste manual de saldo com extrato detalhado.',
+                f1_desc: 'Contas de 2 a ilimitadas, conforme o plano, transferências entre bancos com lançamento automático de contrapartida (inclusive agendadas) e ajuste de saldo com extrato detalhado.',
                 f2_tit: 'Categorias com Cores e Hierarquia',
-                f2_desc: 'Organize receitas e despesas em 2 níveis (categorias e subcategorias), cores personalizadas e limites de gastos por categoria.',
+                f2_desc: 'Organize receitas e despesas em 2 níveis (categorias e subcategorias), com cores personalizadas e limite de gasto por categoria.',
                 f3_tit: 'Lançamentos Parcelados e Fixos',
                 f3_desc: 'Controle compras parceladas ou contas recorrentes com geração automática de parcelas independentes e fáceis de editar.',
-                f4_tit: 'Demonstrativo DRE Anual',
-                f4_desc: 'Demonstrativo contábil mensal e anual estruturado em formato de planilha com colunas sticky fixas para análise estratégica.',
+                f4_tit: 'Demonstrativo Anual',
+                f4_desc: 'Resultado mensal e anual em formato de planilha, com a coluna das categorias fixa enquanto você rola os meses. Do Premium em diante, com demonstrativo financeiro e orçamento por categoria.',
                 f5_tit: 'App Mobile com Modo Offline',
-                f5_desc: 'Instale como aplicativo (PWA) no iPhone ou Android. Lance gastos mesmo sem internet que o sistema sincroniza ao reconectar.',
-                f6_tit: 'Backup JSON & Exportação CSV',
-                f6_desc: 'Exporte todos os seus dados a qualquer momento e restaure com mesclagem inteligente sem riscos de perda de informações.',
+                f5_desc: 'Instale como aplicativo (PWA) no iPhone ou Android. Nos planos Premium e Pro, lance gastos mesmo sem internet: o sistema sincroniza quando você reconectar.',
+                f6_tit: 'Exportação e Backup (Pro)',
+                f6_desc: 'No plano Pro, exporte relatórios em CSV e PDF e faça backup completo dos seus dados em JSON, com restauração quando precisar.',
+                f7_tit: 'Lembretes de Vencimento',
+                f7_desc: 'Receba uma notificação com as despesas que vencem, mesmo com o app fechado, no horário que você escolher.',
+                f8_tit: 'Comunidade e Novidades',
+                f8_desc: 'Sugira melhorias, vote nas ideias de outros usuários e acompanhe as novidades do sistema.',
+                f9_tit: 'Seu Idioma e Sua Moeda',
+                f9_desc: 'Português, espanhol e inglês; guaranies, reais, dólares, euros ou pesos argentinos; tema claro e escuro.',
+                mock_mes: 'Exemplo',
+                mock_super: 'Supermercado',
                 ia_badge: 'Inteligência Artificial',
                 ia_titulo: 'Assistente Financeiro com IA Integrada',
                 ia_sub: 'Chega de digitar tudo manualmente. Nossa IA entende sua rotina e faz o trabalho pesado para você com total segurança:',
                 ia_item1: '<b>Registro por Texto Direto:</b> Basta digitar <i>"Gastei 45.000 em almoço"</i>.',
                 ia_item2: '<b>Registro por Foto & Áudio:</b> Envie fotos de recibos fiscais ou áudios de voz.',
-                ia_item3: '<b>IA Nível 2 Avançada:</b> Marca previstos como pagos, altera categorias e consulta relatórios.',
+                ia_item3: '<b>IA avançada (Pro):</b> marca como pago o que estava previsto, edita lançamentos, cria categorias e faz transferências.',
                 ia_item4: '<b>Botão de Desfazer em 10s:</b> Controle total e segurança em cada ação gerada pela IA.',
                 ia_chat_tit: 'Chat IA MyFinance',
                 ia_chat_user: '📸 [Foto de Nota Fiscal de Combustível Gs. 180.000]',
-                ia_chat_bot: '✨ Identifiquei: <b>Posto Petrobras - Gs. 180.000</b> na categoria <b>Transporte / Combustível</b>. Lançamento registrado com sucesso! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Desfazer (10s)]</span>',
+                ia_chat_bot: '✨ Identifiquei: <b>Posto de combustível - Gs. 180.000</b> na categoria <b>Transporte / Combustível</b>. Lançamento registrado com sucesso! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Desfazer (10s)]</span>',
                 planos_badge: 'Nossos Planos',
                 planos_titulo: 'Escolha o plano ideal para você',
-                planos_sub: 'Sem taxas ocultas. Cancele ou altere seu plano quando desejar.',
+                planos_sub: 'Teste 3 dias grátis em qualquer plano. Depois, pague por transferência ou Tigo Money e ativamos a sua assinatura.',
                 ciclo_mensal: 'Mensal',
                 ciclo_anual: 'Anual',
                 dois_meses_gratis: '2 meses grátis',
@@ -1283,11 +1589,77 @@
                 faq_q2: 'Como funciona a Inteligência Artificial no sistema?',
                 faq_a2: 'Você pode conversar no Chat IA para registrar despesas por texto ("Gastei 50 mil em mercado"), enviar foto do recibo fiscal ou áudio de voz. A IA reconhece o valor, data e categoria e lança direto para você com 10 segundos para desfazer com um clique.',
                 faq_q3: 'Como funciona o modo offline?',
-                faq_a3: 'Ao instalar o MyFinance como App no celular (iOS/Android), você pode registrar seus lançamentos mesmo em locais sem sinal de internet. Quando seu telefone reconectar, tudo sincroniza automaticamente.',
+                faq_a3: 'Nos planos Premium e Pro, ao instalar o MyFinance como app no celular (iOS/Android), você registra lançamentos mesmo sem sinal de internet. Quando o telefone reconectar, tudo sincroniza automaticamente.',
                 faq_q4: 'Quais moedas são suportadas?',
-                faq_a4: 'O MyFinance suporta Guaranies (Gs. PYG), Real (R$ BRL), Dólar ($ USD) e Euro (€ EUR), além de suporte nativo aos idiomas Português e Espanhol.',
+                faq_a4: 'O MyFinance trabalha com Guaranies (Gs. PYG), Real (R$ BRL), Dólar ($ USD), Peso argentino (ARS) e Euro (€ EUR). Você escolhe a moeda em Configurações, e o sistema está disponível em português, espanhol e inglês.',
                 faq_q5: 'Meus dados ficam seguros?',
-                faq_a5: 'Sim. Utilizamos isolamento rigoroso multi-tenant por usuário, criptografia de ponta a ponta e proteção CSRF nativa. Além disso, você pode exportar um backup JSON de todas as suas contas e lançamentos quando desejar.',
+                faq_a5: 'Sim. Cada conta só enxerga os próprios dados, as senhas são guardadas com hash, a conexão usa HTTPS e as ações são protegidas contra CSRF. No plano Pro você ainda exporta um backup em JSON quando quiser, e pode excluir a sua conta e os seus dados a qualquer momento.',
+                nav_casos: 'Casos de uso',
+                hero_titulo: 'Pare de se perguntar <em>para onde foi o seu dinheiro.</em>',
+                hero_sub: 'O MyFinance reúne suas contas, parcelas e gastos em um só lugar, e a Inteligência Artificial registra tudo por você: por texto, foto do recibo ou voz. Em minutos você enxerga o mês inteiro com clareza.',
+                hero_chip1: 'Sem cartão de crédito',
+                hero_chip2: 'Guaranies, reais, dólares, euros ou pesos',
+                hero_chip3: 'No navegador e no celular (app instalável)',
+                dores_badge: 'Você se reconhece?',
+                dores_titulo: 'Sem controle, o dinheiro escapa sem você perceber',
+                dores_sub: 'Não é falta de renda. É falta de visão. Estes três problemas custam caro todos os meses:',
+                dor1_tit: '"Para onde foi o meu salário?"',
+                dor1_desc: 'Pequenos gastos do dia a dia somam muito, e sem registro você só descobre isso quando o saldo já acabou.',
+                dor2_tit: 'Parcelas e contas que viram surpresa',
+                dor2_desc: 'Compras parceladas e contas fixas acumulam. Esquecer um vencimento significa multa, juros e estresse.',
+                dor3_tit: 'Planilha que ninguém mantém',
+                dor3_desc: 'Começa animado, vira obrigação e é abandonada em semanas. No fim, você volta a decidir no escuro.',
+                dores_fecho: 'O MyFinance resolve os três: você registra em segundos e o sistema <em>faz as contas, mostra o que está pendente e avisa o que vence</em> para você decidir com segurança.',
+                casos_badge: 'Casos de uso',
+                casos_titulo: 'Feito para a sua rotina, seja ela qual for',
+                casos_sub: 'Veja como pessoas como você usam o MyFinance para ter o controle que faltava.',
+                lbl_situacao: 'Situação',
+                lbl_solucao: 'Com o MyFinance',
+                lbl_ver_plano: 'Ver plano →',
+                lbl_plano_ideal: 'Plano ideal: <b>Premium</b>',
+                lbl_plano_ideal_pro: 'Plano ideal: <b>Pro</b>',
+                lbl_plano_ideal_basico: 'Já a partir do <b>Básico</b>',
+                c1_quem: 'Famílias',
+                c1_tit: 'Fechar o mês no azul, sem susto',
+                c1_sit: 'O salário entra e, por volta do dia 20, o dinheiro acaba sem ninguém saber em quê.',
+                c1_sol: 'Você define um limite por categoria (mercado, escola, lazer) e acompanha quanto já gastou e quanto ainda pode gastar em cada uma.',
+                c2_quem: 'Autônomos e freelancers',
+                c2_tit: 'Separar o pessoal do negócio',
+                c2_sit: 'Tudo cai na mesma conta e, no fim do ano, você não sabe se realmente lucrou.',
+                c2_sol: 'Contas ilimitadas, transferências entre elas com contrapartida automática, fluxo de caixa e demonstrativo anual para ver o resultado real e exportar para o seu contador.',
+                c3_quem: 'Pequenos comerciantes',
+                c3_tit: 'Anotar no balcão, mesmo sem sinal',
+                c3_sit: 'Entra e sai dinheiro o dia todo, e o que não é anotado na hora se perde.',
+                c3_sol: 'Instale o app no celular e registre no ato, mesmo sem internet: tudo sincroniza quando o sinal volta. Com internet, fotografe o recibo e a IA faz o lançamento.',
+                c4_quem: 'Quem compra parcelado',
+                c4_tit: 'Parcelas que nunca mais viram surpresa',
+                c4_sit: 'Três compras em 10 vezes e você perde a conta do que ainda vai pagar nos próximos meses.',
+                c4_sol: 'Lance a compra uma vez e o sistema cria todas as parcelas. A lista de pendentes mostra o que vence e você navega pelos meses para ver o peso de cada um.',
+                c5_quem: 'Vida entre dois países',
+                c5_tit: 'Na sua moeda e no seu idioma',
+                c5_sit: 'Você vive, trabalha ou viaja entre países, e o sistema que usa não fala a sua língua nem a sua moeda.',
+                c5_sol: 'Escolha a moeda (guarani, real, dólar, euro ou peso argentino) e o idioma (português, espanhol ou inglês) e use tudo do seu jeito, no computador e no celular.',
+                c6_quem: 'Quem não tem tempo',
+                c6_tit: 'Registrar um gasto em 5 segundos',
+                c6_sit: 'Você sabe que deveria anotar tudo, mas na correria ninguém abre uma planilha.',
+                c6_sol: 'Escreva "gastei 45 mil no almoço", mande a foto da nota ou um áudio. A IA escolhe valor, data e categoria, e você tem 10 segundos para desfazer.',
+                como_badge: 'Como funciona',
+                como_titulo: 'Do cadastro ao controle em poucos minutos',
+                como_sub: 'Sem instalação complicada, sem configuração demorada.',
+                passo1_tit: 'Crie sua conta',
+                passo1_desc: 'Escolha o plano que quer testar e use-o por 3 dias, de graça e sem cartão. Durante o teste você pode trocar de plano.',
+                passo2_tit: 'Registre do jeito mais fácil',
+                passo2_desc: 'Digite, fotografe o recibo ou fale com a IA. Parcelas e contas fixas são criadas de uma vez só.',
+                passo3_tit: 'Veja a verdade dos números',
+                passo3_desc: 'Painel do mês, gráficos, pendentes e demonstrativo anual sempre atualizados, para decidir com clareza.',
+                faq_q6: 'Qual plano devo escolher?',
+                faq_a6: 'O <b>Básico</b> serve para registrar e acompanhar o mês (até 2 contas). O <b>Premium</b> acrescenta orçamento por categoria, IA e registro offline, e tem o melhor custo-benefício. O <b>Pro</b> inclui contas ilimitadas, fluxo de caixa, exportação e mais registros por foto e áudio. Como o teste de 3 dias vale para qualquer plano e dá para trocar durante ele, o melhor jeito de decidir é experimentar.',
+                faq_q7: 'Como contrato e pago um plano?',
+                faq_a7: 'Escolha o plano na tela de assinatura e faça a solicitação. Nós entramos em contato com os dados de pagamento (transferência bancária ou Tigo Money) e ativamos a sua assinatura assim que confirmarmos o pagamento.',
+                cta_titulo: 'Cada mês sem controle é dinheiro que escapa',
+                cta_sub: 'Comece hoje. Em poucos minutos você sabe exatamente para onde vai cada guarani e passa a decidir com segurança.',
+                cta_btn: 'Começar meu teste grátis de 3 dias',
+                cta_nota: 'Sem cartão de crédito. Você escolhe o plano e pode trocar durante o teste.',
                 direitos: 'Todos os direitos reservados.',
                 termos: 'Termos de Uso',
                 privacidade: 'Privacidade'
@@ -1301,11 +1673,8 @@
                 nav_entrar: 'Iniciar Sesión',
                 nav_cadastro: 'Prueba Gratis',
                 hero_badge: '3 días de prueba gratis en el plan que elija, sin tarjeta',
-                hero_titulo: 'Gestión financiera simple, inteligente y completa.',
-                hero_sub: 'Controle sus cuentas bancarias, movimientos en cuotas, informes demostrativos y automatice su rutina con Inteligencia Artificial integrada por texto, foto y voz.',
                 hero_cta: 'Comenzar Prueba Gratis (3 Días)',
                 hero_ver_planos: 'Ver Planes',
-                hero_satisfacao: 'Plataforma multi-moneda y multi-idioma (Gs., R$, $)',
                 mock_saldo_disp: 'Saldo Disponible',
                 mock_total_cons: 'Total Consolidado',
                 mock_receitas: 'Ingresos',
@@ -1318,30 +1687,38 @@
                 feat_titulo: 'Todo lo que necesita en un solo lugar',
                 feat_sub: 'Diseñado pensando en simplicidad, seguridad y control contable profesional.',
                 f1_tit: 'Cuentas Bancarias y Transferencias',
-                f1_desc: 'Creación ilimitada de cuentas, transferencias entre bancos con movimiento automático de contrapartida y ajuste manual de saldo con extracto detallado.',
+                f1_desc: 'Cuentas de 2 a ilimitadas, según el plan, transferencias entre bancos con contrapartida automática (incluso programadas) y ajuste de saldo con extracto detallado.',
                 f2_tit: 'Categorías con Colores y Jerarquía',
-                f2_desc: 'Organice ingresos y gastos en 2 niveles (categorías y subcategorías), colores personalizados y límites de gastos por categoría.',
+                f2_desc: 'Organice ingresos y gastos en 2 niveles (categorías y subcategorías), con colores personalizados y límite de gasto por categoría.',
                 f3_tit: 'Movimientos en Cuotas y Fijos',
                 f3_desc: 'Controle compras en cuotas o gastos recurrentes con generación automática de cuotas independientes y fáciles de editar.',
-                f4_tit: 'Demostrativo Anual DRE',
-                f4_desc: 'Demostrativo contable mensual y anual estructurado en formato de planilla con columnas fijas para análisis estratégico.',
+                f4_tit: 'Demostrativo Anual',
+                f4_desc: 'Resultado mensual y anual en formato de planilla, con la columna de categorías fija mientras se desplaza por los meses. Del Premium en adelante, con demostrativo financiero y presupuesto por categoría.',
                 f5_tit: 'App Móvil con Modo sin Conexión',
-                f5_desc: 'Instale como aplicación (PWA) en iPhone o Android. Registre gastos incluso sin internet que el sistema sincroniza al reconectar.',
-                f6_tit: 'Copia de Seguridad y Exportación CSV',
-                f6_desc: 'Exporte todos sus datos en cualquier momento y restaure con fusión inteligente sin riesgo de pérdida de información.',
+                f5_desc: 'Instale como aplicación (PWA) en iPhone o Android. En los planes Premium y Pro, registre gastos incluso sin internet: el sistema sincroniza cuando se reconecte.',
+                f6_tit: 'Exportación y Copia de Seguridad (Pro)',
+                f6_desc: 'En el plan Pro, exporte informes en CSV y PDF y haga una copia de seguridad completa de sus datos en JSON, con restauración cuando la necesite.',
+                f7_tit: 'Recordatorios de Vencimiento',
+                f7_desc: 'Reciba una notificación con los gastos que vencen, incluso con la app cerrada, en el horario que usted elija.',
+                f8_tit: 'Comunidad y Novedades',
+                f8_desc: 'Sugiera mejoras, vote por las ideas de otros usuarios y siga las novedades del sistema.',
+                f9_tit: 'Su Idioma y Su Moneda',
+                f9_desc: 'Portugués, español e inglés; guaraníes, reales, dólares, euros o pesos argentinos; tema claro y oscuro.',
+                mock_mes: 'Ejemplo',
+                mock_super: 'Supermercado',
                 ia_badge: 'Inteligencia Artificial',
                 ia_titulo: 'Asistente Financiero con IA Integrada',
                 ia_sub: 'Basta de escribir todo a mano. Nuestra IA comprende su rutina y hace el trabajo pesado por usted con total seguridad:',
                 ia_item1: '<b>Registro directo por texto:</b> Simplemente escriba <i>"Gasté 45.000 en almuerzo"</i>.',
                 ia_item2: '<b>Registro por foto y audio:</b> Envíe fotos de comprobantes fiscales o notas de voz.',
-                ia_item3: '<b>IA Avanzada Nivel 2:</b> Marca previstos como cobrados/pagados, edita categorías y consulta informes.',
+                ia_item3: '<b>IA avanzada (Pro):</b> marca como pagado lo que estaba previsto, edita movimientos, crea categorías y hace transferencias.',
                 ia_item4: '<b>Botón de deshacer en 10 s:</b> Control total y seguridad en cada acción generada por la IA.',
                 ia_chat_tit: 'Chat IA MyFinance',
                 ia_chat_user: '📸 [Foto de Factura de Combustible Gs. 180.000]',
-                ia_chat_bot: '✨ Identifiqué: <b>Estación Petrobras - Gs. 180.000</b> en la categoría <b>Transporte / Combustible</b>. ¡Movimiento registrado! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Deshacer (10 s)]</span>',
+                ia_chat_bot: '✨ Identifiqué: <b>Estación de servicio - Gs. 180.000</b> en la categoría <b>Transporte / Combustible</b>. ¡Movimiento registrado! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Deshacer (10 s)]</span>',
                 planos_badge: 'Nuestros Planes',
                 planos_titulo: 'Elija el plan ideal para usted',
-                planos_sub: 'Sin cargos ocultos. Cancele o cambie de plan cuando lo desee.',
+                planos_sub: 'Pruebe 3 días gratis en cualquier plan. Después, pague por transferencia o Tigo Money y activamos su suscripción.',
                 ciclo_mensal: 'Mensual',
                 ciclo_anual: 'Anual',
                 dois_meses_gratis: '2 meses gratis',
@@ -1401,28 +1778,318 @@
                 faq_q2: '¿Cómo funciona la Inteligencia Artificial en el sistema?',
                 faq_a2: 'Puede chatear con la IA para registrar gastos por texto ("Gasté 50 mil en súper"), enviar foto del ticket o nota de voz. La IA reconoce el monto, fecha y categoría y lo registra al instante con 10 segundos para deshacer.',
                 faq_q3: '¿Cómo funciona el modo sin conexión?',
-                faq_a3: 'Al instalar MyFinance como App en su celular (iOS/Android), puede registrar movimientos incluso sin internet. Cuando su teléfono recupere la conexión, todo se sincroniza automáticamente.',
+                faq_a3: 'En los planes Premium y Pro, al instalar MyFinance como app en el celular (iOS/Android), usted registra movimientos incluso sin señal de internet. Cuando el teléfono se reconecte, todo se sincroniza automáticamente.',
                 faq_q4: '¿Qué monedas son compatibles?',
-                faq_a4: 'MyFinance es compatible con Guaraníes (Gs. PYG), Real (R$ BRL), Dólar ($ USD) y Euro (€ EUR), además de soporte nativo en Español y Portugués.',
+                faq_a4: 'MyFinance trabaja con Guaraníes (Gs. PYG), Real (R$ BRL), Dólar ($ USD), Peso argentino (ARS) y Euro (€ EUR). Usted elige la moneda en Configuración, y el sistema está disponible en portugués, español e inglés.',
                 faq_q5: '¿Mis datos están seguros?',
-                faq_a5: 'Sí. Utilizamos aislamiento multi-usuario por cuenta, cifrado SSL y protección CSRF nativa. Además, puede descargar una copia de seguridad JSON de sus cuentas y movimientos cuando lo desee.',
+                faq_a5: 'Sí. Cada cuenta solo ve sus propios datos, las contraseñas se guardan con hash, la conexión usa HTTPS y las acciones están protegidas contra CSRF. En el plan Pro además exporta una copia de seguridad en JSON cuando quiera, y puede eliminar su cuenta y sus datos en cualquier momento.',
+                nav_casos: 'Casos de uso',
+                hero_titulo: 'Deje de preguntarse <em>a dónde se fue su dinero.</em>',
+                hero_sub: 'MyFinance reúne sus cuentas, cuotas y gastos en un solo lugar, y la Inteligencia Artificial registra todo por usted: por texto, foto del recibo o voz. En minutos ve el mes completo con claridad.',
+                hero_chip1: 'Sin tarjeta de crédito',
+                hero_chip2: 'Guaraníes, reales, dólares, euros o pesos',
+                hero_chip3: 'En el navegador y en el celular (app instalable)',
+                dores_badge: '¿Se reconoce?',
+                dores_titulo: 'Sin control, el dinero se escapa sin que lo note',
+                dores_sub: 'No es falta de ingresos. Es falta de visión. Estos tres problemas cuestan caro todos los meses:',
+                dor1_tit: '"¿A dónde se fue mi sueldo?"',
+                dor1_desc: 'Los pequeños gastos del día a día suman mucho, y sin registro lo descubre cuando el saldo ya se acabó.',
+                dor2_tit: 'Cuotas y cuentas que se vuelven sorpresa',
+                dor2_desc: 'Las compras en cuotas y las cuentas fijas se acumulan. Olvidar un vencimiento significa multa, intereses y estrés.',
+                dor3_tit: 'Una planilla que nadie mantiene',
+                dor3_desc: 'Empieza con entusiasmo, se vuelve obligación y se abandona en semanas. Al final, vuelve a decidir a ciegas.',
+                dores_fecho: 'MyFinance resuelve los tres: usted registra en segundos y el sistema <em>hace las cuentas, muestra lo pendiente y avisa lo que vence</em> para que decida con seguridad.',
+                casos_badge: 'Casos de uso',
+                casos_titulo: 'Hecho para su rutina, sea cual sea',
+                casos_sub: 'Vea cómo personas como usted usan MyFinance para tener el control que faltaba.',
+                lbl_situacao: 'Situación',
+                lbl_solucao: 'Con MyFinance',
+                lbl_ver_plano: 'Ver plan →',
+                lbl_plano_ideal: 'Plan ideal: <b>Premium</b>',
+                lbl_plano_ideal_pro: 'Plan ideal: <b>Pro</b>',
+                lbl_plano_ideal_basico: 'Ya desde el <b>Básico</b>',
+                c1_quem: 'Familias',
+                c1_tit: 'Cerrar el mes en positivo, sin sustos',
+                c1_sit: 'Entra el sueldo y, hacia el día 20, el dinero se acaba sin que nadie sepa en qué.',
+                c1_sol: 'Define un límite por categoría (supermercado, escuela, ocio) y sigue cuánto ya gastó y cuánto aún puede gastar en cada una.',
+                c2_quem: 'Autónomos y freelancers',
+                c2_tit: 'Separar lo personal del negocio',
+                c2_sit: 'Todo cae en la misma cuenta y, a fin de año, no sabe si realmente ganó.',
+                c2_sol: 'Cuentas ilimitadas, transferencias entre ellas con contrapartida automática, flujo de caja y demostrativo anual para ver el resultado real y exportarlo a su contador.',
+                c3_quem: 'Pequeños comerciantes',
+                c3_tit: 'Anotar en el mostrador, incluso sin señal',
+                c3_sit: 'Entra y sale dinero todo el día, y lo que no se anota en el momento se pierde.',
+                c3_sol: 'Instale la app en el celular y registre al instante, incluso sin internet: todo se sincroniza cuando vuelve la señal. Con internet, fotografíe el recibo y la IA hace el registro.',
+                c4_quem: 'Quien compra en cuotas',
+                c4_tit: 'Cuotas que nunca más son una sorpresa',
+                c4_sit: 'Tres compras en 10 cuotas y pierde la cuenta de lo que todavía va a pagar en los próximos meses.',
+                c4_sol: 'Cargue la compra una vez y el sistema crea todas las cuotas. La lista de pendientes muestra lo que vence y usted navega por los meses para ver el peso de cada uno.',
+                c5_quem: 'Vida entre dos países',
+                c5_tit: 'En su moneda y en su idioma',
+                c5_sit: 'Vive, trabaja o viaja entre países, y el sistema que usa no habla su idioma ni su moneda.',
+                c5_sol: 'Elija la moneda (guaraní, real, dólar, euro o peso argentino) y el idioma (portugués, español o inglés) y use todo a su manera, en la computadora y en el celular.',
+                c6_quem: 'Quien no tiene tiempo',
+                c6_tit: 'Registrar un gasto en 5 segundos',
+                c6_sit: 'Sabe que debería anotar todo, pero con la prisa nadie abre una planilla.',
+                c6_sol: 'Escriba "gasté 45 mil en el almuerzo", envíe la foto del ticket o un audio. La IA elige monto, fecha y categoría, y usted tiene 10 segundos para deshacer.',
+                como_badge: 'Cómo funciona',
+                como_titulo: 'Del registro al control en pocos minutos',
+                como_sub: 'Sin instalación complicada, sin configuración lenta.',
+                passo1_tit: 'Cree su cuenta',
+                passo1_desc: 'Elija el plan que quiere probar y úselo 3 días, gratis y sin tarjeta. Durante la prueba puede cambiar de plan.',
+                passo2_tit: 'Registre de la forma más fácil',
+                passo2_desc: 'Escriba, fotografíe el recibo o hable con la IA. Las cuotas y cuentas fijas se crean de una sola vez.',
+                passo3_tit: 'Vea la verdad de los números',
+                passo3_desc: 'Panel del mes, gráficos, pendientes y demostrativo anual siempre actualizados, para decidir con claridad.',
+                faq_q6: '¿Qué plan debo elegir?',
+                faq_a6: 'El <b>Básico</b> sirve para registrar y seguir el mes (hasta 2 cuentas). El <b>Premium</b> agrega presupuesto por categoría, IA y registro sin conexión, y tiene la mejor relación costo-beneficio. El <b>Pro</b> incluye cuentas ilimitadas, flujo de caja, exportación y más registros por foto y audio. Como la prueba de 3 días vale para cualquier plan y se puede cambiar durante ella, la mejor forma de decidir es probar.',
+                faq_q7: '¿Cómo contrato y pago un plan?',
+                faq_a7: 'Elija el plan en la pantalla de suscripción y haga la solicitud. Nos ponemos en contacto con los datos de pago (transferencia bancaria o Tigo Money) y activamos su suscripción apenas confirmemos el pago.',
+                cta_titulo: 'Cada mes sin control es dinero que se escapa',
+                cta_sub: 'Empiece hoy. En pocos minutos sabe exactamente a dónde va cada guaraní y pasa a decidir con seguridad.',
+                cta_btn: 'Empezar mi prueba gratis de 3 días',
+                cta_nota: 'Sin tarjeta de crédito. Usted elige el plan y puede cambiar durante la prueba.',
                 direitos: 'Todos los derechos reservados.',
                 termos: 'Términos de Uso',
                 privacidade: 'Privacidad'
-            }
+            },
+            'en-US': {
+                meta_title: 'MyFinance - Smart Personal Finance',
+                nav_recursos: 'Features',
+                nav_casos: 'Use cases',
+                nav_ia: 'AI Assistant',
+                nav_planos: 'Plans',
+                nav_faq: 'FAQ',
+                nav_entrar: 'Log in',
+                nav_cadastro: 'Free Trial',
+                hero_badge: '3-day free trial on the plan you choose, no card needed',
+                hero_titulo: 'Stop wondering <em>where your money went.</em>',
+                hero_sub: 'MyFinance brings your accounts, installments and spending into one place, and Artificial Intelligence records everything for you: by text, receipt photo or voice. In minutes you see the whole month clearly.',
+                hero_cta: 'Start Free Trial (3 Days)',
+                hero_ver_planos: 'See Plans',
+                hero_chip1: 'No credit card',
+                hero_chip2: 'Guaranies, reais, dollars, euros or pesos',
+                hero_chip3: 'In the browser and on your phone (installable app)',
+                mock_saldo_disp: 'Available Balance',
+                mock_total_cons: 'Consolidated Total',
+                mock_receitas: 'Income',
+                mock_despesas: 'Expenses',
+                mock_lanc_recentes: 'Recent Entries',
+                mock_salario: 'Monthly Salary',
+                mock_conta_corrente: 'Main Checking Account',
+                mock_foto_recibo: 'Recorded from a Receipt Photo',
+                dores_badge: 'Sound familiar?',
+                dores_titulo: 'Without control, money slips away unnoticed',
+                dores_sub: 'It is not a lack of income. It is a lack of visibility. These three problems cost you every month:',
+                dor1_tit: '“Where did my salary go?”',
+                dor1_desc: 'Small everyday expenses add up, and without a record you only find out when the balance is already gone.',
+                dor2_tit: 'Installments and bills that become surprises',
+                dor2_desc: 'Installment purchases and fixed bills pile up. Forgetting a due date means fines, interest and stress.',
+                dor3_tit: 'A spreadsheet nobody keeps up',
+                dor3_desc: 'It starts out motivated, becomes a chore and is dropped within weeks. In the end you are deciding in the dark again.',
+                dores_fecho: 'MyFinance solves all three: you record in seconds and the system <em>does the math, shows what is pending and warns you about what is due</em> so you can decide with confidence.',
+                casos_badge: 'Use cases',
+                casos_titulo: 'Built for your routine, whatever it is',
+                casos_sub: 'See how people like you use MyFinance to get the control they were missing.',
+                lbl_situacao: 'Situation',
+                lbl_solucao: 'With MyFinance',
+                lbl_ver_plano: 'See plan →',
+                lbl_plano_ideal: 'Ideal plan: <b>Premium</b>',
+                lbl_plano_ideal_pro: 'Ideal plan: <b>Pro</b>',
+                lbl_plano_ideal_basico: 'Available from <b>Basic</b>',
+                c1_quem: 'Families',
+                c1_tit: 'Close the month in the black, no surprises',
+                c1_sit: 'The salary arrives and, around the 20th, the money is gone and nobody knows on what.',
+                c1_sol: 'You set a limit per category (groceries, school, leisure) and track how much you have spent and how much you can still spend in each.',
+                c2_quem: 'Self-employed and freelancers',
+                c2_tit: 'Keep personal and business money apart',
+                c2_sit: 'Everything lands in the same account and, at year end, you cannot tell whether you really made a profit.',
+                c2_sol: 'Unlimited accounts, transfers between them with automatic counter-entries, cash flow and an annual statement to see the real result and export it to your accountant.',
+                c3_quem: 'Small shop owners',
+                c3_tit: 'Write it down at the counter, even offline',
+                c3_sit: 'Money comes in and goes out all day, and whatever is not noted on the spot gets lost.',
+                c3_sol: 'Install the app on your phone and record on the spot, even without internet: everything syncs when the signal returns. With internet, photograph the receipt and the AI enters it.',
+                c4_quem: 'Installment buyers',
+                c4_tit: 'Installments that never surprise you again',
+                c4_sit: 'Three purchases in 10 installments and you lose track of what you still owe over the coming months.',
+                c4_sol: 'Enter the purchase once and the system creates every installment. The pending list shows what is due and you can browse month by month to see the weight of each.',
+                c5_quem: 'Life between two countries',
+                c5_tit: 'In your currency and your language',
+                c5_sit: 'You live, work or travel between countries, and the system you use speaks neither your language nor your currency.',
+                c5_sol: 'Pick your currency (guarani, real, dollar, euro or Argentine peso) and your language (Portuguese, Spanish or English) and use everything your way, on computer and phone.',
+                c6_quem: 'People short on time',
+                c6_tit: 'Record an expense in 5 seconds',
+                c6_sit: 'You know you should note everything down, but in the rush nobody opens a spreadsheet.',
+                c6_sol: 'Type “spent 45k on lunch”, send a photo of the receipt or a voice note. The AI picks the amount, date and category, and you have 10 seconds to undo.',
+                como_badge: 'How it works',
+                como_titulo: 'From sign-up to control in a few minutes',
+                como_sub: 'No complicated installation, no lengthy setup.',
+                passo1_tit: 'Create your account',
+                passo1_desc: 'Pick the plan you want to try and use it for 3 days, free and without a card. You can switch plans during the trial.',
+                passo2_tit: 'Record it the easiest way',
+                passo2_desc: 'Type, photograph the receipt or talk to the AI. Installments and fixed bills are created in one go.',
+                passo3_tit: 'See the truth in the numbers',
+                passo3_desc: 'Monthly dashboard, charts, pending items and an annual statement, always up to date, so you can decide clearly.',
+                feat_badge: 'System Features',
+                feat_titulo: 'Everything you need in one place',
+                feat_sub: 'Designed for simplicity, security and professional accounting control.',
+                f1_tit: 'Bank Accounts & Transfers',
+                f1_desc: 'From 2 to unlimited accounts depending on the plan, transfers between banks with an automatic counter-entry (including scheduled ones) and balance adjustments with a detailed statement.',
+                f2_tit: 'Colored, Hierarchical Categories',
+                f2_desc: 'Organize income and expenses on 2 levels (categories and subcategories), with custom colors and a spending limit per category.',
+                f3_tit: 'Installment and Fixed Entries',
+                f3_desc: 'Control installment purchases and recurring bills with automatically generated, independent and easy-to-edit installments.',
+                f4_tit: 'Annual Statement',
+                f4_desc: 'Monthly and annual results laid out like a spreadsheet, with the category column kept fixed as you scroll through the months. From Premium up, with a financial statement and a budget per category.',
+                f5_tit: 'Mobile App with Offline Mode',
+                f5_desc: 'Install it as an app (PWA) on iPhone or Android. On the Premium and Pro plans, record expenses even without internet: the system syncs when you reconnect.',
+                f6_tit: 'Export and Backup (Pro)',
+                f6_desc: 'On the Pro plan, export reports as CSV and PDF and make a full backup of your data in JSON, with restore whenever you need it.',
+                f7_tit: 'Due-date Reminders',
+                f7_desc: 'Get a notification with the expenses that are due, even when the app is closed, at the time you choose.',
+                f8_tit: 'Community and Updates',
+                f8_desc: 'Suggest improvements, vote on other users ideas and follow what is new in the system.',
+                f9_tit: 'Your Language and Currency',
+                f9_desc: 'Portuguese, Spanish and English; guaranies, reais, dollars, euros or Argentine pesos; light and dark theme.',
+                mock_mes: 'Example',
+                mock_super: 'Groceries',
+                ia_badge: 'Artificial Intelligence',
+                ia_titulo: 'Financial Assistant with Built-in AI',
+                ia_sub: 'No more typing everything by hand. Our AI understands your routine and does the heavy lifting for you, safely:',
+                ia_item1: '<b>Direct Text Entry:</b> Just type <i>“Spent 45,000 on lunch”</i>.',
+                ia_item2: '<b>Photo & Voice Entry:</b> Send photos of receipts or voice messages.',
+                ia_item3: '<b>Advanced AI (Pro):</b> marks scheduled items as paid, edits entries, creates categories and makes transfers.',
+                ia_item4: '<b>10-second Undo:</b> Full control and safety over every action the AI takes.',
+                ia_chat_tit: 'MyFinance AI Chat',
+                ia_chat_user: '📸 [Photo of a fuel receipt, Gs. 180,000]',
+                ia_chat_bot: '✨ Identified: <b>Gas station - Gs. 180,000</b> in the category <b>Transport / Fuel</b>. Entry recorded successfully! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Undo (10s)]</span>',
+                planos_badge: 'Our Plans',
+                planos_titulo: 'Choose the ideal plan for you',
+                planos_sub: 'Try any plan free for 3 days. Afterwards, pay by bank transfer or Tigo Money and we activate your subscription.',
+                ciclo_mensal: 'Monthly',
+                ciclo_anual: 'Annual',
+                dois_meses_gratis: '2 months free',
+                mes: 'month',
+                btn_quero_plano: 'I want this plan',
+                faixa_vendido: 'Best Value',
+                faixa_completo: 'Most Complete',
+                p_basico_nome: 'Basic Plan',
+                p_basico_sub: 'Record and follow: dashboard, charts, pending items and annual statement.',
+                p_premium_nome: 'Premium Plan',
+                p_premium_sub: 'Analyze and plan: financial statement, budget, AI and offline entry.',
+                p_pro_nome: 'Pro Plan',
+                p_pro_sub: 'Everything: cash flow, export, 3 times more photo and voice entries and unlimited accounts.',
+                grp_financas: 'Finances',
+                grp_ia: 'Artificial Intelligence',
+                grp_app: 'App',
+                grp_extras: 'Support and Extras',
+                nao_incluida: 'Not included',
+                r_painel: 'Monthly dashboard, categories and subcategories',
+                r_contas_basico: 'Bank accounts: <b>Up to 2 accounts</b>',
+                r_contas_prem: 'Bank accounts: <b>Up to 3 accounts</b>',
+                r_contas_ilim: 'Bank accounts: Unlimited',
+                r_lancamentos: 'Fixed and installment entries, and transfers',
+                r_relatorios: 'Reports with charts and pending items',
+                r_anual: 'Annual statement',
+                r_anual_dest: 'Annual statement',
+                r_estado: 'Financial statement and budget per category',
+                r_estado_dest: 'Financial statement and budget per category',
+                r_avancado: 'Cash flow, per-account view and comparison with last year',
+                r_avancado_dest: 'Cash flow, per-account view and comparison with last year',
+                r_exportar: 'Export (CSV and PDF) and backup',
+                r_exportar_dest: 'Export (CSV and PDF) and backup',
+                r_chat_ia: 'AI chat for questions',
+                r_ia_texto: 'Direct text entry (with 10 s to undo)',
+                r_ia_midia: 'Photo and voice entry',
+                r_ia_foto_audio: 'Photo (receipts) and voice entry',
+                r_ia_nivel2: 'Advanced AI: works with scheduled entries',
+                r_limite_prem: 'AI chat: <b>300 messages/month</b>',
+                r_limite_pro: 'AI chat: <b>600 messages/month</b>',
+                r_midia_prem: 'Photo (receipts) and voice entry: <b>10 entries/month</b>',
+                r_midia_pro: 'Photo (receipts) and voice entry: <b>30 entries/month</b> (3 times more)',
+                r_app_web: 'Web system (browser)',
+                r_app_mobile: 'Installable app (Android and iPhone)',
+                r_app_offline: 'Offline entry with sync',
+                r_app_offline_dest: 'Offline entry with sync',
+                r_comunidade: 'Community and suggestions',
+                r_suporte: 'E-mail support',
+                r_suporte_prio: 'Priority support',
+                r_novidades: 'Early access to new features',
+                trial_banner_tit: 'Want to try before you choose?',
+                trial_banner_sub: 'Pick a plan and use it <b>free for 3 days</b>, no card needed. During the trial you can switch plans.',
+                trial_banner_btn: 'Create Free Account',
+                faq_badge: 'Common Questions',
+                faq_titulo: 'Frequently Asked Questions',
+                faq_q1: 'How does the 3-day free trial work?',
+                faq_a1: 'When you create your account you pick the plan you want to try (Basic, Premium or Pro) and use it free for 3 days, with no credit card. During the trial you can switch plans without restarting the clock. The trial is valid once per account: afterwards, you need a plan to continue, and your data stays safe.',
+                faq_q2: 'How does the Artificial Intelligence work?',
+                faq_a2: 'You can chat with the AI to record expenses by text (“Spent 50k on groceries”), send a photo of the receipt or a voice message. The AI recognizes the amount, date and category and records it for you, with 10 seconds to undo in one click.',
+                faq_q3: 'How does offline mode work?',
+                faq_a3: 'On the Premium and Pro plans, once you install MyFinance as an app on your phone (iOS/Android), you can record entries even without an internet signal. When the phone reconnects, everything syncs automatically.',
+                faq_q4: 'Which currencies are supported?',
+                faq_a4: 'MyFinance works with Guaranies (Gs. PYG), Real (R$ BRL), Dollar ($ USD), Argentine Peso (ARS) and Euro (€ EUR). You pick the currency in Settings, and the system is available in Portuguese, Spanish and English.',
+                faq_q5: 'Is my data safe?',
+                faq_a5: 'Yes. Each account only sees its own data, passwords are stored hashed, the connection uses HTTPS and actions are protected against CSRF. On the Pro plan you can also export a JSON backup whenever you wish, and you can delete your account and data at any time.',
+                faq_q6: 'Which plan should I choose?',
+                faq_a6: '<b>Basic</b> is for recording and following the month (up to 2 accounts). <b>Premium</b> adds budget per category, AI and offline entry, and has the best value. <b>Pro</b> includes unlimited accounts, cash flow, export and more photo and voice entries. Since the 3-day trial works with any plan and you can switch during it, the best way to decide is to try.',
+                faq_q7: 'How do I subscribe and pay for a plan?',
+                faq_a7: 'Choose the plan on the subscription screen and send the request. We get in touch with the payment details (bank transfer or Tigo Money) and activate your subscription as soon as the payment is confirmed.',
+                cta_titulo: 'Every month without control is money slipping away',
+                cta_sub: 'Start today. In a few minutes you will know exactly where every guarani goes and start deciding with confidence.',
+                cta_btn: 'Start my 3-day free trial',
+                cta_nota: 'No credit card. You pick the plan and can switch during the trial.',
+                direitos: 'All rights reserved.',
+                termos: 'Terms of Use',
+                privacidade: 'Privacy'
+            },
         };
 
         // Idioma Engine
         const langSelect = document.getElementById('lang-toggle');
-        const idiomaSalvo = localStorage.getItem('gf_idioma') || 'pt-BR';
-        langSelect.value = idiomaSalvo;
-        aplicarIdioma(idiomaSalvo);
+        // Sem escolha anterior, abre no idioma do navegador (es -> espanhol, en -> ingles, o resto -> portugues).
+        function idiomaDoNavegador() {
+            const prefs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+            for (const l of prefs) {
+                const c = String(l).toLowerCase();
+                if (c.startsWith('es')) return 'es-PY';
+                if (c.startsWith('pt')) return 'pt-BR';
+                if (c.startsWith('en')) return 'en-US';
+            }
+            return 'pt-BR';
+        }
+        const chaveIdioma = (l) => (String(l).toLowerCase().startsWith('es') ? 'es' : (String(l).toLowerCase().startsWith('en') ? 'en' : 'pt'));
+        const PRERENDER = document.documentElement.hasAttribute('data-prerender');
+        let idiomaSalvo = null;
+        try { idiomaSalvo = localStorage.getItem('gf_idioma'); } catch (e) {}
 
-        langSelect.addEventListener('change', (e) => {
-            const lang = e.target.value;
-            localStorage.setItem('gf_idioma', lang);
-            aplicarIdioma(lang);
-        });
+        if (PRERENDER) {
+            // Pagina estatica: o HTML ja vem traduzido (bom para buscadores). O seletor leva para a URL do idioma.
+            const paginaLang = document.documentElement.lang;
+            const valorPagina = { pt: 'pt-BR', es: 'es-PY', en: 'en-US' }[chaveIdioma(paginaLang)];
+            langSelect.value = valorPagina;
+            langSelect.addEventListener('change', (e) => {
+                try { localStorage.setItem('gf_idioma', e.target.value); } catch (err) {}
+                location.href = e.target.selectedOptions[0].getAttribute('data-href');
+            });
+            // Somente a pagina raiz (x-default) escolhe sozinha o idioma; buscadores nunca sao redirecionados.
+            const robo = /bot|crawl|spider|slurp|bing|duckduck|facebookexternalhit|whatsapp|telegram|linkedin|twitter/i.test(navigator.userAgent);
+            if (document.documentElement.hasAttribute('data-raiz') && !robo) {
+                const alvo = TRANSLATIONS[idiomaSalvo] || idiomaSalvo === 'pt-BR' || idiomaSalvo === 'es-PY' || idiomaSalvo === 'en-US' ? idiomaSalvo : idiomaDoNavegador();
+                const opt = Array.prototype.find.call(langSelect.options, (o) => o.value === alvo);
+                if (opt && opt.value !== valorPagina && opt.getAttribute('data-href')) location.replace(opt.getAttribute('data-href'));
+            }
+            atualizarCobrancas(paginaLang);
+        } else {
+            if (!TRANSLATIONS[idiomaSalvo]) idiomaSalvo = idiomaDoNavegador();
+            langSelect.value = idiomaSalvo;
+            aplicarIdioma(idiomaSalvo);
+
+            langSelect.addEventListener('change', (e) => {
+                const lang = e.target.value;
+                try { localStorage.setItem('gf_idioma', lang); } catch (err) {}
+                aplicarIdioma(lang);
+            });
+        }
 
         function aplicarIdioma(lang) {
             const dict = TRANSLATIONS[lang] || TRANSLATIONS['pt-BR'];
@@ -1442,7 +2109,7 @@
         function atualizarCobrancas(lang) {
             const cicloBtn = document.querySelector('.planos-ciclo button.is-ativo');
             const ciclo = cicloBtn ? cicloBtn.getAttribute('data-ciclo') : 'mensal';
-            const langKey = lang === 'es-PY' ? 'es' : 'pt';
+            const langKey = chaveIdioma(lang);
 
             document.querySelectorAll('.plano-cobranca').forEach(el => {
                 const texto = el.getAttribute('data-cobranca-' + ciclo + '-' + langKey);
@@ -1454,15 +2121,14 @@
         const temaBtn = document.getElementById('tema-toggle');
         const html = document.documentElement;
         
-        const temaSalvo = localStorage.getItem('gf_tema') || 'claro';
-        html.setAttribute('data-tema', temaSalvo);
+        const temaSalvo = html.getAttribute('data-tema') || 'claro';
         atualizarIconeTema(temaSalvo);
 
         temaBtn.addEventListener('click', () => {
             const temaAtual = html.getAttribute('data-tema');
             const novoTema = temaAtual === 'claro' ? 'escuro' : 'claro';
             html.setAttribute('data-tema', novoTema);
-            localStorage.setItem('gf_tema', novoTema);
+            try { localStorage.setItem('gf_tema', novoTema); } catch (err) {}
             atualizarIconeTema(novoTema);
         });
 
@@ -1491,7 +2157,7 @@
         document.querySelectorAll('.faq-question').forEach(q => {
             q.addEventListener('click', () => {
                 const item = q.parentElement;
-                item.classList.toggle('is-open');
+                q.setAttribute('aria-expanded', item.classList.toggle('is-open') ? 'true' : 'false');
             });
         });
     </script>

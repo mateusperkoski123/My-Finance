@@ -1,0 +1,12 @@
+{
+  "name": "landing-build",
+  "private": true,
+  "description": "Gera a landing estatica do MyFinance (myfinance.systempy.com) a partir de views/landing.ejs",
+  "scripts": {
+    "build": "node build.js"
+  },
+  "devDependencies": {
+    "@phosphor-icons/core": "^2.1.1",
+    "cheerio": "^1.0.0"
+  }
+}

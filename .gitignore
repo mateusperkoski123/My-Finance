@@ -18,3 +18,6 @@ Thumbs.db
 node_modules/
 
 !/public/assets/icons/*.png
+
+# Landing estatica gerada (scripts/landing/build.js); imagens Open Graph da landing (.jpg) sao versionadas
+/dist-landing/
