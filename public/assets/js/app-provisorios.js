@@ -40,7 +40,7 @@
         const v = criar('td', null, fmtValor(Number(l.valor))); v.style.fontWeight = '700'; v.style.whiteSpace = 'nowrap'; v.style.color = Number(l.valor) < 0 ? 'var(--red)' : 'var(--green)';
         tr_.appendChild(v);
         const e = criar('td'); const est = estadoDe(l); e.appendChild(criar('span', est.classe, est.texto)); tr_.appendChild(e);
-        const a = criar('td', 'td-acoes'); const rel = criar('i', 'ph ph-clock-counter-clockwise'); rel.title = tr('aguardando_envio'); rel.style.color = 'var(--muted)'; a.appendChild(rel); tr_.appendChild(a);
+        const a = criar('td', 'td-acoes'); const rel = criar('i', 'ph ph-clock-counter-clockwise'); rel.title = tr('aguardando_envio'); rel.style.color = 'var(--muted)'; const ed = criar('button', 'icon-btn gf-prov-editar'); ed.type = 'button'; ed.title = tr('editar'); ed.setAttribute('aria-label', tr('editar')); ed.setAttribute('data-gf-editar-fila', l.client_id); const edi = criar('i', 'ph ph-pencil-simple'); ed.appendChild(edi); a.appendChild(ed); a.appendChild(rel); tr_.appendChild(a);
         return tr_;
     }
 
@@ -55,7 +55,7 @@
         tr_.appendChild(d);
         const dt = criar('td', null, fmtData(l.data_competencia)); dt.style.whiteSpace = 'nowrap'; dt.style.fontSize = '13px'; tr_.appendChild(dt);
         const v = criar('td', null, fmtValor(Number(l.valor))); v.style.fontWeight = '700'; v.style.whiteSpace = 'nowrap'; v.style.color = Number(l.valor) < 0 ? 'var(--red)' : 'var(--green)'; tr_.appendChild(v);
-        const a = criar('td'); const rel = criar('i', 'ph ph-clock-counter-clockwise'); rel.title = tr('aguardando_envio'); rel.style.color = 'var(--muted)'; a.appendChild(rel); tr_.appendChild(a);
+        const a = criar('td'); const rel = criar('i', 'ph ph-clock-counter-clockwise'); rel.title = tr('aguardando_envio'); rel.style.color = 'var(--muted)'; const ed = criar('button', 'icon-btn gf-prov-editar'); ed.type = 'button'; ed.title = tr('editar'); ed.setAttribute('aria-label', tr('editar')); ed.setAttribute('data-gf-editar-fila', l.client_id); const edi = criar('i', 'ph ph-pencil-simple'); ed.appendChild(edi); a.appendChild(ed); a.appendChild(rel); tr_.appendChild(a);
         return tr_;
     }
 

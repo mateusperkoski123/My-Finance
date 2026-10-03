@@ -6,7 +6,7 @@ module.exports = {
     // Limite mensal de mensagens do Chat IA quando o plano nao define um (planos.ia_limite_mes).
     IA_LIMITE_PADRAO: parseInt(process.env.IA_LIMITE_MENSAGENS_MES || '300', 10),
     // Mudar este valor obriga todos os usuarios a aceitar os termos novamente.
-    TERMOS_VERSAO: '1.1',
+    TERMOS_VERSAO: '1.2',
     EMAIL_SUPORTE: process.env.SUPPORT_EMAIL || '',
     CICLOS: ['mensal', 'anual'],
     // Planos que podem ser testados e contratados (o "prueba" e o teste antigo de 7 dias, com tudo liberado).

@@ -76,7 +76,7 @@
         if (estado.online) return;
         const f = e.target;
         const acao = f && f.getAttribute ? (f.getAttribute('action') || '').split('?')[0] : '';
-        const funcionaOffline = acao === '/lancamentos' || acao === '/lancamentos/criar' || acao === '/contas/transferir' || acao === '/contas/agendar-transferencia' || acao === '/categorias/criar' || /^\/lancamentos\/\d+\/marcar-pago$/.test(acao);
+        const funcionaOffline = acao === '/lancamentos' || acao === '/lancamentos/criar' || acao === '/contas/transferir' || acao === '/contas/agendar-transferencia' || acao === '/categorias/criar' || /^\/lancamentos\/\d+\/marcar-pago$/.test(acao) || /^\/fila\/[^/]+\/editar$/.test(acao);
         if (!funcionaOffline && f && f.getAttribute && (f.getAttribute('method') || 'get').toLowerCase() === 'post') {
             e.preventDefault();
             e.stopImmediatePropagation();

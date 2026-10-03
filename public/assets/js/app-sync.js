@@ -72,6 +72,15 @@
                 await voltarParaPendente();
                 throw Object.assign(new Error('token'), { codigo: 401 });
             }
+            if (resp.status === 403) {
+                let motivo = null;
+                try { motivo = (await resp.json()).erro; } catch (e) { motivo = null; }
+                if (motivo === 'plano_sem_offline') {
+                    for (const item of pendentes) await window.AppDb.atualizarOutboxItem(item.id, { status: 'rejected', erro: 'plano_sem_offline' });
+                    avisar();
+                    return false;
+                }
+            }
             if (!resp.ok) {
                 await voltarParaPendente('HTTP ' + resp.status); // 429/5xx/413: respeita o limite do servidor e para aqui
                 return false;

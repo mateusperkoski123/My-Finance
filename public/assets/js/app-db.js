@@ -197,6 +197,98 @@
         }));
     }
 
+    // Edita um lancamento que ainda esta na fila (criado sem internet): troca os dados do item e a copia provisoria,
+    // mantendo o mesmo item (mesmo id, mesmo client_id e mesma posicao na fila). Volta a "pendente" (inclusive se
+    // tinha sido recusado). Nao mexe em item que esta sendo enviado agora.
+    function substituirOutbox(id, op) {
+        return abrir().then((db) => new Promise((resolve, reject) => {
+            const tx = db.transaction(['outbox', 'lancamentos'], 'readwrite');
+            const outbox = tx.objectStore('outbox');
+            let trocou = false;
+            const get = outbox.get(id);
+            get.onsuccess = () => {
+                const atual = get.result;
+                if (!atual || atual.status === 'syncing' || atual.acao !== 'create' || atual.tabela !== 'lancamentos') return;
+                const item = Object.assign({}, atual, { dados: op.dados || {}, resumo: op.resumo || null, status: 'pending', erro: null, tentativas: 0, servidor: null });
+                outbox.put(item);
+                const lanc = tx.objectStore('lancamentos');
+                provisorios({ tabela: item.tabela, acao: item.acao, dados: item.dados }, item.client_id).forEach((p) => lanc.put(p));
+                trocou = true;
+            };
+            tx.oncomplete = () => resolve(trocou);
+            tx.onerror = (err) => reject(err.target.error);
+        }));
+    }
+
+    // Edita um lancamento que ainda esta na fila (criado sem internet): troca os dados do item e a copia provisoria,
+    // mantendo o mesmo item (mesmo id, mesmo client_id e mesma posicao na fila). Volta a "pendente" (inclusive se
+    // tinha sido recusado). Nao mexe em item que esta sendo enviado agora.
+    function substituirOutbox(id, op) {
+        return abrir().then((db) => new Promise((resolve, reject) => {
+            const tx = db.transaction(['outbox', 'lancamentos'], 'readwrite');
+            const outbox = tx.objectStore('outbox');
+            let trocou = false;
+            const get = outbox.get(id);
+            get.onsuccess = () => {
+                const atual = get.result;
+                if (!atual || atual.status === 'syncing' || atual.acao !== 'create' || atual.tabela !== 'lancamentos') return;
+                const item = Object.assign({}, atual, { dados: op.dados || {}, resumo: op.resumo || null, status: 'pending', erro: null, tentativas: 0, servidor: null });
+                outbox.put(item);
+                const lanc = tx.objectStore('lancamentos');
+                provisorios({ tabela: item.tabela, acao: item.acao, dados: item.dados }, item.client_id).forEach((p) => lanc.put(p));
+                trocou = true;
+            };
+            tx.oncomplete = () => resolve(trocou);
+            tx.onerror = (err) => reject(err.target.error);
+        }));
+    }
+
+    // Edita um lancamento que ainda esta na fila (criado sem internet): troca os dados do item e a copia provisoria,
+    // mantendo o mesmo item (mesmo id, mesmo client_id e mesma posicao na fila). Volta a "pendente" (inclusive se
+    // tinha sido recusado). Nao mexe em item que esta sendo enviado agora.
+    function substituirOutbox(id, op) {
+        return abrir().then((db) => new Promise((resolve, reject) => {
+            const tx = db.transaction(['outbox', 'lancamentos'], 'readwrite');
+            const outbox = tx.objectStore('outbox');
+            let trocou = false;
+            const get = outbox.get(id);
+            get.onsuccess = () => {
+                const atual = get.result;
+                if (!atual || atual.status === 'syncing' || atual.acao !== 'create' || atual.tabela !== 'lancamentos') return;
+                const item = Object.assign({}, atual, { dados: op.dados || {}, resumo: op.resumo || null, status: 'pending', erro: null, tentativas: 0, servidor: null });
+                outbox.put(item);
+                const lanc = tx.objectStore('lancamentos');
+                provisorios({ tabela: item.tabela, acao: item.acao, dados: item.dados }, item.client_id).forEach((p) => lanc.put(p));
+                trocou = true;
+            };
+            tx.oncomplete = () => resolve(trocou);
+            tx.onerror = (err) => reject(err.target.error);
+        }));
+    }
+
+    // Edita um lancamento que ainda esta na fila (criado sem internet): troca os dados do item e a copia provisoria,
+    // mantendo o mesmo item (mesmo id, mesmo client_id e mesma posicao na fila). Volta a "pendente" (inclusive se
+    // tinha sido recusado). Nao mexe em item que esta sendo enviado agora.
+    function substituirOutbox(id, op) {
+        return abrir().then((db) => new Promise((resolve, reject) => {
+            const tx = db.transaction(['outbox', 'lancamentos'], 'readwrite');
+            const outbox = tx.objectStore('outbox');
+            let trocou = false;
+            const get = outbox.get(id);
+            get.onsuccess = () => {
+                const atual = get.result;
+                if (!atual || atual.status === 'syncing' || atual.acao !== 'create' || atual.tabela !== 'lancamentos') return;
+                const item = Object.assign({}, atual, { dados: op.dados || {}, resumo: op.resumo || null, status: 'pending', erro: null, tentativas: 0, servidor: null });
+                outbox.put(item);
+                const lanc = tx.objectStore('lancamentos');
+                provisorios({ tabela: item.tabela, acao: item.acao, dados: item.dados }, item.client_id).forEach((p) => lanc.put(p));
+                trocou = true;
+            };
+            tx.oncomplete = () => resolve(trocou);
+            tx.onerror = (err) => reject(err.target.error);
+        }));
+    }
+
     // O usuario desistiu da operacao: tira da fila e desfaz a copia provisoria.
     function descartarOutbox(item) {
         return abrir().then((db) => new Promise((resolve, reject) => {
@@ -330,6 +422,10 @@
     exports.buscarOutboxPendentes = buscarOutboxPendentes;
     exports.atualizarOutboxItem = atualizarOutboxItem;
     exports.removerOutboxItem = removerOutboxItem;
+    exports.substituirOutbox = substituirOutbox;
+    exports.substituirOutbox = substituirOutbox;
+    exports.substituirOutbox = substituirOutbox;
+    exports.substituirOutbox = substituirOutbox;
     exports.limparTudo = limparTudo;
     exports.registrarHistorico = registrarHistorico;
     exports.concluirOutbox = concluirOutbox;

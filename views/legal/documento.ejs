@@ -1,13 +1,26 @@
+<%#
+  Documento legal (termos / privacidade). Cada secao e [titulo, texto]; no texto, "\n" separa paragrafos e as linhas
+  que comecam com "- " viram marcadores. Tudo e escapado pelo EJS.
+%>
 <div class="page-header">
     <h1><%= title %></h1>
-    <p class="muted"><%= t('legal.versao', { versao: versao }) %></p>
+    <p class="muted"><%= t('legal.versao', { versao: versao }) %> · <%= aviso %></p>
 </div>
 
 <div class="card legal-doc">
-    <div class="alert alert-aviso"><i class="ph ph-warning"></i> <%= aviso %></div>
     <% secoes.forEach(([titulo, texto]) => { %>
         <h3><%= titulo %></h3>
-        <p><%= texto %></p>
+        <%
+        const _linhas = String(texto).split('\n');
+        let _lista = [];
+        const _fecha = () => { if (_lista.length) { %><ul class="legal-doc__lista"><% _lista.forEach((i) => { %><li><%= i %></li><% }) %></ul><% _lista = []; } };
+        _linhas.forEach((ln) => {
+            if (ln.startsWith('- ')) { _lista.push(ln.slice(2)); return; }
+            _fecha();
+            if (ln.trim()) { %><p><%= ln %></p><% }
+        });
+        _fecha();
+        %>
     <% }) %>
     <p style="margin-top: 20px;"><a href="/termos"><%= t('legal.termos_titulo') %></a> · <a href="/privacidade"><%= t('legal.privacidade_titulo') %></a></p>
 </div>

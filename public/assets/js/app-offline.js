@@ -33,6 +33,7 @@
         if (acao === '/contas/transferir') return 'transferir';
         if (acao === '/contas/agendar-transferencia') return 'agendar';
         if (acao === '/categorias/criar') return 'categoria';
+        if (/^\/fila\/[^/]+\/editar$/.test(acao)) return 'editar_fila'; // editar um lancamento que ainda esta na fila
         return null;
     }
 
@@ -68,7 +69,7 @@
     function montar(tipo, form) {
         const fd = new FormData(form);
         const R = window.AppRegras;
-        if (tipo === 'criar') {
+        if (tipo === 'criar' || tipo === 'editar_fila') {
             const serie = serieDe(fd);
             const valor = R.parseMoeda(fd.get('valor'));
             const descricao = String(fd.get('descricao') || '').trim();
@@ -77,7 +78,7 @@
             if (!serie || !descricao || !(valor > 0) || !categoria || !conta) return { erro: 'invalido' };
             const pago = fd.get('foi_pago') === '1' || fd.get('foi_recebida') === '1' || fd.get('status') === 'pago';
             const dados = Object.assign({
-                tipo: fd.get('tipo') === 'receita' ? 'receita' : 'despesa', conta_id: Number(conta), categoria_id: Number(categoria), descricao, valor,
+                tipo: (form.dataset.gfTipo || fd.get('tipo')) === 'receita' ? 'receita' : 'despesa', conta_id: Number(conta), categoria_id: Number(categoria), descricao, valor,
                 data_competencia: dataDe(form, 'data_competencia'), status: pago ? 'pago' : 'pendente'
             }, serie);
             // O formulario tem uma unica data: a do vencimento (pendente) ou a do pagamento/recebimento (pago).
@@ -144,12 +145,23 @@
         form.dataset.gfBusy = '1';
         const botao = e.submitter;
         try {
+            if (tipo === 'editar_fila') {
+                const itemId = decodeURIComponent((form.getAttribute('action').match(/^\/fila\/([^/]+)\/editar/) || [])[1] || '');
+                const m = montar('editar_fila', form);
+                if (m.erro) { toast(tr('invalido'), 'erro'); return; }
+                const trocou = await window.AppDb.substituirOutbox(itemId, { dados: m.dados, resumo: m.resumo });
+                const aberto = form.closest('.modal-backdrop'); if (aberto) aberto.classList.remove('is-open');
+                toast(tr(trocou ? 'editado' : 'nao_editavel'), trocou ? 'sucesso' : 'erro');
+                avisarFila();
+                return;
+            }
             if (await servidorAlcancavel()) {
                 form.dataset.gfOnline = '1';
                 form.requestSubmit(botao || undefined);
                 setTimeout(() => { delete form.dataset.gfOnline; }, 0);
                 return;
             }
+            if (cfg.offline === false) { toast(tr('plano_sem_offline'), 'erro'); return; } // plano sem registro offline: nada de fila
             const m = montar(tipo, form);
             if (m.erro) { toast(tr('invalido'), 'erro'); return; }
             if (m.acao === 'pagar') {
@@ -163,7 +175,7 @@
             if (tipo !== 'pagar') form.reset();
             if (tipo === 'pagar') { const linha = form.closest('tr, li, .card'); if (linha) linha.classList.add('gf-pendente-envio'); form.querySelectorAll('button').forEach((b) => { b.disabled = true; }); }
             toast(tr('salvo'), 'sucesso');
-            atualizar();
+            avisarFila();
         } catch (err) {
             console.warn('Falha ao guardar no aparelho:', err && err.message);
             toast(tr('falha_guardar'), 'erro');
@@ -179,6 +191,67 @@
         const modal = document.getElementById(abrir.getAttribute('data-modal-open'));
         if (modal) renovarDatas(modal);
     }, true);
+
+    // Atualiza o contador e redesenha as linhas "aguardando envio" da lista.
+    function avisarFila() {
+        atualizar();
+        try { window.dispatchEvent(new CustomEvent('gf-fila-mudou', { detail: {} })); } catch (e) { /* sem DOM */ }
+    }
+
+    // Abre o formulario de edicao ja preenchido com o que esta na fila. Salvar troca o item da fila (nao cria outro).
+    function abrirEdicaoFila(item) {
+        const d = item.dados || {};
+        const tipo = d.tipo === 'receita' ? 'receita' : 'despesa';
+        const modal = document.getElementById('modal-editar-' + tipo);
+        const form = modal && modal.querySelector('[data-editar-form]');
+        if (!form) return false;
+        const fecharFila = document.getElementById('modal-fila'); if (fecharFila) fecharFila.classList.remove('is-open');
+        // Reaproveita o preenchimento do formulario de edicao (app.js), que le o botao [data-editar-lanc].
+        const ponte = document.createElement('button');
+        ponte.type = 'button';
+        ponte.hidden = true;
+        ponte.setAttribute('data-editar-lanc', JSON.stringify({
+            id: 0, tipo, descricao: d.descricao, valor: d.valor, conta_id: d.conta_id, categoria_id: d.categoria_id,
+            data_competencia: d.data_competencia, status: d.status, serie: false
+        }));
+        document.body.appendChild(ponte);
+        ponte.click();
+        ponte.remove();
+        form.setAttribute('action', '/fila/' + encodeURIComponent(item.id) + '/editar');
+        form.dataset.gfTipo = tipo;
+        const fixo = form.elements.e_fixo, repetir = form.elements.repetir;
+        if (fixo) fixo.checked = !!d.e_fixo;
+        if (repetir) { repetir.checked = !!d.repetir && !d.e_fixo; repetir.dispatchEvent(new Event('change', { bubbles: true })); }
+        if (form.elements.quantidade_repeticoes) form.elements.quantidade_repeticoes.value = d.repetir ? d.quantidade_repeticoes : 12;
+        const novo = form.querySelector('[data-ed-novo-serie]'); if (novo) novo.hidden = false; // fixa/repetir continuam editaveis
+        const serie = form.querySelector('[data-ed-serie]'); if (serie) serie.hidden = true;
+        return true;
+    }
+
+    async function editarItemFila(item) {
+        if (!item || item.status === 'syncing' || item.acao !== 'create' || item.tabela !== 'lancamentos') return;
+        if (abrirEdicaoFila(item)) return;
+        // Esta tela nao tem o formulario: vai para o Inicio e abre la.
+        try { sessionStorage.setItem('gf_editar_fila', item.id); } catch (e) { /* sem sessionStorage */ }
+        window.location.href = '/';
+    }
+
+    document.addEventListener('click', async (e) => {
+        const lapis = e.target.closest && e.target.closest('[data-gf-editar-fila]');
+        if (!lapis) return;
+        e.preventDefault();
+        const cid = lapis.getAttribute('data-gf-editar-fila');
+        const item = (await window.AppDb.listarOutbox()).find((i) => i.client_id === cid || i.id === cid);
+        editarItemFila(item);
+    });
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        let id = null;
+        try { id = sessionStorage.getItem('gf_editar_fila'); sessionStorage.removeItem('gf_editar_fila'); } catch (e) { id = null; }
+        if (!id) return;
+        const item = (await window.AppDb.listarOutbox()).find((i) => i.id === id);
+        if (item) abrirEdicaoFila(item);
+    });
 
     // ---------- Fila: contador e tela "Aguardando envio" ----------
     function formatarValor(v) {
@@ -236,6 +309,10 @@
             info.appendChild(tit); info.appendChild(sub);
             li.appendChild(info);
             if (item.status !== 'syncing') {
+                if (item.acao === 'create' && item.tabela === 'lancamentos') {
+                    const ed = document.createElement('button'); ed.type = 'button'; ed.className = 'btn btn-outline btn-sm'; ed.textContent = tr('editar'); ed.setAttribute('data-gf-editar-fila', item.client_id);
+                    li.appendChild(ed);
+                }
                 const b = document.createElement('button'); b.type = 'button'; b.className = 'btn btn-outline btn-sm'; b.textContent = tr('descartar');
                 b.addEventListener('click', async () => {
                     if (!window.confirm(tr('confirmar_descartar'))) return;

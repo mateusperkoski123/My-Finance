@@ -138,14 +138,15 @@ router.post('/admin/usuarios/:id/desarquivar', requireAuth, exigirAdmin, adminCo
 router.post('/admin/usuarios/:id/excluir', requireAuth, exigirAdmin, adminController.excluirDefinitivo);
 
 // Landing page & Dashboard routes
-router.get('/landing', (req, res) => {
-    res.render('landing', { layout: false, title: 'MyFinance - Gestão Financeira Inteligente' });
-});
+// A pagina de apresentacao (landing) mora num endereco proprio (myfinance.systempy.com, gerada por scripts/landing).
+// Este endereco e so o app: quem nao esta logado cai direto no login (la tem o link para criar a conta).
+const LANDING_URL = process.env.LANDING_URL || 'https://myfinance.systempy.com';
+router.get('/landing', (req, res) => res.redirect(302, LANDING_URL));
 router.get('/', (req, res, next) => {
     if (req.session && req.session.user_id) {
         return requireAuth(req, res, next);
     }
-    return res.render('landing', { layout: false, title: 'MyFinance - Gestão Financeira Inteligente' });
+    return res.redirect('/login');
 }, dashboardController.index);
 router.post('/lancamentos', requireAuth, dashboardController.criarLancamento);
 router.post('/lancamentos/criar', requireAuth, dashboardController.criarLancamento);
