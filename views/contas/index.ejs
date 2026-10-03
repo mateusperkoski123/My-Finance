@@ -16,7 +16,7 @@
         <a href="/contas?aba=arquivadas" class="tabs__item <%= abaArquivadas ? 'is-active' : '' %>"><%= t('contas.aba_arquivadas') %></a>
     </div>
     <div class="contas-resumo-topo" style="display: flex; align-items: center; gap: 12px;">
-        <span class="badge badge-neutro" style="font-size: 12px; font-weight: 600;"><%= t('contas.n_contas', { n: totalContas }) %></span>
+        <span class="badge badge-neutro" style="font-size: 13px; font-weight: 600;"><%= t('contas.n_contas', { n: totalContas }) %></span>
         <span class="muted"><%= t('contas.saldo_total') %>:</span>
         <strong class="moeda-destaque" id="header-saldo-total" style="font-size: 18px; margin-left: 4px; color: var(--green);"><%= moeda(saldoTotal) %></strong>
     </div>
@@ -35,7 +35,7 @@
                         <span class="conta-card__dot" style="background: <%= c.cor %>; width: 12px; height: 12px; border-radius: 50%; display: inline-block;"></span>
                         <strong><%= c.nome %></strong>
                         <% if (c.conta_padrao) { %>
-                            <span class="badge badge-padrao" style="font-size: 10px;"><%= t('contas.conta_padrao') %></span>
+                            <span class="badge badge-padrao" style="font-size: 11px;"><%= t('contas.conta_padrao') %></span>
                         <% } %>
                     </div>
                     <% if (!abaArquivadas) { %>
@@ -45,7 +45,7 @@
                     <% } %>
                 </div>
                 <div class="conta-card__body" style="margin: 16px 0;">
-                    <span class="muted" style="font-size: 12px;"><%= t('contas.saldo_atual') %></span>
+                    <span class="muted" style="font-size: 13px;"><%= t('contas.saldo_atual') %></span>
                     <div class="conta-card__saldo val-saldo-display" id="saldo-display-<%= c.id %>" style="font-size: 22px; font-weight: 700; color: <%= c.saldo_atual >= 0 ? 'var(--green)' : 'var(--red)' %>;">
                         <%= moeda(c.saldo_atual) %>
                     </div>
@@ -116,7 +116,7 @@
                         <p class="muted" style="font-size: 13px;"><%= t('contas.ajustar_sub', { nome: c.nome }) %></p>
 
                         <div style="background: var(--bg); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
-                            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted);"><%= t('contas.origem') %></span>
+                            <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted);"><%= t('contas.origem') %></span>
                             <div style="font-weight: 600; font-size: 15px;"><%= c.nome %></div>
                             <div style="font-size: 13px; margin-top: 4px;"><%= t('contas.saldo') %>: <strong style="color: var(--green);"><%= moeda(c.saldo_atual) %></strong></div>
                         </div>
@@ -336,7 +336,7 @@
         </div>
         <form method="post" action="/contas/agendar-transferencia" class="form">
             <%- csrfCampo %>
-            <p class="muted" style="font-size: 12.5px; margin-top: 0;"><%= t('agendar.ajuda') %></p>
+            <p class="muted" style="font-size: 13px; margin-top: 0;"><%= t('agendar.ajuda') %></p>
 
             <div class="form-row">
                 <div class="form-group">
@@ -395,7 +395,7 @@
             </div>
 
             <div class="form-group" data-gf-repetir-alvo hidden style="padding: 10px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg);">
-                <label style="font-size: 12px; font-weight: 600;"><%= t('modal.qtd_repeticoes') %></label>
+                <label style="font-size: 13px; font-weight: 600;"><%= t('modal.qtd_repeticoes') %></label>
                 <input class="input" type="number" name="quantidade_repeticoes" min="2" max="60" value="12">
             </div>
 

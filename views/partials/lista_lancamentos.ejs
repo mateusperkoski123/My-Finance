@@ -107,9 +107,9 @@ function gfAtualizarParam(chave, valor) {
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <i class="ph ph-caret-right" style="font-size: 14px; transition: transform 0.2s;"></i>
                             <strong><%= ({ 'Pagos': t('grupo.pagos'), 'Pendentes': t('grupo.pendentes'), 'Sem Data': t('grupo.sem_data'), 'Outros': t('grupo.outros'), 'Sem categoria': t('comum.sem_categoria'), 'Sem Categoria': t('comum.sem_categoria') })[g.key] || (String(g.key).startsWith('Sem Categoria / ') ? t('comum.sem_categoria') + ' / ' + String(g.key).slice(16) : g.key) %></strong>
-                            <span class="muted" style="font-size: 12px; font-weight: normal;">(<%= g.count %>)</span>
+                            <span class="muted" style="font-size: 13px; font-weight: normal;">(<%= g.count %>)</span>
                         </div>
-                        <div style="display: flex; align-items: center; gap: 10px; font-size: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px; font-size: 13px;">
                             <% if (g.pagoCount > 0) { %>
                                 <span class="badge badge-sucesso"><%= g.pagoCount %> <%= t('lancamento.status.pago').toLowerCase() %></span>
                             <% } %>
@@ -155,7 +155,7 @@ function gfAtualizarParam(chave, valor) {
                                                             <%= l.categoria_nome %>
                                                         </span>
                                                         <% if (l.subcategoria_nome) { %>
-                                                            <span class="muted" style="font-size: 11px; padding-left: 14px; white-space: nowrap;"><%= l.subcategoria_nome %></span>
+                                                            <span class="muted" style="font-size: 12px; padding-left: 14px; white-space: nowrap;"><%= l.subcategoria_nome %></span>
                                                         <% } %>
                                                     </div>
                                                 <% } else { %>
@@ -218,7 +218,7 @@ function gfAtualizarParam(chave, valor) {
                                                 <%= l.categoria_nome %>
                                             </span>
                                             <% if (l.subcategoria_nome) { %>
-                                                <span class="muted" style="font-size: 11px; padding-left: 14px; white-space: nowrap;"><%= l.subcategoria_nome %></span>
+                                                <span class="muted" style="font-size: 12px; padding-left: 14px; white-space: nowrap;"><%= l.subcategoria_nome %></span>
                                             <% } %>
                                         </div>
                                     <% } else { %>
@@ -254,7 +254,7 @@ const _fim = Math.min(paginaAtual * porPagina, totalRegistros);
     <span class="muted"><%= t('paginacao.mostrando', { a: _ini, b: _fim, total: totalRegistros }) %></span>
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
         <label class="muted" style="display: flex; align-items: center; gap: 6px; margin: 0;"><%= t('paginacao.por_pagina') %>
-            <select class="input" style="padding: 4px 8px; font-size: 12px; width: auto; border-radius: 8px;" onchange="gfAtualizarParam('por_pagina', this.value)">
+            <select class="input" style="padding: 4px 8px; font-size: 13px; width: auto; border-radius: 8px;" onchange="gfAtualizarParam('por_pagina', this.value)">
                 <% [30, 50, 100, 200].forEach(n => { %><option value="<%= n %>" <%= porPagina === n ? 'selected' : '' %>><%= n %></option><% }) %>
             </select>
         </label>

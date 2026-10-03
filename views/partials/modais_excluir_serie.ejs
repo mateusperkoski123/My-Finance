@@ -13,23 +13,23 @@
                         <%- csrfCampo %>
 <input type="hidden" name="voltar" value="<%= currentUrl %>">
                         <p style="font-weight: 600; font-size: 13.5px; margin-bottom: 6px;"><%= t('painel.excluir_serie_aviso') %></p>
-                        <p class="muted" style="font-size: 12px; margin-top: 0; margin-bottom: 16px;"><%= t('painel.excluir_serie_pergunta') %></p>
+                        <p class="muted" style="font-size: 13px; margin-top: 0; margin-bottom: 16px;"><%= t('painel.excluir_serie_pergunta') %></p>
 
                         <div style="background: var(--bg); padding: 14px; border-radius: 12px; margin-bottom: 16px; border: 1px solid var(--border);">
                             <label style="display: block; margin-bottom: 10px; font-size: 13px; cursor: pointer;">
                                 <input type="radio" name="escopo_serie" value="apenas_esta" checked>
                                 <strong><%= t('series.apenas_esta') %></strong>
-                                <span class="muted" style="display: block; font-size: 11px; margin-left: 20px;"><%= t('series.apenas_esta_desc') %></span>
+                                <span class="muted" style="display: block; font-size: 12px; margin-left: 20px;"><%= t('series.apenas_esta_desc') %></span>
                             </label>
                             <label style="display: block; margin-bottom: 10px; font-size: 13px; cursor: pointer;">
                                 <input type="radio" name="escopo_serie" value="esta_e_proximas">
                                 <strong><%= t('series.esta_e_proximas') %></strong>
-                                <span class="muted" style="display: block; font-size: 11px; margin-left: 20px;"><%= t('series.esta_e_proximas_desc') %></span>
+                                <span class="muted" style="display: block; font-size: 12px; margin-left: 20px;"><%= t('series.esta_e_proximas_desc') %></span>
                             </label>
                             <label style="display: block; font-size: 13px; cursor: pointer;">
                                 <input type="radio" name="escopo_serie" value="toda_serie">
                                 <strong><%= t('series.toda_serie') %></strong>
-                                <span class="muted" style="display: block; font-size: 11px; margin-left: 20px;"><%= t('series.toda_serie_desc') %></span>
+                                <span class="muted" style="display: block; font-size: 12px; margin-left: 20px;"><%= t('series.toda_serie_desc') %></span>
                             </label>
                         </div>
 

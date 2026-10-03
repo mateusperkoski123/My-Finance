@@ -27,7 +27,7 @@
     <% if (typeof googleAtivo !== 'undefined' && googleAtivo) { %>
     <div style="margin: 20px 0; text-align: center; position: relative;">
         <hr style="border: 0; border-top: 1px solid var(--border); margin: 0;">
-        <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--card); padding: 0 10px; font-size: 12px; color: var(--muted);"><%= t('auth.ou') %></span>
+        <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: var(--card); padding: 0 10px; font-size: 13px; color: var(--muted);"><%= t('auth.ou') %></span>
     </div>
 
     <a href="/auth/google" class="btn btn-outline btn-block" style="display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 500; text-decoration: none;">
@@ -44,6 +44,6 @@
 
     <p class="auth-footer" style="display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 20px;">
         <span><%= t('auth.sem_conta') %> <a href="/cadastro"><%= t('auth.criar_conta') %></a></span>
-        <a href="/esqueci-senha" class="muted" style="font-size: 12px; text-decoration: underline;"><%= t('auth.esqueceu') %></a>
+        <a href="/esqueci-senha" class="muted" style="font-size: 13px; text-decoration: underline;"><%= t('auth.esqueceu') %></a>
     </p>
 </div>

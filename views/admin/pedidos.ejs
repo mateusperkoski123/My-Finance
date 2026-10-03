@@ -37,13 +37,13 @@ pedidos.forEach((p) => { const k = p.plano_codigo + '|' + p.ciclo; resumo[k] = (
                     <td>
                         <strong><%= p.nome %></strong>
                         <% if (p.user_status !== 'ativo') { %><span class="badge badge-pendente"><%= t('admin.suspenso') %></span><% } %>
-                        <div class="muted" style="font-size: 12px;"><a href="mailto:<%= p.email %>"><%= p.email %></a></div>
-                        <div class="muted" style="font-size: 12px;"><%= t('adm.pedidos_atual') %>: <%= p.plano_atual ? nomePlano(p.plano_atual) : '-' %> (<%= t('assinatura.status.' + (p.ass_status || 'sem')) %>)</div>
+                        <div class="muted" style="font-size: 13px;"><a href="mailto:<%= p.email %>"><%= p.email %></a></div>
+                        <div class="muted" style="font-size: 13px;"><%= t('adm.pedidos_atual') %>: <%= p.plano_atual ? nomePlano(p.plano_atual) : '-' %> (<%= t('assinatura.status.' + (p.ass_status || 'sem')) %>)</div>
                     </td>
                     <td style="white-space: nowrap;">
                         <% if (fone) { %>
                             <strong><%= fone %></strong>
-                            <div style="font-size: 12px;">
+                            <div style="font-size: 13px;">
                                 <a href="https://wa.me/<%= wa %>" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo"></i> WhatsApp</a>
                                 · <a href="tel:+<%= wa %>"><i class="ph ph-phone"></i> <%= t('adm.pedidos_ligar') %></a>
                             </div>
@@ -51,8 +51,8 @@ pedidos.forEach((p) => { const k = p.plano_codigo + '|' + p.ciclo; resumo[k] = (
                     </td>
                     <td><strong><%= nomePlano(p.plano_codigo) %></strong></td>
                     <td><span class="badge <%= p.ciclo === 'anual' ? 'badge-sucesso' : 'badge-neutro' %>"><%= ciclos[p.ciclo] || '-' %></span></td>
-                    <td class="num"><strong>Gs. <%= fmt(p.valor) %></strong><div class="muted" style="font-size: 11px;"><%= t('assinatura.sem_iva') %></div></td>
-                    <td class="muted" style="font-size: 12px; white-space: nowrap;"><%= p.solicitado_em ? formatDateTime(p.solicitado_em) : '-' %></td>
+                    <td class="num"><strong>Gs. <%= fmt(p.valor) %></strong><div class="muted" style="font-size: 12px;"><%= t('assinatura.sem_iva') %></div></td>
+                    <td class="muted" style="font-size: 13px; white-space: nowrap;"><%= p.solicitado_em ? formatDateTime(p.solicitado_em) : '-' %></td>
                     <td style="white-space: nowrap;">
                         <a class="btn btn-primary btn-sm" href="/admin/usuarios?q=<%= encodeURIComponent(p.email) %>" title="<%= t('adm.pedidos_ativar_dica') %>"><i class="ph ph-check-circle"></i> <%= t('adm.pedidos_ativar') %></a>
                         <form method="post" action="/admin/pedidos/<%= p.user_id %>/descartar" data-confirm="<%= t('adm.pedidos_descartar_conf') %>" style="display: inline;">

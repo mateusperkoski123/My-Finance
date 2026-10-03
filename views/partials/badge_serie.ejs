@@ -1,8 +1,8 @@
 <%# Selo de lancamento em serie: "Fixo" (recorrente) ou "2/4" (repetido N vezes). Espera: l (com serie_id, recorrente, serie_pos, serie_total). %>
 <% if (l.serie_id) { %>
     <% if (l.recorrente) { %>
-        <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;"><i class="ph ph-repeat"></i> <%= t('painel.fixo') %></span>
+        <span class="badge badge-neutro" style="font-size: 11px; margin-left: 4px;"><i class="ph ph-repeat"></i> <%= t('painel.fixo') %></span>
     <% } else { %>
-        <span class="badge badge-neutro" style="font-size: 10px; margin-left: 4px;" title="<%= t('painel.parcela_titulo', { n: l.serie_pos, total: l.serie_total }) %>"><i class="ph ph-repeat"></i> <%= l.serie_pos %>/<%= l.serie_total %></span>
+        <span class="badge badge-neutro" style="font-size: 11px; margin-left: 4px;" title="<%= t('painel.parcela_titulo', { n: l.serie_pos, total: l.serie_total }) %>"><i class="ph ph-repeat"></i> <%= l.serie_pos %>/<%= l.serie_total %></span>
     <% } %>
 <% } %>

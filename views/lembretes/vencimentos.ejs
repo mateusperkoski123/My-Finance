@@ -16,7 +16,7 @@
             <li style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border, rgba(128,128,128,.25));">
                 <div style="flex: 1; min-width: 0;">
                     <strong style="display: block; overflow-wrap: anywhere;"><%= descricaoLancamento(d) %></strong>
-                    <span class="muted" style="font-size: 12.5px;"><%= d.conta_nome %><% if (g.mostrarData) { %> · <%= formatDate(d.data_competencia, 'DD/MM/YYYY') %><% } %></span>
+                    <span class="muted" style="font-size: 13px;"><%= d.conta_nome %><% if (g.mostrarData) { %> · <%= formatDate(d.data_competencia, 'DD/MM/YYYY') %><% } %></span>
                 </div>
                 <strong style="white-space: nowrap;"><%= moeda(d.valor_abs) %></strong>
                 <form method="post" action="/lancamentos/<%= d.id %>/marcar-pago" style="margin: 0;">

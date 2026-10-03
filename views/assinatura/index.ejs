@@ -29,7 +29,7 @@ const nomePlano = (c) => t('plano.' + c + '.nome');
 <section class="card assinatura-atual">
     <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start;">
         <div>
-            <span class="muted" style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;"><%= t('assinatura.seu_plano') %></span>
+            <span class="muted" style="font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em;"><%= t('assinatura.seu_plano') %></span>
             <h2 style="margin: 4px 0 6px;"><%= st === 'escolher' ? t('assinatura.sem_plano') : nomePlano(ass.plano_codigo) %></h2>
             <p class="muted" style="margin: 0;">
                 <% if (st === 'beta') { %>
@@ -64,7 +64,7 @@ const nomePlano = (c) => t('plano.' + c + '.nome');
     <% if (st === 'escolher') { %>
         <div style="margin-top: 14px;">
             <a href="/teste" class="btn btn-primary"><i class="ph ph-gift"></i> <%= t('assinatura.escolher_botao') %></a>
-            <p class="muted" style="font-size: 12.5px; margin: 8px 0 0;"><%= t('assinatura.prueba_sub', { dias: negocio.TRIAL_DIAS }) %></p>
+            <p class="muted" style="font-size: 13px; margin: 8px 0 0;"><%= t('assinatura.prueba_sub', { dias: negocio.TRIAL_DIAS }) %></p>
         </div>
     <% } %>
 </section>
@@ -182,7 +182,7 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
             <div class="pedido-resumo">
                 <div><strong data-pedido-nome></strong> · <span data-pedido-ciclo></span></div>
                 <div class="pedido-resumo__preco" data-pedido-preco></div>
-                <div class="muted" style="font-size: 12.5px;"><i class="ph ph-info"></i> <%= t('assinatura.sem_iva_aviso') %></div>
+                <div class="muted" style="font-size: 13px;"><i class="ph ph-info"></i> <%= t('assinatura.sem_iva_aviso') %></div>
             </div>
             <label class="lanc-campo">
                 <span><%= t('assinatura.telefone') %></span>

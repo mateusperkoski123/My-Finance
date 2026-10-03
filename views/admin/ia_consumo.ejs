@@ -112,7 +112,7 @@ const kpis = [['iac.hoje', totais.hoje], ['iac.sete', totais.d7], ['iac.trinta',
                 <tbody>
                 <% topo.forEach(u => { %>
                     <tr>
-                        <td><strong><%= u.nome %></strong><div class="muted" style="font-size: 12px;"><%= u.email %></div></td>
+                        <td><strong><%= u.nome %></strong><div class="muted" style="font-size: 13px;"><%= u.email %></div></td>
                         <% cfg.extra.forEach(([k]) => { %><td class="num"><%= nf(u[k]) %></td><% }) %>
                         <td class="num"><%= nf(u[cfg.tok]) %></td>
                         <td class="num"><%= usd(u[cfg.custo]) %></td>

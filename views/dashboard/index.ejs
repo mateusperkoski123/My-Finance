@@ -26,7 +26,7 @@ const nomesMeses = {
             <a class="btn btn-outline btn-sm" href="/?mes=<%= periodo.mes_anterior %>&ano=<%= periodo.ano_anterior %>" style="border-radius: 8px;"><i class="ph ph-caret-left"></i></a>
             <div style="text-align: center;">
                 <strong style="font-size: 15px; font-weight: 700; display: block; color: var(--text);"><%= nomesMeses[periodo.mes] %> <%= periodo.ano %></strong>
-                <span class="muted" style="font-size: 11px; font-weight: 500;"><%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> - <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></span>
+                <span class="muted" style="font-size: 12px; font-weight: 500;"><%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> - <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></span>
             </div>
             <a class="btn btn-outline btn-sm" href="/?mes=<%= periodo.mes_proximo %>&ano=<%= periodo.ano_proximo %>" style="border-radius: 8px;"><i class="ph ph-caret-right"></i></a>
         </div>
@@ -66,13 +66,13 @@ const nomesMeses = {
             <%= t('painel.saldo_disponivel') %>
             <button type="button" id="btn-ocultar-saldo" class="btn-olho" aria-label="<%= t('painel.ocultar_saldo') %>" title="<%= t('painel.ocultar_saldo') %>" aria-pressed="false"><i class="ph ph-eye"></i></button>
         </span>
-        <span style="font-size: 11px; background: var(--bg); padding: 4px 10px; border-radius: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--border);"><%= t('contas.total_consolidado') %></span>
+        <span style="font-size: 12px; background: var(--bg); padding: 4px 10px; border-radius: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--border);"><%= t('contas.total_consolidado') %></span>
     </div>
     <div data-saldo-oculta style="font-size: 32px; font-weight: 800; color: <%= resumo.saldo_disponivel >= 0 ? 'var(--green)' : 'var(--red)' %>;">
         <%= moeda(resumo.saldo_disponivel) %>
     </div>
     <% if (Math.abs(resumo.saldo_previsto - resumo.saldo_disponivel) > 0.5) { %>
-    <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
+    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
         <span class="muted"><%= t('painel.saldo_previsto_apos') %></span>
         <strong data-saldo-oculta style="color: var(--text); font-weight: 700;"><%= moeda(resumo.saldo_previsto) %></strong>
     </div>
@@ -124,7 +124,7 @@ const nomesMeses = {
 <section class="card pendencias" aria-label="<%= t('painel.pendencias') %>">
     <div class="pendencias__topo">
         <span class="pendencias__titulo"><i class="ph ph-warning-circle" style="color: var(--pendente); font-size: 18px;"></i> <%= t('painel.vencidas_hoje', { n: pendenciasUrgentes.total }) %></span>
-        <a href="/relatorios?aba=pendentes" class="muted" style="font-size: 12px; font-weight: 600;"><%= t('painel.ver_todas') %></a>
+        <a href="/relatorios?aba=pendentes" class="muted" style="font-size: 13px; font-weight: 600;"><%= t('painel.ver_todas') %></a>
     </div>
     <div class="pendencias__lista">
         <% pendenciasUrgentes.itens.forEach(p => { const dias = parseInt(p.dias_atraso, 10) || 0; %>

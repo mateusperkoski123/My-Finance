@@ -36,10 +36,10 @@
                         <span class="categoria-dot" style="background: <%= c.cor || '#3b82f6' %>; width: 12px; height: 12px; border-radius: 50%; display: inline-block;"></span>
                         <strong style="font-size: 15px;"><%= c.nome %></strong>
                         <% if (c.limite_gasto && parseFloat(c.limite_gasto) > 0) { %>
-                            <span class="badge badge-neutro" style="font-size: 10px;" title="<%= t('categorias.limite_label') %>"><i class="ph ph-target"></i> <%= t('categorias.limite_badge', { valor: moeda(parseFloat(c.limite_gasto)) }) %></span>
+                            <span class="badge badge-neutro" style="font-size: 11px;" title="<%= t('categorias.limite_label') %>"><i class="ph ph-target"></i> <%= t('categorias.limite_badge', { valor: moeda(parseFloat(c.limite_gasto)) }) %></span>
                         <% } %>
                         <% if (c.subcategorias && c.subcategorias.length > 0) { %>
-                            <span class="badge badge-neutro" style="font-size: 10px;"><%= c.subcategorias.length %> <%= t('categorias.sub_abrev') %></span>
+                            <span class="badge badge-neutro" style="font-size: 11px;"><%= c.subcategorias.length %> <%= t('categorias.sub_abrev') %></span>
                         <% } %>
                     </span>
                     <span class="categoria-linha__acoes" style="display: flex; gap: 6px;">
@@ -141,7 +141,7 @@
                     </div>
                     <form method="post" action="/categorias/<%= sub.id %>/atualizar" class="form">
                         <%- csrfCampo %>
-                        <p class="muted" style="font-size: 12.5px; margin: 0 0 12px;"><%= c.nome %></p>
+                        <p class="muted" style="font-size: 13px; margin: 0 0 12px;"><%= c.nome %></p>
                         <div class="form-group">
                             <label for="sub-nome-<%= sub.id %>"><%= t('categorias.nome_label') %></label>
                             <input class="input" type="text" id="sub-nome-<%= sub.id %>" name="nome" value="<%= sub.nome %>" maxlength="120" required>

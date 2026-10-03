@@ -19,7 +19,7 @@
                     <% if (faltando) { %><span class="badge badge-pendente" title="<%= t('adm.novidades_incompleta_dica') %>"><%= t('adm.novidades_incompleta') %></span><% } %>
                 </div>
                 <strong class="nov-adm__titulo"><%= n.titulo_pt || n.titulo_es || n.titulo_en %></strong>
-                <div class="muted" style="font-size: 12px;">
+                <div class="muted" style="font-size: 13px;">
                     <% if (n.publicada_em) { %><%= t('adm.novidades_publicada_em', { data: formatDate(n.publicada_em, 'DD/MM/YYYY') }) %> · <% } %>
                     <i class="ph ph-thumbs-up"></i> <%= n.gostei %> · <i class="ph ph-thumbs-down"></i> <%= n.nao_gostei %>
                 </div>

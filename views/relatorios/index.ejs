@@ -45,7 +45,7 @@
         <summary><i class="ph ph-calendar-blank"></i> <%= t('filtro.periodo_personalizado') %></summary>
         <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap;">
             <input type="date" name="data_inicio" value="<%= periodo.inicio %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;" aria-label="<%= t('relatorios.data_inicial') %>">
-            <span class="muted" style="font-size: 12px;"><%= t('filtro.ate') %></span>
+            <span class="muted" style="font-size: 13px;"><%= t('filtro.ate') %></span>
             <input type="date" name="data_fim" value="<%= periodo.fim %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;" aria-label="<%= t('relatorios.data_final') %>">
             <button type="submit" name="aplicar" value="1" class="btn btn-outline btn-sm" style="border-radius: 8px;"><%= t('filtro.aplicar_datas') %></button>
         </div>
@@ -70,7 +70,7 @@
                     <span class="muted" style="font-size: 13px; font-weight: 500;"><%= t('painel.saldo_anterior') %></span>
                     <div style="font-size: 22px; font-weight: 700; margin-top: 6px; color: var(--text);"><%= moeda(resumo.saldo_anterior) %></div>
                 </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11.5px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
                     <span class="muted"><%= t('relatorios.saldo_final_label') %></span>
                     <strong style="color: <%= saldoAcumuladoTotal >= 0 ? 'var(--green)' : 'var(--red)' %>;">
                         <%= moeda(saldoAcumuladoTotal) %>
@@ -87,7 +87,7 @@
                     </div>
                     <div style="font-size: 22px; font-weight: 700; margin-top: 6px; color: var(--green);"><%= moeda(resumo.receitas_recebidas) %></div>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
                     <span class="muted"><%= t('painel.a_receber') %>:</span>
                     <strong style="color: var(--text);"><%= moeda(resumo.receitas_a_receber) %></strong>
                 </div>
@@ -101,7 +101,7 @@
                     </div>
                     <div style="font-size: 22px; font-weight: 700; margin-top: 6px; color: var(--red);"><%= moeda(resumo.despesas_pagas) %></div>
                 </div>
-                <div style="display: flex; justify-content: space-between; font-size: 11.5px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
+                <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-top: 12px; border-top: 1px solid var(--border); padding-top: 8px;">
                     <span class="muted"><%= t('painel.nao_pago') %>:</span>
                     <strong style="color: var(--text);"><%= moeda(resumo.despesas_nao_pagas) %></strong>
                 </div>
@@ -216,7 +216,7 @@
                 <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: <%= categoriaFiltro.cor || '#3b82f6' %>; flex-shrink: 0;"></span>
                 <div style="min-width: 0;">
                     <strong style="font-size: 16px; overflow-wrap: anywhere;"><%= categoriaFiltro.pai_nome ? categoriaFiltro.pai_nome + ' / ' + categoriaFiltro.nome : categoriaFiltro.nome %></strong>
-                    <div class="muted" style="font-size: 12px;"><%= t('relatorios.aba_demonstrativo') %> · <%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> – <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></div>
+                    <div class="muted" style="font-size: 13px;"><%= t('relatorios.aba_demonstrativo') %> · <%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> – <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></div>
                 </div>
             </div>
             <a class="btn btn-outline btn-sm" href="<%= '/relatorios?' + new URLSearchParams(Object.assign({ aba: 'demonstrativo' }, periodoParams)).toString() %>"><i class="ph ph-arrow-left"></i> <%= t('graf.voltar_estado') %></a>
@@ -354,13 +354,13 @@
         <% if (!vista) { %>
         <div class="card" style="border-radius: 16px; padding: 14px 18px; margin-top: 16px; display: flex; gap: 14px 24px; flex-wrap: wrap; align-items: center;">
             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-                <span class="muted" style="font-size: 12px; font-weight: 600;"><%= t('comum.tipo') %></span>
+                <span class="muted" style="font-size: 13px; font-weight: 600;"><%= t('comum.tipo') %></span>
                 <%- _chip(!tipoFiltro, _lnk(nivel ? { nivel } : {}), t('painel.filtro.todas')) %>
                 <%- _chip(tipoFiltro === 'receita', _lnk(Object.assign({ tipo: 'receita' }, nivel ? { nivel } : {})), t('painel.filtro.receitas')) %>
                 <%- _chip(tipoFiltro === 'despesa', _lnk(Object.assign({ tipo: 'despesa' }, nivel ? { nivel } : {})), t('painel.filtro.despesas')) %>
             </div>
             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-                <span class="muted" style="font-size: 12px; font-weight: 600;"><%= t('graf.nivel') %></span>
+                <span class="muted" style="font-size: 13px; font-weight: 600;"><%= t('graf.nivel') %></span>
                 <%- _chip(!nivel, _lnk(tipoFiltro ? { tipo: tipoFiltro } : {}), t('graf.nivel_ambos')) %>
                 <%- _chip(nivel === 'cat', _lnk(Object.assign({ nivel: 'cat' }, tipoFiltro ? { tipo: tipoFiltro } : {})), t('graf.nivel_cat')) %>
                 <%- _chip(nivel === 'sub', _lnk(Object.assign({ nivel: 'sub' }, tipoFiltro ? { tipo: tipoFiltro } : {})), t('graf.nivel_sub')) %>
@@ -403,7 +403,7 @@
                 <h3 style="color: <%= _cor %>;"><%= tp === 'receita' ? t('comum.receitas') : t('comum.despesas') %></h3>
                 <strong style="color: <%= _cor %>;"><%= moeda(S.total) %></strong>
             </div>
-            <p class="muted" style="font-size: 12px; margin: 0 0 12px;"><%= t('graf.clique_categoria') %><% if (tp === 'despesa' && !orcamentoMult) { %> · <%= t('est.orcado_so_mes') %><% } %></p>
+            <p class="muted" style="font-size: 13px; margin: 0 0 12px;"><%= t('graf.clique_categoria') %><% if (tp === 'despesa' && !orcamentoMult) { %> · <%= t('est.orcado_so_mes') %><% } %></p>
             <div class="tabela-container tabela-container--rola">
                 <table class="tabela estado-t">
                     <thead>
@@ -455,7 +455,7 @@
         </section>
         <% }) %>
         <% if (_tem && !tipoFiltro && D.cats.length && orcamentoMult) { %>
-            <p class="muted" style="font-size: 12px; margin: 12px 4px 0;"><i class="ph ph-info"></i> <%= t('est.limite_dica') %> · <a href="/categorias"><%= t('est.definir_limites') %></a></p>
+            <p class="muted" style="font-size: 13px; margin: 12px 4px 0;"><i class="ph ph-info"></i> <%= t('est.limite_dica') %> · <a href="/categorias"><%= t('est.definir_limites') %></a></p>
         <% } %>
         <% } %>
 
@@ -484,7 +484,7 @@
             <section class="card estado-tabela" style="border-radius: 16px; padding: 20px; margin-top: 16px;">
                 <div class="estado-tabela__cab">
                     <h3 style="color: <%= _cor %>;"><%= tp === 'receita' ? t('comum.receitas') : t('comum.despesas') %></h3>
-                    <span class="muted" style="font-size: 12px;"><%= t('est.atual') %> × <%= _ant %></span>
+                    <span class="muted" style="font-size: 13px;"><%= t('est.atual') %> × <%= _ant %></span>
                 </div>
                 <div class="tabela-container tabela-container--rola">
                     <table class="tabela estado-t">
@@ -556,7 +556,7 @@
             <section class="card estado-tabela" style="border-radius: 16px; padding: 20px; margin-top: 16px;">
                 <div class="estado-tabela__cab">
                     <h3><%= t('est.vista_fluxo') %></h3>
-                    <span class="muted" style="font-size: 12px;"><%= t('est.fluxo_dica') %></span>
+                    <span class="muted" style="font-size: 13px;"><%= t('est.fluxo_dica') %></span>
                 </div>
                 <% if (!temMov) { %>
                     <p class="muted" style="margin: 12px 0 0;"><%= t('relatorios.demonstrativo_sem_dados') %></p>
@@ -618,7 +618,7 @@
                             </tr>
                             <% F.blocos.forEach(b => { %>
                             <tr>
-                                <td><strong><%= _rotBloco(b) %></strong> <span class="muted" style="font-size: 11.5px;"><%= _perBloco(b) %></span></td>
+                                <td><strong><%= _rotBloco(b) %></strong> <span class="muted" style="font-size: 12.5px;"><%= _perBloco(b) %></span></td>
                                 <td class="num" style="color: var(--green);"><%= (b.entR + b.entP) ? moeda(b.entR + b.entP) : '—' %></td>
                                 <td class="num" style="color: var(--red);"><%= (b.saiR + b.saiP) ? moeda(b.saiR + b.saiP) : '—' %></td>
                                 <td class="num opc"><%= Math.abs(b.outros) >= 1 ? (b.outros > 0 ? '+' : '−') + moeda(Math.abs(b.outros)) : '—' %></td>
@@ -668,7 +668,7 @@
             <section class="card estado-tabela" style="border-radius: 16px; padding: 20px; margin-top: 16px;">
                 <div class="estado-tabela__cab">
                     <h3><%= t('est.vista_contas') %></h3>
-                    <span class="muted" style="font-size: 12px;"><%= t('est.contas_dica') %></span>
+                    <span class="muted" style="font-size: 13px;"><%= t('est.contas_dica') %></span>
                 </div>
                 <div class="tabela-container tabela-container--rola">
                     <table class="tabela estado-t estado-contas">

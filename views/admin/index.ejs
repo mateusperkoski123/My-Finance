@@ -40,7 +40,7 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
         <button type="submit" class="btn btn-outline" aria-label="<%= t('categorias.buscar') %>"><i class="ph ph-magnifying-glass"></i></button>
     </form>
 
-    <p class="muted" style="font-size: 12px; margin: 0 0 10px;"><i class="ph ph-info"></i> <%= t('admin.legenda_planos') %></p>
+    <p class="muted" style="font-size: 13px; margin: 0 0 10px;"><i class="ph ph-info"></i> <%= t('admin.legenda_planos') %></p>
     <%- include('_massa', { voltar: 'usuarios', acoes: ['ia_on', 'ia_off', 'ia_nivel_1', 'ia_nivel_2', 'trial', 'suspender', 'reativar', 'arquivar'] }) %>
 
     <div class="tabela-container">
@@ -64,8 +64,8 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                         <%# O Chat IA vem do plano; o selo so aparece para quem o admin desligou ou deixou no nivel basico. %>
                         <% if (!u.ia_habilitada) { %><span class="badge badge-pendente"><i class="ph ph-sparkle"></i> <%= t('admin.ia_desligada') %></span><% } else if (u.ia_nivel !== 2) { %><span class="badge badge-neutro"><i class="ph ph-sparkle"></i> <%= t('admin.ia_nivel1') %></span><% } %>
                         <% if (u.user_status !== 'ativo') { %><span class="badge badge-pendente"><%= t('admin.suspenso') %></span><% } %>
-                        <div class="muted" style="font-size: 12px;"><%= u.email %> <% if (!u.email_verificado_em) { %>· <%= t('admin.sem_verificar') %><% } %></div>
-                        <% if (u.telefone_numero) { %><div class="muted" style="font-size: 12px;"><i class="ph ph-phone"></i> <%= u.telefone_codigo %> <%= u.telefone_numero %></div><% } %>
+                        <div class="muted" style="font-size: 13px;"><%= u.email %> <% if (!u.email_verificado_em) { %>· <%= t('admin.sem_verificar') %><% } %></div>
+                        <% if (u.telefone_numero) { %><div class="muted" style="font-size: 13px;"><i class="ph ph-phone"></i> <%= u.telefone_codigo %> <%= u.telefone_numero %></div><% } %>
                     </td>
                     <td>
                         <%= u.plano_codigo ? nomePlano(u.plano_codigo) : '-' %>
@@ -77,14 +77,14 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                             <% if (u.dias_restantes !== null && u.dias_restantes !== undefined) { %>
                                 <div><span class="badge <%= u.dias_restantes <= 3 ? 'badge-alerta' : 'badge-neutro' %>"><%= t(u.dias_restantes === 1 ? 'admin.dia_restante' : 'admin.dias_restantes', { n: u.dias_restantes }) %></span></div>
                             <% } %>
-                        <% } else if (u.status_efetivo === 'beta') { %><span class="muted" style="font-size: 12px;"><%= t('admin.sem_vencimento') %></span>
+                        <% } else if (u.status_efetivo === 'beta') { %><span class="muted" style="font-size: 13px;"><%= t('admin.sem_vencimento') %></span>
                         <% } else { %>-<% } %>
                     </td>
                     <td><%- u.solicitado_codigo ? '<a href="/admin/pedidos">' + nomePlano(u.solicitado_codigo).replace(/&/g, '&amp;').replace(/</g, '&lt;') + ' (' + t('assinatura.ciclo_' + (u.ciclo_solicitado || 'mensal')) + ')</a>' : '-' %></td>
-                    <td class="muted" style="font-size: 12px; white-space: nowrap;"><%= u.ultimo_acesso ? formatDateTime(u.ultimo_acesso) : '-' %></td>
+                    <td class="muted" style="font-size: 13px; white-space: nowrap;"><%= u.ultimo_acesso ? formatDateTime(u.ultimo_acesso) : '-' %></td>
                     <td class="num">
                         <strong><%= u.lanc_total.toLocaleString(lang) %></strong>
-                        <div class="muted" style="font-size: 12px;"><%= t('admin.lanc_recentes', { n: u.lanc_30d.toLocaleString(lang), dias: diasAtividade }) %></div>
+                        <div class="muted" style="font-size: 13px;"><%= t('admin.lanc_recentes', { n: u.lanc_30d.toLocaleString(lang), dias: diasAtividade }) %></div>
                     </td>
                     <td>
                         <details class="menu-acoes">

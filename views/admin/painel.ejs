@@ -134,7 +134,7 @@ const mesIa = r.iaCusto.mes;
                 <% s.maisAtivos.forEach((u, i) => { %>
                     <tr>
                         <td class="num muted"><%= i + 1 %></td>
-                        <td><strong><%= u.nome %></strong><% if (u.role === 'admin') { %> <span class="badge badge-neutro">admin</span><% } %><div class="muted" style="font-size: 12px;"><%= u.email %></div></td>
+                        <td><strong><%= u.nome %></strong><% if (u.role === 'admin') { %> <span class="badge badge-neutro">admin</span><% } %><div class="muted" style="font-size: 13px;"><%= u.email %></div></td>
                         <td class="num"><strong><%= nf(u.recentes) %></strong></td>
                         <td class="iac-barra-col"><span class="iac-barra" style="width: <%= Math.round(u.recentes / _maxAtivo * 100) %>%;"></span></td>
                         <td class="num muted"><%= nf(u.total) %></td>

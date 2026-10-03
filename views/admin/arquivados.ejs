@@ -22,8 +22,8 @@
             <% usuarios.forEach(u => { %>
                 <tr>
                     <td class="massa-col"><input type="checkbox" class="massa-sel" name="ids" value="<%= u.id %>" form="form-massa" <%= u.role === 'admin' ? 'disabled' : '' %> aria-label="<%= u.nome %>"></td>
-                    <td><strong><%= u.nome %></strong><div class="muted" style="font-size: 12px;"><%= u.email %></div></td>
-                    <td class="muted" style="font-size: 12px;"><%= u.ultimo_acesso ? formatDateTime(u.ultimo_acesso) : '-' %></td>
+                    <td><strong><%= u.nome %></strong><div class="muted" style="font-size: 13px;"><%= u.email %></div></td>
+                    <td class="muted" style="font-size: 13px;"><%= u.ultimo_acesso ? formatDateTime(u.ultimo_acesso) : '-' %></td>
                     <td style="display: flex; gap: 8px; flex-wrap: wrap;">
                         <form method="post" action="/admin/usuarios/<%= u.id %>/desarquivar">
                             <%- csrfCampo %>
