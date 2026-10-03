@@ -5,6 +5,85 @@
     </div>
 </div>
 
+<%
+const _base = '/contas/' + conta.id + '/extrato';
+const _filtrosAtivos = !!(filtros.tipo || filtros.status || filtros.busca || filtros.ordenar);
+// Parametros que identificam o periodo (usados nos links de navegacao e como campos ocultos do formulario).
+const _per = { preset: periodo.preset };
+if (periodo.preset === 'mes' || periodo.preset === 'anual') { _per.mes = periodo.mes; _per.ano = periodo.ano; }
+function lk(extra, comFiltros) {
+    const raw = Object.assign({}, comFiltros === false ? {} : filtros, extra);
+    const limpo = {};
+    Object.keys(raw).forEach(k => { if (raw[k] !== '' && raw[k] !== null && raw[k] !== undefined) limpo[k] = raw[k]; });
+    return _base + '?' + new URLSearchParams(limpo).toString();
+}
+const _presets = [['hoje', t('filtro.hoje')], ['7dias', t('filtro.7dias')], ['mes', t('filtro.mes_atual')], ['anual', t('filtro.anual')], ['todo', t('extrato.todo')]];
+%>
+<div class="card" style="border-radius: 16px; padding: 16px 20px; margin-bottom: 16px;">
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
+        <div class="mes-nav" style="flex: 1; min-width: 220px; margin: 0;">
+            <% if (periodo.preset === 'mes') { %>
+                <a class="btn btn-outline btn-sm" href="<%= lk({ preset: 'mes', mes: periodo.mes_anterior, ano: periodo.ano_anterior }) %>" aria-label="<%= t('painel.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
+            <% } %>
+            <div class="mes-nav__centro">
+                <strong><%= periodo.preset === 'mes' ? t('painel.mes.' + periodo.mes) + ' ' + periodo.ano : (periodo.preset === 'anual' ? periodo.ano : (periodo.preset === 'todo' ? t('extrato.periodo_todo') : t('comum.periodo'))) %></strong>
+                <% if (periodo.inicio) { %><span class="muted"><%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> – <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></span><% } %>
+            </div>
+            <% if (periodo.preset === 'mes') { %>
+                <a class="btn btn-outline btn-sm" href="<%= lk({ preset: 'mes', mes: periodo.mes_proximo, ano: periodo.ano_proximo }) %>" aria-label="<%= t('painel.mes_proximo') %>"><i class="ph ph-caret-right"></i></a>
+            <% } %>
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
+            <% _presets.forEach(pr => { %>
+                <a href="<%= lk({ preset: pr[0] }) %>" class="btn <%= periodo.preset === pr[0] ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= pr[1] %></a>
+            <% }) %>
+        </div>
+    </div>
+
+    <form method="get" action="<%= _base %>" role="search">
+        <% Object.keys(_per).forEach(k => { %><input type="hidden" name="<%= k %>" value="<%= _per[k] %>"><% }) %>
+        <div class="busca-linha" style="margin-bottom: 10px;">
+            <input class="input" type="search" name="busca" value="<%= filtros.busca %>" placeholder="<%= t('extrato.busca_placeholder') %>" aria-label="<%= t('extrato.busca_placeholder') %>">
+            <button type="submit" class="btn btn-outline" aria-label="<%= t('categorias.buscar') %>"><i class="ph ph-magnifying-glass"></i></button>
+        </div>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+            <select name="tipo" class="input" style="width: auto; padding: 6px 10px; font-size: 13px; border-radius: 10px;" onchange="this.form.submit()" aria-label="<%= t('contas.extrato.col.tipo') %>">
+                <option value="" <%= !filtros.tipo ? 'selected' : '' %>><%= t('painel.filtro.todas') %></option>
+                <option value="despesa" <%= filtros.tipo === 'despesa' ? 'selected' : '' %>><%= t('painel.filtro.despesas') %></option>
+                <option value="receita" <%= filtros.tipo === 'receita' ? 'selected' : '' %>><%= t('painel.filtro.receitas') %></option>
+                <option value="transferencia" <%= filtros.tipo === 'transferencia' ? 'selected' : '' %>><%= t('lancamento.tipo.transferencia') %></option>
+            </select>
+            <select name="status" class="input" style="width: auto; padding: 6px 10px; font-size: 13px; border-radius: 10px;" onchange="this.form.submit()" aria-label="<%= t('contas.extrato.col.status') %>">
+                <option value="" <%= !filtros.status ? 'selected' : '' %>><%= t('extrato.est_todos') %></option>
+                <option value="pago" <%= filtros.status === 'pago' ? 'selected' : '' %>><%= t('extrato.est_pagos') %></option>
+                <option value="pendente" <%= filtros.status === 'pendente' ? 'selected' : '' %>><%= t('extrato.est_pendentes') %></option>
+            </select>
+            <select name="ordenar" class="input" style="width: auto; padding: 6px 10px; font-size: 13px; border-radius: 10px;" onchange="this.form.submit()" aria-label="<%= t('filtro.ordenar') %>">
+                <option value="" <%= !filtros.ordenar ? 'selected' : '' %>><%= t('extrato.ord_recentes') %></option>
+                <option value="vencimento" <%= filtros.ordenar === 'vencimento' ? 'selected' : '' %>><%= t('extrato.ord_antigos') %></option>
+                <option value="valor" <%= filtros.ordenar === 'valor' ? 'selected' : '' %>><%= t('extrato.ord_valor') %></option>
+            </select>
+            <% if (_filtrosAtivos) { %><a class="btn btn-outline btn-sm" href="<%= lk(_per, false) %>"><i class="ph ph-x"></i> <%= t('extrato.limpar') %></a><% } %>
+        </div>
+        <details class="periodo-custom" style="margin-top: 10px;" <%= periodo.preset === 'custom' ? 'open' : '' %>>
+            <summary><i class="ph ph-calendar-blank"></i> <%= t('filtro.periodo_personalizado') %></summary>
+            <div style="display: flex; gap: 10px; margin-top: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="date" name="data_inicio" value="<%= periodo.inicio || '' %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;">
+                <span class="muted" style="font-size: 12px;"><%= t('filtro.ate') %></span>
+                <input type="date" name="data_fim" value="<%= periodo.fim || '' %>" class="input" style="width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px;">
+                <button type="submit" name="aplicar" value="1" class="btn btn-outline btn-sm" style="border-radius: 8px;"><%= t('filtro.aplicar_datas') %></button>
+            </div>
+        </details>
+    </form>
+
+    <div style="display: flex; gap: 8px 18px; flex-wrap: wrap; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); font-size: 13px;">
+        <span class="muted"><%= t('extrato.movimentos', { n: lancamentos.length }) %></span>
+        <span><span class="muted"><%= t('extrato.entradas') %>:</span> <strong style="color: var(--green);">+ <%= moeda(totais.entradas) %></strong></span>
+        <span><span class="muted"><%= t('extrato.saidas') %>:</span> <strong style="color: var(--red);">- <%= moeda(totais.saidas) %></strong></span>
+        <span><span class="muted"><%= t('extrato.resultado') %>:</span> <strong style="color: <%= totais.resultado >= 0 ? 'var(--green)' : 'var(--red)' %>;"><%= totais.resultado >= 0 ? '+' : '-' %> <%= moeda(Math.abs(totais.resultado)) %></strong></span>
+    </div>
+</div>
+
 <div class="card" style="border-radius: 16px; padding: 20px;">
     <div class="tabela-container">
         <table class="tabela tabela-extrato">
@@ -21,7 +100,7 @@
             <tbody>
                 <% if (!lancamentos || lancamentos.length === 0) { %>
                     <tr>
-                        <td colspan="6" class="tabela__vazio"><%= t('contas.extrato.vazio') %></td>
+                        <td colspan="6" class="tabela__vazio"><%= (_filtrosAtivos || periodo.preset !== 'todo') ? t('extrato.sem_resultados') : t('contas.extrato.vazio') %></td>
                     </tr>
                 <% } else { %>
                     <% lancamentos.forEach(l => { %>

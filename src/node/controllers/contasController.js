@@ -282,11 +282,53 @@ const contasController = {
                 req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_invalida') };
                 return res.redirect('/contas');
             }
-            const itens = await Conta.extrato(id, userId);
+            const q = req.query;
+            const hojeObj = hojeLocal();
+            const hoje = toLocalYMD(hojeObj);
+            const mes = parseInt(q.mes || (hojeObj.getMonth() + 1), 10);
+            const ano = parseInt(q.ano || hojeObj.getFullYear(), 10);
+            let preset = ['hoje', '7dias', 'mes', 'anual', 'todo', 'custom'].includes(q.preset) ? q.preset : 'mes';
+            let inicio, fim;
+            const ymd = /^\d{4}-\d{2}-\d{2}$/;
+            if (ymd.test(q.data_inicio || '') && ymd.test(q.data_fim || '') && (q.aplicar || preset === 'custom')) {
+                preset = 'custom'; inicio = q.data_inicio; fim = q.data_fim;
+            } else if (preset === 'hoje') {
+                inicio = fim = hoje;
+            } else if (preset === '7dias') {
+                const d = hojeLocal(); d.setDate(d.getDate() - 7);
+                inicio = toLocalYMD(d); fim = hoje;
+            } else if (preset === 'anual') {
+                inicio = `${ano}-01-01`; fim = `${ano}-12-31`;
+            } else if (preset === 'todo') {
+                inicio = fim = null;
+            } else {
+                preset = 'mes';
+                inicio = toLocalYMD(new Date(ano, mes - 1, 1));
+                fim = toLocalYMD(new Date(ano, mes, 0));
+            }
+            const mesAnt = new Date(ano, mes - 2, 1), mesProx = new Date(ano, mes, 1);
+            const periodo = {
+                preset, inicio, fim, mes, ano,
+                mes_anterior: mesAnt.getMonth() + 1, ano_anterior: mesAnt.getFullYear(),
+                mes_proximo: mesProx.getMonth() + 1, ano_proximo: mesProx.getFullYear()
+            };
+            const filtros = {
+                tipo: ['receita', 'despesa', 'transferencia'].includes(q.tipo) ? q.tipo : '',
+                status: ['pago', 'pendente'].includes(q.status) ? q.status : '',
+                busca: String(q.busca || '').trim().slice(0, 80),
+                ordenar: ['vencimento', 'valor'].includes(q.ordenar) ? q.ordenar : ''
+            };
+            const itens = await Conta.extrato(id, userId, { inicio, fim, ...filtros });
+            const somar = (fn) => itens.reduce((s, l) => s + (fn(parseFloat(l.valor) || 0) ? Math.abs(parseFloat(l.valor) || 0) : 0), 0);
+            const totais = { entradas: somar((v) => v > 0), saidas: somar((v) => v < 0) };
+            totais.resultado = totais.entradas - totais.saidas;
             res.render('contas/extrato', {
                 title: `${req.t('contas.extrato.titulo')} - ${conta.nome}`,
                 conta,
-                lancamentos: itens
+                lancamentos: itens,
+                periodo,
+                filtros,
+                totais
             });
         } catch (err) {
             console.error('Erro em contasController.extrato:', err);

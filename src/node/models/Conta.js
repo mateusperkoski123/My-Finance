@@ -165,14 +165,36 @@ class Conta {
         return this.buscarPorUsuario(userId, true);
     }
 
-    static async extrato(id, userId) {
+    // Extrato da conta com filtros opcionais: periodo, tipo, status, busca e ordenacao.
+    static async extrato(id, userId, f = {}) {
+        let where = 'WHERE l.conta_id = ? AND l.user_id = ?';
+        const params = [id, userId];
+        if (f.inicio && f.fim) {
+            where += ' AND l.data_competencia BETWEEN ? AND ?';
+            params.push(f.inicio, f.fim);
+        }
+        if (['receita', 'despesa', 'transferencia'].includes(f.tipo)) {
+            where += ' AND l.tipo = ?';
+            params.push(f.tipo);
+        }
+        if (f.status === 'pago' || f.status === 'pendente') {
+            where += ' AND l.status = ?';
+            params.push(f.status);
+        }
+        if (f.busca) {
+            where += ' AND (l.descricao LIKE ? OR c.nome LIKE ?)';
+            params.push(`%${f.busca}%`, `%${f.busca}%`);
+        }
+        let orderBy = 'l.data_competencia DESC, l.id DESC';
+        if (f.ordenar === 'vencimento') orderBy = 'l.data_competencia ASC, l.id ASC';
+        else if (f.ordenar === 'valor') orderBy = 'ABS(l.valor) DESC, l.id DESC';
         const [rows] = await db.query(
             `SELECT l.*, c.nome as categoria_nome
              FROM lancamentos l
              LEFT JOIN categorias c ON l.categoria_id = c.id
-             WHERE l.conta_id = ? AND l.user_id = ?
-             ORDER BY l.data_competencia DESC, l.id DESC`,
-            [id, userId]
+             ${where}
+             ORDER BY ${orderBy}`,
+            params
         );
         return rows;
     }
