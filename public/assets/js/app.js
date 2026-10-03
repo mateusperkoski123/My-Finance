@@ -498,7 +498,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!novo || !atual) return false;
     var aberto = document.querySelector('.modal-backdrop.is-open');
     var y = window.scrollY;
+    // Grupos (acordeoes por categoria etc.) mantem aberto/fechado como o usuario deixou.
+    var grupos = {};
+    atual.querySelectorAll('details[data-grupo]').forEach(function (d) { grupos[d.getAttribute('data-grupo')] = d.open; });
     atual.innerHTML = novo.innerHTML;
+    atual.querySelectorAll('details[data-grupo]').forEach(function (d) {
+      var k = d.getAttribute('data-grupo');
+      if (Object.prototype.hasOwnProperty.call(grupos, k)) d.open = grupos[k];
+    });
     // Reexecuta scripts inline do conteudo novo (graficos, filtros)
     atual.querySelectorAll('script').forEach(function (antigo) {
       var s = document.createElement('script');
@@ -534,6 +541,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }).then(function (html) {
         if (html === null) return;
         var flash = new DOMParser().parseFromString(html, 'text/html').querySelector('main .alert');
+        // Formulario dentro de um modal (editar/novo): fecha o modal para nao reabrir junto com o conteudo novo.
+        var modalDoForm = form.closest('.modal-backdrop');
+        if (modalDoForm) modalDoForm.classList.remove('is-open');
         var ok = atualizarConteudo(html);
         if (!ok) { window.location.reload(); return; }
         // A mensagem de retorno veio no conteudo novo (alert); tambem mostra toast para nao passar despercebida.

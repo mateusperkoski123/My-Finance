@@ -13,7 +13,7 @@
             <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
         </div>
 
-        <form method="post" action="/lancamentos" class="form" style="display: flex; flex-direction: column; gap: 16px;">
+        <form method="post" action="/lancamentos" class="form" data-ajax style="display: flex; flex-direction: column; gap: 16px;">
             <%- csrfCampo %>
             <% if (typeof voltar !== 'undefined' && voltar) { %><input type="hidden" name="voltar" value="<%= voltar %>"><% } %>
             <input type="hidden" name="tipo" value="receita">
@@ -171,7 +171,7 @@
             <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>" style="background: none; border: none; font-size: 18px; cursor: pointer; color: var(--muted);"><i class="ph ph-x"></i></button>
         </div>
 
-        <form method="post" action="/lancamentos" class="form" style="display: flex; flex-direction: column; gap: 16px;">
+        <form method="post" action="/lancamentos" class="form" data-ajax style="display: flex; flex-direction: column; gap: 16px;">
             <%- csrfCampo %>
             <% if (typeof voltar !== 'undefined' && voltar) { %><input type="hidden" name="voltar" value="<%= voltar %>"><% } %>
             <input type="hidden" name="tipo" value="despesa">
