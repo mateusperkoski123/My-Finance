@@ -144,6 +144,7 @@
                         </div>
                         <button type="button" role="menuitem" class="menu-perfil__item" data-abrir-foto><i class="ph ph-camera"></i> <span data-rotulo-foto><%= usuarioLogado.foto_em ? t('foto.alterar') : t('foto.adicionar') %></span></button>
                         <a role="menuitem" class="menu-perfil__item" href="/configuracoes/perfil"><i class="ph ph-user"></i> <%= t('config.menu.perfil') %></a>
+                        <a role="menuitem" class="menu-perfil__item" href="/guia"><i class="ph ph-book-open"></i> <%= t('guia.titulo') %></a>
                     </div>
                 </div>
             </div>
@@ -224,6 +225,7 @@
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/comunidade') ? 'is-active' : '' %>" href="/comunidade"><i class="ph ph-users-three"></i> <%= t('nav.comunidad') %><% if (novidadesNovas > 0) { %> <span class="selo-novidade" title="<%= t('novidades.selo_titulo', { n: novidadesNovas }) %>"><%= novidadesNovas > 9 ? '9+' : novidadesNovas %></span><% } %></a>
         <% if (_mostrarIa) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/ia') ? 'is-active' : '' %>" href="/ia"><i class="ph ph-sparkle"></i> <%= t('nav.ia') %><% if (_seloIa) { %> <%- include('partials/selo_plano', { plano: 'premium' }) %><% } %></a><% } %>
         <% if (_adm) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/admin') ? 'is-active' : '' %>" href="/admin"><i class="ph ph-shield-star"></i> <%= t('nav.admin') %></a><% } %>
+        <a role="menuitem" class="folha__item <%= _rota.startsWith('/guia') ? 'is-active' : '' %>" href="/guia"><i class="ph ph-book-open"></i> <%= t('guia.titulo') %></a>
         <a role="menuitem" class="folha__item <%= _rota === '/assinatura' ? 'is-active' : '' %>" href="/assinatura"><i class="ph ph-crown-simple"></i> <%= t('config.menu.assinatura') %></a>
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/configuracoes') ? 'is-active' : '' %>" href="/configuracoes"><i class="ph ph-gear"></i> <%= t('nav.configuracoes') %></a>
         <hr>

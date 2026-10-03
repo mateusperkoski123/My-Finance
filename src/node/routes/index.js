@@ -100,6 +100,10 @@ router.post('/verificar-email/reenviar', requireAuth, contaController.reenviarVe
 // Assinatura
 router.get('/assinatura', requireAuth, assinaturaController.index);
 router.post('/assinatura/solicitar', requireAuth, assinaturaController.solicitar);
+// Guia de uso (caso pratico passo a passo, nos tres idiomas)
+router.get('/guia', requireAuth, (req, res) => {
+    res.render('guia/index', { title: req.t('guia.titulo'), secoes: require('../core/guia').montar(req.lang) });
+});
 // Teste gratis: escolher o plano do teste (uma vez) e trocar o plano enquanto o teste esta em andamento.
 router.get('/teste', requireAuth, assinaturaController.escolherTeste);
 router.post('/teste/iniciar', requireAuth, assinaturaController.iniciarTeste);

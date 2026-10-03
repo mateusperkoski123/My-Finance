@@ -2732,3 +2732,44 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
 .btn-adquirir [data-valor] { white-space: nowrap; }
 @media (max-width: 768px) { .plano-card__preco { font-size: 36px; } }
 @media (max-width: 360px) { .plano-card__preco { font-size: 32px; } .btn-adquirir { font-size: 13.5px; padding-left: 8px; padding-right: 8px; } }
+
+/* ---- Guia de uso ---- */
+.guia__cab h1 { display: flex; align-items: center; gap: 10px; margin: 0 0 6px; }
+.guia__cab p { max-width: 760px; margin: 0 0 18px; font-size: 14.5px; line-height: 1.55; }
+.guia__corpo { display: flex; flex-direction: column; gap: 16px; max-width: 880px; }
+.guia__indice { padding: 14px 16px; border-radius: 16px; }
+.guia__indice-titulo { display: block; font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 10px; }
+.guia__indice ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.guia__indice li a { display: flex; align-items: center; gap: 8px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 999px; text-decoration: none; font-size: 13.5px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.guia__indice li a:hover { background: var(--bg); }
+.guia__indice li a i { font-size: 18px; color: var(--muted); flex-shrink: 0; }
+.guia__secoes { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.guia__secao { border-radius: 18px; padding: 22px 24px; scroll-margin-top: 14px; }
+.guia__secao-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+.guia__secao-topo h2 { margin: 0; font-size: 19px; flex: 1 1 220px; }
+.guia__icone { width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 22px; background: var(--bg); border: 1px solid var(--border); flex-shrink: 0; }
+.guia__intro { margin: 0 0 14px; font-size: 15px; line-height: 1.55; color: var(--muted); }
+.guia__passos { list-style: none; margin: 0 0 14px; padding: 0; display: flex; flex-direction: column; gap: 10px; counter-reset: passo; }
+.guia__passos li { display: flex; gap: 12px; align-items: flex-start; font-size: 14.5px; line-height: 1.55; counter-increment: passo; }
+.guia__passos li::before { content: counter(passo); flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; display: inline-grid; place-items: center; font-size: 12.5px; font-weight: 800; background: var(--primary); color: var(--primary-text); margin-top: 1px; }
+.guia__passos em, .guia__intro em, .guia__dica em { font-style: italic; color: var(--text); background: color-mix(in srgb, var(--blue) 10%, transparent); padding: 0 4px; border-radius: 5px; }
+.guia__exemplo { border: 1px dashed var(--border); border-radius: 14px; padding: 10px 12px; margin-bottom: 14px; background: var(--bg); display: flex; flex-direction: column; gap: 6px; }
+.guia__exemplo small { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+.guia__lanc { display: flex; justify-content: space-between; align-items: center; gap: 10px; border: 1px solid var(--border); border-left: 4px solid var(--red); border-radius: 10px; background: var(--card); padding: 8px 12px; font-size: 13.5px; }
+.guia__lanc--rec { border-left-color: var(--green); }
+.guia__lanc b { white-space: nowrap; color: var(--red); } .guia__lanc--rec b { color: var(--green); }
+.guia__dica { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 14px; padding: 12px 14px; border-radius: 12px; background: color-mix(in srgb, var(--pendente) 10%, var(--card)); border: 1px solid color-mix(in srgb, var(--pendente) 30%, var(--border)); font-size: 14px; line-height: 1.5; }
+.guia__dica i { color: var(--pendente); font-size: 19px; margin-top: 1px; flex-shrink: 0; }
+.guia__acoes { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.guia__topo-link { font-size: 13px; color: var(--muted); text-decoration: none; }
+.guia__topo-link:hover { color: var(--text); }
+.guia__fim { text-align: center; border-radius: 18px; padding: 24px; }
+.guia__fim h2 { margin: 0 0 6px; }
+@media (max-width: 768px) {
+  .guia__indice { padding: 10px; }
+  .guia__indice ol { flex-wrap: nowrap; overflow-x: auto; gap: 6px; scrollbar-width: none; padding-bottom: 2px;
+    -webkit-mask-image: linear-gradient(to right, #000 90%, transparent); mask-image: linear-gradient(to right, #000 90%, transparent); }
+  .guia__indice ol::-webkit-scrollbar { display: none; }
+  .guia__indice-titulo { display: none; }
+}
+@media (max-width: 768px) { .guia__secao { padding: 18px 16px; } .guia__secao-topo h2 { font-size: 17px; } .guia__passos li { font-size: 14px; } }

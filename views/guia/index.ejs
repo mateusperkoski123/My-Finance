@@ -1,0 +1,64 @@
+<%#
+  Guia de uso: um mes de uma pessoa comum (Marina). Conteudo em src/node/core/guia.js (pt, es, en).
+  Marcacao simples nos textos: **negrito** e *italico*; tudo o mais e escapado.
+%>
+<%
+const _fmt = (txt) => String(txt)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>');
+%>
+<div class="guia" id="topo-guia">
+    <header class="guia__cab">
+        <h1><i class="ph ph-book-open" aria-hidden="true"></i> <%= t('guia.titulo') %></h1>
+        <p class="muted"><%= t('guia.subtitulo') %></p>
+    </header>
+
+    <div class="guia__corpo">
+        <nav class="guia__indice card" aria-label="<%= t('guia.indice') %>">
+            <strong class="guia__indice-titulo"><%= t('guia.indice') %></strong>
+            <ol>
+                <% secoes.forEach(function (sec) { %>
+                    <li><a href="#<%= sec.id %>"><i class="ph <%= sec.icone %>" aria-hidden="true"></i><span><%= sec.titulo.replace(/^\d+\.\s*/, '') %></span></a></li>
+                <% }) %>
+            </ol>
+        </nav>
+
+        <div class="guia__secoes">
+            <% secoes.forEach(function (sec, n) { %>
+            <section class="card guia__secao" id="<%= sec.id %>">
+                <div class="guia__secao-topo">
+                    <span class="guia__icone"><i class="ph <%= sec.icone %>" aria-hidden="true"></i></span>
+                    <h2><%= sec.titulo %></h2>
+                    <% if (sec.plano) { %><%- include('../partials/selo_plano', { plano: sec.plano }) %><% } %>
+                </div>
+                <% if (sec.intro) { %><p class="guia__intro"><%- _fmt(sec.intro) %></p><% } %>
+                <ol class="guia__passos">
+                    <% sec.passos.forEach(function (p) { %><li><span><%- _fmt(p) %></span></li><% }) %>
+                </ol>
+                <% if (sec.exemplo.length) { %>
+                <div class="guia__exemplo" aria-label="<%= t('guia.exemplo') %>">
+                    <small><%= t('guia.exemplo') %></small>
+                    <% sec.exemplo.forEach(function (e) { %>
+                        <div class="guia__lanc guia__lanc--<%= e.tipo %>"><span><%= e.rot %></span><b><%= e.val %></b></div>
+                    <% }) %>
+                </div>
+                <% } %>
+                <% if (sec.dica) { %>
+                <p class="guia__dica"><i class="ph-fill ph-lightbulb" aria-hidden="true"></i> <span><strong><%= t('guia.dica') %>:</strong> <%- _fmt(sec.dica) %></span></p>
+                <% } %>
+                <div class="guia__acoes">
+                    <% if (sec.link) { %><a class="btn btn-outline btn-sm" href="<%= sec.link.href %>"><%= sec.link.rot %> <i class="ph ph-arrow-right" aria-hidden="true"></i></a><% } %>
+                    <a class="guia__topo-link" href="#topo-guia"><i class="ph ph-arrow-up" aria-hidden="true"></i> <%= t('guia.topo') %></a>
+                </div>
+            </section>
+            <% }) %>
+
+            <section class="card guia__fim">
+                <h2><%= t('guia.fim_titulo') %></h2>
+                <p class="muted"><%= t('guia.fim_texto') %></p>
+                <a class="btn btn-primary" href="/"><%= t('guia.ir_painel') %></a>
+            </section>
+        </div>
+    </div>
+</div>
