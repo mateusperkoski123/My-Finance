@@ -214,8 +214,8 @@
     <%- include('../partials/modais_lancamento', { dataHoje, voltar: currentUrl }) %>
     <% } %>
     
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 20px;">
-        <!-- Coluna Esquerda: Ingresos (Receitas) -->
+    <div style="display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px;">
+        <!-- Ingresos (receitas) primeiro; os gastos vem logo abaixo, em largura total -->
         <div class="card" style="border-radius: 16px; padding: 20px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px;">
                 <h3 style="font-size: 16px; font-weight: 700; color: var(--green); display: flex; align-items: center; gap: 8px; margin: 0;">

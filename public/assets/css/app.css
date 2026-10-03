@@ -2084,3 +2084,13 @@ tr.gf-prov-row td { border-bottom: 1px dashed var(--border); }
   .tabela-lanc .btn-pagar span, .tabela-extrato .btn-pagar span { display: none; }
   .tabela-lanc .btn-pagar, .tabela-extrato .btn-pagar { padding: 6px 9px; }
 }
+
+/* Pendentes (Relatorios): tabela em largura total que se ajusta ao espaco, sem cortar Acoes. */
+@media (min-width: 769px) {
+  .tabela-pend { white-space: normal; table-layout: auto; }
+  .tabela-pend th, .tabela-pend td { padding: 10px 8px; vertical-align: middle; }
+  .tabela-pend td:nth-child(1) { min-width: 160px; }
+  .tabela-pend td:nth-child(1) strong, .tabela-pend td:nth-child(1) div { max-width: none !important; white-space: normal !important; overflow: visible !important; text-overflow: clip !important; overflow-wrap: anywhere; }
+  .tabela-pend td:nth-child(2), .tabela-pend td:nth-child(3) { white-space: nowrap; }
+  .tabela-pend th:last-child, .tabela-pend td:last-child { width: 1%; white-space: nowrap; }
+}
