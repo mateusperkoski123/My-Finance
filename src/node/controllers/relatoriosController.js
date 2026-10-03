@@ -92,76 +92,226 @@ function montarEstado(linhas, orcamentoMult) {
 }
 
 
+const YMD = /^\d{4}-\d{2}-\d{2}$/;
+
+// ---- Periodo escolhido (mes, ano, hoje, 7 dias, datas) e os parametros que o identificam nos links ----
+function resolverPeriodo(query) {
+    const hojeObj = hojeLocal();
+    const hoje = toLocalYMD(hojeObj);
+    const mes = parseInt(query.mes || (hojeObj.getMonth() + 1), 10);
+    const ano = parseInt(query.ano || hojeObj.getFullYear(), 10);
+    let inicio, fim, preset = query.preset || 'mes';
+
+    // Datas so valem como periodo personalizado quando vieram do botao "Aplicar" ou de um link com preset=custom/sem preset;
+    // os outros envios do formulario carregam as datas so para exibir o periodo atual.
+    const usaDatas = YMD.test(query.data_inicio || '') && YMD.test(query.data_fim || '') && (query.aplicar || !query.preset || query.preset === 'custom');
+    if (usaDatas) {
+        inicio = query.data_inicio;
+        fim = query.data_fim;
+        preset = 'custom';
+    } else if (preset === 'hoje') {
+        inicio = hoje;
+        fim = hoje;
+    } else if (preset === '7dias') {
+        const d = hojeLocal();
+        if (query.aba === 'pendentes') {
+            // Pendentes olha para frente: de hoje ate daqui a 7 dias (as atrasadas entram porque o periodo contem hoje).
+            inicio = hoje;
+            d.setDate(d.getDate() + 7);
+            fim = toLocalYMD(d);
+        } else {
+            d.setDate(d.getDate() - 7);
+            inicio = toLocalYMD(d);
+            fim = hoje;
+        }
+    } else if (preset === '30dias') {
+        const d = hojeLocal(); d.setDate(d.getDate() - 30);
+        inicio = toLocalYMD(d);
+        fim = hoje;
+    } else if (preset === 'anual') {
+        inicio = `${ano}-01-01`;
+        fim = `${ano}-12-31`;
+    } else {
+        preset = 'mes';
+        inicio = toLocalYMD(new Date(ano, mes - 1, 1));
+        fim = toLocalYMD(new Date(ano, mes, 0));
+    }
+
+    const mesAnt = new Date(ano, mes - 2, 1);
+    const mesProx = new Date(ano, mes, 1);
+    const periodo = {
+        mes, ano, inicio, fim, preset,
+        mes_anterior: mesAnt.getMonth() + 1, ano_anterior: mesAnt.getFullYear(),
+        mes_proximo: mesProx.getMonth() + 1, ano_proximo: mesProx.getFullYear()
+    };
+    const periodoParams = preset === 'custom'
+        ? { preset: 'custom', data_inicio: inicio, data_fim: fim }
+        : ((preset === 'mes' || preset === 'anual') ? { preset, mes, ano } : { preset });
+    return { periodo, periodoParams, hoje, hojeObj };
+}
+
+// ---- Com o que comparar: periodo anterior (padrao), mesmo periodo do ano passado ou datas escolhidas ----
+function resolverComparacao(query, periodo) {
+    const { preset, inicio, fim, mes, ano } = periodo;
+    let comparar = ['anterior', 'ano', 'custom'].includes(query.comparar) ? query.comparar : 'anterior';
+    let periodoAnt = null;
+    if (comparar === 'custom') {
+        if (YMD.test(query.cmp_inicio || '') && YMD.test(query.cmp_fim || '') && query.cmp_inicio <= query.cmp_fim) {
+            periodoAnt = { inicio: query.cmp_inicio, fim: query.cmp_fim };
+        } else {
+            comparar = 'anterior';
+        }
+    }
+    if (comparar === 'ano') {
+        if (preset === 'mes') {
+            periodoAnt = { inicio: toLocalYMD(new Date(ano - 1, mes - 1, 1)), fim: toLocalYMD(new Date(ano - 1, mes, 0)) };
+        } else if (preset === 'anual') {
+            periodoAnt = { inicio: `${ano - 1}-01-01`, fim: `${ano - 1}-12-31` };
+        } else {
+            const volta = (ymd) => { const [a, m, d] = ymd.split('-').map(Number); return toLocalYMD(new Date(a - 1, m - 1, d)); };
+            periodoAnt = { inicio: volta(inicio), fim: volta(fim) };
+        }
+    }
+    if (!periodoAnt) periodoAnt = periodoAnterior(preset, inicio, fim, mes, ano);
+    const cmpParams = comparar === 'anterior' ? {} : (comparar === 'ano' ? { comparar } : { comparar, cmp_inicio: periodoAnt.inicio, cmp_fim: periodoAnt.fim });
+    return { comparar, periodoAnt, cmpParams };
+}
+
+// ---- Estado financeiro: categorias com realizado, pendente, total, % e comparacao ----
+async function carregarEstado(userId, periodo, periodoAnt) {
+    const { inicio, fim, preset } = periodo;
+    // Limite de gasto das categorias e mensal: vale ao ver um mes (x1) ou o ano (x12); em outros periodos nao se compara.
+    const orcamentoMult = preset === 'mes' ? 1 : (preset === 'anual' ? 12 : null);
+    const [linhas] = await db.query(
+        `SELECT l.tipo,
+                COALESCE(p.id, c.id) AS categoria_id, IF(p.id IS NULL, c.nome, p.nome) AS categoria, IF(p.id IS NULL, c.cor, p.cor) AS categoria_cor,
+                IF(p.id IS NULL, c.limite_gasto, p.limite_gasto) AS cat_limite,
+                IF(p.id IS NOT NULL, c.id, NULL) AS subcategoria_id, IF(p.id IS NOT NULL, c.nome, NULL) AS subcategoria,
+                IF(p.id IS NOT NULL, c.limite_gasto, NULL) AS sub_limite,
+                SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? AND l.status = 'pago' THEN ABS(l.valor) ELSE 0 END) AS realizado,
+                SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? AND l.status = 'pendente' THEN ABS(l.valor) ELSE 0 END) AS pendente,
+                SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) ELSE 0 END) AS total,
+                SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) ELSE 0 END) AS anterior
+         FROM lancamentos l
+         LEFT JOIN categorias c ON l.categoria_id = c.id
+         LEFT JOIN categorias p ON c.parent_id = p.id
+         WHERE l.user_id = ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
+           AND (l.data_competencia BETWEEN ? AND ? OR l.data_competencia BETWEEN ? AND ?)
+         GROUP BY l.tipo, p.id, c.id, p.nome, c.nome, p.cor, c.cor, p.limite_gasto, c.limite_gasto`,
+        [inicio, fim, inicio, fim, inicio, fim, periodoAnt.inicio, periodoAnt.fim, userId, inicio, fim, periodoAnt.inicio, periodoAnt.fim]
+    );
+    return { estado: montarEstado(linhas, orcamentoMult), orcamentoMult };
+}
+
+// ---- Visao por conta: saldo inicial, entradas, saidas, transferencias/ajustes, saldo realizado, pendente e projetado ----
+async function carregarPorConta(userId, periodo) {
+    const { inicio, fim } = periodo;
+    const [rows] = await db.query(
+        `SELECT c.id, c.nome, c.cor, c.saldo_inicial,
+                COALESCE(SUM(CASE WHEN l.status = 'pago' AND l.data_competencia < ? THEN l.valor END), 0) AS mov_anterior,
+                COALESCE(SUM(CASE WHEN l.status = 'pago' AND l.tipo = 'receita' AND l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) END), 0) AS entradas,
+                COALESCE(SUM(CASE WHEN l.status = 'pago' AND l.tipo = 'despesa' AND l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) END), 0) AS saidas,
+                COALESCE(SUM(CASE WHEN l.status = 'pago' AND l.tipo IN ('ajuste', 'transferencia') AND l.data_competencia BETWEEN ? AND ? THEN l.valor END), 0) AS transf_ajustes,
+                COALESCE(SUM(CASE WHEN l.status = 'pendente' AND l.tipo = 'receita' AND l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) END), 0) AS a_receber,
+                COALESCE(SUM(CASE WHEN l.status = 'pendente' AND l.tipo = 'despesa' AND l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) END), 0) AS a_pagar
+         FROM contas c
+         LEFT JOIN lancamentos l ON l.conta_id = c.id AND l.user_id = c.user_id
+         WHERE c.user_id = ? AND c.status = 'ativa'
+         GROUP BY c.id, c.nome, c.cor, c.saldo_inicial
+         ORDER BY c.nome ASC`,
+        [inicio, inicio, fim, inicio, fim, inicio, fim, inicio, fim, inicio, fim, userId]
+    );
+    const contas = rows.map((r) => {
+        const ini = num(r.saldo_inicial) + num(r.mov_anterior);
+        const fimReal = ini + num(r.entradas) - num(r.saidas) + num(r.transf_ajustes);
+        const pendente = num(r.a_receber) - num(r.a_pagar);
+        return {
+            id: r.id, nome: r.nome, cor: r.cor, inicial: ini, entradas: num(r.entradas), saidas: num(r.saidas), outros: num(r.transf_ajustes),
+            realizado: fimReal, aReceber: num(r.a_receber), aPagar: num(r.a_pagar), pendente, projetado: fimReal + pendente
+        };
+    }).sort((a, b) => b.realizado - a.realizado);
+    const soma = (k) => contas.reduce((s, c) => s + c[k], 0);
+    const total = { inicial: soma('inicial'), entradas: soma('entradas'), saidas: soma('saidas'), outros: soma('outros'), realizado: soma('realizado'), pendente: soma('pendente'), projetado: soma('projetado') };
+    return { contas, total };
+}
+
+// ---- Fluxo de caixa: entradas/saidas por dia, semana ou mes (realizado x previsto) e saldo acumulado ----
+async function carregarFluxo(userId, periodo, saldoAnterior) {
+    const { inicio, fim } = periodo;
+    const [rows] = await db.query(
+        `SELECT l.data_competencia AS dia, l.tipo, l.status, SUM(l.valor) AS total
+         FROM lancamentos l
+         WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND ${CONTA_ATIVA}
+           AND (l.tipo IN ('receita', 'despesa') OR (l.tipo IN ('ajuste', 'transferencia') AND l.status = 'pago'))
+         GROUP BY l.data_competencia, l.tipo, l.status`,
+        [userId, inicio, fim]
+    );
+    const [maior] = await db.query(
+        `SELECT l.descricao, ABS(l.valor) AS valor, l.data_competencia AS dia
+         FROM lancamentos l
+         WHERE l.user_id = ? AND l.tipo = 'despesa' AND l.data_competencia BETWEEN ? AND ? AND ${CONTA_ATIVA}
+         ORDER BY ABS(l.valor) DESC, l.id ASC LIMIT 1`,
+        [userId, inicio, fim]
+    );
+
+    // Blocos: ate 7 dias = por dia; ate 62 dias = semanas de 7 dias a partir do inicio; mais que isso = por mes.
+    const [a, m, d] = inicio.split('-').map(Number);
+    const [a2, m2, d2] = fim.split('-').map(Number);
+    const ini = new Date(a, m - 1, d), end = new Date(a2, m2 - 1, d2);
+    const dias = Math.round((end - ini) / 86400000) + 1;
+    const blocos = [];
+    if (dias <= 7) {
+        for (let i = 0; i < dias; i++) { const x = new Date(ini); x.setDate(x.getDate() + i); blocos.push({ tipo: 'dia', ini: toLocalYMD(x), fim: toLocalYMD(x) }); }
+    } else if (dias <= 62) {
+        for (let i = 0, n = 1; i < dias; i += 7, n++) {
+            const x = new Date(ini); x.setDate(x.getDate() + i);
+            const y = new Date(ini); y.setDate(y.getDate() + Math.min(i + 6, dias - 1));
+            blocos.push({ tipo: 'sem', n, ini: toLocalYMD(x), fim: toLocalYMD(y) });
+        }
+    } else {
+        for (let c = new Date(ini.getFullYear(), ini.getMonth(), 1); c <= end; c = new Date(c.getFullYear(), c.getMonth() + 1, 1)) {
+            const x = c < ini ? ini : c;
+            const ultimo = new Date(c.getFullYear(), c.getMonth() + 1, 0);
+            const y = ultimo > end ? end : ultimo;
+            blocos.push({ tipo: 'mes', mes: c.getMonth() + 1, ano: c.getFullYear(), ini: toLocalYMD(x), fim: toLocalYMD(y) });
+        }
+    }
+    blocos.forEach((b) => Object.assign(b, { entR: 0, entP: 0, saiR: 0, saiP: 0, outros: 0 }));
+    rows.forEach((r) => {
+        const dia = toLocalYMD(r.dia);
+        const b = blocos.find((x) => dia >= x.ini && dia <= x.fim);
+        if (!b) return;
+        const v = num(r.total);
+        if (r.tipo === 'receita') { if (r.status === 'pago') b.entR += Math.abs(v); else b.entP += Math.abs(v); }
+        else if (r.tipo === 'despesa') { if (r.status === 'pago') b.saiR += Math.abs(v); else b.saiP += Math.abs(v); }
+        else b.outros += v;
+    });
+    let saldo = saldoAnterior;
+    let menor = { valor: saldo, ref: null };
+    blocos.forEach((b) => {
+        b.liquido = b.entR + b.entP - b.saiR - b.saiP + b.outros;
+        saldo += b.liquido;
+        b.saldoFim = saldo;
+        if (b.saldoFim < menor.valor) menor = { valor: b.saldoFim, ref: b };
+    });
+    const entradas = blocos.reduce((s, b) => s + b.entR + b.entP, 0);
+    const saidas = blocos.reduce((s, b) => s + b.saiR + b.saiP, 0);
+    return {
+        blocos, saldoInicial: saldoAnterior, saldoFinal: saldo, entradas, saidas,
+        menor, negativo: blocos.find((b) => b.saldoFim < 0) || null,
+        maiorSaida: maior[0] ? { descricao: maior[0].descricao, valor: num(maior[0].valor), dia: toLocalYMD(maior[0].dia) } : null,
+        saidaMaior: blocos.filter((b) => b.liquido < 0)
+    };
+}
+
 const relatoriosController = {
     index: async (req, res) => {
         const userId = req.user.id;
         const query = req.query;
-
-        const hojeObj = hojeLocal();
-        const hoje = toLocalYMD(hojeObj);
-
-        let mes = parseInt(query.mes || (hojeObj.getMonth() + 1), 10);
-        let ano = parseInt(query.ano || hojeObj.getFullYear(), 10);
-
-        let inicio, fim, preset = query.preset || 'mes';
-
-        // Datas so valem como periodo personalizado quando vieram do botao "Aplicar" ou de um link com preset=custom/sem preset;
-        // os outros envios do formulario carregam as datas so para exibir o periodo atual.
-        const usaDatas = query.data_inicio && query.data_fim && (query.aplicar || !query.preset || query.preset === 'custom');
-        if (usaDatas) {
-            inicio = query.data_inicio;
-            fim = query.data_fim;
-            preset = 'custom';
-        } else if (preset === 'hoje') {
-            inicio = hoje;
-            fim = hoje;
-        } else if (preset === '7dias') {
-            const d = hojeLocal();
-            if (query.aba === 'pendentes') {
-                // Pendentes olha para frente: de hoje ate daqui a 7 dias (as atrasadas entram porque o periodo contem hoje).
-                inicio = hoje;
-                d.setDate(d.getDate() + 7);
-                fim = toLocalYMD(d);
-            } else {
-                d.setDate(d.getDate() - 7);
-                inicio = toLocalYMD(d);
-                fim = hoje;
-            }
-        } else if (preset === '30dias') {
-            const d = hojeLocal(); d.setDate(d.getDate() - 30);
-            inicio = toLocalYMD(d);
-            fim = hoje;
-        } else if (preset === 'anual') {
-            inicio = `${ano}-01-01`;
-            fim = `${ano}-12-31`;
-        } else {
-            const start = new Date(ano, mes - 1, 1);
-            const end = new Date(ano, mes, 0);
-            inicio = toLocalYMD(start);
-            fim = toLocalYMD(end);
-        }
-
-        const mesAnt = new Date(ano, mes - 2, 1);
-        const mesProx = new Date(ano, mes, 1);
-        const periodo = {
-            mes,
-            ano,
-            inicio,
-            fim,
-            preset,
-            mes_anterior: mesAnt.getMonth() + 1,
-            ano_anterior: mesAnt.getFullYear(),
-            mes_proximo: mesProx.getMonth() + 1,
-            ano_proximo: mesProx.getFullYear()
-        };
-
+        const { periodo, periodoParams, hoje, hojeObj } = resolverPeriodo(query);
+        const { inicio, fim, preset } = periodo;
         const aba = query.aba || 'graficos';
-        const anoAnual = parseInt(query.ano_anual || ano, 10);
-
-        // Parametros que identificam o periodo (links entre abas, lista compartilhada e graficos clicaveis).
-        const periodoParams = preset === 'custom'
-            ? { preset: 'custom', data_inicio: inicio, data_fim: fim }
-            : ((preset === 'mes' || preset === 'anual') ? { preset, mes, ano } : { preset });
+        const anoAnual = parseInt(query.ano_anual || periodo.ano, 10);
 
         // Contas e categorias dos formularios (novo / editar) nas abas que listam lancamentos.
         const comLista = aba === 'pendentes' || aba === 'demonstrativo';
@@ -192,41 +342,27 @@ const relatoriosController = {
             dadosLista = await Lancamento.buscarFiltrados(userId, periodo, filtros, ordenacao, pagina, porPagina, agrupamento, extra);
         }
 
-        // ---- Estado financeiro: resultado do periodo + categorias (realizado, pendente, total, %, vs periodo anterior, orcado) ----
+        // ---- Estado financeiro: resultado do periodo, comparacao, categorias, contas e fluxo de caixa ----
         const tipoFiltro = ['receita', 'despesa'].includes(query.tipo) ? query.tipo : '';
         const nivel = ['cat', 'sub'].includes(query.nivel) ? query.nivel : '';
-        let estado = null;
-        const periodoAnt = periodoAnterior(preset, inicio, fim, mes, ano);
-        // Limite de gasto das categorias e mensal: vale ao ver um mes (x1) ou o ano (x12); em outros periodos nao se compara.
-        const orcamentoMult = preset === 'mes' ? 1 : (preset === 'anual' ? 12 : null);
+        const vista = ['comparativo', 'fluxo', 'contas'].includes(query.vista) ? query.vista : '';
+        let estado = null, orcamentoMult = null, porConta = null, fluxo = null;
+        const { comparar, periodoAnt, cmpParams } = resolverComparacao(query, periodo);
+
+        let resumo = null;
+        if (aba === 'graficos' || (aba === 'demonstrativo' && !estadoPorCategoria)) {
+            resumo = await Lancamento.resumoPeriodo(userId, periodo);
+        }
         if (aba === 'demonstrativo' && !estadoPorCategoria) {
-            const [linhas] = await db.query(
-                `SELECT l.tipo,
-                        COALESCE(p.id, c.id) AS categoria_id, IF(p.id IS NULL, c.nome, p.nome) AS categoria, IF(p.id IS NULL, c.cor, p.cor) AS categoria_cor,
-                        IF(p.id IS NULL, c.limite_gasto, p.limite_gasto) AS cat_limite,
-                        IF(p.id IS NOT NULL, c.id, NULL) AS subcategoria_id, IF(p.id IS NOT NULL, c.nome, NULL) AS subcategoria,
-                        IF(p.id IS NOT NULL, c.limite_gasto, NULL) AS sub_limite,
-                        SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? AND l.status = 'pago' THEN ABS(l.valor) ELSE 0 END) AS realizado,
-                        SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? AND l.status = 'pendente' THEN ABS(l.valor) ELSE 0 END) AS pendente,
-                        SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) ELSE 0 END) AS total,
-                        SUM(CASE WHEN l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) ELSE 0 END) AS anterior
-                 FROM lancamentos l
-                 LEFT JOIN categorias c ON l.categoria_id = c.id
-                 LEFT JOIN categorias p ON c.parent_id = p.id
-                 WHERE l.user_id = ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
-                   AND l.data_competencia BETWEEN ? AND ?
-                 GROUP BY l.tipo, p.id, c.id, p.nome, c.nome, p.cor, c.cor, p.limite_gasto, c.limite_gasto`,
-                [inicio, fim, inicio, fim, inicio, fim, periodoAnt.inicio, periodoAnt.fim, userId,
-                    inicio < periodoAnt.inicio ? inicio : periodoAnt.inicio, fim > periodoAnt.fim ? fim : periodoAnt.fim]
-            );
-            estado = montarEstado(linhas, orcamentoMult);
+            ({ estado, orcamentoMult } = await carregarEstado(userId, periodo, periodoAnt));
+            if (vista === 'contas') porConta = await carregarPorConta(userId, periodo);
+            if (vista === 'fluxo') fluxo = await carregarFluxo(userId, periodo, resumo.saldo_anterior);
         }
 
         // ---- Graficos: totais por tipo, situacao, categoria e subcategoria (o navegador monta e filtra os 4 graficos) ----
         let graficosDados = [];
         let frequencia = [];
         let evolucao = [];
-        let resumo = null;
         if (aba === 'graficos') {
             const [dados] = await db.query(
                 `SELECT l.tipo, l.status,
@@ -247,13 +383,7 @@ const relatoriosController = {
                 total: parseFloat(r.total) || 0
             }));
             frequencia = await Lancamento.frequenciaDiaria(userId, inicio, fim);
-        }
 
-        // Resumo do periodo (cartoes dos graficos) e evolucao do saldo
-        if (aba === 'graficos' || aba === 'demonstrativo') {
-            resumo = await Lancamento.resumoPeriodo(userId, periodo);
-        }
-        if (aba === 'graficos') {
             // Evolucao do saldo dia a dia (saldo anterior + movimentos pagos acumulados; contas ativas)
             const [movs] = await db.query(
                 `SELECT l.data_competencia AS dia, SUM(l.valor) AS total
@@ -292,7 +422,7 @@ const relatoriosController = {
         // Base da lista compartilhada: mantem aba e periodo nos links (busca, abas de tipo, agrupar, ordenar, paginacao).
         const listaParams = Object.assign({ aba }, periodoParams);
         const limparUrl = '/relatorios?' + new URLSearchParams(
-            aba === 'demonstrativo' ? Object.assign({ aba }, periodoParams, filtros.tipo !== 'todas' && ['receita', 'despesa'].includes(filtros.tipo) ? { tipo: filtros.tipo } : {}) : listaParams
+            aba === 'demonstrativo' ? Object.assign({ aba }, periodoParams, cmpParams, filtros.tipo !== 'todas' && ['receita', 'despesa'].includes(filtros.tipo) ? { tipo: filtros.tipo } : {}) : listaParams
         ).toString();
 
         res.render('relatorios/index', {
@@ -323,14 +453,86 @@ const relatoriosController = {
             // estado financeiro / graficos / anual
             tipoFiltro,
             nivel,
+            vista,
+            comparar,
+            cmpParams,
             estado,
             periodoAnt,
             orcamentoMult,
+            porConta,
+            fluxo,
             graficosDados,
             frequencia,
             evolucao,
             demonstrativoAnual,
             resumo
+        });
+    },
+
+    // Estado financeiro em CSV (uma linha por categoria e subcategoria, com o resumo do periodo no fim).
+    estadoCsv: async (req, res) => {
+        const userId = req.user.id;
+        const { periodo } = resolverPeriodo(req.query);
+        const { periodoAnt } = resolverComparacao(req.query, periodo);
+        const { estado, orcamentoMult } = await carregarEstado(userId, periodo, periodoAnt);
+        const resumo = await Lancamento.resumoPeriodo(userId, periodo);
+
+        const esc = (v) => {
+            const t = v === null || v === undefined ? '' : String(v);
+            const seguro = /^[=+\-@]/.test(t) && isNaN(Number(t)) ? "'" + t : t; // evita formula de planilha
+            return '"' + seguro.replace(/"/g, '""') + '"';
+        };
+        const n = (v) => (v === null || v === undefined ? '' : String(Math.round(v * 100) / 100).replace('.', ','));
+        const linhas = [['tipo', 'categoria', 'subcategoria', 'realizado', 'pendente', 'total', 'pct_do_total', 'comparacao', 'variacao_pct', 'orcado', 'uso_do_orcado_pct'].join(';')];
+        const linha = (tipo, cat, sub, x) => linhas.push([
+            tipo, esc(cat), esc(sub), n(x.realizado), n(x.pendente), n(x.total), n(x.pct), n(x.anterior), n(x.variacao), n(x.orcado), n(x.uso)
+        ].join(';'));
+        [['receita', estado.receitas], ['despesa', estado.despesas]].forEach(([tipo, S]) => {
+            S.cats.forEach((c) => {
+                linha(tipo, c.nome, '', c);
+                c.subLista.forEach((s) => linha(tipo, c.nome, s.direto ? '(sem subcategoria)' : s.nome, s));
+            });
+            linhas.push([tipo + '_total', '', '', n(S.realizado), n(S.pendente), n(S.total), '100', n(S.anterior), n(S.variacao), '', ''].join(';'));
+        });
+        const X = estado.resultado;
+        linhas.push(['resultado', '', '', n(X.realizado), n(X.total - X.realizado), n(X.total), '', n(X.anterior), '', '', ''].join(';'));
+        linhas.push(['saldo_anterior', '', '', '', '', n(resumo.saldo_anterior), '', '', '', '', ''].join(';'));
+        linhas.push(['ajustes_e_transferencias', '', '', '', '', n(resumo.ajustes_periodo), '', '', '', '', ''].join(';'));
+        linhas.push(['saldo_final_projetado', '', '', '', '', n(resumo.saldo_previsto), '', '', '', '', ''].join(';'));
+        linhas.push(['saldo_realizado', '', '', '', '', n(resumo.saldo_disponivel), '', '', '', '', ''].join(';'));
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', `attachment; filename="estado-financeiro_${periodo.inicio}_a_${periodo.fim}.csv"`);
+        res.send(String.fromCharCode(0xFEFF) + linhas.join(String.fromCharCode(13, 10)) + String.fromCharCode(13, 10));
+    },
+
+    // Pagina de impressao do estado financeiro (o navegador salva como PDF). Com anexo=1 lista tambem as transacoes do periodo.
+    estadoImprimir: async (req, res) => {
+        const userId = req.user.id;
+        const { periodo, periodoParams, hojeObj } = resolverPeriodo(req.query);
+        const { comparar, periodoAnt } = resolverComparacao(req.query, periodo);
+        const { estado, orcamentoMult } = await carregarEstado(userId, periodo, periodoAnt);
+        const resumo = await Lancamento.resumoPeriodo(userId, periodo);
+        let anexo = null;
+        if (req.query.anexo === '1') {
+            const [rows] = await db.query(
+                `SELECT l.data_competencia, l.tipo, l.descricao, l.valor, l.status,
+                        COALESCE(p.nome, c.nome) AS categoria, IF(p.id IS NOT NULL, c.nome, NULL) AS subcategoria, cb.nome AS conta
+                 FROM lancamentos l
+                 LEFT JOIN categorias c ON l.categoria_id = c.id
+                 LEFT JOIN categorias p ON c.parent_id = p.id
+                 LEFT JOIN contas cb ON l.conta_id = cb.id
+                 WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND l.tipo IN ('receita', 'despesa') AND ${CONTA_ATIVA}
+                 ORDER BY l.data_competencia ASC, l.id ASC LIMIT 2000`,
+                [userId, periodo.inicio, periodo.fim]
+            );
+            anexo = rows;
+        }
+        res.render('relatorios/imprimir', {
+            layout: false,
+            title: req.t('est.impr_titulo'),
+            periodo, periodoParams, periodoAnt, comparar, estado, orcamentoMult, resumo, anexo,
+            geradoEm: toLocalYMD(hojeObj),
+            usuarioNome: req.user.nome
         });
     }
 };

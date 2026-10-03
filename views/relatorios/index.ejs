@@ -219,7 +219,13 @@
         <%- include('../partials/modais_excluir_serie', { lancamentos }) %>
     <% } else { %>
         <%
-        const _lnk = (extra) => '/relatorios?' + new URLSearchParams(Object.assign({ aba: 'demonstrativo' }, periodoParams, extra)).toString();
+        // Links do Estado financeiro: mantem periodo, comparacao e aba interna (vista). o.semCmp/o.semVista soltam esses parametros; o.vista troca a aba.
+        const _lnk = (extra, o) => {
+            o = o || {};
+            const vs = o.semVista ? {} : ('vista' in o ? (o.vista ? { vista: o.vista } : {}) : (vista ? { vista } : {}));
+            return '/relatorios?' + new URLSearchParams(Object.assign({ aba: 'demonstrativo' }, periodoParams, o.semCmp ? {} : cmpParams, vs, extra)).toString();
+        };
+        const _exp = (caminho, extra) => caminho + '?' + new URLSearchParams(Object.assign({}, periodoParams, cmpParams, extra)).toString();
         const _chip = (ativo, href, texto) => '<a href="' + href + '" class="btn btn-sm ' + (ativo ? 'btn-primary' : 'btn-outline') + '" style="border-radius: 20px;">' + texto + '</a>';
         const R = estado.receitas, D = estado.despesas, X = estado.resultado;
         const _f1 = (v) => Math.abs(v).toFixed(1).replace('.', ',');
@@ -242,11 +248,40 @@
         const _ant = formatDate(periodoAnt.inicio, 'DD/MM/YYYY') + ' – ' + formatDate(periodoAnt.fim, 'DD/MM/YYYY');
         %>
 
+        <!-- Comparar com... e exportar -->
+        <div class="card estado-barra">
+            <div class="estado-barra__cmp">
+                <div class="estado-barra__chips">
+                    <span class="muted rot"><%= t('est.comparar') %></span>
+                    <%- _chip(comparar === 'anterior', _lnk({}, { semCmp: true }), t('est.cmp_anterior')) %>
+                    <%- _chip(comparar === 'ano', _lnk({ comparar: 'ano' }, { semCmp: true }), t('est.cmp_ano')) %>
+                </div>
+                <details class="periodo-custom" <%= comparar === 'custom' ? 'open' : '' %>>
+                    <summary><i class="ph ph-calendar-blank"></i> <%= t('est.cmp_custom') %><%= comparar === 'custom' ? ': ' + _ant : '' %></summary>
+                    <form method="get" action="/relatorios" class="estado-barra__form">
+                        <input type="hidden" name="aba" value="demonstrativo">
+                        <% Object.keys(periodoParams).forEach(k => { %><input type="hidden" name="<%= k %>" value="<%= periodoParams[k] %>"><% }) %>
+                        <% if (vista) { %><input type="hidden" name="vista" value="<%= vista %>"><% } %>
+                        <input type="hidden" name="comparar" value="custom">
+                        <input type="date" name="cmp_inicio" value="<%= periodoAnt.inicio %>" class="input" aria-label="<%= t('relatorios.data_inicial') %>" required>
+                        <span class="muted"><%= t('filtro.ate') %></span>
+                        <input type="date" name="cmp_fim" value="<%= periodoAnt.fim %>" class="input" aria-label="<%= t('relatorios.data_final') %>" required>
+                        <button type="submit" class="btn btn-outline btn-sm"><%= t('filtro.aplicar_datas') %></button>
+                    </form>
+                </details>
+            </div>
+            <div class="estado-barra__exp">
+                <a class="btn btn-outline btn-sm" href="<%= _exp('/relatorios/estado/imprimir', {}) %>" target="_blank" rel="noopener"><i class="ph ph-file-pdf"></i> <%= t('est.pdf') %></a>
+                <a class="btn btn-outline btn-sm" href="<%= _exp('/relatorios/estado/imprimir', { anexo: '1' }) %>" target="_blank" rel="noopener" title="<%= t('est.pdf_anexo_dica') %>"><i class="ph ph-list-bullets"></i> <%= t('est.pdf_anexo') %></a>
+                <a class="btn btn-outline btn-sm" href="<%= _exp('/relatorios/estado/csv', {}) %>"><i class="ph ph-file-csv"></i> <%= t('est.csv') %></a>
+            </div>
+        </div>
+
         <!-- Resultado do periodo (demonstracao de resultados) -->
         <section class="card estado-resumo">
             <div class="estado-resumo__cab">
                 <h3><%= t('est.resumo_titulo') %></h3>
-                <span class="muted"><%= t('est.vs', { periodo: _ant }) %></span>
+                <span class="muted"><%= t('est.vs', { periodo: _ant }) %> · <%= t('est.cmp_' + comparar) %></span>
             </div>
             <div class="estado-linha">
                 <span class="estado-linha__rot"><%= t('painel.saldo_anterior') %></span>
@@ -283,6 +318,13 @@
             </div>
         </section>
 
+        <nav class="estado-vistas" aria-label="<%= t('est.vistas') %>">
+            <% [['', 'est.vista_categorias', 'ph-list-dashes'], ['comparativo', 'est.vista_comparativo', 'ph-arrows-left-right'], ['fluxo', 'est.vista_fluxo', 'ph-chart-bar'], ['contas', 'est.vista_contas', 'ph-bank']].forEach(v => { %>
+                <a href="<%= _lnk({}, { vista: v[0] }) %>" class="estado-vistas__item <%= vista === v[0] ? 'is-ativo' : '' %>"><i class="ph <%= v[2] %>"></i> <%= t(v[1]) %></a>
+            <% }) %>
+        </nav>
+
+        <% if (!vista) { %>
         <div class="card" style="border-radius: 16px; padding: 14px 18px; margin-top: 16px; display: flex; gap: 14px 24px; flex-wrap: wrap; align-items: center;">
             <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
                 <span class="muted" style="font-size: 12px; font-weight: 600;"><%= t('comum.tipo') %></span>
@@ -387,6 +429,265 @@
         <% }) %>
         <% if (_tem && !tipoFiltro && D.cats.length && orcamentoMult) { %>
             <p class="muted" style="font-size: 12px; margin: 12px 4px 0;"><i class="ph ph-info"></i> <%= t('est.limite_dica') %> · <a href="/categorias"><%= t('est.definir_limites') %></a></p>
+        <% } %>
+        <% } %>
+
+        <% if (vista === 'comparativo') { %>
+            <%
+            const _difTxt = (v) => (Math.abs(v) < 0.5 ? '<span class="muted">—</span>' : (v > 0 ? '+' : '−') + moeda(Math.abs(v)));
+            const _kpi = (titulo, atual, ant, boaSubir, cor) => {
+                const dif = atual - ant;
+                const delta = ant > 0 ? _delta(((atual - ant) / ant) * 100, boaSubir) : _deltaRes(atual, ant);
+                return '<div class="cmp-kpi"><small>' + titulo + '</small><strong style="color:' + cor + '">' + moeda(atual) + '</strong>' +
+                    '<div class="cmp-kpi__linha"><span>' + t('est.comparacao') + '</span><b>' + moeda(ant) + '</b></div>' +
+                    '<div class="cmp-kpi__linha"><span>' + t('est.diferenca') + '</span><b>' + _difTxt(dif) + ' ' + delta + '</b></div></div>';
+            };
+            %>
+            <div class="cmp-kpis">
+                <%- _kpi(t('comum.receitas'), R.total, R.anterior, true, 'var(--green)') %>
+                <%- _kpi(t('comum.despesas'), D.total, D.anterior, false, 'var(--red)') %>
+                <%- _kpi(t('est.resultado'), X.total, X.anterior, true, 'var(--text)') %>
+            </div>
+            <% [['despesa', D, false], ['receita', R, true]].forEach(([tp, S, boaSubir]) => {
+                if (!S.cats.length) return;
+                const _linhas = S.cats.slice().sort((a, b) => Math.max(b.total, b.anterior) - Math.max(a.total, a.anterior));
+                const _max = Math.max.apply(null, _linhas.map(c => Math.max(c.total, c.anterior)).concat([1]));
+                const _cor = tp === 'receita' ? 'var(--green)' : 'var(--red)';
+            %>
+            <section class="card estado-tabela" style="border-radius: 16px; padding: 20px; margin-top: 16px;">
+                <div class="estado-tabela__cab">
+                    <h3 style="color: <%= _cor %>;"><%= tp === 'receita' ? t('comum.receitas') : t('comum.despesas') %></h3>
+                    <span class="muted" style="font-size: 12px;"><%= t('est.atual') %> × <%= _ant %></span>
+                </div>
+                <div class="tabela-container">
+                    <table class="tabela estado-t">
+                        <thead>
+                            <tr>
+                                <th><%= t('relatorios.demonstrativo_categoria_col') %></th>
+                                <th class="num"><%= t('est.atual') %></th>
+                                <th class="num"><%= t('est.comparacao') %></th>
+                                <th class="num"><%= t('est.diferenca') %></th>
+                                <th class="num"><%= t('est.variacao') %></th>
+                                <th class="opc"><%= t('est.atual') %> × <%= t('est.comparacao') %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% _linhas.forEach(c => { const dif = c.total - c.anterior; %>
+                            <tr>
+                                <td><a href="<%= _lnk({ tipo: tp, categoria_id: c.id }, { semVista: true }) %>" class="estado-nome"><span class="estado-dot" style="background: <%= c.cor || '#3b82f6' %>;"></span><span><%= c.nome %></span></a></td>
+                                <td class="num"><strong><%= moeda(c.total) %></strong></td>
+                                <td class="num"><%= moeda(c.anterior) %></td>
+                                <td class="num"><%- _difTxt(dif) %></td>
+                                <td class="num"><%- _delta(c.variacao, boaSubir) %></td>
+                                <td class="opc"><div class="barra2"><i style="width: <%= (c.total / _max * 100).toFixed(0) %>%; background: <%= _cor %>;"></i><i class="barra2--cmp" style="width: <%= (c.anterior / _max * 100).toFixed(0) %>%;"></i></div></td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td><strong><%= t('est.total') %></strong></td>
+                                <td class="num"><strong><%= moeda(S.total) %></strong></td>
+                                <td class="num"><%= moeda(S.anterior) %></td>
+                                <td class="num"><%- _difTxt(S.total - S.anterior) %></td>
+                                <td class="num"><%- _delta(S.variacao, boaSubir) %></td>
+                                <td class="opc"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+            <% }) %>
+            <%
+            // Maiores altas e quedas de gasto (por categoria).
+            const _dif = D.cats.map(c => ({ c, d: c.total - c.anterior }));
+            const _altas = _dif.filter(x => x.d > 0.5).sort((a, b) => b.d - a.d).slice(0, 3);
+            const _quedas = _dif.filter(x => x.d < -0.5).sort((a, b) => a.d - b.d).slice(0, 3);
+            const _item = (x) => '<div class="it"><a href="' + _lnk({ tipo: 'despesa', categoria_id: x.c.id }, { semVista: true }) + '" class="estado-nome">' + x.c.nome.replace(/</g, '&lt;') + '</a><span>' + _difTxt(x.d) + ' ' + _delta(x.c.variacao, false) + '</span></div>';
+            %>
+            <div class="cmp-duo">
+                <div class="cmp-lista"><h4>▲ <%= t('est.maiores_altas') %></h4><%- _altas.length ? _altas.map(_item).join('') : '<p class="muted">' + t('est.sem_altas') + '</p>' %></div>
+                <div class="cmp-lista"><h4>▼ <%= t('est.maiores_quedas') %></h4><%- _quedas.length ? _quedas.map(_item).join('') : '<p class="muted">' + t('est.sem_quedas') + '</p>' %></div>
+            </div>
+        <% } %>
+        <% if (vista === 'fluxo' && fluxo) { %>
+            <%
+            const F = fluxo;
+            const _dm = (ymd) => formatDate(ymd, 'DD/MM/YYYY').slice(0, 5);
+            const _rotBloco = (b) => b.tipo === 'dia' ? _dm(b.ini) : (b.tipo === 'sem' ? t('est.sem_n', { n: b.n }) : t('painel.mes.' + b.mes).slice(0, 3) + '/' + String(b.ano).slice(2));
+            const _perBloco = (b) => b.tipo === 'sem' ? _dm(b.ini) + '–' + _dm(b.fim) : '';
+            const _comp = (v) => { const a = Math.abs(v); const s = v < 0 ? '−' : ''; if (a >= 1e6) return s + (a / 1e6).toFixed(1).replace('.', ',') + ' mi'; if (a >= 1e3) return s + Math.round(a / 1e3) + ' mil'; return s + Math.round(a); };
+            // Grafico (SVG): barras = entradas/saidas por bloco (cheia = realizado, listrada = previsto); linha azul = saldo acumulado (eixo da direita).
+            const W = 1000, H = 310, pl = 70, pr = 80, pt = 36, pb = 44, n = F.blocos.length, cw = (W - pl - pr) / Math.max(n, 1);
+            const maxBar = Math.max.apply(null, F.blocos.map(b => Math.max(b.entR + b.entP, b.saiR + b.saiP)).concat([1]));
+            const saldos = [F.saldoInicial].concat(F.blocos.map(b => b.saldoFim));
+            const sMin = Math.min.apply(null, saldos.concat([0])), sMax = Math.max.apply(null, saldos.concat([1]));
+            const yB = (v) => H - pb - (v / maxBar) * (H - pb - pt);
+            const yS = (v) => H - pb - ((v - sMin) / (sMax - sMin)) * (H - pb - pt);
+            const temMov = F.entradas + F.saidas > 0;
+            %>
+            <section class="card estado-tabela" style="border-radius: 16px; padding: 20px; margin-top: 16px;">
+                <div class="estado-tabela__cab">
+                    <h3><%= t('est.vista_fluxo') %></h3>
+                    <span class="muted" style="font-size: 12px;"><%= t('est.fluxo_dica') %></span>
+                </div>
+                <% if (!temMov) { %>
+                    <p class="muted" style="margin: 12px 0 0;"><%= t('relatorios.demonstrativo_sem_dados') %></p>
+                <% } else { %>
+                <svg viewBox="0 0 <%= W %> <%= H %>" width="100%" role="img" aria-label="<%= t('est.vista_fluxo') %>" class="fluxo-svg">
+                    <defs>
+                        <pattern id="fxV" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="6" style="fill: var(--green)" opacity=".7"/></pattern>
+                        <pattern id="fxR" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="3" height="6" style="fill: var(--red)" opacity=".7"/></pattern>
+                    </defs>
+                    <% [0, 0.25, 0.5, 0.75, 1].forEach(f => { const v = maxBar * f; %>
+                        <line x1="<%= pl %>" x2="<%= W - pr %>" y1="<%= yB(v) %>" y2="<%= yB(v) %>" stroke="var(--border)"/>
+                        <text x="<%= pl - 8 %>" y="<%= yB(v) + 4 %>" text-anchor="end" font-size="11" fill="var(--muted)"><%= _comp(v) %></text>
+                    <% }) %>
+                    <% [0, 0.25, 0.5, 0.75, 1].forEach(f => { const v = sMin + (sMax - sMin) * f; %>
+                        <text x="<%= W - pr + 8 %>" y="<%= yS(v) + 4 %>" font-size="11" fill="#2a78d6"><%= _comp(v) %></text>
+                    <% }) %>
+                    <% if (sMin < 0) { %><line x1="<%= pl %>" x2="<%= W - pr %>" y1="<%= yS(0) %>" y2="<%= yS(0) %>" stroke="#2a78d6" stroke-dasharray="4 4" opacity=".5"/><% } %>
+                    <% F.blocos.forEach((b, i) => {
+                        const bw = Math.min(cw * 0.3, 46), x0 = pl + i * cw + cw / 2 - bw - 3;
+                        const barra = (x, tot, real, cor, pad) => {
+                            let out = '';
+                            if (tot > 0) out += '<rect x="' + x + '" y="' + yB(tot) + '" width="' + bw + '" height="' + (yB(0) - yB(tot)) + '" rx="3" fill="url(#' + pad + ')" style="stroke: ' + cor + '" stroke-opacity=".7"/>';
+                            if (real > 0) out += '<rect x="' + x + '" y="' + yB(real) + '" width="' + bw + '" height="' + (yB(0) - yB(real)) + '" rx="3" style="fill: ' + cor + '"/>';
+                            return out;
+                        };
+                    %>
+                        <%- barra(x0, b.entR + b.entP, b.entR, 'var(--green)', 'fxV') %>
+                        <%- barra(x0 + bw + 6, b.saiR + b.saiP, b.saiR, 'var(--red)', 'fxR') %>
+                        <text x="<%= pl + i * cw + cw / 2 %>" y="<%= H - 24 %>" text-anchor="middle" font-size="12" fill="var(--text)" font-weight="600"><%= _rotBloco(b) %></text>
+                        <text x="<%= pl + i * cw + cw / 2 %>" y="<%= H - 9 %>" text-anchor="middle" font-size="10.5" fill="var(--muted)"><%= _perBloco(b) %></text>
+                    <% }) %>
+                    <% const xs = [pl].concat(F.blocos.map((b, i) => pl + i * cw + cw / 2)); %>
+                    <polyline points="<%= xs.map((x, i) => x.toFixed(0) + ',' + yS(saldos[i]).toFixed(0)).join(' ') %>" fill="none" stroke="#2a78d6" stroke-width="2.5"/>
+                    <% xs.forEach((x, i) => { %><circle cx="<%= x %>" cy="<%= yS(saldos[i]) %>" r="4" fill="#2a78d6"/><% }) %>
+                    <text x="<%= xs[xs.length - 1] %>" y="<%= yS(saldos[saldos.length - 1]) - 12 %>" text-anchor="middle" font-size="12" font-weight="700" fill="#2a78d6"><%= moeda(F.saldoFinal) %></text>
+                </svg>
+                <div class="fluxo-legenda">
+                    <span><b style="color: var(--green);">■</b> <%= t('est.entradas') %></span>
+                    <span><b style="color: var(--red);">■</b> <%= t('est.saidas') %></span>
+                    <span>▨ <%= t('est.legenda_previsto') %></span>
+                    <span><b style="color: #2a78d6;">●</b> <%= t('est.legenda_saldo') %></span>
+                </div>
+                <div class="tabela-container" style="margin-top: 8px;">
+                    <table class="tabela estado-t">
+                        <thead>
+                            <tr>
+                                <th><%= t('est.periodo_col') %></th>
+                                <th class="num"><%= t('est.entradas') %></th>
+                                <th class="num"><%= t('est.saidas') %></th>
+                                <th class="num opc" title="<%= t('est.ajustes_dica') %>"><%= t('est.outros') %></th>
+                                <th class="num"><%= t('est.liquido') %></th>
+                                <th class="num"><%= t('est.saldo_final_col') %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="estado-sub estado-sub--solo">
+                                <td><%= t('est.saldo_inicial') %></td><td></td><td></td><td class="opc"></td><td></td>
+                                <td class="num"><%= moeda(F.saldoInicial) %></td>
+                            </tr>
+                            <% F.blocos.forEach(b => { %>
+                            <tr>
+                                <td><strong><%= _rotBloco(b) %></strong> <span class="muted" style="font-size: 11.5px;"><%= _perBloco(b) %></span></td>
+                                <td class="num" style="color: var(--green);"><%= (b.entR + b.entP) ? moeda(b.entR + b.entP) : '—' %></td>
+                                <td class="num" style="color: var(--red);"><%= (b.saiR + b.saiP) ? moeda(b.saiR + b.saiP) : '—' %></td>
+                                <td class="num opc"><%= Math.abs(b.outros) >= 1 ? (b.outros > 0 ? '+' : '−') + moeda(Math.abs(b.outros)) : '—' %></td>
+                                <td class="num"><strong><%= b.liquido >= 0 ? '+' : '−' %><%= moeda(Math.abs(b.liquido)) %></strong></td>
+                                <td class="num" style="color: <%= b.saldoFim < 0 ? 'var(--red)' : 'inherit' %>;"><strong><%= moeda(b.saldoFim) %></strong></td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td><strong><%= t('est.total') %></strong></td>
+                                <td class="num"><%= moeda(F.entradas) %></td>
+                                <td class="num"><%= moeda(F.saidas) %></td>
+                                <td class="num opc"></td>
+                                <td class="num"><%= F.saldoFinal - F.saldoInicial >= 0 ? '+' : '−' %><%= moeda(Math.abs(F.saldoFinal - F.saldoInicial)) %></td>
+                                <td class="num"><strong><%= moeda(F.saldoFinal) %></strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="fluxo-alertas">
+                    <% if (F.saldoFinal >= 0) { %>
+                        <span class="badge badge-sucesso"><i class="ph ph-check-circle"></i> <%= t('est.fecha_azul', { valor: moeda(F.saldoFinal) }) %></span>
+                    <% } else { %>
+                        <span class="badge badge-erro" style="background: var(--red-bg); color: var(--red);"><i class="ph ph-warning-circle"></i> <%= t('est.fecha_vermelho', { valor: moeda(F.saldoFinal) }) %></span>
+                    <% } %>
+                    <span class="badge badge-neutro"><i class="ph ph-arrow-down"></i> <%= t('est.menor_saldo', { valor: moeda(F.menor.valor), ref: F.menor.ref ? _rotBloco(F.menor.ref) : t('est.inicio_periodo') }) %></span>
+                    <% if (F.maiorSaida) { %>
+                        <span class="badge badge-neutro"><i class="ph ph-calendar-check"></i> <%= t('est.maior_saida', { nome: truncarTexto(F.maiorSaida.descricao, 30), valor: moeda(F.maiorSaida.valor), data: _dm(F.maiorSaida.dia) }) %></span>
+                    <% } %>
+                    <% if (F.negativo) { %>
+                        <span class="badge badge-alerta"><i class="ph ph-warning"></i> <%= t('est.saldo_negativo', { rot: _rotBloco(F.negativo) }) %></span>
+                    <% } %>
+                    <% F.saidaMaior.slice(0, 2).forEach(b => { %>
+                        <span class="badge badge-alerta"><i class="ph ph-warning"></i> <%= t('est.saida_maior', { rot: _rotBloco(b), valor: moeda(Math.abs(b.liquido)) }) %></span>
+                    <% }) %>
+                </div>
+                <% } %>
+            </section>
+        <% } %>
+        <% if (vista === 'contas' && porConta) { %>
+            <%
+            const PC = porConta;
+            const _cel = (v, cor, sinal) => '<td class="num"' + (cor && v ? ' style="color:' + cor + '"' : '') + '>' + (Math.abs(v) >= 1 ? (sinal && v > 0 ? '+' : (v < 0 ? '−' : '')) + moeda(Math.abs(v)) : '<span class="muted">—</span>') + '</td>';
+            const _extrato = (c) => '/contas/' + c.id + '/extrato?' + new URLSearchParams({ preset: 'custom', data_inicio: periodo.inicio, data_fim: periodo.fim }).toString();
+            %>
+            <section class="card estado-tabela" style="border-radius: 16px; padding: 20px; margin-top: 16px;">
+                <div class="estado-tabela__cab">
+                    <h3><%= t('est.vista_contas') %></h3>
+                    <span class="muted" style="font-size: 12px;"><%= t('est.contas_dica') %></span>
+                </div>
+                <div class="tabela-container">
+                    <table class="tabela estado-t estado-contas">
+                        <thead>
+                            <tr>
+                                <th><%= t('modal.conta') %></th>
+                                <th class="num opc"><%= t('est.saldo_inicial_col') %></th>
+                                <th class="num"><%= t('est.entradas') %></th>
+                                <th class="num"><%= t('est.saidas') %></th>
+                                <th class="num opc" title="<%= t('est.ajustes_dica') %>"><%= t('est.transf_ajustes') %></th>
+                                <th class="num"><%= t('est.saldo_realizado_col') %></th>
+                                <th class="num opc" title="<%= t('est.pendente_liquido_dica') %>"><%= t('est.pendente_liquido') %></th>
+                                <th class="num"><%= t('est.saldo_projetado_col') %></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (!PC.contas.length) { %>
+                                <tr><td colspan="8" class="tabela__vazio"><%= t('relatorios.demonstrativo_sem_dados') %></td></tr>
+                            <% } %>
+                            <% PC.contas.forEach(c => { %>
+                            <tr>
+                                <td><a href="<%= _extrato(c) %>" class="estado-nome"><span class="estado-dot" style="background: <%= c.cor || '#2563eb' %>;"></span><span><%= c.nome %></span></a></td>
+                                <td class="num opc"><%= moeda(c.inicial) %></td>
+                                <%- _cel(c.entradas, 'var(--green)', false) %>
+                                <%- _cel(c.saidas, 'var(--red)', false) %>
+                                <%- _cel(c.outros, null, true).replace('<td class="num"', '<td class="num opc"') %>
+                                <td class="num"><strong><%= moeda(c.realizado) %></strong></td>
+                                <%- _cel(c.pendente, c.pendente >= 0 ? 'var(--green)' : 'var(--red)', true).replace('<td class="num"', '<td class="num opc"') %>
+                                <td class="num"><strong><%= moeda(c.projetado) %></strong></td>
+                            </tr>
+                            <% }) %>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td><strong><%= t('est.total') %></strong></td>
+                                <td class="num opc"><%= moeda(PC.total.inicial) %></td>
+                                <td class="num"><%= moeda(PC.total.entradas) %></td>
+                                <td class="num"><%= moeda(PC.total.saidas) %></td>
+                                <td class="num opc"><%= Math.abs(PC.total.outros) >= 1 ? (PC.total.outros > 0 ? '+' : '−') + moeda(Math.abs(PC.total.outros)) : '—' %></td>
+                                <td class="num"><strong><%= moeda(PC.total.realizado) %></strong></td>
+                                <td class="num opc"><%= (PC.total.pendente >= 0 ? '+' : '−') %><%= moeda(Math.abs(PC.total.pendente)) %></td>
+                                <td class="num"><strong><%= moeda(PC.total.projetado) %></strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
         <% } %>
     <% } %>
 <% } else if (aba === 'demonstrativo_anual') { %>

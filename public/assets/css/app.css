@@ -2179,3 +2179,60 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
 }
 .estado-linha--real .estado-linha__val { font-size: 14px; font-weight: 700; color: var(--muted); }
 .estado-linha--proj { border-top: 2px solid var(--border); }
+
+/* Comparativo periodo anterior x atual (Painel) */
+.comp-card { padding: 16px 18px; border-radius: 16px; margin-bottom: 16px; display: flex; flex-direction: column; justify-content: center; }
+.comp-card__titulo { margin: 0 0 10px; font-size: 14px; font-weight: 700; }
+.comp-grid { display: grid; grid-template-columns: 1.3fr 1fr 1fr 1.5fr; gap: 8px; align-items: center; }
+.comp-grid--cab { font-size: 11px; color: var(--muted); font-weight: 600; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+.comp-linha { padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+.comp-linha:last-child { border-bottom: 0; }
+.comp-linha--total { font-weight: 800; }
+.comp-rotulo { font-weight: 600; min-width: 0; }
+.comp-col { text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.comp-col--atual { font-weight: 700; }
+.comp-col--var { display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-weight: 700; }
+.comp-col--var small { font-weight: 600; opacity: .85; }
+@media (min-width: 769px) {
+  .painel-resumo:has(.grafico-card) .comp-card { margin-bottom: 0; }
+}
+@media (max-width: 768px) {
+  .comp-grid { grid-template-columns: 1.1fr 1fr 1fr; }
+  .comp-linha { font-size: 12px; }
+  .comp-col--var { grid-column: 1 / -1; justify-content: flex-end; font-size: 11.5px; padding-bottom: 2px; }
+  .comp-grid--cab .comp-col--var { display: none; }
+}
+
+/* Estado financeiro: comparacao, exportar, abas internas, comparativo, fluxo de caixa e por conta ---------------- */
+.estado-barra { border-radius: 16px; padding: 14px 18px; margin-top: 20px; display: flex; justify-content: space-between; gap: 14px 20px; flex-wrap: wrap; align-items: flex-start; }
+.estado-barra__chips { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.estado-barra .rot { font-size: 12px; font-weight: 600; margin-right: 2px; }
+.estado-barra__cmp details { margin-top: 10px; }
+.estado-barra__form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; }
+.estado-barra__form .input { width: 150px; padding: 4px 8px; font-size: 13px; border-radius: 8px; }
+.estado-barra__exp { display: flex; gap: 6px; flex-wrap: wrap; }
+.estado-vistas { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 16px; border-bottom: 1px solid var(--border); }
+.estado-vistas__item { padding: 9px 14px; font-size: 13.5px; font-weight: 600; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; display: inline-flex; align-items: center; gap: 6px; }
+.estado-vistas__item:hover { color: var(--text); }
+.estado-vistas__item.is-ativo { color: var(--text); border-bottom-color: var(--text); }
+.cmp-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+.cmp-kpi { border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; background: var(--card); }
+.cmp-kpi small { color: var(--muted); font-size: 11.5px; display: block; }
+.cmp-kpi strong { font-size: 19px; display: block; margin: 2px 0 6px; }
+.cmp-kpi__linha { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); }
+.cmp-kpi__linha b { color: var(--text); font-weight: 600; text-align: right; }
+.barra2 { display: flex; flex-direction: column; gap: 3px; min-width: 120px; }
+.barra2 i { display: block; height: 6px; border-radius: 4px; }
+.barra2 .barra2--cmp { background: var(--muted); opacity: .5; }
+.cmp-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 16px; }
+.cmp-lista { border: 1px solid var(--border); border-radius: 14px; padding: 12px 16px; background: var(--card); }
+.cmp-lista h4 { margin: 0 0 8px; font-size: 13px; }
+.cmp-lista .it { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 6px 0; border-top: 1px solid var(--border); }
+.cmp-lista .it:first-of-type { border-top: none; }
+.cmp-lista p { margin: 0; font-size: 13px; }
+.fluxo-svg { display: block; max-height: 340px; }
+.fluxo-legenda { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.fluxo-alertas { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.fluxo-alertas .badge { font-size: 12px; padding: 6px 10px; }
+@media (max-width: 800px) { .cmp-kpis, .cmp-duo { grid-template-columns: 1fr; } .estado-vistas__item { padding: 8px 10px; font-size: 12.5px; } }
+.estado-contas th, .estado-contas td { padding: 10px 8px; }

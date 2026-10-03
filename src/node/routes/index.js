@@ -146,6 +146,8 @@ router.post('/categorias/:id/restaurar', requireAuth, categoriasController.resta
 const gateAnual = (req, res, next) => (req.query.aba === 'demonstrativo_anual' ? exigirRecurso('rec_relatorio_anual')(req, res, next) : next());
 router.get('/relatorios', requireAuth, gateAnual, relatoriosController.index);
 router.get('/relatorios/exportar', requireAuth, exigirRecurso('rec_exportar', 'flash.recurso_pro'), relatoriosController.exportar);
+router.get('/relatorios/estado/csv', requireAuth, exigirRecurso('rec_exportar', 'flash.recurso_pro'), relatoriosController.estadoCsv);
+router.get('/relatorios/estado/imprimir', requireAuth, exigirRecurso('rec_exportar', 'flash.recurso_pro'), relatoriosController.estadoImprimir);
 
 // Divisao de Patrimonio route (Fase 5 - Placeholder)
 router.get('/patrimonio', requireAuth, (req, res) => {
