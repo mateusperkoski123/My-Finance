@@ -4,43 +4,39 @@ const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 const Lancamento = require('../models/Lancamento');
 const db = require('../config/db');
+const { IDIOMAS } = require('../core/idiomas');
+const { t: traduzir } = require('../core/i18n');
+
+// Opcoes oferecidas em Configuracoes > Preferencia (e as unicas aceitas ao salvar).
+const MOEDAS = {
+    'PYG': 'Guaraní (PYG)',
+    'BRL': 'Real (BRL)',
+    'USD': 'Dólar (USD)',
+    'ARS': 'Peso Argentino (ARS)',
+    'EUR': 'Euro (EUR)'
+};
+const TEMAS = { 'claro': 'Claro', 'escuro': 'Escuro' };
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const configuracoesController = {
     index: (req, res) => {
         res.render('configuracoes/index', {
             title: req.t('config.titulo'),
             menuAtivo: 'preferencia',
-            config: {
-                idiomas: {
-                    'pt-BR': 'Português (Brasil)',
-                    'es-PY': 'Español (Paraguay)',
-                    'en-US': 'English (US)'
-                },
-                moedas: {
-                    'PYG': 'Guaraní (PYG)',
-                    'BRL': 'Real (BRL)',
-                    'USD': 'Dólar (USD)',
-                    'ARS': 'Peso Argentino (ARS)',
-                    'EUR': 'Euro (EUR)'
-                },
-                temas: {
-                    'claro': 'Claro',
-                    'escuro': 'Escuro'
-                }
-            }
+            config: { idiomas: IDIOMAS, moedas: MOEDAS, temas: TEMAS }
         });
     },
 
     salvarPreferencia: async (req, res) => {
         const userId = req.user.id;
-        const { idioma, moeda, tema } = req.body;
-        await User.updatePreferencias(userId, {
-            idioma: idioma || 'pt-BR',
-            moeda: moeda || 'PYG',
-            tema: tema || 'claro'
-        });
+        // Valor fora da lista (formulario adulterado) mantem o que o usuario ja tinha.
+        const idioma = IDIOMAS[req.body.idioma] ? req.body.idioma : (req.user.idioma || 'pt-BR');
+        const moeda = MOEDAS[req.body.moeda] ? req.body.moeda : (req.user.moeda || 'PYG');
+        const tema = TEMAS[req.body.tema] ? req.body.tema : (req.user.tema || 'claro');
+        await User.updatePreferencias(userId, { idioma, moeda, tema });
         req.session.idioma = idioma;
-        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.preferencias_salvas') };
+        // A confirmacao ja sai no idioma que acabou de ser escolhido.
+        req.session.flash = { tipo: 'sucesso', mensagem: traduzir('flash.preferencias_salvas', {}, idioma) };
         res.redirect('/configuracoes');
     },
 
@@ -53,30 +49,41 @@ const configuracoesController = {
 
     salvarPerfil: async (req, res) => {
         const userId = req.user.id;
-        const { nome, email } = req.body;
-        if (!nome || !nome.trim()) {
+        const nome = typeof req.body.nome === 'string' ? req.body.nome.trim().slice(0, 120) : '';
+        const email = typeof req.body.email === 'string' ? req.body.email.trim() : '';
+        if (!nome) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.perfil_nome_obrigatorio') };
             return res.redirect('/configuracoes/perfil');
         }
-        if (!email || !email.trim()) {
+        if (!email) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.perfil_email_obrigatorio') };
             return res.redirect('/configuracoes/perfil');
         }
+        if (!EMAIL_RE.test(email) || email.length > 190) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.email_invalido') };
+            return res.redirect('/configuracoes/perfil');
+        }
 
-        const existing = await User.findByEmail(email.trim());
+        const existing = await User.findByEmail(email);
         if (existing && existing.id !== userId) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.perfil_email_em_uso') };
             return res.redirect('/configuracoes/perfil');
         }
 
-        await User.updatePerfil(userId, { nome: nome.trim(), email: email.trim() });
+        await User.updatePerfil(userId, { nome, email });
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.perfil_atualizado') };
         res.redirect('/configuracoes/perfil');
     },
 
     salvarSenha: async (req, res) => {
         const userId = req.user.id;
-        const { senha_atual, nova_senha, confirmar_nova_senha } = req.body;
+        const senha_atual = typeof req.body.senha_atual === 'string' ? req.body.senha_atual : '';
+        const nova_senha = typeof req.body.nova_senha === 'string' ? req.body.nova_senha : '';
+        const confirmar_nova_senha = typeof req.body.confirmar_nova_senha === 'string' ? req.body.confirmar_nova_senha : '';
+        if (!senha_atual || !nova_senha) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_obrigatoria') };
+            return res.redirect('/configuracoes/perfil');
+        }
 
         const user = await User.findById(userId);
         if (!bcrypt.compareSync(senha_atual, user.senha_hash)) {
@@ -159,11 +166,20 @@ const configuracoesController = {
             return res.redirect('/configuracoes/dados');
         }
 
-        const contasData = payload.contas || [];
-        const categoriasData = payload.categorias || [];
-        const lancamentosData = payload.lancamentos || [];
+        // O arquivo vem de fora: so listas sao aceitas, e nomes/cores sao conferidos antes de gravar.
+        const lista = (v) => (Array.isArray(v) ? v.filter((x) => x && typeof x === 'object') : []);
+        const contasData = lista(payload && payload.contas);
+        const lancamentosData = lista(payload && payload.lancamentos);
+        // As categorias podem vir em arvore (como o backup exporta, com "subcategorias" dentro) ou em lista simples.
+        const categoriasData = [];
+        lista(payload && payload.categorias).forEach((c) => {
+            categoriasData.push(c);
+            lista(c.subcategorias).forEach((s) => categoriasData.push(s));
+        });
 
-        const { toLocalYMD, hojeLocal } = require('../core/helpers');
+        const { toLocalYMD, hojeLocal, corValida } = require('../core/helpers');
+        const TIPOS_CONTA = ['corrente', 'poupanca', 'carteira', 'investimento', 'outra'];
+        const nomeDe = (v) => String(v || '').trim().slice(0, 120);
         // Aceita 'YYYY-MM-DD' ou ISO com fuso (backups antigos gravavam '...T03:00:00.000Z').
         const normData = (v) => {
             if (!v) return null;
@@ -185,16 +201,17 @@ const configuracoesController = {
             const contaMap = {};
             let contasCount = 0;
             for (const c of contasData) {
-                if (!c.nome) continue;
-                const [existente] = await conn.query('SELECT id FROM contas WHERE user_id = ? AND nome = ? LIMIT 1', [userId, c.nome]);
+                const nome = nomeDe(c.nome);
+                if (!nome) continue;
+                const [existente] = await conn.query('SELECT id FROM contas WHERE user_id = ? AND nome = ? LIMIT 1', [userId, nome]);
                 if (existente.length) {
                     if (c.id) contaMap[c.id] = existente[0].id;
                     continue;
                 }
                 const [resAcc] = await conn.query(
                     `INSERT INTO contas (user_id, nome, tipo, cor, saldo_inicial, conta_padrao, status, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, 0, ?, NOW(), NOW())`,
-                    [userId, c.nome, c.tipo || 'corrente', c.cor || '#2563eb', parseFloat(c.saldo_inicial) || 0, c.status === 'arquivada' ? 'arquivada' : 'ativa']
+                     VALUES (?, ?, ?, ?, ?, 0, ?, NOW(3), NOW(3))`,
+                    [userId, nome, TIPOS_CONTA.includes(c.tipo) ? c.tipo : 'corrente', corValida(c.cor) ? c.cor : '#2563eb', parseFloat(c.saldo_inicial) || 0, c.status === 'arquivada' ? 'arquivada' : 'ativa']
                 );
                 if (c.id) contaMap[c.id] = resAcc.insertId;
                 contasCount++;
@@ -210,17 +227,20 @@ const configuracoesController = {
             const sysCatMap = {};
             existingSysCats.forEach(sc => { sysCatMap[sc.chave_sistema] = sc.id; });
 
+            // Categorias-pai primeiro: as subcategorias precisam do id novo do pai.
             const sortedCats = [...categoriasData].sort((a, b) => (a.parent_id ? 1 : 0) - (b.parent_id ? 1 : 0));
             for (const cat of sortedCats) {
-                if (!cat.nome) continue;
+                const nome = nomeDe(cat.nome);
+                if (!nome) continue;
                 if (cat.sistema && cat.chave_sistema && sysCatMap[cat.chave_sistema]) {
                     catMap[cat.id] = sysCatMap[cat.chave_sistema];
                     continue;
                 }
                 const parentId = cat.parent_id ? (catMap[cat.parent_id] || null) : null;
+                if (cat.parent_id && !parentId) continue; // subcategoria cujo pai nao veio no arquivo
                 const [existente] = await conn.query(
                     'SELECT id FROM categorias WHERE user_id = ? AND nome = ? AND parent_id <=> ? LIMIT 1',
-                    [userId, cat.nome, parentId]
+                    [userId, nome, parentId]
                 );
                 if (existente.length) {
                     if (cat.id) catMap[cat.id] = existente[0].id;
@@ -229,8 +249,8 @@ const configuracoesController = {
                 const tipoCat = 'ambas'; // categorias nao tem tipo
                 const [resCat] = await conn.query(
                     `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, limite_gasto, sistema, chave_sistema, status, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, 0, NULL, ?, NOW(), NOW())`,
-                    [userId, parentId, cat.nome, cat.cor || '#3b82f6', tipoCat, cat.limite_gasto ? parseFloat(cat.limite_gasto) : null, cat.status === 'arquivada' ? 'arquivada' : 'ativa']
+                     VALUES (?, ?, ?, ?, ?, ?, 0, NULL, ?, NOW(3), NOW(3))`,
+                    [userId, parentId, nome, corValida(cat.cor) ? cat.cor : '#3b82f6', tipoCat, parseFloat(cat.limite_gasto) > 0 ? parseFloat(cat.limite_gasto) : null, cat.status === 'arquivada' ? 'arquivada' : 'ativa']
                 );
                 if (cat.id) catMap[cat.id] = resCat.insertId;
                 categoriasCount++;
@@ -238,6 +258,7 @@ const configuracoesController = {
 
             // 3. Lancamentos (ignora os que ja existem identicos: importar 2x nao duplica)
             let lancamentosCount = 0;
+            const lancMap = {}; // id no arquivo -> id gravado (para religar as duas pernas das transferencias)
             for (const l of lancamentosData) {
                 if (!l.descricao || !l.valor) continue;
                 const mappedContaId = contaMap[l.conta_id] || fallbackAccountId;
@@ -247,6 +268,7 @@ const configuracoesController = {
                 const status = STATUS.includes(l.status) ? l.status : 'pendente';
                 const dataComp = normData(l.data_competencia) || toLocalYMD(hojeLocal());
                 const dataPag = normData(l.data_pagamento);
+                const descricao = String(l.descricao).slice(0, 190);
                 let valor = parseFloat(l.valor) || 0;
                 // Invariante do sistema: despesa e negativa, receita e positiva (ajuste/transferencia mantem o sinal informado).
                 if (tipo === 'despesa') valor = -Math.abs(valor);
@@ -254,24 +276,38 @@ const configuracoesController = {
 
                 const [dup] = await conn.query(
                     'SELECT id FROM lancamentos WHERE user_id = ? AND conta_id = ? AND tipo = ? AND descricao = ? AND valor = ? AND data_competencia = ? LIMIT 1',
-                    [userId, mappedContaId, tipo, l.descricao, valor, dataComp]
+                    [userId, mappedContaId, tipo, descricao, valor, dataComp]
                 );
-                if (dup.length) continue;
+                if (dup.length) {
+                    if (l.id) lancMap[l.id] = dup[0].id;
+                    continue;
+                }
 
-                await conn.query(
+                const [resLanc] = await conn.query(
                     `INSERT INTO lancamentos (user_id, conta_id, categoria_id, tipo, descricao, valor,
                                                data_competencia, data_pagamento, status, recorrente,
                                                serie_id, observacoes, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`,
-                    [userId, mappedContaId, mappedCatId, tipo, String(l.descricao).slice(0, 190), valor, dataComp,
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(3), NOW(3))`,
+                    [userId, mappedContaId, mappedCatId, tipo, descricao, valor, dataComp,
                      status === 'pago' ? (dataPag || dataComp) : null, status, l.recorrente || l.e_fixo ? 1 : 0,
                      l.serie_id ? String(l.serie_id).slice(0, 36) : null, l.observacoes ? String(l.observacoes).slice(0, 500) : null]
                 );
+                if (l.id) lancMap[l.id] = resLanc.insertId;
                 lancamentosCount++;
             }
 
-            await Conta.garantirContaPadrao(userId);
+            // Transferencias: religa saida e entrada quando as duas pernas vieram no arquivo (as duas continuam andando juntas).
+            for (const l of lancamentosData) {
+                const meu = l.id ? lancMap[l.id] : null;
+                const par = l.transferencia_par_id ? lancMap[l.transferencia_par_id] : null;
+                if (l.tipo === 'transferencia' && meu && par) {
+                    await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ? AND user_id = ? AND transferencia_par_id IS NULL', [par, meu, userId]);
+                }
+            }
+
             await conn.commit();
+            // Depois de gravar (a consulta usa outra conexao e so enxerga o que ja foi confirmado): garante uma conta padrao.
+            await Conta.garantirContaPadrao(userId);
             req.session.flash = {
                 tipo: 'sucesso',
                 mensagem: req.t('flash.dados_importado_sucesso', { contas: contasCount, categorias: categoriasCount, lancamentos: lancamentosCount })

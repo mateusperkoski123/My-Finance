@@ -26,12 +26,14 @@ const adminController = {
         const busca = String(req.query.q || '').trim().slice(0, 100);
         // Filtro por dias restantes do teste/plano: '' (todos), 1, 3, 7, 15, 'vencido' ou 'sem' (sem vencimento).
         const vence = ['1', '3', '7', '15', 'vencido', 'sem'].includes(req.query.vence) ? req.query.vence : '';
+        // Ordem da lista: '' (padrao) ou por quantidade de transacoes registradas (ultimos 30 dias / total).
+        const ordenar = ['lanc_30d', 'lanc_total'].includes(req.query.ordenar) ? req.query.ordenar : '';
         const [metricas, usuarios, planos] = await Promise.all([
             Assinatura.metricas(),
-            Assinatura.listarUsuariosAdmin({ busca, vence }),
+            Assinatura.listarUsuariosAdmin({ busca, vence, ordenar }),
             Assinatura.listarPlanos()
         ]);
-        res.render('admin/index', { title: req.t('admin.titulo'), metricas, usuarios, planos, busca, fmt, vence, aba: 'usuarios' });
+        res.render('admin/index', { title: req.t('admin.titulo'), metricas, usuarios, planos, busca, fmt, vence, ordenar, diasAtividade: Estatisticas.DIAS_ATIVIDADE, aba: 'usuarios' });
     },
 
     // Consumo da IA: tokens (texto / fotos / audios), custo estimado por dia e saldo de creditos (informado manualmente).
@@ -109,6 +111,18 @@ const adminController = {
         await Assinatura.estenderTrial(parseInt(req.params.id, 10), dias);
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.admin_trial_estendido', { dias }) };
         redirecionar(res);
+    },
+
+    // Pedidos de plano: quem pediu, qual plano, mensal ou anual, e o telefone para o contato.
+    pedidos: async (req, res) => {
+        const pedidos = await Assinatura.listarPedidos();
+        res.render('admin/pedidos', { title: req.t('admin.titulo'), pedidos, fmt, telefone: require('../core/telefone'), aba: 'pedidos' });
+    },
+
+    descartarPedido: async (req, res) => {
+        await Assinatura.descartarPedido(parseInt(req.params.id, 10));
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.admin_pedido_descartado') };
+        res.redirect('/admin/pedidos');
     },
 
     cancelar: async (req, res) => {

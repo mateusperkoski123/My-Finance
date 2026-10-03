@@ -106,17 +106,21 @@
         if (typeof str === 'number') return str;
         if (!str) return 0;
         let s = String(str).trim();
-        s = s.replace(/(Gs\.|R\$|\$|€|Gs)/gi, '').trim();
-        if (s.includes('.') && !s.includes(',')) {
-            const parts = s.split('.');
-            const lastPart = parts[parts.length - 1];
-            if (parts.length > 2 || lastPart.length === 3) {
-                s = parts.join('');
-            }
-        } else if (s.includes(',') && !s.includes('.')) {
-            s = s.replace(',', '.');
-        } else if (s.includes(',') && s.includes('.')) {
-            s = s.replace(/\./g, '').replace(',', '.');
+        s = s.replace(/(Gs\.|R\$|US\$|\$|€|Gs)/gi, '').trim();
+        const temPonto = s.includes('.');
+        const temVirgula = s.includes(',');
+        if (temPonto && temVirgula) {
+            // O separador que aparece por ultimo e o decimal: "1.500,50" (real) ou "1,500.50" (dolar).
+            if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.');
+            else s = s.replace(/,/g, '');
+        } else if (temPonto) {
+            const partes = s.split('.');
+            if (partes.length > 2 || partes[partes.length - 1].length === 3) s = partes.join('');
+        } else if (temVirgula) {
+            // So virgulas: milhar do dolar ("1,500"); nos demais casos e o decimal ("10,5").
+            const partes = s.split(',');
+            if (partes.length > 2 || partes[partes.length - 1].replace(/[^0-9]/g, '').length === 3) s = partes.join('');
+            else s = s.replace(',', '.');
         }
         s = s.replace(/[^0-9.-]/g, '');
         return parseFloat(s) || 0;

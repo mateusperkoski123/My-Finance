@@ -8,7 +8,7 @@
 
         <div class="form-group">
             <label for="email"><%= t('auth.email_cadastrado') %></label>
-            <input class="input" type="email" id="email" name="email" placeholder="<%= t('auth.email_ph') %>" required autofocus>
+            <input class="input" type="email" id="email" name="email" autocomplete="email" inputmode="email" placeholder="<%= t('auth.email_ph') %>" required autofocus>
         </div>
 
         <button type="submit" class="btn btn-primary btn-block"><%= t('auth.enviar_link') %></button>

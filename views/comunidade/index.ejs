@@ -1,4 +1,6 @@
 <div class="comunidade-page">
+    <%- include('_abas', { aba: 'sugestoes' }) %>
+
     <!-- Header -->
     <div class="comunidade-header">
         <div>
@@ -7,7 +9,6 @@
         </div>
         <div>
             <button type="button" class="btn btn-primary" onclick="abrirModalNovaPostagem()">
-                <i class="ph-bold ph-plus"></i>
                 <%= t('comunidade.btn_adicionar') %>
             </button>
         </div>

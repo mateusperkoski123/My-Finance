@@ -63,16 +63,16 @@ async function sendVerificationEmail(email, link, lang = 'pt-BR') {
 }
 
 // Aviso para o(s) administrador(es) quando alguem pede um plano pago.
-async function sendPlanRequestNotice({ usuario, plano, ciclo, link }) {
+async function sendPlanRequestNotice({ usuario, plano, ciclo, telefone = '', link }) {
     const admins = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim()).filter(Boolean);
     if (!admins.length) return;
     const lang = 'es-PY';
     await enviar({
         to: admins.join(','), subject: t('email.pedido_assunto', { app: NOME_APP }, lang),
-        textoLog: `${usuario.nome} <${usuario.email}> pediu ${plano} (${ciclo})`,
+        textoLog: `${usuario.nome} <${usuario.email}> pediu ${plano} (${ciclo}) - tel ${telefone}`,
         html: modelo({ titulo: t('email.pedido_titulo', {}, lang),
-            texto: t('email.pedido_texto', { nome: usuario.nome, email: usuario.email, plano, ciclo }, lang),
-            botao: t('email.pedido_botao', {}, lang), link, aviso: '', lang })
+            texto: t('email.pedido_texto', { nome: usuario.nome, email: usuario.email, plano, ciclo, telefone }, lang),
+            botao: t('email.pedido_botao', {}, lang), link: link.replace(/\/admin$/, '/admin/pedidos'), aviso: '', lang })
     });
 }
 

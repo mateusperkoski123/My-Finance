@@ -135,6 +135,7 @@
             await baixarMudancas(token);
             const hora = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             await window.AppDb.salvarMeta('ultima_sincronizacao_em', hora);
+            await window.AppDb.salvarMeta('ultima_sincronizacao_ms', Date.now());
             try { window.dispatchEvent(new CustomEvent('gf-fila-mudou', { detail: { sincronizou: true } })); } catch (e) { /* sem DOM */ }
             const problemas = await window.AppDb.buscarOutboxComProblema();
             atualizarIndicador(problemas.length ? '!' + problemas.length : hora);
@@ -163,10 +164,24 @@
         } catch (e) { /* melhor esforco */ }
     }
 
+    // Ao abrir uma pagina: so sincroniza se houver algo na fila para enviar ou se a ultima sincronizacao ja tem mais de
+    // INTERVALO_MIN_MS. Navegar entre as telas nao precisa baixar tudo de novo a cada clique (e nao estoura o limite do servidor).
+    const INTERVALO_MIN_MS = 30 * 1000;
+    async function sincronizarAoAbrir() {
+        if (!dbDisponivel()) return;
+        try {
+            const pendentes = await window.AppDb.buscarOutboxPendentes();
+            const ultima = Number(await window.AppDb.obterMeta('ultima_sincronizacao_ms')) || 0;
+            const decorrido = Date.now() - ultima;
+            if (!pendentes.length && decorrido >= 0 && decorrido < INTERVALO_MIN_MS) return;
+        } catch (e) { /* na duvida, sincroniza */ }
+        await executarSincronizacao();
+    }
+
     function iniciar() {
         window.addEventListener('online', executarSincronizacao);
         document.addEventListener('DOMContentLoaded', () => {
-            executarSincronizacao();
+            sincronizarAoAbrir();
             setInterval(() => { if (document.visibilityState === 'visible') executarSincronizacao(); }, 5 * 60 * 1000);
         });
     }

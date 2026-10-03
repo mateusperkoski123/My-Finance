@@ -1,61 +1,88 @@
+// Simbolo e separadores de cada moeda. O sinal de negativo vem antes do simbolo, igual ao formatador do navegador (app.js).
+const SIMBOLOS = { PYG: 'Gs.', BRL: 'R$', USD: '$', EUR: '€', ARS: '$' };
+
 function moeda(valor, codigoMoeda = 'PYG') {
     const num = parseFloat(valor) || 0;
-    
-    // Int currencies
+    const abs = Math.abs(num);
+    const milhar = (txt, sep) => txt.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+
+    // Moeda sem centavos
     if (codigoMoeda === 'PYG') {
-        const intVal = Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        return `Gs. ${intVal}`;
-    }
-    if (codigoMoeda === 'BRL') {
-        const parts = num.toFixed(2).split('.');
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        return `R$ ${parts.join(',')}`;
-    }
-    if (codigoMoeda === 'USD') {
-        const parts = num.toFixed(2).split('.');
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        return `$ ${parts.join('.')}`;
-    }
-    if (codigoMoeda === 'EUR') {
-        const parts = num.toFixed(2).split('.');
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        return `€ ${parts.join(',')}`;
-    }
-    if (codigoMoeda === 'ARS') {
-        const parts = num.toFixed(2).split('.');
-        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        return `$ ${parts.join('.')}`;
+        const inteiro = Math.round(abs);
+        return `${num < 0 && inteiro > 0 ? '-' : ''}Gs. ${milhar(String(inteiro), '.')}`;
     }
 
-    const parts = num.toFixed(2).split('.');
-    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-    return `${codigoMoeda} ${parts.join(',')}`;
+    const [inteiro, centavos] = abs.toFixed(2).split('.');
+    const sinal = num < 0 && (inteiro !== '0' || centavos !== '00') ? '-' : '';
+    // Dolar: milhar com virgula e decimal com ponto; as demais (real, euro, peso) usam ponto e virgula.
+    if (codigoMoeda === 'USD') return `${sinal}$ ${milhar(inteiro, ',')}.${centavos}`;
+    return `${sinal}${SIMBOLOS[codigoMoeda] || codigoMoeda} ${milhar(inteiro, '.')},${centavos}`;
 }
 
+// Converte o texto digitado em numero, no formato de qualquer moeda do sistema:
+// "Gs. 1.500.000", "R$ 1.500,50", "$ 1,500.50" (dolar), "10,5", "1500".
+// ATENCAO: public/assets/js/app-regras.js tem uma copia desta funcao (uso sem internet); as duas precisam ficar iguais.
 function parseMoeda(str) {
     if (typeof str === 'number') return str;
     if (!str) return 0;
-    
-    let s = String(str).trim();
-    // Remove currency prefixes/suffixes
-    s = s.replace(/(Gs\.|R\$|\$|€|Gs)/gi, '').trim();
 
-    // Check if there are dots and no comma (e.g., 100.000 or 1.500.000)
-    if (s.includes('.') && !s.includes(',')) {
-        const parts = s.split('.');
-        const lastPart = parts[parts.length - 1];
-        if (parts.length > 2 || lastPart.length === 3) {
-            s = parts.join('');
-        }
-    } else if (s.includes(',') && !s.includes('.')) {
-        s = s.replace(',', '.');
-    } else if (s.includes(',') && s.includes('.')) {
-        s = s.replace(/\./g, '').replace(',', '.');
+    let s = String(str).trim();
+    s = s.replace(/(Gs\.|R\$|US\$|\$|€|Gs)/gi, '').trim();
+
+    const temPonto = s.includes('.');
+    const temVirgula = s.includes(',');
+    if (temPonto && temVirgula) {
+        // O separador que aparece por ultimo e o decimal: "1.500,50" (real) ou "1,500.50" (dolar).
+        if (s.lastIndexOf(',') > s.lastIndexOf('.')) s = s.replace(/\./g, '').replace(',', '.');
+        else s = s.replace(/,/g, '');
+    } else if (temPonto) {
+        // So pontos: milhar quando ha varios ou quando vem seguido de exatamente 3 digitos ("1.500", "1.500.000").
+        const partes = s.split('.');
+        if (partes.length > 2 || partes[partes.length - 1].length === 3) s = partes.join('');
+    } else if (temVirgula) {
+        // So virgulas: milhar do dolar ("1,500", "1,234,567"); nos demais casos e o decimal ("10,5").
+        const partes = s.split(',');
+        if (partes.length > 2 || partes[partes.length - 1].replace(/[^0-9]/g, '').length === 3) s = partes.join('');
+        else s = s.replace(',', '.');
     }
 
-    // Strip remaining non-numeric except minus and dot
+    // Tira o que sobrou que nao seja numero, ponto ou sinal
     s = s.replace(/[^0-9.-]/g, '');
     return parseFloat(s) || 0;
+}
+
+const YMD_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+// 'YYYY-MM-DD' que existe de verdade no calendario (recusa "2026-02-31", texto solto, anos absurdos).
+function dataValida(v) {
+    const m = YMD_RE.exec(String(v === undefined || v === null ? '' : v));
+    if (!m) return false;
+    const ano = +m[1], mes = +m[2], dia = +m[3];
+    if (ano < 1990 || ano > 2100) return false;
+    const d = new Date(ano, mes - 1, dia);
+    return d.getFullYear() === ano && d.getMonth() === mes - 1 && d.getDate() === dia;
+}
+
+// Mes (1-12) e ano vindos da URL; qualquer coisa fora do esperado vira o mes/ano de hoje.
+function mesAnoValidos(mes, ano, hoje = hojeLocal()) {
+    const m = parseInt(mes, 10);
+    const a = parseInt(ano, 10);
+    return {
+        mes: m >= 1 && m <= 12 ? m : hoje.getMonth() + 1,
+        ano: a >= 1990 && a <= 2100 ? a : hoje.getFullYear()
+    };
+}
+
+const corValida = (v) => /^#[0-9a-fA-F]{6}$/.test(String(v || ''));
+
+// JSON para embutir dentro de um <script> da pagina. O sinal de menor vira um escape unicode: um nome de categoria ou
+// conta contendo "</script>" (digitado ou vindo de um backup importado) nao consegue fechar o bloco e injetar codigo.
+// Os separadores de linha U+2028 e U+2029 tambem sao escapados (quebrariam o script em navegadores antigos).
+const SEPARADORES_DE_LINHA = new RegExp('[' + String.fromCharCode(0x2028, 0x2029) + ']', 'g');
+function jsonScript(v) {
+    return JSON.stringify(v === undefined ? null : v)
+        .replace(/</g, '\\u003c')
+        .replace(SEPARADORES_DE_LINHA, (c) => '\\u' + c.charCodeAt(0).toString(16));
 }
 
 function formatDate(dateStr, formatStr = 'YYYY-MM-DD') {
@@ -156,6 +183,10 @@ module.exports = {
     addMonthsYMD,
     moeda,
     parseMoeda,
+    dataValida,
+    mesAnoValidos,
+    corValida,
+    jsonScript,
     formatDate,
     formatDateTime,
     truncarTexto,

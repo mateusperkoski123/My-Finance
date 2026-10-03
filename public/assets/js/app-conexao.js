@@ -44,7 +44,8 @@
         const ctl = new AbortController();
         const t = setTimeout(() => ctl.abort(), 3500);
         let ok = false;
-        try { ok = (await fetch('/offline', { method: 'HEAD', cache: 'no-store', signal: ctl.signal })).ok; } catch (e) { ok = false; } finally { clearTimeout(t); }
+        // /ping responde sem sessao nem banco (server.js): e chamado a cada poucos segundos e antes de cada envio de formulario.
+        try { ok = (await fetch('/ping', { method: 'HEAD', cache: 'no-store', signal: ctl.signal })).ok; } catch (e) { ok = false; } finally { clearTimeout(t); }
         aplicar(ok);
         return ok;
     }

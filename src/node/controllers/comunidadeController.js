@@ -4,6 +4,8 @@ const { formatarTempoRelativo } = require('../core/tempoRelativo');
 
 const comunidadeController = {
     async index(req, res) {
+        // Ha novidade que o usuario ainda nao viu e nenhuma lista foi pedida: abre pelas Novidades.
+        if (res.locals.novidadesNovas > 0 && !Object.keys(req.query).length) return res.redirect('/comunidade/novidades');
         const orden = ['top', 'novo', 'tendencia'].includes(req.query.orden) ? req.query.orden : 'top';
         const categoria = ['sugestao', 'bug'].includes(req.query.categoria) ? req.query.categoria : '';
         const q = String(req.query.q || '').slice(0, 120);

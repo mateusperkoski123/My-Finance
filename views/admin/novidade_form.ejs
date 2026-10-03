@@ -1,0 +1,48 @@
+<%- include('_abas', { abaAdmin: 'novidades' }) %>
+<div class="page-header">
+    <h1><i class="ph ph-megaphone"></i> <%= t(id ? 'adm.novidades_editar' : 'adm.novidades_nova') %></h1>
+    <p class="muted"><%= t('adm.novidades_form_sub') %></p>
+</div>
+
+<form method="post" action="<%= id ? '/admin/novidades/' + id : '/admin/novidades' %>" class="card adm-secao nov-form">
+    <%- csrfCampo %>
+    <div class="nov-form__linha">
+        <label class="nov-form__campo">
+            <span><%= t('adm.novidades_tipo') %></span>
+            <select class="input" name="tipo">
+                <% tipos.forEach((tp) => { %><option value="<%= tp %>" <%= novidade.tipo === tp ? 'selected' : '' %>><%= t('novidades.tipo.' + tp) %></option><% }) %>
+            </select>
+            <small class="muted"><%= t('adm.novidades_tipo_dica') %></small>
+        </label>
+        <label class="nov-form__campo">
+            <span><%= t('adm.novidades_sugestao') %></span>
+            <input class="input" type="number" name="post_id" min="1" inputmode="numeric" value="<%= novidade.post_id || '' %>" placeholder="123">
+            <small class="muted"><%= t('adm.novidades_sugestao_dica') %></small>
+        </label>
+    </div>
+
+    <% [['pt', 'Português'], ['es', 'Español'], ['en', 'English']].forEach(([i, nome]) => { %>
+        <fieldset class="nov-form__idioma">
+            <legend><%= nome %></legend>
+            <label class="nov-form__campo">
+                <span><%= t('adm.novidades_titulo_campo') %></span>
+                <input class="input" type="text" name="titulo_<%= i %>" maxlength="140" value="<%= novidade['titulo_' + i] || '' %>">
+            </label>
+            <label class="nov-form__campo">
+                <span><%= t('adm.novidades_texto_campo') %></span>
+                <textarea class="input" name="texto_<%= i %>" rows="4" maxlength="2000"><%= novidade['texto_' + i] || '' %></textarea>
+            </label>
+        </fieldset>
+    <% }) %>
+
+    <p class="muted" style="font-size: 12.5px; margin: 0;"><i class="ph ph-info"></i> <%= t('adm.novidades_regra') %></p>
+    <div class="nov-form__acoes">
+        <a class="btn btn-outline" href="/admin/novidades"><%= t('assinatura.cancelar') %></a>
+        <% if (novidade.estado === 'publicada') { %>
+            <button type="submit" name="acao" value="rascunho" class="btn btn-primary"><%= t('adm.novidades_salvar') %></button>
+        <% } else { %>
+            <button type="submit" name="acao" value="rascunho" class="btn btn-outline"><%= t('adm.novidades_salvar_rascunho') %></button>
+            <button type="submit" name="acao" value="publicar" class="btn btn-primary"><i class="ph ph-paper-plane-tilt"></i> <%= t('adm.novidades_salvar_publicar') %></button>
+        <% } %>
+    </div>
+</form>

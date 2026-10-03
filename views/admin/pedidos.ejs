@@ -1,0 +1,70 @@
+<%
+const nomePlano = (c) => t('plano.' + c + '.nome');
+const ciclos = { mensal: t('assinatura.ciclo_mensal'), anual: t('assinatura.ciclo_anual') };
+// Resumo: quantos pedidos de cada plano/ciclo
+const resumo = {};
+pedidos.forEach((p) => { const k = p.plano_codigo + '|' + p.ciclo; resumo[k] = (resumo[k] || 0) + 1; });
+%>
+<%- include('_abas', { abaAdmin: 'pedidos' }) %>
+<div class="page-header">
+    <h1><i class="ph ph-hand-coins"></i> <%= t('adm.pedidos_titulo') %></h1>
+    <p class="muted"><%= t('adm.pedidos_sub') %></p>
+</div>
+
+<% if (!pedidos.length) { %>
+    <section class="card adm-secao"><p class="muted" style="margin: 0;"><i class="ph ph-check-circle"></i> <%= t('adm.pedidos_vazio') %></p></section>
+<% } else { %>
+<div class="pedidos-resumo">
+    <span class="badge badge-alerta"><%= t('adm.pedidos_total', { n: pedidos.length }) %></span>
+    <% Object.keys(resumo).forEach((k) => { const [pl, ci] = k.split('|'); %>
+        <span class="badge badge-neutro"><%= nomePlano(pl) %> · <%= ciclos[ci] || ci %>: <b><%= resumo[k] %></b></span>
+    <% }) %>
+</div>
+
+<section class="card adm-secao">
+    <div class="tabela-container">
+        <table class="tabela tabela-pedidos">
+            <thead><tr>
+                <th><%= t('admin.col_usuario') %></th><th><%= t('adm.pedidos_contato') %></th><th><%= t('adm.pedidos_plano') %></th>
+                <th><%= t('assinatura.ciclo') %></th><th class="num"><%= t('comum.valor') %></th><th><%= t('adm.pedidos_quando') %></th><th><%= t('tabela.acoes') %></th>
+            </tr></thead>
+            <tbody>
+            <% pedidos.forEach((p) => {
+                const fone = telefone.formatar(p.telefone_codigo, p.telefone_numero);
+                const wa = telefone.soDigitos(p.telefone_codigo, p.telefone_numero);
+            %>
+                <tr>
+                    <td>
+                        <strong><%= p.nome %></strong>
+                        <% if (p.user_status !== 'ativo') { %><span class="badge badge-pendente"><%= t('admin.suspenso') %></span><% } %>
+                        <div class="muted" style="font-size: 12px;"><a href="mailto:<%= p.email %>"><%= p.email %></a></div>
+                        <div class="muted" style="font-size: 12px;"><%= t('adm.pedidos_atual') %>: <%= p.plano_atual ? nomePlano(p.plano_atual) : '-' %> (<%= t('assinatura.status.' + (p.ass_status || 'sem')) %>)</div>
+                    </td>
+                    <td style="white-space: nowrap;">
+                        <% if (fone) { %>
+                            <strong><%= fone %></strong>
+                            <div style="font-size: 12px;">
+                                <a href="https://wa.me/<%= wa %>" target="_blank" rel="noopener"><i class="ph ph-whatsapp-logo"></i> WhatsApp</a>
+                                · <a href="tel:+<%= wa %>"><i class="ph ph-phone"></i> <%= t('adm.pedidos_ligar') %></a>
+                            </div>
+                        <% } else { %><span class="muted"><%= t('adm.pedidos_sem_tel') %></span><% } %>
+                    </td>
+                    <td><strong><%= nomePlano(p.plano_codigo) %></strong></td>
+                    <td><span class="badge <%= p.ciclo === 'anual' ? 'badge-sucesso' : 'badge-neutro' %>"><%= ciclos[p.ciclo] || '-' %></span></td>
+                    <td class="num"><strong>Gs. <%= fmt(p.valor) %></strong><div class="muted" style="font-size: 11px;"><%= t('assinatura.sem_iva') %></div></td>
+                    <td class="muted" style="font-size: 12px; white-space: nowrap;"><%= p.solicitado_em ? formatDateTime(p.solicitado_em) : '-' %></td>
+                    <td style="white-space: nowrap;">
+                        <a class="btn btn-primary btn-sm" href="/admin/usuarios?q=<%= encodeURIComponent(p.email) %>" title="<%= t('adm.pedidos_ativar_dica') %>"><i class="ph ph-check-circle"></i> <%= t('adm.pedidos_ativar') %></a>
+                        <form method="post" action="/admin/pedidos/<%= p.user_id %>/descartar" data-confirm="<%= t('adm.pedidos_descartar_conf') %>" style="display: inline;">
+                            <%- csrfCampo %>
+                            <button type="submit" class="btn btn-outline btn-sm" aria-label="<%= t('adm.pedidos_descartar') %>" title="<%= t('adm.pedidos_descartar') %>"><i class="ph ph-x"></i></button>
+                        </form>
+                    </td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+    <p class="muted adm-nota"><%= t('adm.pedidos_nota') %></p>
+</section>
+<% } %>

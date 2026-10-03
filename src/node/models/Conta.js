@@ -147,6 +147,9 @@ class Conta {
     }
 
     static async definirPadrao(id, userId) {
+        // So uma conta ativa do proprio usuario pode ser a padrao (senao ele ficaria sem nenhuma).
+        const conta = await this.buscarPorId(id, userId);
+        if (!conta || conta.status !== 'ativa') return;
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();

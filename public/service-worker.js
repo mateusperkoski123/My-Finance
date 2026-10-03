@@ -3,7 +3,7 @@
 const BUILD = '__BUILD_ID__';
 const CACHE_SHELL = `myfinance-shell-${BUILD}`;
 const CACHE_PAGINAS = `myfinance-paginas-${BUILD}`;
-const CACHE_EXTERNO = 'myfinance-externo-v1'; // fonte de icones (unpkg), nao muda a cada build
+const CACHE_EXTERNO = 'myfinance-externo-v1'; // icones e graficos (CDN, em versao fixa), nao muda a cada build
 const MAX_PAGINAS = 30;
 const CHAVE_USUARIO = '/__usuario__';
 
@@ -147,7 +147,7 @@ async function navegacao(req) {
     }
 }
 
-// Icones (CSS/JS/fontes do unpkg): cache primeiro, atualiza em segundo plano.
+// Icones e graficos (CSS/JS/fontes de CDN): cache primeiro, atualiza em segundo plano.
 async function externo(req) {
     const cache = await caches.open(CACHE_EXTERNO);
     const guardado = await cache.match(req);
@@ -163,7 +163,8 @@ self.addEventListener('fetch', (event) => {
     if (req.method !== 'GET') return;
     const url = new URL(req.url);
 
-    if (url.origin === 'https://unpkg.com') {
+    // Icones e graficos vem de CDN (folhas de estilo, fontes e Chart.js): guardados para o app funcionar sem internet.
+    if (url.origin === 'https://cdn.jsdelivr.net' || url.origin === 'https://unpkg.com') {
         event.respondWith(externo(req));
         return;
     }

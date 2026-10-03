@@ -1,12 +1,19 @@
 // Estatisticas agregadas do sistema (painel do admin e, no futuro, avisos para todos os usuarios).
-// So numeros agregados: nenhuma funcao daqui devolve dados de um usuario especifico, exceto as listas "recentes" do admin.
+// So numeros agregados: nenhuma funcao daqui devolve dados de um usuario especifico, exceto as listas do admin
+// ("recentes" e "mais ativos").
 // Os dias sao contados no fuso do negocio (IA_TIMEZONE, padrao America/Asuncion), mesmo que o servidor/banco rodem em UTC.
 const db = require('../config/db');
 const { hojeUso } = require('../core/ia_precos');
 
 const TTL_MS = 60 * 1000; // o painel pode ser aberto varias vezes: recalcula no maximo 1x por minuto
 const DIAS_SERIE = 62; // 2 meses de historico diario (alimenta os periodos, os comparativos e os graficos)
+const DIAS_ATIVIDADE = 30; // janela de "mais ativos" e da coluna de lancamentos na lista de usuarios
+const MAIS_ATIVOS = 10;
 const cache = new Map();
+
+// Transacao registrada = uma acao do usuario: receita/despesa (uma serie fixa/repetida conta 1) ou transferencia (as duas pernas contam 1).
+const EH_TRANSACAO = "(tipo IN ('receita','despesa') OR (tipo = 'transferencia' AND valor < 0))";
+const CONTAR_TRANSACOES = 'COUNT(DISTINCT COALESCE(serie_id, id))';
 
 const tzNegocio = () => process.env.IA_TIMEZONE || 'America/Asuncion';
 const pad = (n) => String(n).padStart(2, '0');
@@ -61,11 +68,9 @@ async function calcular() {
     const iniSerie = lista[0];
     const iniBanco = ctx.aBanco(iniSerie);
     const dia = (col) => `DATE_FORMAT(DATE_ADD(${col}, INTERVAL ${Number(ctx.diff)} MINUTE), '%Y-%m-%d')`;
-    // Transacao registrada = uma acao do usuario: receita/despesa (uma serie fixa/repetida conta 1) ou transferencia (as duas pernas contam 1).
-    const ehTransacao = "(tipo IN ('receita','despesa') OR (tipo = 'transferencia' AND valor < 0))";
 
     const [tx, usu, pag, pagantes, ia] = await Promise.all([
-        db.query(`SELECT ${dia('created_at')} AS dia, COUNT(DISTINCT COALESCE(serie_id, id)) AS n FROM lancamentos WHERE created_at >= ? AND ${ehTransacao} GROUP BY 1`, [iniBanco]),
+        db.query(`SELECT ${dia('created_at')} AS dia, ${CONTAR_TRANSACOES} AS n FROM lancamentos WHERE created_at >= ? AND ${EH_TRANSACAO} GROUP BY 1`, [iniBanco]),
         db.query(`SELECT ${dia('created_at')} AS dia, COUNT(*) AS n FROM users WHERE created_at >= ? GROUP BY 1`, [iniBanco]),
         db.query(`SELECT ${dia('pago_em')} AS dia, COUNT(*) AS n, COALESCE(SUM(valor), 0) AS valor FROM pagamentos WHERE status = 'pago' AND pago_em >= ? GROUP BY 1`, [iniBanco]),
         db.query(`SELECT ${dia('primeiro')} AS dia, COUNT(*) AS n FROM (SELECT user_id, MIN(pago_em) AS primeiro FROM pagamentos WHERE status = 'pago' AND user_id IS NOT NULL GROUP BY user_id) x WHERE primeiro >= ? GROUP BY 1`, [iniBanco]),
@@ -86,7 +91,7 @@ async function calcular() {
         `SELECT SUM(g >= ?) AS hoje, SUM(g >= ?) AS sem, SUM(g >= ?) AS mes, COUNT(*) AS total
          FROM (SELECT GREATEST(COALESCE(ultimo_login_em, '1970-01-01'), COALESCE(ultimo_acesso_em, '1970-01-01')) AS g FROM users WHERE status <> 'arquivado') x`,
         [limiteAtivo(per.hoje[0]), limiteAtivo(per.sem[0]), limiteAtivo(somarDias(ctx.hoje, -29))]);
-    const [[tot]] = await db.query(`SELECT COUNT(DISTINCT COALESCE(serie_id, id)) AS n FROM lancamentos WHERE ${ehTransacao}`);
+    const [[tot]] = await db.query(`SELECT ${CONTAR_TRANSACOES} AS n FROM lancamentos WHERE ${EH_TRANSACAO}`);
     const [[iaTot]] = await db.query('SELECT COALESCE(SUM(mensagens), 0) AS m, COALESCE(SUM(imagens), 0) AS i, COALESCE(SUM(audios), 0) AS a FROM ia_uso_diario');
     const [[venc3]] = await db.query("SELECT COUNT(*) AS n FROM assinaturas WHERE status = 'trial' AND trial_fim > NOW() AND trial_fim <= DATE_ADD(NOW(), INTERVAL 3 DAY)");
     const [[conv]] = await db.query(
@@ -98,6 +103,14 @@ async function calcular() {
         `SELECT p.id, p.valor, p.moeda, p.ciclo, p.pago_em, u.nome AS usuario, pl.codigo AS plano
          FROM pagamentos p LEFT JOIN users u ON u.id = p.user_id LEFT JOIN planos pl ON pl.id = p.plano_id
          WHERE p.status = 'pago' ORDER BY p.pago_em DESC, p.id DESC LIMIT 8`);
+    // Quem mais registrou transacoes nos ultimos 30 dias (mesma regra de contagem do restante do painel).
+    const [maisAtivos] = await db.query(
+        `SELECT u.id, u.nome, u.email, u.role, x.recentes, x.total
+         FROM (${transacoesPorUsuarioSql()}) x
+         JOIN users u ON u.id = x.user_id
+         WHERE u.status <> 'arquivado' AND x.recentes > 0
+         ORDER BY x.recentes DESC, x.total DESC, u.id
+         LIMIT ${MAIS_ATIVOS}`, [ctx.aBanco(somarDias(ctx.hoje, -(DIAS_ATIVIDADE - 1)))]);
 
     const serie = (chave) => lista.map((d) => ({ d, n: S[chave][d] || 0 }));
     return {
@@ -108,8 +121,17 @@ async function calcular() {
         totais: { transacoes: Number(tot.n) || 0, iaMensagens: Number(iaTot.m), iaFotos: Number(iaTot.i), iaAudios: Number(iaTot.a) },
         trialsVencendo3d: Number(venc3.n) || 0,
         conversao30d: { novos: Number(conv.novos) || 0, pagaram: Number(conv.pagaram) || 0 },
-        idiomas, recentesUsuarios, recentesPagamentos
+        idiomas, recentesUsuarios, recentesPagamentos,
+        maisAtivos: maisAtivos.map((u) => ({ ...u, recentes: Number(u.recentes) || 0, total: Number(u.total) || 0 })),
+        diasAtividade: DIAS_ATIVIDADE
     };
+}
+
+// Transacoes por usuario: total e as registradas a partir de uma data (um parametro: o inicio da janela, no relogio do banco).
+function transacoesPorUsuarioSql() {
+    return `SELECT user_id, ${CONTAR_TRANSACOES} AS total,
+                   COUNT(DISTINCT CASE WHEN created_at >= ? THEN COALESCE(serie_id, id) END) AS recentes
+            FROM lancamentos WHERE ${EH_TRANSACAO} GROUP BY user_id`;
 }
 
 class Estatisticas {
@@ -128,8 +150,17 @@ class Estatisticas {
         return { geradoEm: p.geradoEm, transacoes: { hoje: p.resumo.transacoes.hoje, semana: p.resumo.transacoes.sem, mes: p.resumo.transacoes.mes, total: p.totais.transacoes } };
     }
 
+    // Inicio (no relogio do banco) da janela "ultimos N dias" do negocio, hoje incluido: a mesma do bloco "mais ativos".
+    static async inicioAtividade() {
+        const ctx = await contexto();
+        return ctx.aBanco(somarDias(ctx.hoje, -(DIAS_ATIVIDADE - 1)));
+    }
+
     static limparCache() { cache.clear(); }
 }
+
+Estatisticas.DIAS_ATIVIDADE = DIAS_ATIVIDADE;
+Estatisticas.transacoesPorUsuarioSql = transacoesPorUsuarioSql;
 
 Estatisticas._interno = { periodos, somarDias, offsetNegocioMin, dtDb, msDeYmd };
 module.exports = Estatisticas;

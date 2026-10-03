@@ -1,0 +1,69 @@
+<div class="comunidade-page">
+    <%- include('_abas', { aba: 'novidades' }) %>
+
+    <div class="comunidade-header">
+        <div>
+            <h1 class="comunidade-titulo"><%= t('novidades.titulo') %></h1>
+            <p class="comunidade-subtitulo text-muted"><%= t('novidades.subtitulo') %></p>
+        </div>
+    </div>
+
+    <% if (!novidades.length) { %>
+        <div class="card"><p class="muted" style="margin: 0;"><i class="ph ph-megaphone"></i> <%= t('novidades.vazio') %></p></div>
+    <% } %>
+
+    <div class="novidades-lista">
+    <% novidades.forEach((n) => { %>
+        <article class="card novidade" data-novidade="<%= n.id %>">
+            <div class="novidade__topo">
+                <span class="novidade__tipo novidade__tipo--<%= n.tipo %>"><%= t('novidades.tipo.' + n.tipo) %></span>
+                <% if (n.nova) { %><span class="novidade__nova"><%= t('novidades.nova') %></span><% } %>
+                <time class="muted novidade__data" datetime="<%= new Date(n.publicada_em).toISOString() %>"><%= formatDate(n.publicada_em, 'DD/MM/YYYY') %></time>
+            </div>
+            <h2 class="novidade__titulo"><%= n.titulo %></h2>
+            <p class="novidade__texto"><%= n.texto %></p>
+            <% if (n.post_id && n.post_titulo) { %>
+                <p class="muted novidade__origem"><i class="ph ph-lightbulb"></i> <%= t('novidades.origem') %> <a href="/comunidade/<%= n.post_id %>"><%= n.post_titulo %></a></p>
+            <% } %>
+            <div class="novidade__reacoes" role="group" aria-label="<%= t('novidades.reagir') %>">
+                <button type="button" class="novidade__reacao <%= n.minha === 1 ? 'is-ativa' : '' %>" data-reagir="gostei" aria-pressed="<%= n.minha === 1 %>">
+                    <i class="<%= n.minha === 1 ? 'ph-fill' : 'ph' %> ph-thumbs-up"></i> <%= t('novidades.gostei') %> <b data-n="gostei"><%= n.gostei %></b>
+                </button>
+                <button type="button" class="novidade__reacao <%= n.minha === -1 ? 'is-ativa' : '' %>" data-reagir="nao_gostei" aria-pressed="<%= n.minha === -1 %>">
+                    <i class="<%= n.minha === -1 ? 'ph-fill' : 'ph' %> ph-thumbs-down"></i> <%= t('novidades.nao_gostei') %> <b data-n="nao_gostei"><%= n.nao_gostei %></b>
+                </button>
+            </div>
+        </article>
+    <% }) %>
+    </div>
+
+    <p class="muted" style="font-size: 13px; margin-top: 16px;"><i class="ph ph-lightbulb"></i> <%= t('novidades.sugerir') %> <a href="/comunidade?lista=1"><%= t('novidades.sugerir_link') %></a></p>
+</div>
+
+<script>
+(function () {
+    var token = (document.querySelector('meta[name="csrf-token"]') || {}).content || '';
+    document.querySelectorAll('[data-novidade]').forEach(function (card) {
+        card.querySelectorAll('[data-reagir]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                btn.disabled = true;
+                fetch('/comunidade/novidades/' + card.getAttribute('data-novidade') + '/reagir', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': token, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                    body: 'valor=' + encodeURIComponent(btn.getAttribute('data-reagir'))
+                }).then(function (r) { return r.json(); }).then(function (d) {
+                    if (!d.sucesso) return;
+                    card.querySelector('[data-n="gostei"]').textContent = d.gostei;
+                    card.querySelector('[data-n="nao_gostei"]').textContent = d.nao_gostei;
+                    card.querySelectorAll('[data-reagir]').forEach(function (b) {
+                        var on = (b.getAttribute('data-reagir') === 'gostei' && d.minha === 1) || (b.getAttribute('data-reagir') === 'nao_gostei' && d.minha === -1);
+                        b.classList.toggle('is-ativa', on);
+                        b.setAttribute('aria-pressed', on ? 'true' : 'false');
+                        b.querySelector('i').className = (on ? 'ph-fill' : 'ph') + ' ph-thumbs-' + (b.getAttribute('data-reagir') === 'gostei' ? 'up' : 'down');
+                    });
+                }).catch(function () {}).then(function () { btn.disabled = false; });
+            });
+        });
+    });
+})();
+</script>

@@ -1,0 +1,147 @@
+<%# Modal de receita/despesa: o MESMO formulario para cadastrar (modo 'novo') e para editar (modo 'editar', preenchido por
+   public/assets/js/app.js a partir do botao [data-editar-lanc]). Uma instancia por modo e tipo.
+   Espera: modo ('novo'|'editar'), tipo ('receita'|'despesa'), contas, categoriasArvore, currentUrl;
+   no modo 'novo': dataHoje e, opcional, voltar (caminho para onde retornar depois de salvar).
+   A data e uma so: o dia do vencimento (pendente) ou o dia em que foi pago/recebido (pago). %>
+<%
+const _rec = tipo === 'receita';
+const _novo = modo === 'novo';
+const _p = (_novo ? 'novo-' : 'ed-') + tipo;
+const _titulo = _novo ? (_rec ? t('painel.add_receita') : t('painel.add_despesa')) : (_rec ? t('modal.editar_receita') : t('modal.editar_despesa'));
+const _voltar = _novo ? (typeof voltar !== 'undefined' && voltar ? voltar : '') : currentUrl;
+const _salvar = _novo ? (_rec ? t('painel.salvar_receita') : t('painel.salvar_despesa')) : t('modal.salvar');
+%>
+<div class="modal-backdrop modal-backdrop--lanc" id="modal-<%= _novo ? 'novo' : 'editar' %>-<%= tipo %>" data-modal<% if (!_novo) { %> data-editar-modal="<%= tipo %>"<% } %>>
+    <div class="modal card modal--lanc modal--<%= tipo %>">
+        <div class="modal__header">
+            <div class="modal__titulo">
+                <span class="modal__icone"><i class="ph <%= _rec ? 'ph-trend-up' : 'ph-trend-down' %>"></i></span>
+                <h2><%= _titulo %></h2>
+            </div>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+
+        <form method="post" action="<%= _novo ? '/lancamentos' : '#' %>" class="form lanc-form" data-ajax<% if (!_novo) { %> data-editar-form<% } %>>
+            <%- csrfCampo %>
+            <% if (_voltar) { %><input type="hidden" name="voltar" value="<%= _voltar %>"><% } %>
+            <% if (_novo) { %><input type="hidden" name="tipo" value="<%= tipo %>"><% } %>
+
+            <h4 class="lanc-form__secao"><%= t('modal.inf_basicas') %></h4>
+
+            <div class="form-group">
+                <label for="<%= _p %>-descricao"><%= t('modal.descricao') %></label>
+                <input class="input" type="text" id="<%= _p %>-descricao" name="descricao" maxlength="190" autocomplete="off" required<% if (_novo) { %> placeholder="<%= _rec ? t('painel.ph_receita') : t('painel.ph_despesa') %>"<% } %>>
+            </div>
+
+            <div class="form-group">
+                <label for="<%= _p %>-valor"><%= t('modal.valor') %></label>
+                <input class="input lanc-form__valor" type="text" id="<%= _p %>-valor" name="valor" data-money data-money-positivo required>
+            </div>
+
+            <div class="form-group">
+                <label for="<%= _p %>-categoria"><%= t('comum.categoria') %> *</label>
+                <select class="input" id="<%= _p %>-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="" required>
+                    <option value=""><%= t('modal.escolha_cat') %></option>
+                    <% (categoriasArvore || []).filter(cat => !cat.sistema).forEach(cat => { %>
+                        <option value="<%= cat.id %>"><%= cat.nome %></option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="<%= _p %>-subcategoria"><%= t('comum.subcategoria') %></label>
+                <select class="input" id="<%= _p %>-subcategoria" name="subcategoria_id" data-gf-subcategoria-select disabled>
+                    <option value=""><%= t('modal.sel_cat_primeiro') %></option>
+                </select>
+            </div>
+
+            <h4 class="lanc-form__secao"><%= t('modal.config_transacao') %></h4>
+
+            <div class="lanc-campo lanc-campo--linha">
+                <div class="lanc-campo__rotulo">
+                    <span class="lanc-campo__ico lanc-campo__ico--status" data-status-icon-box><i class="ph ph-clock" data-status-icon></i></span>
+                    <div>
+                        <strong data-status-title><%= _rec ? t('modal.nao_foi_recebida') : t('modal.nao_foi_pago') %></strong>
+                        <small><%= _rec ? t('painel.status_recebimento') : t('painel.status_pagamento') %></small>
+                    </div>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" name="status" value="pago" data-gf-status-toggle data-tipo="<%= tipo %>" aria-label="<%= _rec ? t('modal.foi_recebida') : t('modal.foi_pago') %>">
+                    <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                </label>
+            </div>
+
+            <div class="lanc-campo">
+                <label class="lanc-campo__rotulo" for="<%= _p %>-data">
+                    <span class="lanc-campo__ico"><i class="ph ph-calendar"></i></span>
+                    <strong data-status-date-label><%= t('modal.data_vencimento') %></strong>
+                </label>
+                <input class="input" type="date" id="<%= _p %>-data" name="data_competencia" value="<%= _novo ? dataHoje : '' %>" required>
+            </div>
+
+            <div class="lanc-campo">
+                <label class="lanc-campo__rotulo" for="<%= _p %>-conta">
+                    <span class="lanc-campo__ico"><i class="ph ph-bank"></i></span>
+                    <strong><%= t('modal.conta') %></strong>
+                </label>
+                <select class="input" id="<%= _p %>-conta" name="conta_id" required>
+                    <% (contas || []).forEach(c => { %>
+                        <option value="<%= c.id %>"><%= c.nome %></option>
+                    <% }) %>
+                </select>
+            </div>
+
+            <%# Fixa (todo mes) ou repetida (parcelas). Ao editar, so aparece para transacao avulsa: ela vira uma serie a partir desta. %>
+            <div class="lanc-grupo"<% if (!_novo) { %> data-ed-novo-serie<% } %>>
+                <div class="lanc-campo lanc-campo--linha">
+                    <div class="lanc-campo__rotulo">
+                        <span class="lanc-campo__ico"><i class="ph ph-push-pin"></i></span>
+                        <div>
+                            <strong><%= _rec ? t('modal.receita_fixa') : t('modal.despesa_fixa') %></strong>
+                            <small><%= t('modal.fixa_dica') %></small>
+                        </div>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="e_fixo" value="1" aria-label="<%= _rec ? t('modal.receita_fixa') : t('modal.despesa_fixa') %>">
+                        <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                    </label>
+                </div>
+
+                <div class="lanc-campo lanc-campo--linha">
+                    <div class="lanc-campo__rotulo">
+                        <span class="lanc-campo__ico"><i class="ph ph-arrows-clockwise"></i></span>
+                        <div>
+                            <strong><%= t('modal.repetir') %></strong>
+                            <small><%= t('modal.repetir_dica') %></small>
+                        </div>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="repetir" value="1" data-gf-toggle-repetir aria-label="<%= t('modal.repetir') %>">
+                        <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                    </label>
+                </div>
+
+                <div class="lanc-campo" data-gf-repetir-alvo hidden>
+                    <label class="lanc-campo__rotulo" for="<%= _p %>-qtd"><strong><%= t('modal.qtd_repeticoes') %></strong></label>
+                    <input class="input" type="number" id="<%= _p %>-qtd" name="quantidade_repeticoes" min="2" max="60" value="12" inputmode="numeric">
+                </div>
+            </div>
+
+            <% if (!_novo) { %>
+            <%# Transacao que ja faz parte de uma serie: escolhe quais ocorrencias recebem a alteracao. %>
+            <div class="lanc-campo" data-ed-serie hidden>
+                <p class="lanc-serie__titulo"><%= t('series.titulo') %></p>
+                <p class="muted lanc-serie__dica"><%= t('series.atencao') %></p>
+                <label class="lanc-serie__opcao"><input type="radio" name="escopo_serie" value="apenas_esta" checked> <%= t('series.apenas_esta') %></label>
+                <label class="lanc-serie__opcao"><input type="radio" name="escopo_serie" value="esta_e_proximas"> <%= t('series.esta_e_proximas') %></label>
+                <label class="lanc-serie__opcao"><input type="radio" name="escopo_serie" value="toda_serie"> <%= t('series.toda_serie') %></label>
+            </div>
+            <% } %>
+
+            <div class="modal-rodape">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
+                <button type="submit" class="btn btn-salvar"><i class="ph ph-floppy-disk"></i> <%= _salvar %></button>
+            </div>
+        </form>
+    </div>
+</div>

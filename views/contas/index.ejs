@@ -53,7 +53,7 @@
                 <div class="conta-card__footer" style="display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 12px;">
                     <% if (!abaArquivadas) { %>
                         <a href="/contas/<%= c.id %>/extrato" class="btn btn-outline btn-sm"><%= t('contas.extrato') %></a>
-                        <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-transferir" onclick="prepararTransferenciaOrigem('<%= c.id %>', '<%= c.nome %>')"><%= t('contas.transferir') %></button>
+                        <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-transferir" onclick="prepararTransferenciaOrigem('<%= c.id %>')"><%= t('contas.transferir') %></button>
                         <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-ajustar-<%= c.id %>"><%= t('contas.ajustar_saldo') %></button>
                         <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-editar-<%= c.id %>"><%= t('contas.editar') %></button>
                         <form method="post" action="/contas/<%= c.id %>/arquivar" style="display:inline;">
@@ -126,7 +126,7 @@
                                         style="white-space: nowrap; color: var(--green); font-weight: 600;">
                                     <i class="ph ph-plus"></i> <span><%= t('contas.adicionar_saldo') %></span>
                                 </button>
-                                <input class="input" type="text" name="valor_ajuste" data-money required placeholder="0,00" style="flex: 1;">
+                                <input class="input" type="text" name="valor_ajuste" data-money data-money-positivo required style="flex: 1;">
                             </div>
                         </div>
 
@@ -228,7 +228,7 @@
                 </div>
                 <div class="form-group">
                     <label><%= t('contas.saldo_inicial_label') %></label>
-                    <input class="input" type="text" name="saldo_inicial" data-money placeholder="0,00">
+                    <input class="input" type="text" name="saldo_inicial" data-money>
                 </div>
             </div>
 
@@ -301,7 +301,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label><%= t('contas.transferir.valor_label') %></label>
-                    <input class="input" type="text" name="valor" data-money required placeholder="0,00">
+                    <input class="input" type="text" name="valor" data-money data-money-positivo required>
                 </div>
                 <div class="form-group">
                     <label><%= t('contas.transferir.data_label') %></label>
@@ -354,7 +354,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label><%= t('contas.transferir.valor_label') %></label>
-                    <input class="input" type="text" name="valor" data-money required placeholder="0,00">
+                    <input class="input" type="text" name="valor" data-money data-money-positivo required>
                 </div>
                 <div class="form-group">
                     <label><%= t('agendar.data') %></label>
@@ -402,7 +402,9 @@
 </div>
 
 <script>
-const ocultasSet = new Set(JSON.parse(localStorage.getItem('gf_contas_ocultas') || '[]'));
+// Contas com o saldo oculto (guardado neste aparelho). Armazenamento indisponivel ou corrompido = nenhuma oculta.
+let ocultasSet = new Set();
+try { ocultasSet = new Set(JSON.parse(localStorage.getItem('gf_contas_ocultas') || '[]').map(String)); } catch (e) { /* segue sem ocultar */ }
 
 // Alterna o ajuste entre "adicionar" e "subtrair" (sem HTML dentro de atributo inline).
 function gfAlternarAjuste(btn) {
@@ -420,7 +422,7 @@ function toggleOlhoConta(contaId) {
     } else {
         ocultasSet.add(contaId);
     }
-    localStorage.setItem('gf_contas_ocultas', JSON.stringify(Array.from(ocultasSet)));
+    try { localStorage.setItem('gf_contas_ocultas', JSON.stringify(Array.from(ocultasSet))); } catch (e) { /* so nao lembra na proxima visita */ }
     aplicarEstadosOlho();
 }
 
@@ -451,7 +453,7 @@ function aplicarEstadosOlho() {
     }
 }
 
-function prepararTransferenciaOrigem(origemId, origemNome) {
+function prepararTransferenciaOrigem(origemId) {
     const origSelect = document.getElementById('transfer-origem-select');
     const origHidden = document.getElementById('transfer-origem-hidden');
     if (origSelect && origHidden) {
@@ -484,7 +486,7 @@ function atualizarOpcoesDestino(origemId) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    aplicarEstadosOlho();
-});
+// No carregamento (esconde os saldos ocultos) e de novo quando o app.js ja definiu o formatador (acerta o saldo total).
+document.addEventListener('DOMContentLoaded', aplicarEstadosOlho);
+window.addEventListener('load', aplicarEstadosOlho);
 </script>

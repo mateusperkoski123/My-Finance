@@ -1,7 +1,10 @@
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 const Lancamento = require('../models/Lancamento');
-const { parseMoeda, toLocalYMD, moeda, hojeLocal } = require('../core/helpers');
+const { parseMoeda, toLocalYMD, moeda, hojeLocal, dataValida, mesAnoValidos } = require('../core/helpers');
+
+const AGRUPAR_VALIDOS = ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'status'];
+const ORDENAR_VALIDOS = ['data', 'vencimento', 'valor', 'criacao'];
 
 // Destino pos-acao: campo 'voltar' do formulario (somente caminho local), senao Referer, senao '/'.
 const destinoRetorno = (req) => {
@@ -23,13 +26,12 @@ const dashboardController = {
         const userId = req.user.id;
         const query = req.query;
 
-        // Period logic
+        // Period logic (mes/ano e datas vindos da URL: valores invalidos caem no mes atual em vez de quebrar a pagina)
         const hoje = hojeLocal();
-        let mes = parseInt(query.mes || (hoje.getMonth() + 1), 10);
-        let ano = parseInt(query.ano || hoje.getFullYear(), 10);
+        const { mes, ano } = mesAnoValidos(query.mes, query.ano, hoje);
 
         let inicio, fim, customizado = false;
-        if (query.data_inicio && query.data_fim) {
+        if (dataValida(query.data_inicio) && dataValida(query.data_fim) && query.data_inicio <= query.data_fim) {
             inicio = query.data_inicio;
             fim = query.data_fim;
             customizado = true;
@@ -70,8 +72,8 @@ const dashboardController = {
             subcategoria_id: cleanVal(query.subcategoria_id)
         };
 
-        const ordenacao = cleanVal(query.ordenar) || 'data';
-        const agrupamento = cleanVal(query.agrupar) || 'sem_agrupamento';
+        const ordenacao = ORDENAR_VALIDOS.includes(query.ordenar) ? query.ordenar : 'data';
+        const agrupamento = AGRUPAR_VALIDOS.includes(query.agrupar) ? query.agrupar : 'sem_agrupamento';
         const pagina = Math.max(parseInt(query.pagina || '1', 10) || 1, 1);
         const porPagina = Math.min(Math.max(parseInt(query.por_pagina || '30', 10) || 30, 10), 200);
 
@@ -129,7 +131,7 @@ const dashboardController = {
         const b = req.body;
         const val = parseMoeda(b.valor);
 
-        if (!b.descricao || !b.descricao.trim()) {
+        if (typeof b.descricao !== 'string' || !b.descricao.trim()) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_descricao_obrigatoria') };
             return res.redirect(voltarOuInicio(req));
         }
@@ -145,22 +147,28 @@ const dashboardController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lancamento_conta_invalida') };
             return res.redirect(voltarOuInicio(req));
         }
+        // Data do lancamento: vencimento (pendente) ou dia do pagamento/recebimento (pago). Em branco = hoje.
+        const dataLanc = b.data_competencia || toLocalYMD(hojeLocal());
+        if (!dataValida(dataLanc)) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_data_invalida') };
+            return res.redirect(voltarOuInicio(req));
+        }
 
         const payload = {
             conta_id: b.conta_id,
             categoria_id: b.categoria_id || null,
             subcategoria_id: b.subcategoria_id || null,
-            tipo: b.tipo || 'despesa',
-            descricao: b.descricao.trim(),
+            // Por esta tela so entram receita e despesa (transferencias e ajustes tem as proprias rotas).
+            tipo: b.tipo === 'receita' ? 'receita' : 'despesa',
+            descricao: String(b.descricao).trim().slice(0, 190),
             valor: val,
-            data_competencia: b.data_competencia || toLocalYMD(hojeLocal()),
-            data_vencimento: b.data_vencimento || null,
-            data_pagamento: b.data_pagamento || null,
+            data_competencia: dataLanc,
+            data_pagamento: dataValida(b.data_pagamento) ? b.data_pagamento : null,
             status: (b.foi_pago === '1' || b.foi_recebida === '1' || b.status === 'pago') ? 'pago' : 'pendente',
             e_fixo: b.e_fixo === '1' || b.e_fixo === true ? 1 : 0,
             repetir: b.repetir === '1' || b.repetir === true ? 1 : 0,
             quantidade_repeticoes: b.quantidade_repeticoes || '1',
-            observacoes: b.observacoes || null
+            observacoes: b.observacoes ? String(b.observacoes).slice(0, 500) : null
         };
 
         let criados;
@@ -188,7 +196,7 @@ const dashboardController = {
         const b = req.body;
         const val = parseMoeda(b.valor);
 
-        if (!b.descricao || !b.descricao.trim()) {
+        if (typeof b.descricao !== 'string' || !b.descricao.trim()) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_descricao_obrigatoria') };
             return res.redirect(destinoRetorno(req));
         }
@@ -200,24 +208,33 @@ const dashboardController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_categoria_obrigatoria') };
             return res.redirect(destinoRetorno(req));
         }
+        if (b.data_competencia && !dataValida(b.data_competencia)) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_data_invalida') };
+            return res.redirect(destinoRetorno(req));
+        }
 
         const payload = {
             conta_id: b.conta_id,
             categoria_id: b.categoria_id || null,
             subcategoria_id: b.subcategoria_id || null,
-            descricao: b.descricao ? b.descricao.trim() : '',
+            descricao: String(b.descricao).trim().slice(0, 190),
             valor: val,
             data_competencia: b.data_competencia,
-            data_vencimento: b.data_vencimento || null,
-            data_pagamento: b.data_pagamento || null,
+            data_pagamento: dataValida(b.data_pagamento) ? b.data_pagamento : null,
             status: (b.foi_pago === '1' || b.foi_recebida === '1' || b.status === 'pago') ? 'pago' : 'pendente',
-            e_fixo: b.e_fixo === '1' || b.e_fixo === true ? 1 : 0,
-            observacoes: b.observacoes || null
+            // "Fixa" so vem do formulario quando a transacao e avulsa; numa serie o modelo mantem o que ja estava.
+            e_fixo: b.e_fixo === '1' || b.e_fixo === true ? 1 : undefined,
+            observacoes: b.observacoes !== undefined ? (String(b.observacoes).slice(0, 500) || null) : undefined
         };
 
-        const escopo = b.escopo_serie || 'apenas_esta';
+        const escopo = ['esta_e_proximas', 'toda_serie'].includes(b.escopo_serie) ? b.escopo_serie : 'apenas_esta';
         try {
-            await Lancamento.atualizar(id, userId, payload, escopo);
+            const ok = await Lancamento.atualizar(id, userId, payload, escopo);
+            if (!ok) {
+                // Nao existe, e de outro usuario ou nao e receita/despesa (transferencia e ajuste tem a propria edicao).
+                req.session.flash = { tipo: 'erro', mensagem: req.t('flash.generico_erro') };
+                return res.redirect(destinoRetorno(req));
+            }
         } catch (err) {
             if (err.codigo) {
                 req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_conta_categoria_invalida') };
@@ -249,11 +266,11 @@ const dashboardController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.transferencia_valor_invalido') };
             return res.redirect(destinoRetorno(req));
         }
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
+        if (!dataValida(data)) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.agendar_invalido') };
             return res.redirect(destinoRetorno(req));
         }
-        const dataPag = /^\d{4}-\d{2}-\d{2}$/.test(String(b.data_pagamento || '')) ? b.data_pagamento : null;
+        const dataPag = dataValida(b.data_pagamento) ? b.data_pagamento : null;
         const ok = await Lancamento.atualizarTransferencia(req.params.id, userId, {
             valor, data, pago: b.status === 'pago', dataPagamento: dataPag,
             escopo: ['esta_e_proximas', 'toda_serie'].includes(b.escopo_serie) ? b.escopo_serie : 'apenas_esta'
@@ -277,12 +294,14 @@ const dashboardController = {
         const id = req.params.id;
         const status = req.body.status === 'pendente' ? 'pendente' : 'pago';
         const antes = await Lancamento.buscarPorId(id, userId);
+        if (!antes) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.generico_erro') };
+            return res.redirect(destinoRetorno(req));
+        }
         await Lancamento.marcarComoPago(id, userId, status);
         let mensagem = status === 'pendente' ? req.t('flash.pagamento_desfeito') : req.t('flash.lancamento_marcado_pago');
-        if (antes) {
-            const conta = await Conta.buscarPorId(antes.conta_id, userId);
-            if (conta) mensagem += ` — ${conta.nome}: ${moeda(conta.saldo_atual, res.locals.currency)}`;
-        }
+        const conta = await Conta.buscarPorId(antes.conta_id, userId);
+        if (conta) mensagem += ` — ${conta.nome}: ${moeda(conta.saldo_atual, res.locals.currency)}`;
         req.session.flash = { tipo: 'sucesso', mensagem };
         res.redirect(destinoRetorno(req));
     }

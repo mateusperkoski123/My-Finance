@@ -2,22 +2,37 @@
 var GF_T = window.GF_T || {};
 // Comportamentos globais e leves da interface.
 document.addEventListener('DOMContentLoaded', function () {
-  // Some sozinho os alertas de sucesso/erro depois de alguns segundos.
-  document.querySelectorAll('.alert').forEach(function (el) {
+  // A mensagem de retorno (sucesso/erro de uma ação) some sozinha depois de alguns segundos. Só ela (data-flash):
+  // as faixas da conta (teste grátis, confirmar e-mail, somente leitura), os avisos do aplicativo (atualizar, instalar)
+  // e os avisos fixos das telas continuam na página. O erro fica mais tempo, para dar tempo de ler.
+  document.querySelectorAll('.alert[data-flash]').forEach(function (el) {
     setTimeout(function () {
       el.style.transition = 'opacity .4s ease';
       el.style.opacity = '0';
       setTimeout(function () { el.remove(); }, 400);
-    }, 4000);
+    }, el.classList.contains('alert-erro') ? 10000 : 5000);
   });
 
   // Modais genéricos: qualquer botão com data-modal-open="id" abre o
   // <div id="id" data-modal>; data-modal-close ou clique no fundo fecha.
+  // O clique no fundo só fecha se começou no fundo: arrastar para selecionar um texto e soltar fora
+  // do formulário não pode fechar o modal e perder o que foi digitado.
+  var inicioDoClique = null;
+  document.addEventListener('mousedown', function (evento) { inicioDoClique = evento.target; }, true);
+  document.addEventListener('touchstart', function (evento) { inicioDoClique = evento.target; }, { capture: true, passive: true });
+
   document.addEventListener('click', function (evento) {
     const abrir = evento.target.closest('[data-modal-open]');
     if (abrir) {
       const modal = document.getElementById(abrir.getAttribute('data-modal-open'));
-      if (modal) modal.classList.add('is-open');
+      if (modal) {
+        modal.classList.add('is-open');
+        // No computador o cursor já entra no primeiro campo; no celular não (o teclado cobriria o formulário).
+        if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+          const campo = modal.querySelector('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([disabled]), select:not([disabled]), textarea:not([disabled])');
+          if (campo) setTimeout(function () { campo.focus(); }, 30);
+        }
+      }
       return;
     }
 
@@ -27,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
 
-    if (evento.target.matches('.modal-backdrop.is-open, [data-modal].is-open')) {
+    if (evento.target.matches('.modal-backdrop.is-open, [data-modal].is-open') && (!inicioDoClique || inicioDoClique === evento.target)) {
       evento.target.classList.remove('is-open');
     }
   });
@@ -263,25 +278,18 @@ document.addEventListener('DOMContentLoaded', function () {
     var iconEl = container.querySelector('[data-status-icon]');
     var dateLabelEl = container.querySelector('[data-status-date-label]');
 
+    // O formulário tem uma data só: com o interruptor ligado ela é o dia do pagamento/recebimento;
+    // desligado, é o dia do vencimento (o lançamento fica pendente até ser marcado como pago).
     var atualizarStatusUI = function () {
       var estaMarcado = toggle.checked; // ON = Foi Recebida / Foi Pago
-      if (estaMarcado) {
-        if (titleEl) titleEl.textContent = ehReceita ? GF_T.foi_recebida : GF_T.foi_pago;
-        if (dateLabelEl) dateLabelEl.textContent = ehReceita ? GF_T.data_recebimento : GF_T.data_pagamento;
-        if (iconBox) iconBox.style.background = 'var(--green-bg)';
-        if (iconEl) {
-          iconEl.className = 'ph ph-trend-up';
-          iconEl.style.color = 'var(--green)';
-        }
-      } else {
-        if (titleEl) titleEl.textContent = ehReceita ? GF_T.nao_foi_recebida : GF_T.nao_foi_pago;
-        if (dateLabelEl) dateLabelEl.textContent = GF_T.data_vencimento;
-        if (iconBox) iconBox.style.background = 'var(--red-bg)';
-        if (iconEl) {
-          iconEl.className = 'ph ph-trend-down';
-          iconEl.style.color = 'var(--red)';
-        }
+      if (titleEl) {
+        titleEl.textContent = estaMarcado ? (ehReceita ? GF_T.foi_recebida : GF_T.foi_pago) : (ehReceita ? GF_T.nao_foi_recebida : GF_T.nao_foi_pago);
       }
+      if (dateLabelEl) {
+        dateLabelEl.textContent = estaMarcado ? (ehReceita ? GF_T.data_recebimento : GF_T.data_pagamento) : GF_T.data_vencimento;
+      }
+      if (iconBox) iconBox.classList.toggle('is-pago', estaMarcado);
+      if (iconEl) iconEl.className = estaMarcado ? 'ph ph-check-circle' : 'ph ph-clock';
     };
 
     toggle.addEventListener('change', atualizarStatusUI);
@@ -304,164 +312,188 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Formatação ao vivo dos campos de valor monetário (input[data-money]):
   // exibe com separador de milhar e símbolo da moeda atual enquanto o
-  // usuário digita (ex.: "10000" -> "₲ 10.000"). window.gfMoeda é embutido
-  // uma vez em views/layout.php com a config da moeda do usuário logado
-  // (símbolo/casas decimais/separadores - ver App\Core\Money::configParaJs).
-  // O servidor (App\Core\Money::paraFloat) sabe interpretar de volta
-  // qualquer valor formatado assim, então nenhuma mudança é necessária no
-  // "name"/submissão do campo.
-  function gfFormatarValorMoeda(bruto) {
+  // usuário digita (ex.: "10000" -> "Gs. 10.000", "1500,5" -> "R$ 1.500,5").
+  // window.gfMoeda é embutido em views/layout.ejs com a moeda do usuário
+  // (símbolo, casas decimais e separadores). O servidor (parseMoeda, em
+  // src/node/core/helpers.js) lê de volta qualquer valor formatado assim.
+  function gfCfgMoeda() {
     var rawCfg = window.gfMoeda || {};
-    var cfg = {
+    return {
       simbolo: rawCfg.simbolo !== undefined ? rawCfg.simbolo : '',
       decimais: rawCfg.decimais !== undefined ? rawCfg.decimais : (rawCfg.temCentavos === false ? 0 : 2),
       milhar: rawCfg.milhar || rawCfg.separadorMilhar || '.',
       decimal: rawCfg.decimal || rawCfg.separadorDecimal || ','
     };
+  }
+
+  function gfSoDigitos(texto) { return String(texto).replace(/[^0-9]/g, ''); }
+
+  // Monta o texto do campo a partir da parte inteira (só dígitos) e da parte
+  // decimal (só dígitos, ou null quando o usuário ainda não digitou o separador).
+  function gfMontarValor(cfg, negativo, inteiros, decimais) {
+    inteiros = inteiros.replace(/^0+(?=\d)/, '');
+    if (cfg.decimais === 0) decimais = null;
+    if (inteiros === '' && decimais === null) return '';
+    if (inteiros === '') inteiros = '0';
+    var texto = inteiros.replace(/\B(?=(\d{3})+(?!\d))/g, cfg.milhar);
+    if (decimais !== null) texto += cfg.decimal + decimais.slice(0, cfg.decimais);
+    return (negativo ? '-' : '') + cfg.simbolo + ' ' + texto;
+  }
+
+  // Formata um valor para exibir no campo.
+  //  - número (ou texto no formato de número, "1500.5"): valor pronto, sai com todas as casas ("R$ 1.500,50");
+  //  - texto no formato da moeda do usuário ("R$ 1.500,5"): o separador decimal da moeda divide, os de milhar são ignorados.
+  function gfFormatarValorMoeda(bruto) {
+    var cfg = gfCfgMoeda();
     if (bruto === null || bruto === undefined || bruto === '') return '';
 
+    if (typeof bruto === 'string' && /^\s*-?\d+\.\d{1,2}\s*$/.test(bruto)) bruto = Number(bruto);
     if (typeof bruto === 'number') {
-      bruto = bruto.toFixed(cfg.decimais);
+      if (!isFinite(bruto)) return '';
+      var partes = Math.abs(bruto).toFixed(cfg.decimais).split('.');
+      return gfMontarValor(cfg, bruto < 0, partes[0], partes.length > 1 ? partes[1] : null);
     }
+
     bruto = String(bruto);
-
-    var negativo = /^\s*-/.test(bruto);
-
-    if (cfg.decimais === 0) {
-      var digitos = bruto.replace(/[^0-9]/g, '');
-      if (digitos === '') return '';
-      digitos = digitos.replace(/\B(?=(\d{3})+(?!\d))/g, cfg.milhar);
-      return (negativo ? '-' : '') + cfg.simbolo + ' ' + digitos;
-    }
-
-    var limpo = bruto.split('').filter(function (c) {
-      return (c >= '0' && c <= '9') || c === cfg.decimal || c === '.';
-    }).join('');
-
-    if (cfg.decimal !== '.' && limpo.indexOf('.') !== -1 && limpo.indexOf(cfg.decimal) === -1) {
-      limpo = limpo.replace('.', cfg.decimal);
-    }
-
-    var ultima = limpo.lastIndexOf(cfg.decimal);
-
-    var parteInteira, parteDecimal;
-    if (ultima === -1) {
-      parteInteira = limpo;
-      parteDecimal = null;
-    } else {
-      parteInteira = limpo.slice(0, ultima).split(cfg.decimal).join('');
-      parteDecimal = limpo.slice(ultima + cfg.decimal.length).slice(0, cfg.decimais);
-    }
-
-    if (parteInteira === '' && parteDecimal === null) return '';
-    parteInteira = parteInteira.replace(/\B(?=(\d{3})+(?!\d))/g, cfg.milhar);
-    var resultado = parteInteira || '0';
-    if (parteDecimal !== null) resultado += cfg.decimal + parteDecimal;
-    return (negativo ? '-' : '') + cfg.simbolo + ' ' + resultado;
+    var negativo = bruto.indexOf('-') !== -1;
+    var posDecimal = cfg.decimais > 0 ? bruto.lastIndexOf(cfg.decimal) : -1;
+    if (posDecimal === -1) return gfMontarValor(cfg, negativo, gfSoDigitos(bruto), null);
+    return gfMontarValor(cfg, negativo, gfSoDigitos(bruto.slice(0, posDecimal)), gfSoDigitos(bruto.slice(posDecimal + 1)));
   }
 
   window.gfFormatarValorMoeda = gfFormatarValorMoeda;
 
-  function gfContarDigitos(texto) {
-    return (texto.match(/[0-9]/g) || []).length;
+  // Valor colado de outro lugar ("1.500,50", "1,500.50", "1500.5"): o separador que aparece por último é o decimal;
+  // um separador sozinho seguido de exatamente 3 dígitos é de milhar. Mesma leitura do servidor (parseMoeda).
+  function gfLerValorColado(texto) {
+    var s = String(texto).replace(/[^0-9.,-]/g, '');
+    var temPonto = s.indexOf('.') !== -1, temVirgula = s.indexOf(',') !== -1;
+    if (temPonto && temVirgula) {
+      s = s.lastIndexOf(',') > s.lastIndexOf('.') ? s.replace(/\./g, '').replace(',', '.') : s.replace(/,/g, '');
+    } else if (temPonto || temVirgula) {
+      var partes = s.split(temPonto ? '.' : ',');
+      s = (partes.length > 2 || partes[partes.length - 1].length === 3) ? partes.join('') : partes.join('.');
+    }
+    var n = parseFloat(s);
+    return isFinite(n) ? n : null;
   }
 
-  // Acha a posição (índice) logo após o N-ésimo dígito de um texto - usado
-  // pra recolocar o cursor no lugar certo depois de reformatar o valor.
-  function gfPosApos(texto, nDigitos) {
-    if (nDigitos <= 0) return 0;
+  // Quantos caracteres "que contam" (dígitos e o separador decimal da moeda) existem no texto.
+  function gfContam(texto, cfg) {
+    var n = 0;
+    for (var i = 0; i < texto.length; i++) {
+      var c = texto[i];
+      if ((c >= '0' && c <= '9') || (cfg.decimais > 0 && c === cfg.decimal)) n++;
+    }
+    return n;
+  }
+
+  // Posição logo após o N-ésimo caractere "que conta" (dígito ou o separador decimal) - recoloca o cursor
+  // no lugar certo depois de reformatar. Com N = 0 o cursor fica antes do primeiro dígito (depois do símbolo).
+  function gfPosApos(texto, n, cfg) {
     var contados = 0;
     for (var i = 0; i < texto.length; i++) {
-      if (texto[i] >= '0' && texto[i] <= '9') {
-        contados++;
-        if (contados === nDigitos) return i + 1;
-      }
+      var c = texto[i];
+      var conta = (c >= '0' && c <= '9') || (cfg.decimais > 0 && c === cfg.decimal);
+      if (!conta) continue;
+      if (n <= 0) return i;
+      contados++;
+      if (contados === n) return i + 1;
     }
     return texto.length;
   }
 
-  function gfAplicarFormatacaoMoeda(input) {
-    var cursorAntes = input.selectionStart == null ? input.value.length : input.selectionStart;
-    var digitosAntesCursor = gfContarDigitos(input.value.slice(0, cursorAntes));
+  // Reformata o campo depois de uma edição do usuário. Compara com o texto anterior para saber o que foi digitado:
+  // vírgula ou ponto digitados viram o separador decimal da moeda (o teclado do celular nem sempre tem os dois).
+  function gfAoEditarValor(input) {
+    var cfg = gfCfgMoeda();
+    var antes = input._gfAntes || '';
+    var agora = input.value;
+    var cursor = input.selectionStart == null ? agora.length : input.selectionStart;
 
-    input.value = gfFormatarValorMoeda(input.value);
+    // Trecho inserido nesta edição: o que sobra entre o começo e o fim que não mudaram.
+    var ini = 0;
+    var limite = Math.min(antes.length, agora.length);
+    while (ini < limite && antes[ini] === agora[ini]) ini++;
+    var fim = 0;
+    while (fim < limite - ini && antes[antes.length - 1 - fim] === agora[agora.length - 1 - fim]) fim++;
+    var inserido = agora.slice(ini, agora.length - fim);
 
-    var novaPos = gfPosApos(input.value, digitosAntesCursor);
-    try { input.setSelectionRange(novaPos, novaPos); } catch (e) { /* ignora se o navegador nao suportar aqui */ }
+    var negativo = agora.indexOf('-') !== -1;
+    var novo, contam;
+
+    if (cfg.decimais > 0 && inserido.length === 1 && (inserido === ',' || inserido === '.')) {
+      if (antes.indexOf(cfg.decimal) !== -1) {
+        // Já existe separador decimal: o segundo é ignorado e o cursor fica onde estava.
+        novo = antes;
+        contam = gfContam(antes.slice(0, ini), cfg);
+      } else {
+        // Separador decimal digitado: o que está à esquerda é a parte inteira, à direita os centavos.
+        var esquerda = gfSoDigitos(agora.slice(0, ini));
+        novo = gfMontarValor(cfg, negativo, esquerda, gfSoDigitos(agora.slice(ini + 1)));
+        contam = (esquerda.replace(/^0+(?=\d)/, '').length || 1) + 1;
+      }
+    } else if (inserido.length > 1 && /[.,]/.test(inserido)) {
+      // Valor colado já formatado.
+      var colado = gfLerValorColado(agora);
+      novo = colado === null ? '' : gfFormatarValorMoeda(colado);
+      contam = novo.length;
+    } else {
+      // Dígitos digitados ou algo apagado.
+      novo = gfFormatarValorMoeda(agora);
+      var antesDoCursor = agora.slice(0, cursor);
+      contam = gfContam(antesDoCursor, cfg);
+      // zeros à esquerda somem ao reformatar ("05" vira "5"): não contam para a posição
+      var posDecimal = cfg.decimais > 0 ? agora.lastIndexOf(cfg.decimal) : -1;
+      var inteirosBrutos = gfSoDigitos(posDecimal === -1 ? agora : agora.slice(0, posDecimal));
+      var zeros = inteirosBrutos.length - inteirosBrutos.replace(/^0+(?=\d)/, '').length;
+      if (zeros > 0) contam = Math.max(contam - Math.min(zeros, gfSoDigitos(antesDoCursor).length), 0);
+    }
+
+    input.value = novo;
+    input._gfAntes = novo;
+    var pos = gfPosApos(novo, contam, cfg);
+    try { input.setSelectionRange(pos, pos); } catch (e) { /* ignora se o navegador nao suportar aqui */ }
+    gfValidarValor(input);
+  }
+
+  // Campos que exigem valor maior que zero (data-money-positivo): o próprio navegador avisa no campo antes de enviar,
+  // em vez de o servidor recusar depois e o formulário fechar.
+  function gfValidarValor(input) {
+    if (!input.hasAttribute('data-money-positivo')) return;
+    var zerado = input.value !== '' && (gfSoDigitos(input.value).replace(/^0+/, '') === '' || input.value.indexOf('-') !== -1);
+    input.setCustomValidity(zerado ? (GF_T.valor_invalido || 'Valor inválido') : '');
+  }
+  window.gfValidarValor = gfValidarValor;
+
+  // Ao sair do campo, completa os centavos ("R$ 12,5" vira "R$ 12,50").
+  function gfCompletarCentavos(input) {
+    var cfg = gfCfgMoeda();
+    if (cfg.decimais === 0 || !input.value) return;
+    var pos = input.value.lastIndexOf(cfg.decimal);
+    if (pos === -1) return;
+    var centavos = gfSoDigitos(input.value.slice(pos + 1));
+    while (centavos.length < cfg.decimais) centavos += '0';
+    input.value = gfMontarValor(cfg, input.value.indexOf('-') !== -1, gfSoDigitos(input.value.slice(0, pos)), centavos);
+    input._gfAntes = input.value;
   }
 
   gfBinders.push(function (root) {
     root.querySelectorAll('[data-money]').forEach(function (input) {
       if (input.getAttribute('data-gf-bound') === '1') return;
       input.setAttribute('data-gf-bound', '1');
-    gfAplicarFormatacaoMoeda(input); // formata o valor inicial (ex.: modais de edição)
-    input.addEventListener('input', function () { gfAplicarFormatacaoMoeda(input); });
+      var cfg = gfCfgMoeda();
+      // Teclado numérico no celular (o saldo inicial pode ser negativo, então fica com o teclado completo).
+      if (!input.hasAttribute('inputmode') && input.name !== 'saldo_inicial') input.setAttribute('inputmode', cfg.decimais === 0 ? 'numeric' : 'decimal');
+      input.setAttribute('autocomplete', 'off');
+      input.placeholder = cfg.decimais === 0 ? '0' : '0' + cfg.decimal + '00';
+      input.value = gfFormatarValorMoeda(input.value); // formata o valor inicial (ex.: modais de edição)
+      input._gfAntes = input.value;
+      // O valor pode ter sido trocado por código (modal de edição, limpar formulário): o ponto de partida é o que está no campo ao focar.
+      input.addEventListener('focus', function () { input._gfAntes = input.value; gfValidarValor(input); });
+      input.addEventListener('input', function () { gfAoEditarValor(input); });
+      input.addEventListener('blur', function () { gfCompletarCentavos(input); gfValidarValor(input); });
     });
-  });
-
-  // Intercepta envio de formulário de edição de transação repetida para exibir o submodal (Image 5)
-  document.addEventListener('submit', function (evento) {
-    var form = evento.target;
-    if (form.matches('[data-eh-serie="1"]')) {
-      if (form.getAttribute('data-submodal-confirmado') === '1') {
-        return; // Já confirmado, deixa o submit prosseguir normalmente
-      }
-      evento.preventDefault();
-      var submodalId = form.getAttribute('data-submodal-id');
-      var submodal = document.getElementById(submodalId);
-      if (submodal) {
-        submodal.classList.add('is-open');
-      }
-    }
-  });
-
-  // Fechamento e escolha de opção nos submodais de série (Image 5)
-  document.addEventListener('click', function (evento) {
-    var fecharSubmodal = evento.target.closest('[data-submodal-close]');
-    if (fecharSubmodal) {
-      fecharSubmodal.closest('.modal-backdrop')?.classList.remove('is-open');
-      return;
-    }
-
-    var btnOpcao = evento.target.closest('.btn-escopo-opcao');
-    if (btnOpcao) {
-      var escopoVal = btnOpcao.getAttribute('data-escopo-val');
-      var formId = btnOpcao.getAttribute('data-form-id');
-      var form = document.getElementById(formId);
-      if (form) {
-        var inputEscopo = form.querySelector('[name="escopo_edicao"]');
-        if (inputEscopo) {
-          inputEscopo.value = escopoVal;
-        }
-        form.setAttribute('data-submodal-confirmado', '1');
-        btnOpcao.closest('.modal-backdrop')?.classList.remove('is-open');
-        form.submit();
-      }
-    }
-
-    var btnSinal = evento.target.closest('.btn-toggle-ajuste-sinal');
-    if (btnSinal) {
-      var contaId = btnSinal.getAttribute('data-conta-id');
-      var inputTipo = document.getElementById('tipo-ajuste-' + contaId);
-      var icon = document.getElementById('icon-ajustar-sinal-' + contaId);
-      var btnSubmit = document.getElementById('btn-ajustar-submit-' + contaId);
-
-      if (inputTipo && icon) {
-        if (inputTipo.value === 'somar') {
-          inputTipo.value = 'subtrair';
-          btnSinal.style.background = 'var(--red-bg)';
-          icon.className = 'ph ph-minus';
-          icon.style.color = 'var(--red)';
-          if (btnSubmit) btnSubmit.textContent = GF_T.subtrair_saldo;
-        } else {
-          inputTipo.value = 'somar';
-          btnSinal.style.background = 'var(--green-bg)';
-          icon.className = 'ph ph-plus';
-          icon.style.color = 'var(--green)';
-          if (btnSubmit) btnSubmit.textContent = GF_T.adicionar_saldo;
-        }
-      }
-    }
   });
 
   window.gfBind(document);
@@ -476,11 +508,12 @@ document.addEventListener('DOMContentLoaded', function () {
   function toast(msg, tipo) {
     var el = document.createElement('div');
     el.className = 'gf-toast gf-toast--' + (tipo || 'sucesso');
-    el.setAttribute('role', 'status');
+    el.setAttribute('role', tipo === 'erro' ? 'alert' : 'status');
     el.textContent = msg;
     document.body.appendChild(el);
     requestAnimationFrame(function () { el.classList.add('is-visivel'); });
-    setTimeout(function () { el.classList.remove('is-visivel'); setTimeout(function () { el.remove(); }, 300); }, 4200);
+    // Erro fica mais tempo na tela: precisa ser lido.
+    setTimeout(function () { el.classList.remove('is-visivel'); setTimeout(function () { el.remove(); }, 300); }, tipo === 'erro' ? 7500 : 4200);
   }
   window.gfToast = toast;
 
@@ -492,10 +525,11 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Troca so o conteudo principal pelo da pagina recarregada em segundo plano.
-  function atualizarConteudo(html) {
-    var doc = new DOMParser().parseFromString(html, 'text/html');
+  function atualizarConteudo(doc) {
     var novo = doc.querySelector('main.container'), atual = document.querySelector('main.container');
     if (!novo || !atual) return false;
+    // A mensagem de retorno aparece como aviso flutuante (toast): nao fica tambem parada no topo da pagina.
+    novo.querySelectorAll('.alert[data-flash]').forEach(function (el) { el.remove(); });
     var aberto = document.querySelector('.modal-backdrop.is-open');
     var y = window.scrollY;
     // Grupos (acordeoes por categoria etc.) mantem aberto/fechado como o usuario deixou.
@@ -540,14 +574,23 @@ document.addEventListener('DOMContentLoaded', function () {
         return r.text();
       }).then(function (html) {
         if (html === null) return;
-        var flash = new DOMParser().parseFromString(html, 'text/html').querySelector('main .alert');
-        // Formulario dentro de um modal (editar/novo): fecha o modal para nao reabrir junto com o conteudo novo.
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        // A mensagem de retorno desta acao (so ela: os outros avisos da pagina tambem usam a classe "alert").
+        var flash = doc.querySelector('main .alert[data-flash]');
+        var mensagem = flash ? flash.textContent.trim() : '';
+        var recusado = !!flash && /alert-erro/.test(flash.className);
         var modalDoForm = form.closest('.modal-backdrop');
+        if (recusado && modalDoForm) {
+          // O servidor recusou (ex.: categoria invalida): o formulario continua aberto com o que foi digitado.
+          travar(form, false);
+          toast(mensagem, 'erro');
+          return;
+        }
+        // Formulario dentro de um modal (editar/novo): fecha o modal para nao reabrir junto com o conteudo novo.
         if (modalDoForm) modalDoForm.classList.remove('is-open');
-        var ok = atualizarConteudo(html);
+        var ok = atualizarConteudo(doc);
         if (!ok) { window.location.reload(); return; }
-        // A mensagem de retorno veio no conteudo novo (alert); tambem mostra toast para nao passar despercebida.
-        if (flash) toast(flash.textContent.trim(), /alert-erro/.test(flash.className) ? 'erro' : 'sucesso');
+        if (mensagem) toast(mensagem, recusado ? 'erro' : 'sucesso');
       }).catch(function () {
         travar(form, false);
         toast(GF_T.erro_acao, 'erro');
@@ -619,6 +662,7 @@ document.addEventListener('DOMContentLoaded', function () {
     form.elements.descricao.value = d.descricao || '';
     var valor = form.elements.valor;
     valor.value = window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(Number(d.valor) || 0) : String(d.valor);
+    valor.setCustomValidity('');
 
     // Categoria/subcategoria: o lancamento guarda so um id (da subcategoria quando existe); acha o pai na arvore.
     var arvore = window.gfCategoriasArvore || [];
@@ -634,7 +678,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     form.elements.conta_id.value = d.conta_id;
     form.elements.data_competencia.value = d.data_competencia || '';
-    form.elements.data_pagamento.value = d.data_pagamento || d.data_competencia || '';
 
     var status = form.elements.status;
     status.checked = d.status === 'pago';
@@ -672,8 +715,8 @@ document.addEventListener('DOMContentLoaded', function () {
     form.action = '/lancamentos/' + d.id + '/atualizar-transferencia';
     modal.querySelector('[data-transf-descricao]').textContent = d.descricao || '';
     form.elements.valor.value = window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(Number(d.valor) || 0) : String(d.valor);
+    form.elements.valor.setCustomValidity('');
     form.elements.data_competencia.value = d.data_competencia || '';
-    form.elements.data_pagamento.value = d.data_pagamento || d.data_competencia || '';
     var status = form.elements.status;
     status.checked = d.status === 'pago';
     status.dispatchEvent(new Event('change', { bubbles: true }));

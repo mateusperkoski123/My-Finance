@@ -316,7 +316,7 @@ module.exports = {
     'filtro.vencimento': 'Due Date',
     'filtro.preco': 'Price (Amount)',
     'filtro.criacao': 'Creation Date',
-    'filtro.periodo_personalizado': 'Custom Period:',
+    'filtro.periodo_personalizado': 'Custom period',
     'filtro.ate': 'to',
     'filtro.aplicar_datas': 'Apply Dates',
     'filtro.filtrar': 'Filter',

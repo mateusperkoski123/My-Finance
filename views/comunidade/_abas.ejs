@@ -1,0 +1,8 @@
+<%# Abas da Comunidade: Novidades (avisos da equipe) e Sugestoes e erros (feed dos usuarios). %>
+<nav class="tabs comunidade-abas" aria-label="<%= t('comunidade.titulo') %>">
+    <a href="/comunidade/novidades" class="tabs__item <%= aba === 'novidades' ? 'is-active' : '' %>">
+        <i class="ph ph-megaphone"></i> <%= t('novidades.aba') %>
+        <% if (novidadesNovas > 0) { %><span class="selo-novidade selo-novidade--aba"><%= novidadesNovas > 9 ? '9+' : novidadesNovas %></span><% } %>
+    </a>
+    <a href="/comunidade?lista=1" class="tabs__item <%= aba === 'sugestoes' ? 'is-active' : '' %>"><i class="ph ph-lightbulb"></i> <%= t('novidades.aba_sugestoes') %></a>
+</nav>

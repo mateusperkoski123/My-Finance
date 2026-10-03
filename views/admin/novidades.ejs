@@ -1,0 +1,41 @@
+<%- include('_abas', { abaAdmin: 'novidades' }) %>
+<div class="page-header">
+    <h1><i class="ph ph-megaphone"></i> <%= t('adm.novidades_titulo') %></h1>
+    <p class="muted"><%= t('adm.novidades_sub') %></p>
+    <a class="btn btn-primary btn-sm" href="/admin/novidades/nova"><i class="ph ph-plus"></i> <%= t('adm.novidades_nova') %></a>
+</div>
+
+<% if (!novidades.length) { %>
+    <section class="card adm-secao"><p class="muted" style="margin: 0;"><%= t('adm.novidades_vazio') %></p></section>
+<% } else { %>
+<section class="card adm-secao">
+    <ul class="nov-adm">
+    <% novidades.forEach((n) => { const faltando = n.estado === 'rascunho' && ['pt', 'es', 'en'].some((i) => !String(n['titulo_' + i] || '').trim() || !String(n['texto_' + i] || '').trim()); %>
+        <li class="nov-adm__item">
+            <div class="nov-adm__info">
+                <div>
+                    <span class="novidade__tipo novidade__tipo--<%= n.tipo %>"><%= t('novidades.tipo.' + n.tipo) %></span>
+                    <span class="badge <%= n.estado === 'publicada' ? 'badge-sucesso' : 'badge-alerta' %>"><%= t('adm.novidades_estado_' + n.estado) %></span>
+                    <% if (faltando) { %><span class="badge badge-pendente" title="<%= t('adm.novidades_incompleta_dica') %>"><%= t('adm.novidades_incompleta') %></span><% } %>
+                </div>
+                <strong class="nov-adm__titulo"><%= n.titulo_pt || n.titulo_es || n.titulo_en %></strong>
+                <div class="muted" style="font-size: 12px;">
+                    <% if (n.publicada_em) { %><%= t('adm.novidades_publicada_em', { data: formatDate(n.publicada_em, 'DD/MM/YYYY') }) %> · <% } %>
+                    <i class="ph ph-thumbs-up"></i> <%= n.gostei %> · <i class="ph ph-thumbs-down"></i> <%= n.nao_gostei %>
+                </div>
+            </div>
+            <div class="nov-adm__acoes">
+                <a class="btn btn-outline btn-sm" href="/admin/novidades/<%= n.id %>/editar"><i class="ph ph-pencil-simple"></i> <%= t('acao.editar') %></a>
+                <% if (n.estado === 'rascunho') { %>
+                    <form method="post" action="/admin/novidades/<%= n.id %>/publicar"><%- csrfCampo %><button type="submit" class="btn btn-primary btn-sm"><i class="ph ph-paper-plane-tilt"></i> <%= t('adm.novidades_publicar') %></button></form>
+                <% } else { %>
+                    <form method="post" action="/admin/novidades/<%= n.id %>/despublicar"><%- csrfCampo %><button type="submit" class="btn btn-outline btn-sm"><%= t('adm.novidades_despublicar') %></button></form>
+                <% } %>
+                <form method="post" action="/admin/novidades/<%= n.id %>/excluir" data-confirm="<%= t('adm.novidades_excluir_conf') %>"><%- csrfCampo %><button type="submit" class="btn btn-outline btn-sm" aria-label="<%= t('acao.excluir') %>" title="<%= t('acao.excluir') %>"><i class="ph ph-trash"></i></button></form>
+            </div>
+        </li>
+    <% }) %>
+    </ul>
+    <p class="muted adm-nota"><%= t('adm.novidades_nota') %></p>
+</section>
+<% } %>

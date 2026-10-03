@@ -16,7 +16,7 @@
                 </div>
             <% } else { %>
                 <div class="tabela-container">
-                    <table class="tabela">
+                    <table class="tabela tabela-disp">
                         <thead>
                             <tr>
                                 <th><%= t('config.dispositivos.col_nome') %></th>
@@ -32,7 +32,7 @@
                                     <td>
                                         <strong><%= d.nome %></strong>
                                     </td>
-                                    <td><span class="badge" style="background: rgba(255,255,255,0.05);"><%= d.plataforma %></span></td>
+                                    <td><span class="badge badge-neutro"><%= d.plataforma %></span></td>
                                     <td><%= d.ultimo_uso_em ? formatDateTime(d.ultimo_uso_em) : '-' %></td>
                                     <td>
                                         <% if (d.revogado_em) { %>
@@ -43,7 +43,7 @@
                                     </td>
                                     <td style="text-align: right;">
                                         <% if (!d.revogado_em) { %>
-                                            <form method="post" action="/configuracoes/dispositivos/<%= d.id %>/revogar?_csrf=<%= csrfToken %>" style="display: inline;">
+                                            <form method="post" action="/configuracoes/dispositivos/<%= d.id %>/revogar" style="display: inline;">
                                                 <%- csrfCampo %>
                                                 <button type="submit" class="btn btn-sm btn-outline" style="color: var(--red); border-color: rgba(239, 68, 68, 0.3);">
                                                     <i class="ph ph-prohibit"></i> <%= t('config.dispositivos.revogar_btn') %>

@@ -16,9 +16,26 @@ function i18nMiddleware(req, res, next) {
     res.locals.theme = theme;
     res.locals.t = req.t;
 
-    // Flash messages
-    res.locals.flash = req.session.flash || null;
-    delete req.session.flash;
+    // Mensagem de retorno (flash): so e consumida quando uma pagina e de fato montada (res.render le res.locals).
+    // Requisicoes de segundo plano que passam por aqui (teste de conexao, sincronizacao do app, manifest, foto)
+    // nao podem "gastar" a mensagem antes de o usuario ve-la.
+    let lida = false;
+    let valor = null;
+    Object.defineProperty(res.locals, 'flash', {
+        enumerable: true,
+        configurable: true,
+        get() {
+            if (!lida) {
+                lida = true;
+                if (req.method !== 'HEAD' && req.session && req.session.flash) {
+                    valor = req.session.flash;
+                    delete req.session.flash;
+                }
+            }
+            return valor;
+        },
+        set(v) { lida = true; valor = v; }
+    });
 
     next();
 }

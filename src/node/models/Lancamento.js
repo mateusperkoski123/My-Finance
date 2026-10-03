@@ -292,57 +292,59 @@ class Lancamento {
     static async atualizar(id, userId, data, escopoSerie = 'apenas_esta') {
         const itemAtual = await this.buscarPorId(id, userId);
         if (!itemAtual) return false;
+        // So receita e despesa sao editadas por aqui: transferencia e ajuste tem as proprias regras (duas pernas, sinal).
+        if (itemAtual.tipo !== 'receita' && itemAtual.tipo !== 'despesa') return false;
         await this.validarPropriedade(userId, data.conta_id, data.subcategoria_id || data.categoria_id);
 
         const statusStr = data.status === 'pago' || data.status === 1 ? 'pago' : 'pendente';
-        const dataPagStr = statusStr === 'pago' ? (data.data_pagamento || itemAtual.data_pagamento || data.data_competencia || itemAtual.data_competencia) : null;
+        const dataAntes = toLocalYMD(itemAtual.data_competencia);
+        const pagAntes = itemAtual.data_pagamento ? toLocalYMD(itemAtual.data_pagamento) : null;
+        const dataNova = data.data_competencia || dataAntes;
+        // Data do pagamento: a informada; senao a que ja existia - acompanhando a data do lancamento quando as duas eram iguais
+        // (quem corrige o dia de uma compra ja paga espera que o pagamento va junto).
+        const dataPagStr = statusStr === 'pago' ? (data.data_pagamento || (pagAntes && pagAntes !== dataAntes ? pagAntes : dataNova)) : null;
         const categoriaFinalId = data.subcategoria_id || data.categoria_id || itemAtual.categoria_id;
         const rawValor = Math.abs(parseFloat(data.valor) || Math.abs(parseFloat(itemAtual.valor)));
         const finalValor = itemAtual.tipo === 'despesa' ? -rawValor : rawValor;
 
+        // Campos comuns. "Fixa" (recorrente) e observacoes so mudam quando o chamador informa: o formulario do site nao
+        // envia nenhum dos dois ao editar uma serie, e nesse caso fica o que ja estava gravado.
+        const campos = ['conta_id = ?', 'categoria_id = ?', 'descricao = ?', 'valor = ?'];
+        const valores = [data.conta_id || itemAtual.conta_id, categoriaFinalId, data.descricao || itemAtual.descricao, finalValor];
+        if (data.e_fixo !== undefined || data.recorrente !== undefined) {
+            campos.push('recorrente = ?');
+            valores.push(data.e_fixo || data.recorrente ? 1 : 0);
+        }
+        if (data.observacoes !== undefined) {
+            campos.push('observacoes = ?');
+            valores.push(data.observacoes || null);
+        }
+        const set = campos.join(', ');
+
         if (itemAtual.serie_id && escopoSerie !== 'apenas_esta') {
             if (escopoSerie === 'esta_e_proximas') {
                 await db.query(
-                    `UPDATE lancamentos SET 
-                     conta_id = ?, categoria_id = ?, descricao = ?, 
-                     valor = ?, recorrente = ?, observacoes = ?, 
-                     updated_at = NOW(3) 
-                     WHERE user_id = ? AND serie_id = ? AND data_competencia >= ?`,
-                    [
-                        data.conta_id || itemAtual.conta_id, categoriaFinalId, data.descricao || itemAtual.descricao,
-                        finalValor, data.e_fixo || data.recorrente ? 1 : 0, data.observacoes || null,
-                        userId, itemAtual.serie_id, itemAtual.data_competencia
-                    ]
+                    `UPDATE lancamentos SET ${set}, updated_at = NOW(3)
+                     WHERE user_id = ? AND serie_id = ? AND tipo = ? AND data_competencia >= ?`,
+                    [...valores, userId, itemAtual.serie_id, itemAtual.tipo, dataAntes]
                 );
             } else if (escopoSerie === 'toda_serie') {
                 await db.query(
-                    `UPDATE lancamentos SET 
-                     conta_id = ?, categoria_id = ?, descricao = ?, 
-                     valor = ?, recorrente = ?, observacoes = ?, 
-                     updated_at = NOW(3) 
-                     WHERE user_id = ? AND serie_id = ?`,
-                    [
-                        data.conta_id || itemAtual.conta_id, categoriaFinalId, data.descricao || itemAtual.descricao,
-                        finalValor, data.e_fixo || data.recorrente ? 1 : 0, data.observacoes || null,
-                        userId, itemAtual.serie_id
-                    ]
+                    `UPDATE lancamentos SET ${set}, updated_at = NOW(3)
+                     WHERE user_id = ? AND serie_id = ? AND tipo = ?`,
+                    [...valores, userId, itemAtual.serie_id, itemAtual.tipo]
                 );
             }
-            // Status/data de pagamento valem so para a ocorrencia editada (nao marca a serie inteira como paga).
-            await db.query('UPDATE lancamentos SET status = ?, data_pagamento = ?, updated_at = NOW(3) WHERE id = ? AND user_id = ?', [statusStr, dataPagStr, id, userId]);
+            // Data, status e data de pagamento valem so para a ocorrencia editada (nao marca a serie inteira como paga).
+            await db.query(
+                'UPDATE lancamentos SET data_competencia = ?, status = ?, data_pagamento = ?, updated_at = NOW(3) WHERE id = ? AND user_id = ?',
+                [dataNova, statusStr, dataPagStr, id, userId]
+            );
         } else {
             await db.query(
-                `UPDATE lancamentos SET 
-                 conta_id = ?, categoria_id = ?, descricao = ?, 
-                 valor = ?, data_competencia = ?, data_pagamento = ?, 
-                 status = ?, recorrente = ?, observacoes = ?, updated_at = NOW(3) 
+                `UPDATE lancamentos SET ${set}, data_competencia = ?, data_pagamento = ?, status = ?, updated_at = NOW(3)
                  WHERE id = ? AND user_id = ?`,
-                [
-                    data.conta_id || itemAtual.conta_id, categoriaFinalId, data.descricao || itemAtual.descricao,
-                    finalValor, data.data_competencia || itemAtual.data_competencia, dataPagStr,
-                    statusStr, data.e_fixo || data.recorrente ? 1 : 0, data.observacoes || null,
-                    id, userId
-                ]
+                [...valores, dataNova, dataPagStr, statusStr, id, userId]
             );
         }
         return true;
@@ -465,7 +467,11 @@ class Lancamento {
         const item = await this.buscarPorId(id, userId);
         if (!item) return { item: null, ids: [] };
         const ids = [item.id];
-        if (item.tipo === 'transferencia' && item.transferencia_par_id) ids.push(item.transferencia_par_id);
+        if (item.tipo === 'transferencia') {
+            // Transferencias antigas nao tem a ligacao gravada: o par e achado pelo valor oposto na mesma data (e fica ligado dai em diante).
+            const par = await this.localizarParTransferencia(item, userId);
+            if (par) ids.push(par.id);
+        }
         return { item, ids };
     }
 

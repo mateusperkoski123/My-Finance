@@ -17,7 +17,7 @@
         const ctl = new AbortController();
         const t = setTimeout(() => ctl.abort(), 3000);
         try {
-            const r = await fetch('/offline', { method: 'HEAD', cache: 'no-store', signal: ctl.signal });
+            const r = await fetch('/ping', { method: 'HEAD', cache: 'no-store', signal: ctl.signal });
             return r.ok;
         } catch (e) {
             return false;
@@ -80,7 +80,8 @@
                 tipo: fd.get('tipo') === 'receita' ? 'receita' : 'despesa', conta_id: Number(conta), categoria_id: Number(categoria), descricao, valor,
                 data_competencia: dataDe(form, 'data_competencia'), status: pago ? 'pago' : 'pendente'
             }, serie);
-            if (pago) dados.data_pagamento = dataDe(form, 'data_pagamento');
+            // O formulario tem uma unica data: a do vencimento (pendente) ou a do pagamento/recebimento (pago).
+            if (pago) dados.data_pagamento = form.elements.data_pagamento ? dataDe(form, 'data_pagamento') : dados.data_competencia;
             const obs = String(fd.get('observacoes') || '').trim();
             if (obs) dados.observacoes = obs;
             return { acao: 'create', dados, resumo: { titulo: descricao, valor: dados.tipo === 'despesa' ? -valor : valor, tipo: dados.tipo, serie: serie.e_fixo ? 'fixo' : (serie.repetir ? serie.quantidade_repeticoes : null) } };

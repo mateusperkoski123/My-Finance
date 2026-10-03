@@ -12,6 +12,7 @@ const routes = require('./src/node/routes');
 const i18nMiddleware = require('./src/node/middleware/i18nMiddleware');
 const csrfMiddleware = require('./src/node/middleware/csrfMiddleware');
 const User = require('./src/node/models/User');
+const Novidade = require('./src/node/models/Novidade');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,15 +30,12 @@ app.use(
     })
 );
 
-// Rate limiter for auth routes
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 20,
-    standardHeaders: true,
-    legacyHeaders: false
+// Teste de conexao do app (public/assets/js/app-conexao.js). Responde antes de sessao, banco e idioma:
+// toda aba aberta chama isto a cada poucos segundos e antes de enviar um formulario.
+app.all('/ping', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.status(204).end();
 });
-app.use('/login', authLimiter);
-app.use('/cadastro', authLimiter);
 
 // Body parsing
 app.use(express.urlencoded({ extended: true }));
@@ -100,6 +98,7 @@ app.use((req, res, next) => {
     res.locals.currentUrl = req.originalUrl;
     res.locals.googleAtivo = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
     res.locals.usuarioLogado = null;
+    res.locals.novidadesNovas = 0;
     res.locals.assetVersion = BUILD_ID;
     next();
 });
@@ -112,6 +111,8 @@ app.use(async (req, res, next) => {
             if (user) {
                 req.user = user;
                 res.locals.usuarioLogado = user;
+                // Selinho "novidades" do menu (lista de datas em cache: sem consulta a cada pagina).
+                res.locals.novidadesNovas = await Novidade.contarNovas(user).catch(() => 0);
                 // O service worker so guarda paginas autenticadas identificadas por este cabecalho (e as apaga se o usuario mudar).
                 res.setHeader('X-Cache-User', String(user.id));
                 // Ultimo acesso: grava no maximo uma vez a cada ACESSO_INTERVALO_HORAS (padrao 12) por usuario, sem esperar a gravacao.
@@ -128,6 +129,23 @@ app.use(async (req, res, next) => {
 
 // i18n & CSRF middlewares
 app.use(i18nMiddleware);
+
+// Limite de tentativas nas telas de entrada. So conta os envios (POST): abrir a tela nao gasta tentativa.
+// Quem passa do limite volta para a propria tela com um aviso no idioma dele (por isso fica depois da sessao e do idioma).
+const limiteEntrada = (max) => rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max,
+    standardHeaders: true,
+    legacyHeaders: false,
+    skip: (req) => req.method !== 'POST',
+    handler: (req, res) => {
+        req.session.flash = { tipo: 'erro', mensagem: req.t('flash.muitas_tentativas') };
+        res.redirect(req.baseUrl || '/login');
+    }
+});
+app.use('/login', limiteEntrada(20));
+app.use('/cadastro', limiteEntrada(20));
+app.use('/esqueci-senha', limiteEntrada(5)); // cada envio dispara um e-mail
 
 // Manifest do app: textos no idioma da conta (o navegador envia o cookie porque o link usa crossorigin="use-credentials").
 app.get('/manifest.webmanifest', (req, res) => {
@@ -169,9 +187,10 @@ const { contaMiddleware } = require('./src/node/middleware/contaMiddleware');
 app.use((req, res, next) => contaMiddleware(req, res, next).catch(next));
 
 // Helpers in views
-const { moeda, formatDate, formatDateTime, truncarTexto, descricaoLancamento, hojeLocal } = require('./src/node/core/helpers');
+const { moeda, formatDate, formatDateTime, truncarTexto, descricaoLancamento, hojeLocal, jsonScript } = require('./src/node/core/helpers');
 app.use((req, res, next) => {
     res.locals.moeda = (val) => moeda(val, res.locals.currency);
+    res.locals.jsonScript = jsonScript; // dados dentro de <script>: sempre por aqui (nunca JSON.stringify direto)
     res.locals.formatDate = formatDate;
     res.locals.hojeLocal = hojeLocal;
     res.locals.formatDateTime = formatDateTime;

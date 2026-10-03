@@ -84,7 +84,7 @@ const _presets = [['hoje', t('filtro.hoje')], ['7dias', t('filtro.7dias')], ['me
     </div>
 </div>
 
-<div class="card" style="border-radius: 16px; padding: 20px;">
+<div class="card lista-card">
     <div class="tabela-container">
         <table class="tabela tabela-extrato">
             <thead>
@@ -104,7 +104,7 @@ const _presets = [['hoje', t('filtro.hoje')], ['7dias', t('filtro.7dias')], ['me
                     </tr>
                 <% } else { %>
                     <% lancamentos.forEach(l => { %>
-                        <tr>
+                        <tr class="lanc-linha lanc-linha--<%= (l.tipo === 'despesa' || (l.tipo !== 'receita' && parseFloat(l.valor) < 0)) ? 'despesa' : 'receita' %>">
                             <td><%= formatDate(l.data_competencia, 'DD/MM/YYYY') %></td>
                             <td>
                                 <strong title="<%= descricaoLancamento(l) %>"><%= (l.tipo === 'ajuste' || l.tipo === 'transferencia') ? descricaoLancamento(l) : truncarTexto(l.descricao, 45) %></strong>

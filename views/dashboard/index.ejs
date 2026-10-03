@@ -34,11 +34,12 @@ const nomesMeses = {
         <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
             <a href="/?data_inicio=<%= dataHoje %>&data_fim=<%= dataHoje %>" class="btn <%= eHoje ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('painel.hoje') %></a>
             <a href="/?mes=<%= hojeLocal().getMonth() + 1 %>&ano=<%= hojeLocal().getFullYear() %>" class="btn <%= eMes ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
+            <%# O filtro so existe quando ha contas (o formulario dele fica mais abaixo, junto com a lista). %>
+            <% if (contas && contas.length > 0) { %>
             <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-filtro-avancado" style="border-radius: 20px;"><i class="ph ph-sliders-horizontal"></i> <%= t('filtro.filtrar') %></button>
+            <% } %>
         </div>
     </div>
-
-    <!-- Action Buttons Row (+ Receita / - Despesa) Grid -->
 </div>
 
 <% if (!contas || contas.length === 0) { %>
@@ -59,7 +60,7 @@ const nomesMeses = {
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <span class="muted" style="font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
             <%= t('painel.saldo_disponivel') %>
-            <button type="button" id="btn-ocultar-saldo" aria-label="Ocultar saldo" style="background: none; border: none; padding: 2px; cursor: pointer; color: var(--muted); font-size: 20px; line-height: 1; display: inline-flex;"><i class="ph ph-eye"></i></button>
+            <button type="button" id="btn-ocultar-saldo" class="btn-olho" aria-label="<%= t('painel.ocultar_saldo') %>" title="<%= t('painel.ocultar_saldo') %>" aria-pressed="false"><i class="ph ph-eye"></i></button>
         </span>
         <span style="font-size: 11px; background: var(--bg); padding: 4px 10px; border-radius: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--border);"><%= t('contas.total_consolidado') %></span>
     </div>
@@ -73,26 +74,36 @@ const nomesMeses = {
     </div>
     <% } %>
 </div>
+<%# Botoes de acao logo abaixo do saldo: no computador ficam a vista sem rolar a pagina (no celular o botao flutuante "+" faz esse papel). %>
+<div class="myfinance-action-buttons">
+    <button type="button" class="btn btn-acao btn-acao--receita" data-modal-open="modal-novo-receita"><i class="ph ph-plus-circle"></i> <%= t('painel.nova_receita') %></button>
+    <button type="button" class="btn btn-acao btn-acao--despesa" data-modal-open="modal-novo-despesa"><i class="ph ph-minus-circle"></i> <%= t('painel.nova_despesa') %></button>
+</div>
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    var btn = document.getElementById('btn-ocultar-saldo');
-    if (!btn) return;
-    var els = document.querySelectorAll('[data-saldo-oculta]');
-    els.forEach(function (el) { el.setAttribute('data-original', el.textContent.trim()); });
-    function aplicar(oculto) {
-        els.forEach(function (el) { el.textContent = oculto ? '••••••' : el.getAttribute('data-original'); });
-        btn.firstElementChild.className = oculto ? 'ph ph-eye-slash' : 'ph ph-eye';
-        btn.setAttribute('aria-label', oculto ? 'Mostrar saldo' : 'Ocultar saldo');
-    }
-    var oculto = false;
-    try { oculto = localStorage.getItem('gf_saldo_oculto') === '1'; } catch (e) {}
-    aplicar(oculto);
-    btn.addEventListener('click', function () {
-        oculto = !oculto;
-        try { localStorage.setItem('gf_saldo_oculto', oculto ? '1' : '0'); } catch (e) {}
+// Ocultar/mostrar os valores. Alem do carregamento, roda quando a pagina troca o conteudo sem recarregar
+// (depois de pagar ou salvar um lancamento): os valores precisam continuar ocultos.
+(function () {
+    function iniciar() {
+        var btn = document.getElementById('btn-ocultar-saldo');
+        if (!btn) return;
+        var els = document.querySelectorAll('[data-saldo-oculta]');
+        els.forEach(function (el) { el.setAttribute('data-original', el.textContent.trim()); });
+        function aplicar(oculto) {
+            els.forEach(function (el) { el.textContent = oculto ? '••••••' : el.getAttribute('data-original'); });
+            btn.firstElementChild.className = oculto ? 'ph ph-eye-slash' : 'ph ph-eye';
+            btn.setAttribute('aria-pressed', oculto ? 'true' : 'false');
+        }
+        var oculto = false;
+        try { oculto = localStorage.getItem('gf_saldo_oculto') === '1'; } catch (e) {}
         aplicar(oculto);
-    });
-});
+        btn.addEventListener('click', function () {
+            oculto = !oculto;
+            try { localStorage.setItem('gf_saldo_oculto', oculto ? '1' : '0'); } catch (e) {}
+            aplicar(oculto);
+        });
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
+})();
 </script>
 
 <% if (pendenciasUrgentes && pendenciasUrgentes.total > 0) { %>
@@ -178,25 +189,17 @@ const linhasCmp = [
         <ul class="gf-leg" id="legDespesasPainel"></ul>
     </div>
 </section>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="/assets/js/charts.js?v=<%= Date.now() %>"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+<script src="/assets/js/charts.js?v=<%= assetVersion %>"></script>
 <script>
 (function () {
-    var dados = <%- JSON.stringify(despesasPorCategoria) %>;
+    var dados = <%- jsonScript(despesasPorCategoria) %>;
     function desenhar() { if (window.Chart && window.GFCharts) GFCharts.rosca('chartDespesasPainel', 'legDespesasPainel', dados, { rotulo: (window.GF_T || {}).despesas || 'Despesas' }); }
     if (window.Chart && window.GFCharts) { desenhar(); } else { window.addEventListener('load', desenhar); }
 })();
 </script>
 <% } %>
 
-</div>
-
-<!-- Botões de Ação (+ Ingreso / - Gasto) diretamente abaixo do Saldo Disponível -->
-<div class="myfinance-action-buttons" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-    <% if (contas && contas.length > 0) { %>
-        <button type="button" class="btn btn-primary" data-modal-open="modal-novo-receita" style="background: var(--green); border: none; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 14px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="ph ph-plus-circle" style="font-size: 20px;"></i> <%= t('painel.nova_receita') %></button>
-        <button type="button" class="btn btn-primary" data-modal-open="modal-novo-despesa" style="background: var(--red); border: none; font-weight: 700; padding: 12px; border-radius: 14px; font-size: 14px; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px;"><i class="ph ph-minus-circle" style="font-size: 20px;"></i> <%= t('painel.nova_despesa') %></button>
-    <% } %>
 </div>
 
 <%- include('../partials/lista_lancamentos') %>
