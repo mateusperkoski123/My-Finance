@@ -406,6 +406,17 @@ module.exports = {
     'config.dispositivos.revogado': ['Revogado', 'Revocado', 'Revoked'],
     'config.dispositivos.revogar_btn': ['Revogar Acesso', 'Revocar Acceso', 'Revoke Access'],
     'flash.dispositivo_revogado': ['Acesso do dispositivo revogado com sucesso!', '¡Acceso del dispositivo revocado con éxito!', 'Device access revoked successfully!'],
+    'painel.comp.titulo': ['Comparativo com o período anterior', 'Comparativo con el período anterior', 'Comparison with previous period'],
+    'painel.comp.receita_fixa': ['Receita fixa', 'Ingreso fijo', 'Fixed income'],
+    'painel.comp.receita_variavel': ['Receita variável', 'Ingreso variable', 'Variable income'],
+    'painel.comp.despesa_fixa': ['Despesas fixas', 'Gastos fijos', 'Fixed expenses'],
+    'painel.comp.despesa_variavel': ['Despesas variáveis', 'Gastos variables', 'Variable expenses'],
+    'painel.comp.saldo_total': ['Saldo total do período', 'Saldo total del período', 'Total balance of the period'],
+    'painel.comp.anterior': ['Anterior', 'Anterior', 'Previous'],
+    'painel.comp.atual': ['Atual', 'Actual', 'Current'],
+    'painel.comp.variacao': ['Variação', 'Variación', 'Change'],
+    'painel.comp.sem_variacao': ['Sem variação', 'Sin variación', 'No change'],
+    'painel.comp.novo': ['novo', 'nuevo', 'new'],
 };
 
 const meses = {

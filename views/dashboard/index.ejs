@@ -57,19 +57,43 @@ const nomesMeses = {
 <!-- Card Principal: Saldo Disponível -->
 <div class="card resumo-card" style="border-radius: 20px; padding: 22px 24px; margin-bottom: 16px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow);">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span class="muted" style="font-size: 14px; font-weight: 600;"><%= t('painel.saldo_disponivel') %></span>
+        <span class="muted" style="font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
+            <%= t('painel.saldo_disponivel') %>
+            <button type="button" id="btn-ocultar-saldo" aria-label="Ocultar saldo" style="background: none; border: none; padding: 2px; cursor: pointer; color: var(--muted); font-size: 20px; line-height: 1; display: inline-flex;"><i class="ph ph-eye"></i></button>
+        </span>
         <span style="font-size: 11px; background: var(--bg); padding: 4px 10px; border-radius: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--border);"><%= t('contas.total_consolidado') %></span>
     </div>
-    <div style="font-size: 32px; font-weight: 800; color: <%= resumo.saldo_disponivel >= 0 ? 'var(--green)' : 'var(--red)' %>;">
+    <div data-saldo-oculta style="font-size: 32px; font-weight: 800; color: <%= resumo.saldo_disponivel >= 0 ? 'var(--green)' : 'var(--red)' %>;">
         <%= moeda(resumo.saldo_disponivel) %>
     </div>
     <% if (Math.abs(resumo.saldo_previsto - resumo.saldo_disponivel) > 0.5) { %>
     <div style="display: flex; justify-content: space-between; font-size: 12.5px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
         <span class="muted"><%= t('painel.saldo_previsto_apos') %></span>
-        <strong style="color: var(--text); font-weight: 700;"><%= moeda(resumo.saldo_previsto) %></strong>
+        <strong data-saldo-oculta style="color: var(--text); font-weight: 700;"><%= moeda(resumo.saldo_previsto) %></strong>
     </div>
     <% } %>
 </div>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var btn = document.getElementById('btn-ocultar-saldo');
+    if (!btn) return;
+    var els = document.querySelectorAll('[data-saldo-oculta]');
+    els.forEach(function (el) { el.setAttribute('data-original', el.textContent.trim()); });
+    function aplicar(oculto) {
+        els.forEach(function (el) { el.textContent = oculto ? '••••••' : el.getAttribute('data-original'); });
+        btn.firstElementChild.className = oculto ? 'ph ph-eye-slash' : 'ph ph-eye';
+        btn.setAttribute('aria-label', oculto ? 'Mostrar saldo' : 'Ocultar saldo');
+    }
+    var oculto = false;
+    try { oculto = localStorage.getItem('gf_saldo_oculto') === '1'; } catch (e) {}
+    aplicar(oculto);
+    btn.addEventListener('click', function () {
+        oculto = !oculto;
+        try { localStorage.setItem('gf_saldo_oculto', oculto ? '1' : '0'); } catch (e) {}
+        aplicar(oculto);
+    });
+});
+</script>
 
 <% if (pendenciasUrgentes && pendenciasUrgentes.total > 0) { %>
 <!-- Pendencias vencidas ou que vencem hoje -->
@@ -101,25 +125,50 @@ const nomesMeses = {
 <% } %>
 
 <div class="painel-resumo">
-<!-- KPIs do periodo (Saldo anterior / Receitas / Despesas) -->
-<div class="kpi-grid">
-    <div class="card kpi-card" style="border-left: 4px solid var(--blue);">
-        <span class="kpi-card__label"><%= t('painel.saldo_anterior') %></span>
-        <strong class="kpi-card__valor" style="color: var(--blue);"><%= moeda(resumo.saldo_anterior) %></strong>
+<!-- Comparativo: periodo anterior x atual (fixos/variaveis) -->
+<%
+const cmp = comparativo;
+const rotAnt = periodo.customizado ? formatDate(cmp.periodoAnt.inicio, 'DD/MM') + ' - ' + formatDate(cmp.periodoAnt.fim, 'DD/MM') : nomesMeses[periodo.mes_anterior];
+const rotAtual = periodo.customizado ? formatDate(periodo.inicio, 'DD/MM') + ' - ' + formatDate(periodo.fim, 'DD/MM') : nomesMeses[periodo.mes];
+// bomSobe: true quando aumentar e bom (receitas e saldo); false para despesas
+const linhasCmp = [
+    { k: 'receita_fixa', bomSobe: true }, { k: 'receita_variavel', bomSobe: true },
+    { k: 'despesa_fixa', bomSobe: false }, { k: 'despesa_variavel', bomSobe: false },
+    { k: 'saldo_total', bomSobe: true, total: true }
+];
+%>
+<section class="card comp-card">
+    <h3 class="comp-card__titulo"><%= t('painel.comp.titulo') %></h3>
+    <div class="comp-grid comp-grid--cab">
+        <span></span>
+        <span class="comp-col"><%= rotAnt %></span>
+        <span class="comp-col"><%= rotAtual %></span>
+        <span class="comp-col comp-col--var"><%= t('painel.comp.variacao') %></span>
     </div>
-    <div class="card kpi-card" style="border-left: 4px solid var(--green);">
-        <span class="kpi-card__label"><%= t('comum.receitas') %></span>
-        <strong class="kpi-card__valor" style="color: var(--green);"><%= moeda(resumo.receitas_recebidas + resumo.receitas_a_receber) %></strong>
-        <span class="kpi-card__sub"><%= t('painel.recebido') %> <b style="color: var(--green);"><%= moeda(resumo.receitas_recebidas) %></b></span>
-        <span class="kpi-card__sub"><%= t('painel.a_receber') %> <b style="color: var(--pendente);"><%= moeda(resumo.receitas_a_receber) %></b></span>
+    <% linhasCmp.forEach(l => {
+        const ant = cmp.anterior[l.k], atu = cmp.atual[l.k];
+        const dif = atu - ant;
+        const sem = Math.abs(dif) < 0.005;
+        const sobe = dif > 0;
+        const bom = sobe === l.bomSobe;
+        const pct = ant !== 0 ? Math.abs(dif) / Math.abs(ant) * 100 : null;
+        const cor = sem ? 'var(--muted)' : (bom ? 'var(--green)' : 'var(--red)');
+    %>
+    <div class="comp-grid comp-linha<%= l.total ? ' comp-linha--total' : '' %>">
+        <span class="comp-rotulo"><%= t('painel.comp.' + l.k) %></span>
+        <span class="comp-col" data-saldo-oculta><%= moeda(ant) %></span>
+        <span class="comp-col comp-col--atual" data-saldo-oculta><%= moeda(atu) %></span>
+        <span class="comp-col comp-col--var" style="color: <%= cor %>;">
+            <% if (sem) { %>
+                <i class="ph ph-minus"></i> <span><%= t('painel.comp.sem_variacao') %></span>
+            <% } else { %>
+                <i class="ph <%= sobe ? 'ph-arrow-up' : 'ph-arrow-down' %>"></i>
+                <span><span data-saldo-oculta><%= sobe ? '+' : '-' %><%= moeda(Math.abs(dif)) %></span><small> <%= pct !== null ? '(' + (sobe ? '+' : '-') + pct.toFixed(1).replace('.', ',') + '%)' : '(' + t('painel.comp.novo') + ')' %></small></span>
+            <% } %>
+        </span>
     </div>
-    <div class="card kpi-card kpi-card--full" style="border-left: 4px solid var(--red);">
-        <span class="kpi-card__label"><%= t('comum.despesas') %></span>
-        <strong class="kpi-card__valor" style="color: var(--red);"><%= moeda(resumo.despesas_pagas + resumo.despesas_nao_pagas) %></strong>
-        <span class="kpi-card__sub"><%= t('painel.pago') %> <b style="color: var(--green);"><%= moeda(resumo.despesas_pagas) %></b></span>
-        <span class="kpi-card__sub"><%= t('painel.nao_pago') %> <b style="color: var(--pendente);"><%= moeda(resumo.despesas_nao_pagas) %></b></span>
-    </div>
-</div>
+    <% }) %>
+</section>
 
 <% if (despesasPorCategoria && despesasPorCategoria.length > 0) { %>
 <section class="card grafico-card" style="margin-bottom: 16px;">

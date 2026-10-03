@@ -235,6 +235,30 @@ const { migrar, promoverAdmins } = require('./src/node/core/migrator');
         console.log(`🚀 Servidor Node.js rodando na porta http://localhost:${PORT}`);
         console.log(`====================================================`);
     });
+
+    // Agendador interno dos lembretes (substitui o cron externo). Consulta a cada 30 minutos, alinhado ao relogio
+    // (:00 e :30, os mesmos horarios do seletor), e envia o que estiver pendente. A reserva (compare-and-set em
+    // Lembrete.reservar) evita envio duplicado em cluster/varias instancias.
+    // Desligue com LEMBRETES_AGENDADOR=0 se preferir usar so o cron externo em /cron/lembretes.
+    if (process.env.LEMBRETES_AGENDADOR !== '0') {
+        const lembretes = require('./src/node/core/lembretes');
+        const MEIA_HORA = 30 * 60 * 1000;
+        const verificar = async () => {
+            try {
+                const r = await lembretes.processarDevidos();
+                if (r.avisos || r.erros) console.log(`Lembretes: ${r.avisos} aviso(s), ${r.erros} erro(s).`);
+            } catch (err) {
+                console.error('Falha no agendador de lembretes:', err.message);
+            }
+        };
+        const agendar = () => {
+            // +5s de folga para garantir que o relogio ja passou de :00/:30
+            const espera = MEIA_HORA - (Date.now() % MEIA_HORA) + 5000;
+            setTimeout(async () => { await verificar(); agendar(); }, espera).unref();
+        };
+        verificar(); // ao iniciar, recupera avisos que ficaram pendentes enquanto o app estava fora
+        agendar();
+    }
 })();
 
 module.exports = app;

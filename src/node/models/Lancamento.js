@@ -527,6 +527,30 @@ class Lancamento {
         };
     }
 
+    // Receitas/despesas do periodo separadas em fixas (recorrente = 1) e variaveis, mais o saldo previsto ao fim do periodo.
+    static async resumoFixoVariavel(userId, periodo) {
+        const [rows] = await db.query(
+            `SELECT
+                COALESCE(SUM(CASE WHEN l.tipo = 'receita' AND l.recorrente = 1 THEN ABS(l.valor) ELSE 0 END), 0) AS receita_fixa,
+                COALESCE(SUM(CASE WHEN l.tipo = 'receita' AND l.recorrente = 0 THEN ABS(l.valor) ELSE 0 END), 0) AS receita_variavel,
+                COALESCE(SUM(CASE WHEN l.tipo = 'despesa' AND l.recorrente = 1 THEN ABS(l.valor) ELSE 0 END), 0) AS despesa_fixa,
+                COALESCE(SUM(CASE WHEN l.tipo = 'despesa' AND l.recorrente = 0 THEN ABS(l.valor) ELSE 0 END), 0) AS despesa_variavel
+             FROM lancamentos l
+             JOIN contas c ON c.id = l.conta_id AND c.status = 'ativa'
+             WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ?`,
+            [userId, periodo.inicio, periodo.fim]
+        );
+        const resumo = await this.resumoPeriodo(userId, periodo);
+        const r = rows[0] || {};
+        return {
+            receita_fixa: parseFloat(r.receita_fixa) || 0,
+            receita_variavel: parseFloat(r.receita_variavel) || 0,
+            despesa_fixa: parseFloat(r.despesa_fixa) || 0,
+            despesa_variavel: parseFloat(r.despesa_variavel) || 0,
+            saldo_total: resumo.saldo_previsto
+        };
+    }
+
     // Corrige registros legados (ex.: importados de simulacao) com sinal incompativel com o tipo. Idempotente.
     static async normalizarSinais() {
         const [d] = await db.query("UPDATE lancamentos SET valor = -ABS(valor) WHERE tipo = 'despesa' AND valor > 0");

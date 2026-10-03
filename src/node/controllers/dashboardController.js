@@ -87,7 +87,23 @@ const dashboardController = {
         const pendenciasUrgentes = await Lancamento.pendentesUrgentes(userId, toLocalYMD(hojeLocal()));
         const despesasPorCategoria = await Lancamento.resumoPorCategoriaPai(userId, periodo, 'despesa');
 
+        // Comparativo com o periodo anterior: mes anterior (navegacao por mes) ou mesmo intervalo logo antes (periodo livre)
+        let periodoAnt;
+        if (!customizado) {
+            periodoAnt = { inicio: toLocalYMD(new Date(anoAnt, mesAnt - 1, 1)), fim: toLocalYMD(new Date(anoAnt, mesAnt, 0)) };
+        } else {
+            const [ai, mi, di] = inicio.split('-').map(Number);
+            const [af, mf, df] = fim.split('-').map(Number);
+            const dias = Math.round((Date.UTC(af, mf - 1, df) - Date.UTC(ai, mi - 1, di)) / 86400000) + 1;
+            periodoAnt = { inicio: toLocalYMD(new Date(ai, mi - 1, di - dias)), fim: toLocalYMD(new Date(ai, mi - 1, di - 1)) };
+        }
+        const [comparAtual, comparAnterior] = await Promise.all([
+            Lancamento.resumoFixoVariavel(userId, periodo),
+            Lancamento.resumoFixoVariavel(userId, periodoAnt)
+        ]);
+
         res.render('dashboard/index', {
+            comparativo: { atual: comparAtual, anterior: comparAnterior, periodoAnt },
             title: req.t('pages.painel.titulo'),
             periodo,
             filtros,
