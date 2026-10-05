@@ -190,17 +190,16 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
     let dados = {};
     try { dados = event.data ? event.data.json() : {}; } catch (e) { dados = {}; }
-    // O servidor pode mandar icone, imagem, botoes e vibracao (Financeiro); sem eles vale o visual padrao.
+    // O servidor pode mandar botoes e vibracao (Financeiro); o icone e sempre o do app.
     const opcoes = {
         body: dados.body || '',
-        icon: dados.icon || '/assets/icons/icon-192.png',
-        badge: dados.badge || '/assets/icons/icon-192.png',
+        icon: '/assets/icons/icon-192.png',
+        badge: '/assets/icons/icon-192.png',
         tag: dados.tag || 'myfinance',
         renotify: true,
         timestamp: Date.now(),
         data: { url: dados.url || '/', token: dados.token || null }
     };
-    if (dados.image) opcoes.image = dados.image;
     if (dados.vibrate) opcoes.vibrate = dados.vibrate;
     if (Array.isArray(dados.actions) && dados.actions.length) opcoes.actions = dados.actions.slice(0, 2);
     event.waitUntil(self.registration.showNotification(dados.title || 'MyFinance', opcoes));
@@ -218,8 +217,8 @@ async function acaoFinanceiro(acao, token, destino) {
         const r = await resp.json();
         await self.registration.showNotification(r.titulo || 'MyFinance', {
             body: r.mensagem || '',
-            icon: '/assets/financeiro/avatar-192.png',
-            badge: '/assets/financeiro/badge-96.png',
+            icon: '/assets/icons/icon-192.png',
+            badge: '/assets/icons/icon-192.png',
             tag: 'financeiro-confirma'
         });
         await new Promise((ok) => setTimeout(ok, 6000));

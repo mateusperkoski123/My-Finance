@@ -17,7 +17,6 @@ const LOTE = 10;
 const MAX_DIAS_COBRANDO = 30;
 
 const TONS = ['brincalhao', 'cobrando', 'dramatico', 'saudade'];
-const EMOJI = { brincalhao: '😏', cobrando: '🧐', dramatico: '😱', saudade: '🥺' };
 
 // Liberacao: com FINANCEIRO_LIBERADO=todos o recurso vale para todos (aparelhos novos entram ligados); sem isso
 // (fase de teste) so admins veem a opcao, ligam e recebem.
@@ -90,13 +89,10 @@ function validarToken(token, agoraMs = Date.now()) {
 
 function montarNotificacao({ userId, tom, indice, dias, idioma }) {
     return {
-        title: `${EMOJI[tom]} ${t('financeiro.nome', {}, idioma)}`,
+        title: t('financeiro.nome', {}, idioma),
         body: texto(tom, indice, dias, idioma),
         url: `/financeiro?tom=${tom}&m=${indice}&n=${dias}`,
         tag: 'financeiro',
-        icon: '/assets/financeiro/avatar-192.png',
-        badge: '/assets/financeiro/badge-96.png',
-        image: `/assets/financeiro/banner-${tom}.png`,
         vibrate: [120, 60, 120],
         actions: [
             { action: 'pausar', title: t('financeiro.acao_pausar', {}, idioma) },
