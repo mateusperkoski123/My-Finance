@@ -135,18 +135,8 @@
             </nav>
             <div class="navbar__user">
                 <span class="navbar__user-nome" style="font-weight: 600;"><%= usuarioLogado.nome %></span>
-                <div class="navbar__perfil">
-                    <button type="button" class="navbar__avatar js-avatar" id="btn-toggle-menu" aria-haspopup="menu" aria-expanded="false" aria-label="<%= t('foto.menu_aria') %>" data-inicial="<%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %>"><%- include('partials/avatar') %></button>
-                    <div class="menu-perfil" id="menu-perfil" role="menu" hidden>
-                        <div class="menu-perfil__topo">
-                            <span class="menu-perfil__avatar js-avatar" data-inicial="<%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %>"><%- include('partials/avatar') %></span>
-                            <div class="menu-perfil__dados"><strong><%= usuarioLogado.nome %></strong><span><%= usuarioLogado.email || '' %></span></div>
-                        </div>
-                        <button type="button" role="menuitem" class="menu-perfil__item" data-abrir-foto><i class="ph ph-camera"></i> <span data-rotulo-foto><%= usuarioLogado.foto_em ? t('foto.alterar') : t('foto.adicionar') %></span></button>
-                        <a role="menuitem" class="menu-perfil__item" href="/configuracoes/perfil"><i class="ph ph-user"></i> <%= t('config.menu.perfil') %></a>
-                        <a role="menuitem" class="menu-perfil__item" href="/guia"><i class="ph ph-book-open"></i> <%= t('guia.titulo') %></a>
-                    </div>
-                </div>
+                <%# O icone do perfil leva as Configuracoes (perfil, foto, guia, notificacoes... ficam todos la). %>
+                <a class="navbar__avatar js-avatar" href="/configuracoes" id="link-perfil" aria-label="<%= t('nav.configuracoes') %>" title="<%= t('nav.configuracoes') %>" data-inicial="<%= usuarioLogado.nome ? usuarioLogado.nome.charAt(0).toUpperCase() : 'U' %>"><%- include('partials/avatar') %></a>
             </div>
         <% } %>
     </div>
@@ -214,7 +204,7 @@
 
 <% if (usuarioLogado && !_bloq) { %>
     <%# Celular: barra de navegacao fixa embaixo. O + abre Receita/Despesa; "Mais" abre o resto (a faixa do topo so tem a marca e o perfil). %>
-    <% const _rota = currentRoute || ''; const _principal = _rota === '/' || _rota.startsWith('/relatorios') || _rota.startsWith('/contas'); %>
+    <% const _rota = currentRoute || ''; const _iaNaBarra = _mostrarIa && !_seloIa; /* plano com IA ativa: atalho do Chat IA ao lado do Inicio */ const _principal = _rota === '/' || _rota.startsWith('/relatorios') || _rota.startsWith('/contas') || (_iaNaBarra && _rota.startsWith('/ia')); %>
     <div class="folha-fundo" id="folha-fundo" hidden></div>
     <div class="folha" id="folha-novo" role="menu" hidden>
         <button type="button" role="menuitem" class="folha__item" data-novo="receita"><i class="ph ph-arrow-circle-up" style="color: var(--green);"></i> <%= t('painel.nova_receita') %></button>
@@ -223,7 +213,7 @@
     <div class="folha" id="folha-mais" role="menu" hidden>
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/categorias') ? 'is-active' : '' %>" href="/categorias"><i class="ph ph-tag"></i> <%= t('nav.categorias') %></a>
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/comunidade') ? 'is-active' : '' %>" href="/comunidade"><i class="ph ph-users-three"></i> <%= t('nav.comunidad') %><% if (novidadesNovas > 0) { %> <span class="selo-novidade" title="<%= t('novidades.selo_titulo', { n: novidadesNovas }) %>"><%= novidadesNovas > 9 ? '9+' : novidadesNovas %></span><% } %></a>
-        <% if (_mostrarIa) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/ia') ? 'is-active' : '' %>" href="/ia"><i class="ph ph-sparkle"></i> <%= t('nav.ia') %><% if (_seloIa) { %> <%- include('partials/selo_plano', { plano: 'premium' }) %><% } %></a><% } %>
+        <% if (_mostrarIa && !_iaNaBarra) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/ia') ? 'is-active' : '' %>" href="/ia"><i class="ph ph-sparkle"></i> <%= t('nav.ia') %><% if (_seloIa) { %> <%- include('partials/selo_plano', { plano: 'premium' }) %><% } %></a><% } %>
         <% if (_adm) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/admin') ? 'is-active' : '' %>" href="/admin"><i class="ph ph-shield-star"></i> <%= t('nav.admin') %></a><% } %>
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/guia') ? 'is-active' : '' %>" href="/guia"><i class="ph ph-book-open"></i> <%= t('guia.titulo') %></a>
         <a role="menuitem" class="folha__item <%= _rota === '/assinatura' ? 'is-active' : '' %>" href="/assinatura"><i class="ph ph-crown-simple"></i> <%= t('config.menu.assinatura') %></a>
@@ -231,8 +221,9 @@
         <hr>
         <form method="post" action="/logout"><%- csrfCampo %><button type="submit" role="menuitem" class="folha__item folha__item--sair"><i class="ph ph-sign-out"></i> <%= t('nav.sair') %></button></form>
     </div>
-    <nav class="barra-inf" aria-label="<%= t('nav.principal') %>">
+    <nav class="barra-inf<%= _iaNaBarra ? ' barra-inf--ia' : '' %>" aria-label="<%= t('nav.principal') %>">
         <a href="/" class="<%= _rota === '/' ? 'is-active' : '' %>"><i class="ph<%= _rota === '/' ? '-fill' : '' %> ph-house"></i><span><%= t('nav.visao_geral') %></span></a>
+        <% if (_iaNaBarra) { %><a href="/ia" class="<%= _rota.startsWith('/ia') ? 'is-active' : '' %>"><i class="ph<%= _rota.startsWith('/ia') ? '-fill' : '' %> ph-sparkle"></i><span><%= t('nav.ia') %></span></a><% } %>
         <a href="/relatorios" class="<%= _rota.startsWith('/relatorios') ? 'is-active' : '' %>"><i class="ph<%= _rota.startsWith('/relatorios') ? '-fill' : '' %> ph-chart-bar"></i><span><%= t('nav.relatorios') %></span></a>
         <button type="button" class="barra-inf__novo" id="barra-novo" aria-haspopup="menu" aria-expanded="false" aria-label="<%= t('nav.novo') %>"><i class="ph ph-plus"></i></button>
         <a href="/contas" class="<%= _rota.startsWith('/contas') ? 'is-active' : '' %>"><i class="ph<%= _rota.startsWith('/contas') ? '-fill' : '' %> ph-bank"></i><span><%= t('nav.contas_curto') %></span></a>

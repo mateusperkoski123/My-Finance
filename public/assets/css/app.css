@@ -2667,12 +2667,8 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
 .faixa-conta__link { display: inline; margin: 0; }
 .faixa-conta__link button { font: inherit; background: none; border: 0; padding: 0; color: var(--pendente); text-decoration: underline; cursor: pointer; }
 
-/* Abas de Informes: uma linha que rola para o lado (celular) */
+/* Abas de Informes no celular: as 4 ficam sempre visiveis (grade 2x2, definida acima); a ativa fica preenchida */
 @media (max-width: 768px) {
-  .tabs.tabs--grade { display: flex !important; flex-wrap: nowrap; gap: 6px !important; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px;
-    -webkit-mask-image: linear-gradient(to right, #000 88%, transparent); mask-image: linear-gradient(to right, #000 88%, transparent); padding-right: 20px; }
-  .tabs.tabs--grade::-webkit-scrollbar { display: none; }
-  .tabs--grade .tabs__item { white-space: nowrap; flex-shrink: 0; min-height: 40px; padding: 8px 14px; border-radius: 999px; }
   .contas-toolbar { min-width: 0; }
   .contas-toolbar > .tabs--grade { flex: 1 1 0; min-width: 0; max-width: 100%; }
   .tabs--grade .tabs__item.is-active { background: var(--primary); color: var(--primary-text); border-color: var(--primary); }
@@ -2786,3 +2782,12 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
 .moeda-foco a { padding: 5px 13px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; background: var(--card); }
 .moeda-foco a.is-active { background: var(--primary, #2563eb); border-color: var(--primary, #2563eb); color: var(--primary-text); }
 .lanc-cambio { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; }
+
+/* Icone do perfil e um link para as Configuracoes */
+a.navbar__avatar { text-decoration: none; }
+
+/* Celular, plano com IA: o Chat IA ao lado do Inicio (6 colunas: Inicio, IA, Relatorios, +, Contas, Mais) */
+@media (max-width: 768px) {
+  .barra-inf.barra-inf--ia { grid-template-columns: repeat(6, 1fr); }
+  .barra-inf--ia > a span, .barra-inf--ia > button span:not(.barra-inf__ponto) { font-size: 10.5px; }
+}
