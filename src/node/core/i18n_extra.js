@@ -224,7 +224,12 @@ module.exports = {
     'painel.ph_receita': ['Ex: Salário', 'Ej: Salario', 'E.g.: Salary'],
     'painel.ph_despesa': ['Ex: Mercado', 'Ej: Supermercado', 'E.g.: Groceries'],
     'modal.repetir': ['Repetir Lançamento', 'Repetir Movimiento', 'Repeat Entry'],
-    'modal.qtd_repeticoes': ['Quantidade de repetições (meses)', 'Cantidad de repeticiones (meses)', 'Number of repetitions (months)'],
+    'modal.qtd_repeticoes': ['Quantidade de repetições', 'Cantidad de repeticiones', 'Number of repetitions'],
+    'modal.periodicidade': ['Repetir a cada', 'Repetir cada', 'Repeat every'],
+    'modal.per_mensal': ['Mês (mensal)', 'Mes (mensual)', 'Month (monthly)'],
+    'modal.per_trimestral': ['3 meses (trimestral)', '3 meses (trimestral)', '3 months (quarterly)'],
+    'modal.per_semestral': ['6 meses (semestral)', '6 meses (semestral)', '6 months (every half year)'],
+    'modal.per_anual': ['Ano (anual)', 'Año (anual)', 'Year (yearly)'],
     'comum.fechar': ['Fechar', 'Cerrar', 'Close'],
     'painel.novo_lancamento': ['Novo lançamento', 'Nuevo lanzamiento', 'New entry'],
     'relatorios.ano_label': ['Ano: {ano}', 'Año: {ano}', 'Year: {ano}'],
@@ -439,7 +444,7 @@ module.exports = {
     'flash.senha_obrigatoria': ['Preencha a senha atual e a nova senha.', 'Completá la contraseña actual y la nueva.', 'Fill in the current and the new password.'],
     // Formulario de lancamento
     'modal.fixa_dica': ['Repete todo mês: já cria os próximos 24 meses como pendentes.', 'Se repite cada mes: ya crea los próximos 24 meses como pendientes.', 'Repeats every month: creates the next 24 months as pending.'],
-    'modal.repetir_dica': ['Parcelas: cria uma por mês, na quantidade que você escolher.', 'Cuotas: crea una por mes, en la cantidad que elijas.', 'Installments: creates one per month, as many as you choose.'],
+    'modal.repetir_dica': ['Parcelas ou cobranças periódicas: cria uma a cada mês, 3 meses, 6 meses ou ano, na quantidade que você escolher.', 'Cuotas o cobros periódicos: crea una cada mes, 3 meses, 6 meses o año, en la cantidad que elijas.', 'Installments or periodic charges: creates one every month, 3 months, 6 months or year, as many as you choose.'],
     'painel.ocultar_saldo': ['Ocultar ou mostrar os valores', 'Ocultar o mostrar los montos', 'Hide or show the amounts'],
     'categorias.editar_sub_titulo': ['Editar subcategoria', 'Editar subcategoría', 'Edit subcategory'],
 };

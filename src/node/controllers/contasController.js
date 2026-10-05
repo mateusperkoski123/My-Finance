@@ -239,7 +239,7 @@ const contasController = {
             const qtd = eFixo ? MESES_FIXO : (eRepetir ? Math.min(Math.max(parseInt(req.body.quantidade_repeticoes, 10) || 1, 1), 60) : 1);
 
             // Mesma rotina da transferencia imediata, do app e do Chat IA: pares pendentes, um por mes.
-            await Lancamento.criarTransferencia({ userId, origem, destino, valor, data, descricao, agendada: true, eFixo, quantidade: qtd });
+            await Lancamento.criarTransferencia({ userId, origem, destino, valor, data, descricao, agendada: true, eFixo, quantidade: qtd, periodicidade: eRepetir ? req.body.periodicidade : 'mensal' });
             return volta('sucesso', 'flash.transferencia_agendada', { n: qtd });
         } catch (err) {
             console.error('Erro em contasController.agendarTransferencia:', err);

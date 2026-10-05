@@ -63,7 +63,8 @@
         if (!repetir) return fixo ? { e_fixo: true } : {};
         const n = parseInt(fd.get('quantidade_repeticoes'), 10);
         if (!(n >= 2 && n <= 60)) return null;
-        return { repetir: true, quantidade_repeticoes: n };
+        const per = String(fd.get('periodicidade') || 'mensal');
+        return { repetir: true, quantidade_repeticoes: n, periodicidade: ['mensal', 'trimestral', 'semestral', 'anual'].includes(per) ? per : 'mensal' };
     }
 
     function montar(tipo, form) {
@@ -223,6 +224,7 @@
         if (fixo) fixo.checked = !!d.e_fixo;
         if (repetir) { repetir.checked = !!d.repetir && !d.e_fixo; repetir.dispatchEvent(new Event('change', { bubbles: true })); }
         if (form.elements.quantidade_repeticoes) form.elements.quantidade_repeticoes.value = d.repetir ? d.quantidade_repeticoes : 12;
+        if (form.elements.periodicidade) form.elements.periodicidade.value = d.repetir && d.periodicidade ? d.periodicidade : 'mensal';
         const novo = form.querySelector('[data-ed-novo-serie]'); if (novo) novo.hidden = false; // fixa/repetir continuam editaveis
         const serie = form.querySelector('[data-ed-serie]'); if (serie) serie.hidden = true;
         return true;

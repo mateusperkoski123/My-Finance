@@ -168,6 +168,7 @@ const dashboardController = {
             e_fixo: b.e_fixo === '1' || b.e_fixo === true ? 1 : 0,
             repetir: b.repetir === '1' || b.repetir === true ? 1 : 0,
             quantidade_repeticoes: b.quantidade_repeticoes || '1',
+            periodicidade: b.periodicidade,
             observacoes: b.observacoes ? String(b.observacoes).slice(0, 500) : null
         };
 
@@ -247,7 +248,7 @@ const dashboardController = {
         const querRepetir = !querFixo && (b.repetir === '1' || b.repetir === true);
         let totalSerie = 0;
         if (querFixo || querRepetir) {
-            totalSerie = await Lancamento.converterEmSerie(id, userId, { fixo: querFixo, quantidade: b.quantidade_repeticoes });
+            totalSerie = await Lancamento.converterEmSerie(id, userId, { fixo: querFixo, quantidade: b.quantidade_repeticoes, periodicidade: b.periodicidade });
         }
         req.session.flash = {
             tipo: 'sucesso',

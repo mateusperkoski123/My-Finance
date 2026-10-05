@@ -1,6 +1,6 @@
 const db = require('../config/db');
 const { randomUUID: uuidv4 } = require('crypto');
-const { toLocalYMD, formatDate, addMonthsYMD, hojeLocal } = require('../core/helpers');
+const { toLocalYMD, formatDate, addMonthsYMD, hojeLocal, passoMeses } = require('../core/helpers');
 
 // Lancamento marcado como fixo (receita/despesa recorrente) gera 24 meses, a atual incluida.
 const MESES_FIXO = 24;
@@ -202,6 +202,8 @@ class Lancamento {
             // Repetir: cria a quantidade pedida (a atual + as proximas). Fixo: 24 meses (a atual + 23).
             const qtdPedida = eRepetir ? Math.min(Math.max(parseInt(data.quantidade_repeticoes, 10) || 1, 1), 60) : 1;
             const totalOcorrencias = eFixo ? MESES_FIXO : qtdPedida;
+            // Repetir pode ser mensal, trimestral, semestral ou anual; o fixo e sempre mensal.
+            const passo = eRepetir ? passoMeses(data.periodicidade) : 1;
             const serieId = totalOcorrencias > 1 ? uuidv4() : null;
 
             const dataBase = data.data_competencia || toLocalYMD(hojeLocal());
@@ -213,7 +215,7 @@ class Lancamento {
             const lancamentosCriados = [];
 
             for (let i = 0; i < totalOcorrencias; i++) {
-                const dateCompStr = addMonthsYMD(dataBase, i);
+                const dateCompStr = addMonthsYMD(dataBase, i * passo);
                 // So a primeira ocorrencia herda o status escolhido; as futuras ficam pendentes (a pagar/receber).
                 const statusOcorrencia = i === 0 ? (data.status || 'pendente') : 'pendente';
                 const datePagStr = i === 0 && pagDate ? pagDate : null;
@@ -254,10 +256,11 @@ class Lancamento {
 
     // Transferencia entre contas: par de lancamentos (saida + entrada) ligados por transferencia_par_id.
     // Imediata = os dois ja pagos na data; agendada = os dois pendentes (o saldo so move ao marcar como pago).
-    static async criarTransferencia({ userId, origem, destino, valor, data, descricao = '', agendada = false, eFixo = false, quantidade = 1, clientId = null, idsCriados = null }) {
+    static async criarTransferencia({ userId, origem, destino, valor, data, descricao = '', agendada = false, eFixo = false, quantidade = 1, periodicidade = 'mensal', clientId = null, idsCriados = null }) {
         const Categoria = require('./Categoria');
         const catId = await Categoria.idSistema(userId, 'transferencia');
         const total = Math.max(1, quantidade);
+        const passo = eFixo ? 1 : passoMeses(periodicidade);
         const serieId = total > 1 ? uuidv4() : null;
         const sufixo = descricao ? ' - ' + descricao : '';
         const novosIds = [];
@@ -271,7 +274,7 @@ class Lancamento {
                 [userId, serieId, contaId, catId, desc, valorLinha, dataComp, agendada ? null : dataComp, agendada ? 'pendente' : 'pago', eFixo ? 1 : 0, cid]
             );
             for (let i = 0; i < total; i++) {
-                const dataComp = addMonthsYMD(data, i);
+                const dataComp = addMonthsYMD(data, i * passo);
                 const [saida] = await inserir(origem.id, -valor, `Transferência enviada para ${destino.nome}${sufixo}`, dataComp, i === 0 ? clientId : null);
                 const [entrada] = await inserir(destino.id, valor, `Transferência recebida de ${origem.nome}${sufixo}`, dataComp);
                 await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [entrada.insertId, saida.insertId]);
@@ -351,13 +354,14 @@ class Lancamento {
     }
 
     // Transacao avulsa que vira fixa (24 meses) ou repetida (N vezes, parcelas): esta continua como esta e as proximas
-    // ocorrencias, ja pendentes, sao criadas mes a mes. Nao mexe em transacao que ja faz parte de uma serie.
-    static async converterEmSerie(id, userId, { fixo = false, quantidade = 1 } = {}) {
+    // ocorrencias, ja pendentes, sao criadas na periodicidade escolhida (mensal por padrao). Nao mexe em transacao que ja faz parte de uma serie.
+    static async converterEmSerie(id, userId, { fixo = false, quantidade = 1, periodicidade = 'mensal' } = {}) {
         const item = await this.buscarPorId(id, userId);
         if (!item || item.serie_id || (item.tipo !== 'receita' && item.tipo !== 'despesa')) return 0;
         const total = fixo ? MESES_FIXO : Math.min(Math.max(parseInt(quantidade, 10) || 1, 1), 60);
         if (total <= 1) return 0;
         const serieId = uuidv4();
+        const passo = fixo ? 1 : passoMeses(periodicidade);
         const dataBase = toLocalYMD(item.data_competencia);
         const conn = await db.getConnection();
         try {
@@ -370,7 +374,7 @@ class Lancamento {
                       data_competencia, data_pagamento, status, recorrente, observacoes, created_at, updated_at)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL, 'pendente', ?, ?, NOW(3), NOW(3))`,
                     [userId, serieId, item.conta_id, item.categoria_id, item.tipo, item.descricao, item.valor,
-                     addMonthsYMD(dataBase, i), fixo ? 1 : 0, item.observacoes || null]
+                     addMonthsYMD(dataBase, i * passo), fixo ? 1 : 0, item.observacoes || null]
                 );
             }
             await conn.commit();

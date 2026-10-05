@@ -122,7 +122,13 @@ const _salvar = _novo ? (_rec ? t('painel.salvar_receita') : t('painel.salvar_de
                 </div>
 
                 <div class="lanc-campo" data-gf-repetir-alvo hidden>
-                    <label class="lanc-campo__rotulo" for="<%= _p %>-qtd"><strong><%= t('modal.qtd_repeticoes') %></strong></label>
+                    <label class="lanc-campo__rotulo" for="<%= _p %>-per"><strong><%= t('modal.periodicidade') %></strong></label>
+                    <select class="input" id="<%= _p %>-per" name="periodicidade">
+                        <% ['mensal', 'trimestral', 'semestral', 'anual'].forEach((p) => { %>
+                        <option value="<%= p %>"><%= t('modal.per_' + p) %></option>
+                        <% }) %>
+                    </select>
+                    <label class="lanc-campo__rotulo" for="<%= _p %>-qtd" style="margin-top: 10px;"><strong><%= t('modal.qtd_repeticoes') %></strong></label>
                     <input class="input" type="number" id="<%= _p %>-qtd" name="quantidade_repeticoes" min="2" max="60" value="12" inputmode="numeric">
                 </div>
             </div>

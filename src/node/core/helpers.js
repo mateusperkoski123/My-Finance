@@ -158,6 +158,14 @@ function addMonthsYMD(ymd, n) {
     return toLocalYMD(alvo);
 }
 
+// Periodicidade de uma repeticao: mensal (padrao), trimestral, semestral ou anual = meses entre uma ocorrencia e a proxima.
+const PERIODICIDADES = { mensal: 1, trimestral: 3, semestral: 6, anual: 12 };
+function normalizarPeriodicidade(v) {
+    const s = String(v || '').trim().toLowerCase();
+    return PERIODICIDADES[s] ? s : 'mensal';
+}
+function passoMeses(v) { return PERIODICIDADES[normalizarPeriodicidade(v)]; }
+
 // Texto amigavel para lancamentos de sistema (ajuste/transferencia), inclusive os antigos com "#id" e valores no texto.
 function descricaoLancamento(l, t) {
     if (!l) return '';
@@ -181,6 +189,9 @@ function descricaoLancamento(l, t) {
 module.exports = {
     descricaoLancamento,
     addMonthsYMD,
+    PERIODICIDADES,
+    normalizarPeriodicidade,
+    passoMeses,
     moeda,
     parseMoeda,
     dataValida,

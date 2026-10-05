@@ -6,6 +6,7 @@ const db = require('../config/db');
 const User = require('../models/User');
 const Conta = require('../models/Conta');
 const Lancamento = require('../models/Lancamento');
+const { normalizarPeriodicidade } = require('../core/helpers');
 const Categoria = require('../models/Categoria');
 const Dispositivo = require('../models/Dispositivo');
 const SyncExclusao = require('../models/SyncExclusao');
@@ -99,11 +100,12 @@ function serieDe(dados) {
     const eFixo = ['1', 1, true, 'true'].includes(dados.e_fixo);
     const repetir = !eFixo && ['1', 1, true, 'true'].includes(dados.repetir);
     let quantidade = 1;
+    const periodicidade = repetir ? normalizarPeriodicidade(dados.periodicidade) : 'mensal';
     if (repetir) {
         quantidade = Number(dados.quantidade_repeticoes);
         if (!Number.isInteger(quantidade) || quantidade < 2 || quantidade > 60) throw new ErroOp('quantidade_invalida');
     }
-    return { eFixo, repetir, quantidade };
+    return { eFixo, repetir, quantidade, periodicidade };
 }
 
 // ---------- operacoes (push) ----------
@@ -128,7 +130,8 @@ const OPERACOES = {
             client_id: clientId,
             e_fixo: serie.eFixo ? 1 : 0,
             repetir: serie.repetir ? 1 : 0,
-            quantidade_repeticoes: serie.quantidade
+            quantidade_repeticoes: serie.quantidade,
+            periodicidade: serie.periodicidade
         };
         if (clientId) {
             const ja = await achar('lancamentos', userId, { client_id: clientId }, 'id');
@@ -206,7 +209,7 @@ const OPERACOES = {
         await Lancamento.criarTransferencia({
             userId, origem, destino, valor: valorPositivo(dados.valor), data: dataYMD(dados.data, { obrigatoria: true }),
             descricao: texto(dados.descricao, 100, { campo: 'descricao' }) || '',
-            agendada: true, eFixo: serie.eFixo, quantidade: serie.eFixo ? 24 : serie.quantidade, clientId
+            agendada: true, eFixo: serie.eFixo, quantidade: serie.eFixo ? 24 : serie.quantidade, periodicidade: serie.periodicidade, clientId
         });
         const perna = clientId ? await achar('lancamentos', userId, { client_id: clientId }, 'id') : null;
         return { id_servidor: perna ? perna.id : null, updated_at: perna ? await tsLinha('lancamentos', perna.id) : null };

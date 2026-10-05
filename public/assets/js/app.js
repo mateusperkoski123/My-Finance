@@ -689,6 +689,7 @@ document.addEventListener('DOMContentLoaded', function () {
     repetir.checked = false;
     disparar(repetir, 'change');
     form.elements.quantidade_repeticoes.value = 12;
+    if (form.elements.periodicidade) form.elements.periodicidade.value = 'mensal';
     var novo = form.querySelector('[data-ed-novo-serie]'), serie = form.querySelector('[data-ed-serie]');
     novo.hidden = !!d.serie;
     serie.hidden = !d.serie;
