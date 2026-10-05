@@ -5,6 +5,7 @@ class Conta {
         const sql = incluirArquivadas
             ? `SELECT c.*,
                       (SELECT COUNT(*) FROM lancamentos l2 WHERE l2.conta_id = c.id) AS total_lancamentos,
+                      (SELECT COUNT(*) FROM lancamentos l3 WHERE l3.conta_id = c.id AND l3.cotacao IS NOT NULL) AS total_cambios,
                       c.saldo_inicial + COALESCE((
                           SELECT SUM(l.valor) FROM lancamentos l
                           WHERE l.conta_id = c.id AND l.user_id = c.user_id AND l.status = 'pago'
@@ -14,6 +15,7 @@ class Conta {
                ORDER BY c.conta_padrao DESC, c.nome ASC`
             : `SELECT c.*,
                       (SELECT COUNT(*) FROM lancamentos l2 WHERE l2.conta_id = c.id) AS total_lancamentos,
+                      (SELECT COUNT(*) FROM lancamentos l3 WHERE l3.conta_id = c.id AND l3.cotacao IS NOT NULL) AS total_cambios,
                       c.saldo_inicial + COALESCE((
                           SELECT SUM(l.valor) FROM lancamentos l
                           WHERE l.conta_id = c.id AND l.user_id = c.user_id AND l.status = 'pago'
@@ -95,7 +97,8 @@ class Conta {
         }
     }
 
-    // moeda: so muda enquanto a conta nao tem nenhum lancamento (depois disso os valores ja estao gravados naquela moeda).
+    // moeda: pode ser corrigida a qualquer momento (os valores gravados ficam como estao, so passam a ser lidos na nova moeda,
+    // sem conversao), exceto em conta que ja tem transferencia com cambio.
     static async atualizar(id, userId, { nome, tipo, cor, moeda = null, conta_padrao = 0, e_padrao = 0 }) {
         conta_padrao = conta_padrao || e_padrao;
         const conn = await db.getConnection();
@@ -110,7 +113,7 @@ class Conta {
             );
             if (moeda) {
                 await conn.query(
-                    'UPDATE contas SET moeda = ? WHERE id = ? AND user_id = ? AND NOT EXISTS (SELECT 1 FROM lancamentos WHERE conta_id = ?)',
+                    'UPDATE contas SET moeda = ? WHERE id = ? AND user_id = ? AND NOT EXISTS (SELECT 1 FROM lancamentos WHERE conta_id = ? AND cotacao IS NOT NULL)',
                     [moeda, id, userId, id]
                 );
             }

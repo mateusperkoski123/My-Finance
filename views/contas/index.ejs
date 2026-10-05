@@ -196,13 +196,13 @@
 
                         <div class="form-group">
                             <label><%= t('contas.moeda_label') %></label>
-                            <% const _travada = parseInt(c.total_lancamentos, 10) > 0; %>
+                            <% const _travada = parseInt(c.total_cambios, 10) > 0; const _comMovimentos = parseInt(c.total_lancamentos, 10) > 0; %>
                             <select class="input" name="moeda" <%= _travada ? 'disabled' : '' %>>
                                 <% moedasConta.forEach((m) => { %>
                                     <option value="<%= m %>" <%= c.moeda === m ? 'selected' : '' %>><%= t('moeda.nome.' + m) %> (<%= m %>)</option>
                                 <% }) %>
                             </select>
-                            <% if (_travada) { %><small class="form-help"><%= t('contas.moeda_travada_ajuda') %></small><% } %>
+                            <% if (_travada) { %><small class="form-help"><%= t('contas.moeda_travada_ajuda') %></small><% } else if (_comMovimentos) { %><small class="form-help"><%= t('contas.moeda_troca_aviso') %></small><% } %>
                         </div>
 
                         <div class="form-group">
