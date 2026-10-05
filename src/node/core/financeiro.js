@@ -4,6 +4,7 @@
 const crypto = require('crypto');
 const Financeiro = require('../models/Financeiro');
 const Assinatura = require('../models/Assinatura');
+const Lembrete = require('../models/Lembrete');
 const lembretes = require('./lembretes');
 const { t } = require('./i18n');
 
@@ -133,6 +134,29 @@ async function avaliar(cfg, agoraMs) {
     return entregues > 0;
 }
 
+// Teste do admin: faz agora a mesma checagem das 20h com os dados reais da pessoa (sem mexer no horario agendado) e
+// diz o resultado: { motivo, dias, tom }. motivo = enviado | falha | sem_config | desativado | pausado | sem_aparelho
+// | registrou_hoje | fora_do_dia | plano.
+async function verificarAgora(userId, agoraMs = Date.now()) {
+    const cfg = await Financeiro.paraUsuario(userId);
+    if (!cfg) return { motivo: 'sem_config' };
+    if (!cfg.ativo) return { motivo: 'desativado' };
+    if (cfg.pausado_ate && Number(cfg.pausado_ate) > agoraMs) return { motivo: 'pausado' };
+    if (!(await Lembrete.inscricoes(userId)).length) return { motivo: 'sem_aparelho' };
+
+    const fuso = cfg.fuso_efetivo && lembretes.fusoValido(cfg.fuso_efetivo) ? cfg.fuso_efetivo : lembretes.FUSO_PADRAO;
+    const ultimoMs = Number(cfg.ultimo_ts || cfg.cadastro_ts) * 1000;
+    const dias = diferencaDias(lembretes.dataLocalYMD(ultimoMs, fuso), lembretes.dataLocalYMD(agoraMs, fuso));
+    const tom = tomPara(dias);
+    if (!tom) return { motivo: 'registrou_hoje', dias };
+    if (!deveEnviar(dias)) return { motivo: 'fora_do_dia', dias };
+    if (!(await podeReceber(cfg))) return { motivo: 'plano', dias };
+
+    const indice = sortearMensagem(cfg.ultima_msg);
+    const entregues = await lembretes.enviarParaUsuario(userId, montarNotificacao({ userId, tom, indice, dias, idioma: cfg.idioma }));
+    return { motivo: entregues > 0 ? 'enviado' : 'falha', dias, tom };
+}
+
 // Chamado junto dos lembretes de vencimento (agendador interno e /cron/lembretes).
 async function processarDevidos(agoraMs = Date.now()) {
     const resumo = { devidos: 0, avisos: 0, erros: 0 };
@@ -158,5 +182,5 @@ async function pausar(userId, agoraMs = Date.now()) {
 module.exports = {
     TONS, MENSAGENS_POR_TOM, PAUSA_DIAS, liberadoParaTodos, liberadoPara,
     diferencaDias, tomPara, deveEnviar, texto, gerarToken, validarToken, montarNotificacao,
-    processarDevidos, pausar
+    processarDevidos, verificarAgora, pausar
 };

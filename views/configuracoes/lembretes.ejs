@@ -98,6 +98,18 @@
             <% if (financeiro.ativo && totalAparelhos === 0) { %>
                 <p class="muted" style="margin: 12px 0 0; font-size: 13px;"><%= t('financeiro.cfg_precisa_aparelho') %></p>
             <% } %>
+
+            <h3 style="margin: 24px 0 4px; font-size: 15px;"><i class="ph ph-flask"></i> <%= t('financeiro.teste_titulo') %></h3>
+            <p class="muted" style="margin: 0 0 12px; font-size: 13px;"><%= t('financeiro.teste_texto') %></p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <% [['brincalhao', '😏'], ['cobrando', '🧐'], ['dramatico', '😱'], ['saudade', '🥺']].forEach(function (x) { %>
+                    <button type="button" class="btn gf-fin-teste" data-tom="<%= x[0] %>" hidden><%= x[1] %> <%= t('financeiro.tom_' + x[0]) %></button>
+                <% }) %>
+            </div>
+
+            <p class="muted" style="margin: 20px 0 12px; font-size: 13px;"><%= t('financeiro.verif_texto') %></p>
+            <button type="button" id="gf-fin-verificar" class="btn btn-primary" hidden><i class="ph ph-magnifying-glass"></i> <%= t('financeiro.verif_btn') %></button>
+            <p id="gf-fin-verificar-msg" style="margin: 12px 0 0; font-weight: 600;"></p>
         </div>
         <% } %>
         <% } %>
@@ -116,7 +128,8 @@
         bloqueado: <%- JSON.stringify(t('lembrete.bloqueado')) %>,
         nao_suportado: <%- JSON.stringify(t('lembrete.nao_suportado')) %>,
         teste_ok: <%- JSON.stringify(t('lembrete.teste_enviado')) %>,
-        teste_sem: <%- JSON.stringify(t('lembrete.teste_sem_aparelho')) %>
+        teste_sem: <%- JSON.stringify(t('lembrete.teste_sem_aparelho')) %>,
+        fin_teste_ok: <%- JSON.stringify(t('financeiro.teste_enviado')) %>
     };
     var msg = document.getElementById('gf-push-msg');
     var bAtivar = document.getElementById('gf-push-ativar');
@@ -137,6 +150,7 @@
         bAtivar.hidden = estado !== 'inativo';
         bDesativar.hidden = estado !== 'ativo';
         bTestar.hidden = estado !== 'ativo';
+        document.querySelectorAll('.gf-fin-teste').forEach(function (b) { b.hidden = estado !== 'ativo'; });
     }
     function aviso(texto, tipo) {
         if (window.gfToast) window.gfToast(texto, tipo); else alert(texto);
@@ -156,6 +170,40 @@
         window.GfPush.testar(CSRF).then(function (r) {
             aviso(r.sucesso ? MSG.teste_ok : MSG.teste_sem, r.sucesso ? 'sucesso' : 'erro');
         }).then(function () { bTestar.disabled = false; });
+    });
+
+    // Verificacao real da inatividade (so existe na tela para quem tem a opcao liberada). Funciona mesmo sem aparelho:
+    // nesse caso a propria resposta explica que nao ha aparelho.
+    var bVerificar = document.getElementById('gf-fin-verificar');
+    if (bVerificar) {
+        bVerificar.hidden = false;
+        bVerificar.addEventListener('click', function () {
+            var saida = document.getElementById('gf-fin-verificar-msg');
+            bVerificar.disabled = true;
+            fetch('/financeiro/verificar', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'x-csrf-token': CSRF },
+                body: '{}'
+            }).then(function (r) { return r.json(); }).catch(function () { return { sucesso: false, mensagem: '' }; }).then(function (r) {
+                saida.textContent = r.mensagem || '';
+                bVerificar.disabled = false;
+            });
+        });
+    }
+
+    // Exemplos do Financeiro (so existem na tela para quem tem a opcao liberada).
+    document.querySelectorAll('.gf-fin-teste').forEach(function (b) {
+        b.addEventListener('click', function () {
+            b.disabled = true;
+            fetch('/financeiro/testar', {
+                method: 'POST', credentials: 'same-origin',
+                headers: { 'Content-Type': 'application/json', 'x-csrf-token': CSRF },
+                body: JSON.stringify({ tom: b.getAttribute('data-tom') })
+            }).then(function (r) { return r.json(); }).catch(function () { return { sucesso: false }; }).then(function (r) {
+                aviso(r.sucesso ? MSG.fin_teste_ok : MSG.teste_sem, r.sucesso ? 'sucesso' : 'erro');
+                b.disabled = false;
+            });
+        });
     });
 
     window.GfPush.estado().then(function (e) {

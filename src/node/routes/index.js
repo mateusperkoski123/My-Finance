@@ -224,6 +224,8 @@ router.all('/cron/lembretes', cronLimiter, lembretesController.cron);
 const financeiroController = require('../controllers/financeiroController');
 router.get('/financeiro', requireAuth, financeiroController.index);
 router.post('/financeiro/config', requireAuth, financeiroController.configurar);
+router.post('/financeiro/testar', requireAuth, financeiroController.testar);
+router.post('/financeiro/verificar', requireAuth, financeiroController.verificar);
 router.post('/financeiro/acao', cronLimiter, financeiroController.acaoNotificacao);
 router.get('/configuracoes/dispositivos', requireAuth, configuracoesController.dispositivos);
 router.post('/configuracoes/dispositivos/:id/revogar', requireAuth, configuracoesController.revogarDispositivo);

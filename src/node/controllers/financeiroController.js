@@ -1,6 +1,7 @@
 const Financeiro = require('../models/Financeiro');
 const User = require('../models/User');
 const financeiro = require('../core/financeiro');
+const lembretes = require('../core/lembretes');
 const { t } = require('../core/i18n');
 
 const VOLTAR_PERMITIDO = ['/financeiro', '/configuracoes/lembretes'];
@@ -22,6 +23,25 @@ const financeiroController = {
             ativo: !!config.ativo,
             pausadoAte
         });
+    },
+
+    // Envia agora, para os aparelhos da propria pessoa, um exemplo do tom escolhido (para testar o visual e os botoes).
+    testar: async (req, res) => {
+        const tom = String(req.body.tom || '');
+        if (!financeiro.liberadoPara(req.user) || !financeiro.TONS.includes(tom)) return res.status(400).json({ sucesso: false });
+        const dias = { brincalhao: 1, cobrando: 2, dramatico: 3, saudade: 5 }[tom];
+        const indice = 1 + Math.floor(Math.random() * financeiro.MENSAGENS_POR_TOM);
+        const entregues = await lembretes.enviarParaUsuario(req.user.id, financeiro.montarNotificacao({
+            userId: req.user.id, tom, indice, dias, idioma: req.lang
+        }));
+        res.json({ sucesso: entregues > 0 });
+    },
+
+    // Teste do admin: roda a checagem real da inatividade agora e explica o resultado (enviou ou por que nao enviou).
+    verificar: async (req, res) => {
+        if (!financeiro.liberadoPara(req.user)) return res.status(400).json({ sucesso: false });
+        const r = await financeiro.verificarAgora(req.user.id);
+        res.json({ sucesso: r.motivo === 'enviado', motivo: r.motivo, mensagem: req.t('financeiro.verif_' + r.motivo, { n: r.dias }) });
     },
 
     // Botoes da tela e da configuracao: pausar, retomar, desativar e reativar.

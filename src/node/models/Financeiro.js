@@ -56,6 +56,21 @@ class Financeiro {
         return rows;
     }
 
+    // Mesmos dados de devidos(), de uma pessoa so e sem filtros (usado no teste "verificar agora").
+    static async paraUsuario(userId) {
+        const [rows] = await db.query(
+            `SELECT f.*, COALESCE(f.fuso, lc.fuso) AS fuso_efetivo, u.idioma, u.role,
+                    UNIX_TIMESTAMP(u.created_at) AS cadastro_ts,
+                    (SELECT UNIX_TIMESTAMP(MAX(l.created_at)) FROM lancamentos l WHERE l.user_id = f.user_id) AS ultimo_ts
+             FROM financeiro_config f
+             JOIN users u ON u.id = f.user_id
+             LEFT JOIN lembretes_config lc ON lc.user_id = f.user_id
+             WHERE f.user_id = ? LIMIT 1`,
+            [userId]
+        );
+        return rows[0] || null;
+    }
+
     // Reserva o envio: so uma execucao consegue trocar o proximo_envio antigo (pode ser NULL) pelo novo.
     static async reservar(userId, antigoMs, novoMs) {
         const [res] = await db.query(
