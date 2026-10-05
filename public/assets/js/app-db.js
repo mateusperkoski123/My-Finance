@@ -139,11 +139,13 @@
         }
         if (op.tabela === 'lancamentos' && (op.acao === 'transferir' || op.acao === 'agendar_transferencia')) {
             const v = Math.abs(num(d.valor));
+            // Entre moedas diferentes a perna de entrada tem o valor recebido (ou o calculado pela cotacao, se so ela foi informada).
+            const ve = num(d.valor_entrada) > 0 ? Math.abs(num(d.valor_entrada)) : v;
             const agendada = op.acao === 'agendar_transferencia';
             const base = { tipo: 'transferencia', status: agendada ? 'pendente' : 'pago', data_competencia: d.data, data_pagamento: agendada ? null : d.data, pendente_sync: true, categoria_id: null };
             return [
                 Object.assign({ client_id: clientId, client_or_id: clientId, conta_id: num(d.conta_origem_id), descricao: d.descricao || 'Transferência', valor: -v }, base),
-                Object.assign({ client_or_id: clientId + ':in', conta_id: num(d.conta_destino_id), descricao: d.descricao || 'Transferência', valor: v }, base)
+                Object.assign({ client_or_id: clientId + ':in', conta_id: num(d.conta_destino_id), descricao: d.descricao || 'Transferência', valor: ve }, base)
             ];
         }
         return [];

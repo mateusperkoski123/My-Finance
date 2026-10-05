@@ -76,6 +76,13 @@ function agrupar(itens) {
 
 const soma = (lista) => lista.reduce((s, i) => s + Number(i.valor_abs), 0);
 
+// Total por moeda como texto: moedas diferentes nunca se somam ("Gs. 1.000.000 + R$ 20,00").
+function totalTexto(lista, padrao) {
+    const porMoeda = {};
+    lista.forEach((i) => { const c = i.conta_moeda || padrao; porMoeda[c] = (porMoeda[c] || 0) + Number(i.valor_abs); });
+    return Object.keys(porMoeda).map((c) => moeda(porMoeda[c], c)).join(' + ');
+}
+
 // Monta a notificacao de uma data (ou null se nao ha nada). Cada item mostra nome e valor; ao final, os totais.
 // "atrasadas" (despesas vencidas e ainda pendentes) entram so na notificacao que as carrega.
 function montarNotificacao(itens, atrasadas, dataYMD, deslocamentoDias, { idioma, moeda: cod }) {
@@ -91,15 +98,15 @@ function montarNotificacao(itens, atrasadas, dataYMD, deslocamentoDias, { idioma
 
     const linhas = [];
     const todos = [
-        ...g.pagar.map((i) => [tr('lembrete.rot_pagar'), i.descricao, i.valor_abs]),
-        ...g.receber.map((i) => [tr('lembrete.rot_receber'), i.descricao, i.valor_abs]),
-        ...g.transf.map((i) => [tr('lembrete.rot_transf'), descricaoLancamento(i, (k) => tr(k)), i.valor_abs])
+        ...g.pagar.map((i) => [tr('lembrete.rot_pagar'), i.descricao, i.valor_abs, i.conta_moeda]),
+        ...g.receber.map((i) => [tr('lembrete.rot_receber'), i.descricao, i.valor_abs, i.conta_moeda]),
+        ...g.transf.map((i) => [tr('lembrete.rot_transf'), descricaoLancamento(i, (k) => tr(k)), i.valor_abs, i.conta_moeda])
     ];
-    todos.slice(0, MAX_ITENS_NA_NOTIFICACAO).forEach(([rot, nome, valor]) => linhas.push(`${rot} ${nome}: ${moeda(valor, cod)}`));
+    todos.slice(0, MAX_ITENS_NA_NOTIFICACAO).forEach(([rot, nome, valor, moedaItem]) => linhas.push(`${rot} ${nome}: ${moeda(valor, moedaItem || cod)}`));
     if (todos.length > MAX_ITENS_NA_NOTIFICACAO) linhas.push(tr('lembrete.mais', { n: todos.length - MAX_ITENS_NA_NOTIFICACAO }));
-    if (g.pagar.length) linhas.push(tr('lembrete.total', { valor: moeda(soma(g.pagar), cod) }));
-    if (g.receber.length) linhas.push(tr('lembrete.total_receber', { valor: moeda(soma(g.receber), cod) }));
-    if (atrasadas.length) linhas.push(tr('lembrete.atrasadas', { n: atrasadas.length, valor: moeda(soma(atrasadas), cod) }));
+    if (g.pagar.length) linhas.push(tr('lembrete.total', { valor: totalTexto(g.pagar, cod) }));
+    if (g.receber.length) linhas.push(tr('lembrete.total_receber', { valor: totalTexto(g.receber, cod) }));
+    if (atrasadas.length) linhas.push(tr('lembrete.atrasadas', { n: atrasadas.length, valor: totalTexto(atrasadas, cod) }));
     return { title: titulo, body: linhas.join('\n'), url: `/lembretes/vencimentos?data=${dataYMD}`, tag: `vencimentos-${dataYMD}` };
 }
 
@@ -168,5 +175,5 @@ async function processarDevidos() {
 
 module.exports = {
     FUSO_PADRAO, fusoValido, horaValida, proximoEnvio, dataLocalYMD, somarDias,
-    montarNotificacao, enviarParaUsuario, processarDevidos
+    montarNotificacao, totalTexto, enviarParaUsuario, processarDevidos
 };

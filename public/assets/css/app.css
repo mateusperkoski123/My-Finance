@@ -2773,3 +2773,16 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
   .guia__indice-titulo { display: none; }
 }
 @media (max-width: 768px) { .guia__secao { padding: 18px 16px; } .guia__secao-topo h2 { font-size: 17px; } .guia__passos li { font-size: 14px; } }
+
+/* Cambio entre moedas (transferencia entre contas de moedas diferentes) e seletor de moeda dos paineis */
+.cambio-bloco { border: 1px solid var(--border); border-radius: 14px; background: var(--bg); padding: 12px 14px; margin: 4px 0 12px; }
+.cambio-bloco[hidden] { display: none; }
+.cambio-bloco__titulo { margin: 0 0 4px; font-weight: 700; font-size: 14px; display: flex; align-items: center; gap: 6px; }
+.cambio-bloco__ajuda { margin: 0 0 10px; font-size: 12.5px; }
+.cambio-bloco .form-group { margin-bottom: 0; }
+.cambio-bloco__resumo { margin: 10px 0 0; font-size: 13px; font-weight: 600; min-height: 1em; }
+.moeda-foco { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin: 0 0 14px; }
+.moeda-foco__rotulo { font-size: 12.5px; color: var(--muted); margin-right: 2px; }
+.moeda-foco a { padding: 5px 13px; border: 1px solid var(--border); border-radius: 999px; font-size: 13px; font-weight: 600; color: var(--text); text-decoration: none; background: var(--card); }
+.moeda-foco a.is-active { background: var(--primary, #2563eb); border-color: var(--primary, #2563eb); color: var(--primary-text); }
+.lanc-cambio { display: block; font-size: 12px; color: var(--muted); font-weight: 500; margin-top: 2px; }

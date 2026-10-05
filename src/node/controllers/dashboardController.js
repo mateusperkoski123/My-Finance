@@ -273,7 +273,7 @@ const dashboardController = {
         }
         const dataPag = dataValida(b.data_pagamento) ? b.data_pagamento : null;
         const ok = await Lancamento.atualizarTransferencia(req.params.id, userId, {
-            valor, data, pago: b.status === 'pago', dataPagamento: dataPag,
+            valor, valorEntrada: parseMoeda(b.valor_entrada) || null, data, pago: b.status === 'pago', dataPagamento: dataPag,
             escopo: ['esta_e_proximas', 'toda_serie'].includes(b.escopo_serie) ? b.escopo_serie : 'apenas_esta'
         });
         req.session.flash = ok
@@ -302,7 +302,7 @@ const dashboardController = {
         await Lancamento.marcarComoPago(id, userId, status);
         let mensagem = status === 'pendente' ? req.t('flash.pagamento_desfeito') : req.t('flash.lancamento_marcado_pago');
         const conta = await Conta.buscarPorId(antes.conta_id, userId);
-        if (conta) mensagem += ` — ${conta.nome}: ${moeda(conta.saldo_atual, res.locals.currency)}`;
+        if (conta) mensagem += ` — ${conta.nome}: ${moeda(conta.saldo_atual, conta.moeda || res.locals.currency)}`;
         req.session.flash = { tipo: 'sucesso', mensagem };
         res.redirect(destinoRetorno(req));
     }

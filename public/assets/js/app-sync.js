@@ -93,7 +93,7 @@
                 if (!r) { await window.AppDb.atualizarOutboxItem(item.id, { status: 'pending' }); continue; }
                 const titulo = (item.resumo && item.resumo.titulo) || item.acao;
                 if (r.estado === 'ok') {
-                    await window.AppDb.registrarHistorico({ titulo, estado: 'ok', id_servidor: r.id_servidor || null, valor: item.resumo ? item.resumo.valor : null }).catch(() => {});
+                    await window.AppDb.registrarHistorico({ titulo, estado: 'ok', id_servidor: r.id_servidor || null, valor: item.resumo ? item.resumo.valor : null, moeda: item.resumo ? item.resumo.moeda : null }).catch(() => {});
                     await window.AppDb.concluirOutbox(item);
                     andou = true;
                     enviadas++;

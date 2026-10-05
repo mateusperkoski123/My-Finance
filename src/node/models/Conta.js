@@ -69,7 +69,7 @@ class Conta {
         }
     }
 
-    static async criar(userId, { nome, tipo, saldo_inicial, cor, conta_padrao = 0, e_padrao = 0 }) {
+    static async criar(userId, { nome, tipo, saldo_inicial, cor, moeda = 'PYG', conta_padrao = 0, e_padrao = 0 }) {
         conta_padrao = conta_padrao || e_padrao;
         const conn = await db.getConnection();
         try {
@@ -80,9 +80,9 @@ class Conta {
                 await conn.query('UPDATE contas SET conta_padrao = 0 WHERE user_id = ?', [userId]);
             }
             const [res] = await conn.query(
-                `INSERT INTO contas (user_id, nome, tipo, saldo_inicial, cor, conta_padrao, status, created_at, updated_at) 
-                 VALUES (?, ?, ?, ?, ?, ?, 'ativa', NOW(3), NOW(3))`,
-                [userId, nome, tipo || 'corrente', parseFloat(saldo_inicial) || 0, cor || '#2563eb', serPadrao ? 1 : 0]
+                `INSERT INTO contas (user_id, nome, moeda, tipo, saldo_inicial, cor, conta_padrao, status, created_at, updated_at) 
+                 VALUES (?, ?, ?, ?, ?, ?, ?, 'ativa', NOW(3), NOW(3))`,
+                [userId, nome, moeda, tipo || 'corrente', parseFloat(saldo_inicial) || 0, cor || '#2563eb', serPadrao ? 1 : 0]
             );
             await conn.commit();
             await this.garantirContaPadrao(userId);
@@ -95,7 +95,8 @@ class Conta {
         }
     }
 
-    static async atualizar(id, userId, { nome, tipo, cor, conta_padrao = 0, e_padrao = 0 }) {
+    // moeda: so muda enquanto a conta nao tem nenhum lancamento (depois disso os valores ja estao gravados naquela moeda).
+    static async atualizar(id, userId, { nome, tipo, cor, moeda = null, conta_padrao = 0, e_padrao = 0 }) {
         conta_padrao = conta_padrao || e_padrao;
         const conn = await db.getConnection();
         try {
@@ -107,6 +108,12 @@ class Conta {
                 'UPDATE contas SET nome = ?, tipo = ?, cor = ?, conta_padrao = IF(?, 1, conta_padrao), updated_at = NOW(3) WHERE id = ? AND user_id = ?',
                 [nome, tipo, cor, conta_padrao ? 1 : 0, id, userId]
             );
+            if (moeda) {
+                await conn.query(
+                    'UPDATE contas SET moeda = ? WHERE id = ? AND user_id = ? AND NOT EXISTS (SELECT 1 FROM lancamentos WHERE conta_id = ?)',
+                    [moeda, id, userId, id]
+                );
+            }
             await conn.commit();
             await this.garantirContaPadrao(userId);
         } catch (err) {
@@ -192,9 +199,12 @@ class Conta {
         if (f.ordenar === 'vencimento') orderBy = 'l.data_competencia ASC, l.id ASC';
         else if (f.ordenar === 'valor') orderBy = 'ABS(l.valor) DESC, l.id DESC';
         const [rows] = await db.query(
-            `SELECT l.*, c.nome as categoria_nome
+            `SELECT l.*, c.nome as categoria_nome, cb.moeda AS conta_moeda,
+                    (SELECT p.valor FROM lancamentos p WHERE p.id = l.transferencia_par_id) AS par_valor,
+                    (SELECT cp.moeda FROM lancamentos p JOIN contas cp ON cp.id = p.conta_id WHERE p.id = l.transferencia_par_id) AS par_moeda
              FROM lancamentos l
              LEFT JOIN categorias c ON l.categoria_id = c.id
+             LEFT JOIN contas cb ON cb.id = l.conta_id
              ${where}
              ORDER BY ${orderBy}`,
             params

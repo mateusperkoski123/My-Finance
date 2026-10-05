@@ -114,7 +114,7 @@ const _presets = [['hoje', t('filtro.hoje')], ['7dias', t('filtro.7dias')], ['me
                             </td>
                             <td><%= t('lancamento.tipo.' + l.tipo) %></td>
                             <td style="font-weight: 600; color: <%= (l.tipo === 'despesa' || (l.tipo !== 'receita' && parseFloat(l.valor) < 0)) ? 'var(--red)' : 'var(--green)' %>;">
-                                <%= (l.tipo === 'despesa' || (l.tipo !== 'receita' && parseFloat(l.valor) < 0)) ? '-' : '+' %> <%= moeda(Math.abs(parseFloat(l.valor))) %>
+                                <%= (l.tipo === 'despesa' || (l.tipo !== 'receita' && parseFloat(l.valor) < 0)) ? '-' : '+' %> <%= moeda(Math.abs(parseFloat(l.valor)), l.conta_moeda) %><% if (l.tipo === 'transferencia') { const _cb = cambioTexto(l); if (_cb) { %><span class="lanc-cambio"><%= _cb %></span><% } } %>
                             </td>
                             <td>
                                 <span class="badge <%= l.status === 'pago' ? 'badge-sucesso' : 'badge-alerta' %>">

@@ -18,7 +18,7 @@
                     <strong style="display: block; overflow-wrap: anywhere;"><%= descricaoLancamento(d) %></strong>
                     <span class="muted" style="font-size: 13px;"><%= d.conta_nome %><% if (g.mostrarData) { %> · <%= formatDate(d.data_competencia, 'DD/MM/YYYY') %><% } %></span>
                 </div>
-                <strong style="white-space: nowrap;"><%= moeda(d.valor_abs) %></strong>
+                <strong style="white-space: nowrap;"><%= moeda(d.valor_abs, d.conta_moeda) %></strong>
                 <form method="post" action="/lancamentos/<%= d.id %>/marcar-pago" style="margin: 0;">
                     <%- csrfCampo %>
                     <input type="hidden" name="voltar" value="/lembretes/vencimentos?data=<%= data %>">
@@ -30,7 +30,7 @@
     <% if (g.rotuloTotal) { %>
     <div style="display: flex; justify-content: space-between; align-items: center; padding-top: 14px; font-size: 16px;">
         <span><%= g.rotuloTotal %></span>
-        <strong><%= moeda(g.total) %></strong>
+        <strong><%= g.total %></strong>
     </div>
     <% } %>
 </section>

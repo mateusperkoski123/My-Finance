@@ -97,7 +97,8 @@ async function executarOp(userId, op) {
             const ids = [];
             await Lancamento.criarTransferencia({
                 userId, origem, destino, valor: op.valor, data: op.data, descricao: op.descricao || '',
-                agendada: Boolean(op.agendada), eFixo: op.repeticao === 'fixa', quantidade: op.quantidade || 1, idsCriados: ids
+                agendada: Boolean(op.agendada), eFixo: op.repeticao === 'fixa', quantidade: op.quantidade || 1,
+                valorEntrada: op.valor_entrada || null, cotacao: op.cotacao || null, idsCriados: ids
             });
             return { t: 'excluir', ids };
         }

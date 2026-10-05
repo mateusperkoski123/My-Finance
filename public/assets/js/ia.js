@@ -78,11 +78,13 @@
     return out.join('');
   }
 
-  function dinheiro(v) {
+  // moedaDoValor: moeda da conta a que o valor pertence (sem ela vale a moeda principal do usuario).
+  function dinheiro(v, moedaDoValor) {
     var n = Number(v) || 0;
-    var m = CFG.moeda;
+    var m = moedaDoValor || CFG.moeda;
     if (m === 'PYG') return 'Gs. ' + Math.round(n).toLocaleString('de-DE');
     if (m === 'BRL') return 'R$ ' + n.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (m === 'EUR') return '€ ' + n.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
   function dataBr(ymd) { var p = String(ymd || '').slice(0, 10).split('-'); return p.length === 3 ? p[2] + '/' + p[1] + '/' + p[0] : ''; }
@@ -97,17 +99,17 @@
     var t = T;
     if (op.op === 'lancamento') {
       var rec = op.tipo === 'receita';
-      h = '<div class="ia-op__titulo">' + esc(rec ? t.opLancReceita : t.opLancDespesa) + ' <strong>' + (rec ? '+' : '-') + ' ' + esc(dinheiro(op.valor)) + '</strong></div>' +
+      h = '<div class="ia-op__titulo">' + esc(rec ? t.opLancReceita : t.opLancDespesa) + ' <strong>' + (rec ? '+' : '-') + ' ' + esc(dinheiro(op.valor, op.moeda)) + '</strong></div>' +
         '<div class="ia-op__det">' + esc(op.descricao) + ' · ' + esc(op.conta_nome) + ' · ' + esc(op.categoria_nome) + ' · ' + esc(dataBr(op.data_competencia)) + ' · ' + esc(op.status === 'pago' ? t.pago : t.pendente) + '</div>';
     } else if (op.op === 'status') {
       h = '<div class="ia-op__titulo">' + esc(op.status === 'pago' ? t.opStatusPago : t.opStatusPendente) + ' (' + op.itens.length + ')' +
         (op.status === 'pago' && op.data_pagamento ? ' · ' + esc(dataBr(op.data_pagamento)) : '') + '</div><ul class="ia-op__itens">' +
-        op.itens.map(function (i) { return '<li>' + esc(i.descricao) + ' <span class="muted">' + esc(i.conta_nome) + ' · ' + esc(dataBr(i.data)) + '</span> <strong>' + esc(dinheiro(i.valor)) + '</strong></li>'; }).join('') + '</ul>';
+        op.itens.map(function (i) { return '<li>' + esc(i.descricao) + ' <span class="muted">' + esc(i.conta_nome) + ' · ' + esc(dataBr(i.data)) + '</span> <strong>' + esc(dinheiro(i.valor, i.moeda)) + '</strong></li>'; }).join('') + '</ul>';
     } else if (op.op === 'editar') {
       var m = op.mudancas || {};
       h = '<div class="ia-op__titulo">' + esc(t.opEditar) + ': ' + esc(op.descricao_atual) + '</div><ul class="ia-op__itens">';
       if (m.descricao) h += linhaDePara(t.cDescricao, m.descricao.de, m.descricao.para);
-      if (m.valor) h += linhaDePara(t.cValor, m.valor.de, m.valor.para, dinheiro);
+      if (m.valor) h += linhaDePara(t.cValor, m.valor.de, m.valor.para, function (x) { return dinheiro(x, op.moeda); });
       if (m.data) h += linhaDePara(t.cData, m.data.de, m.data.para, dataBr);
       if (m.categoria) h += linhaDePara(t.cCategoria, m.categoria.de, m.categoria.para);
       if (m.conta) h += linhaDePara(t.cConta, m.conta.de, m.conta.para);
@@ -120,7 +122,8 @@
       h = '<div class="ia-op__titulo">' + esc(op.eh_sub ? t.opSubRenomear : t.opCatRenomear) + ': <span class="ia-de">' + esc(op.de) + '</span> <i class="ph ph-arrow-right"></i> <strong>' + esc(op.para) + '</strong></div>';
     } else if (op.op === 'transferencia') {
       var rep = op.repeticao === 'fixa' ? ' · ' + t.repFixa : (op.repeticao === 'repetir' ? ' · ' + t.repRepetir.replace('__N__', op.quantidade) : '');
-      h = '<div class="ia-op__titulo">' + esc(op.agendada ? t.opTransfAgendada : t.opTransf) + ' <strong>' + esc(dinheiro(op.valor)) + '</strong></div>' +
+      var troca = op.moeda_destino && op.moeda_origem && op.moeda_destino !== op.moeda_origem && op.valor_entrada ? ' <i class="ph ph-arrow-right"></i> ' + esc(dinheiro(op.valor_entrada, op.moeda_destino)) : '';
+      h = '<div class="ia-op__titulo">' + esc(op.agendada ? t.opTransfAgendada : t.opTransf) + ' <strong>' + esc(dinheiro(op.valor, op.moeda_origem)) + troca + '</strong></div>' +
         '<div class="ia-op__det">' + esc(t.paraConta.replace('__A__', op.origem_nome).replace('__B__', op.destino_nome)) + ' · ' + esc(dataBr(op.data)) + esc(rep) + (op.descricao ? ' · ' + esc(op.descricao) : '') + '</div>';
     }
     return h;
@@ -353,7 +356,7 @@
       rodape = '<div class="ia-cartao__estado"><i class="ph ph-x-circle"></i> ' + esc(T.cancelado) + '</div>';
     }
     return '<div class="ia-cartao ' + (receita ? 'is-receita' : 'is-despesa') + '" data-cartao="' + c.id + '">' +
-      '<div class="ia-cartao__topo"><span>' + esc(receita ? T.receita : T.despesa) + '</span><strong>' + (receita ? '+' : '-') + ' ' + esc(dinheiro(c.valor)) + '</strong></div>' +
+      '<div class="ia-cartao__topo"><span>' + esc(receita ? T.receita : T.despesa) + '</span><strong>' + (receita ? '+' : '-') + ' ' + esc(dinheiro(c.valor, c.moeda)) + '</strong></div>' +
       '<div class="ia-cartao__desc">' + esc(c.descricao) + '</div>' +
       '<dl class="ia-cartao__det"><div><dt>' + esc(T.conta) + '</dt><dd>' + esc(c.conta) + '</dd></div>' +
       '<div><dt>' + esc(T.categoria) + '</dt><dd>' + esc(c.categoria) + '</dd></div>' +

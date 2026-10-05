@@ -1,0 +1,18 @@
+<%# Bloco de cambio das transferencias: so aparece quando a conta de origem e a de destino tem moedas diferentes.
+   O comportamento (calcular a cotacao ou o valor que entra) esta no script no fim de contas/index.ejs. %>
+<div class="cambio-bloco" data-cambio hidden
+     data-t-cotacao="<%= t('cambio.cotacao') %>" data-t-entra="<%= t('cambio.entra') %>" data-t-resumo="<%= t('cambio.resumo') %>">
+    <p class="cambio-bloco__titulo"><i class="ph ph-currency-circle-dollar"></i> <%= t('cambio.titulo') %></p>
+    <p class="muted cambio-bloco__ajuda"><%= t('cambio.ajuda') %></p>
+    <div class="form-row">
+        <div class="form-group">
+            <label data-cambio-rotulo-cotacao><%= t('cambio.titulo') %></label>
+            <input class="input" type="text" name="cotacao" inputmode="decimal" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label data-cambio-rotulo-entra><%= t('cambio.titulo') %></label>
+            <input class="input" type="text" name="valor_entrada" data-money inputmode="decimal">
+        </div>
+    </div>
+    <p class="cambio-bloco__resumo" data-cambio-resumo></p>
+</div>

@@ -177,7 +177,9 @@ const configuracoesController = {
             lista(c.subcategorias).forEach((s) => categoriasData.push(s));
         });
 
-        const { toLocalYMD, hojeLocal, corValida } = require('../core/helpers');
+        const { toLocalYMD, hojeLocal, corValida, normalizarMoeda } = require('../core/helpers');
+        // Backups antigos nao tinham moeda por conta: valem a moeda do perfil do arquivo (ou a atual do usuario).
+        const moedaPadraoArquivo = normalizarMoeda(payload && payload.perfil && payload.perfil.moeda, normalizarMoeda(req.user.moeda));
         const TIPOS_CONTA = ['corrente', 'poupanca', 'carteira', 'investimento', 'outra'];
         const nomeDe = (v) => String(v || '').trim().slice(0, 120);
         // Aceita 'YYYY-MM-DD' ou ISO com fuso (backups antigos gravavam '...T03:00:00.000Z').
@@ -209,9 +211,9 @@ const configuracoesController = {
                     continue;
                 }
                 const [resAcc] = await conn.query(
-                    `INSERT INTO contas (user_id, nome, tipo, cor, saldo_inicial, conta_padrao, status, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, 0, ?, NOW(3), NOW(3))`,
-                    [userId, nome, TIPOS_CONTA.includes(c.tipo) ? c.tipo : 'corrente', corValida(c.cor) ? c.cor : '#2563eb', parseFloat(c.saldo_inicial) || 0, c.status === 'arquivada' ? 'arquivada' : 'ativa']
+                    `INSERT INTO contas (user_id, nome, moeda, tipo, cor, saldo_inicial, conta_padrao, status, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, 0, ?, NOW(3), NOW(3))`,
+                    [userId, nome, normalizarMoeda(c.moeda, moedaPadraoArquivo), TIPOS_CONTA.includes(c.tipo) ? c.tipo : 'corrente', corValida(c.cor) ? c.cor : '#2563eb', parseFloat(c.saldo_inicial) || 0, c.status === 'arquivada' ? 'arquivada' : 'ativa']
                 );
                 if (c.id) contaMap[c.id] = resAcc.insertId;
                 contasCount++;
@@ -286,11 +288,11 @@ const configuracoesController = {
                 const [resLanc] = await conn.query(
                     `INSERT INTO lancamentos (user_id, conta_id, categoria_id, tipo, descricao, valor,
                                                data_competencia, data_pagamento, status, recorrente,
-                                               serie_id, observacoes, created_at, updated_at)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(3), NOW(3))`,
+                                               serie_id, observacoes, cotacao, created_at, updated_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(3), NOW(3))`,
                     [userId, mappedContaId, mappedCatId, tipo, descricao, valor, dataComp,
                      status === 'pago' ? (dataPag || dataComp) : null, status, l.recorrente || l.e_fixo ? 1 : 0,
-                     l.serie_id ? String(l.serie_id).slice(0, 36) : null, l.observacoes ? String(l.observacoes).slice(0, 500) : null]
+                     l.serie_id ? String(l.serie_id).slice(0, 36) : null, l.observacoes ? String(l.observacoes).slice(0, 500) : null, parseFloat(l.cotacao) > 0 ? parseFloat(l.cotacao) : null]
                 );
                 if (l.id) lancMap[l.id] = resLanc.insertId;
                 lancamentosCount++;

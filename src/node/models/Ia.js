@@ -128,6 +128,7 @@ class Ia {
             descricao: p.descricao,
             valor: p.valor,
             conta: p.conta_nome,
+            moeda: p.moeda || null,
             categoria: p.categoria_nome,
             data: p.data_competencia,
             pago: p.status === 'pago'

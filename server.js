@@ -186,10 +186,15 @@ app.use(csrfMiddleware);
 const { contaMiddleware } = require('./src/node/middleware/contaMiddleware');
 app.use((req, res, next) => contaMiddleware(req, res, next).catch(next));
 
+// Moeda em foco (paineis e relatorios mostram uma moeda por vez): depois do login/regras de conta, antes das rotas
+const { moedaFocoMiddleware } = require('./src/node/core/moedaFoco');
+app.use(moedaFocoMiddleware);
+
 // Helpers in views
-const { moeda, formatDate, formatDateTime, truncarTexto, descricaoLancamento, hojeLocal, jsonScript } = require('./src/node/core/helpers');
+const { moeda, formatDate, formatDateTime, truncarTexto, descricaoLancamento, hojeLocal, jsonScript, textoCambio } = require('./src/node/core/helpers');
 app.use((req, res, next) => {
-    res.locals.moeda = (val) => moeda(val, res.locals.currency);
+    res.locals.moeda = (val, cod) => moeda(val, cod || res.locals.currency); // cod: moeda de uma conta especifica; sem ele, a da tela
+    res.locals.cambioTexto = (l) => textoCambio(l, res.locals.t);
     res.locals.jsonScript = jsonScript; // dados dentro de <script>: sempre por aqui (nunca JSON.stringify direto)
     res.locals.formatDate = formatDate;
     res.locals.hojeLocal = hojeLocal;

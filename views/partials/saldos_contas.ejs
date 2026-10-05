@@ -9,7 +9,7 @@
             <div class="saldos-contas__item" data-conta-id="<%= c.id %>">
                 <div class="saldos-contas__nome"><%= c.nome %></div>
                 <div class="saldos-contas__linha">
-                    <strong class="saldos-contas__valor" data-texto="<%= moeda(c.saldo_atual) %>" style="color: <%= parseFloat(c.saldo_atual) >= 0 ? 'var(--green)' : 'var(--red)' %>;"><%= moeda(c.saldo_atual) %></strong>
+                    <strong class="saldos-contas__valor" data-texto="<%= moeda(c.saldo_atual, c.moeda) %>" style="color: <%= parseFloat(c.saldo_atual) >= 0 ? 'var(--green)' : 'var(--red)' %>;"><%= moeda(c.saldo_atual, c.moeda) %></strong>
                     <button type="button" class="saldos-contas__olho saldos-contas__olho--item" title="<%= t('saldos.toggle_um') %>" aria-label="<%= t('saldos.toggle_conta', { nome: c.nome }) %>"><i class="ph ph-eye"></i></button>
                 </div>
             </div>

@@ -2,14 +2,15 @@ const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 const Lancamento = require('../models/Lancamento');
 const db = require('../config/db');
-const { parseMoeda, toLocalYMD, hojeLocal, dataValida, mesAnoValidos, corValida } = require('../core/helpers');
+const { parseMoeda, toLocalYMD, hojeLocal, dataValida, mesAnoValidos, corValida, normalizarMoeda, calcularCambio } = require('../core/helpers');
 
 const MESES_FIXO = 24;
 const TIPOS_CONTA = ['corrente', 'poupanca', 'carteira', 'investimento', 'outra'];
 
 // Nome, tipo e cor vindos do formulario, ja limpos (nome vazio = invalido).
-const dadosConta = (b) => ({
+const dadosConta = (b, moedaPadrao = 'PYG') => ({
     nome: typeof b.nome === 'string' ? b.nome.trim().slice(0, 120) : '',
+    moeda: b.moeda ? normalizarMoeda(b.moeda, moedaPadrao) : null,
     tipo: TIPOS_CONTA.includes(b.tipo) ? b.tipo : 'corrente',
     cor: corValida(b.cor) ? b.cor : '#3b82f6',
     e_padrao: b.e_padrao === '1' || b.e_padrao === true ? 1 : 0
@@ -28,14 +29,24 @@ const contasController = {
             const ativas = contas.filter(c => c.status !== 'arquivada');
             const arquivadas = contas.filter(c => c.status === 'arquivada');
 
-            const saldoTotal = ativas.reduce((acc, c) => acc + (parseFloat(c.saldo_atual) || 0), 0);
+            // Saldo total por moeda (moedas diferentes nao se somam).
+            const mostradas = abaArquivadas ? arquivadas : ativas;
+            const totaisMoeda = [];
+            mostradas.forEach((c) => {
+                let t = totaisMoeda.find((x) => x.moeda === c.moeda);
+                if (!t) { t = { moeda: c.moeda, total: 0, n: 0 }; totaisMoeda.push(t); }
+                t.total += parseFloat(c.saldo_atual) || 0;
+                t.n++;
+            });
 
             res.render('contas/index', {
                 title: req.t('pages.contas.titulo'),
-                contas: abaArquivadas ? arquivadas : ativas,
+                contas: mostradas,
                 abaArquivadas,
-                saldoTotal,
-                totalContas: (abaArquivadas ? arquivadas : ativas).length
+                totaisMoeda,
+                moedasConta: require('../core/helpers').MOEDAS_CONTA,
+                moedaPadraoConta: normalizarMoeda(req.user.moeda),
+                totalContas: mostradas.length
             });
         } catch (err) {
             console.error('Erro em contasController.index:', err);
@@ -46,11 +57,12 @@ const contasController = {
     criar: async (req, res) => {
         try {
             const userId = req.user.id;
-            const dados = dadosConta(req.body);
+            const dados = dadosConta(req.body, normalizarMoeda(req.user.moeda));
             if (!dados.nome) {
                 req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_nome_obrigatorio') };
                 return res.redirect('/contas');
             }
+            dados.moeda = dados.moeda || normalizarMoeda(req.user.moeda);
 
             await Conta.criar(userId, Object.assign(dados, { saldo_inicial: parseMoeda(req.body.saldo_inicial) }));
 
@@ -71,10 +83,15 @@ const contasController = {
                 req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_nome_obrigatorio') };
                 return res.redirect('/contas');
             }
+            const atual = await Conta.buscarPorId(id, userId);
+            const pedidoTrocaMoeda = atual && dados.moeda && dados.moeda !== atual.moeda;
 
             await Conta.atualizar(id, userId, dados);
 
-            req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.conta_atualizada') };
+            const depois = pedidoTrocaMoeda ? await Conta.buscarPorId(id, userId) : null;
+            req.session.flash = pedidoTrocaMoeda && depois && depois.moeda !== dados.moeda
+                ? { tipo: 'erro', mensagem: req.t('flash.conta_moeda_travada') }
+                : { tipo: 'sucesso', mensagem: req.t('flash.conta_atualizada') };
         } catch (err) {
             console.error('Erro em contasController.atualizar:', err);
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_atualizar') };
@@ -204,8 +221,14 @@ const contasController = {
                 return res.redirect('/contas');
             }
 
+            const cambio = calcularCambio(req.body, val, origem, destino);
+            if (cambio.erro) {
+                req.session.flash = { tipo: 'erro', mensagem: req.t(cambio.erro) };
+                return res.redirect('/contas');
+            }
+
             // Saida da origem + entrada no destino, ja ligadas e gravadas juntas (ou as duas, ou nenhuma).
-            await Lancamento.criarTransferencia({ userId, origem, destino, valor: val, data: dataComp, descricao });
+            await Lancamento.criarTransferencia({ userId, origem, destino, valor: val, data: dataComp, descricao, valorEntrada: cambio.valorEntrada, cotacao: cambio.cotacao });
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.transferencia_realizada') };
         } catch (err) {
             console.error('Erro em contasController.transferir:', err);
@@ -238,8 +261,11 @@ const contasController = {
             const eRepetir = !eFixo && req.body.repetir === '1';
             const qtd = eFixo ? MESES_FIXO : (eRepetir ? Math.min(Math.max(parseInt(req.body.quantidade_repeticoes, 10) || 1, 1), 60) : 1);
 
-            // Mesma rotina da transferencia imediata, do app e do Chat IA: pares pendentes, um por mes.
-            await Lancamento.criarTransferencia({ userId, origem, destino, valor, data, descricao, agendada: true, eFixo, quantidade: qtd, periodicidade: eRepetir ? req.body.periodicidade : 'mensal' });
+            const cambio = calcularCambio(req.body, valor, origem, destino);
+            if (cambio.erro) return volta('erro', cambio.erro);
+
+            // Mesma rotina da transferencia imediata, do app e do Chat IA: pares pendentes, um por mes (ou na periodicidade escolhida).
+            await Lancamento.criarTransferencia({ userId, origem, destino, valor, data, descricao, agendada: true, eFixo, quantidade: qtd, periodicidade: eRepetir ? req.body.periodicidade : 'mensal', valorEntrada: cambio.valorEntrada, cotacao: cambio.cotacao });
             return volta('sucesso', 'flash.transferencia_agendada', { n: qtd });
         } catch (err) {
             console.error('Erro em contasController.agendarTransferencia:', err);
@@ -296,6 +322,7 @@ const contasController = {
             const somar = (fn) => itens.reduce((s, l) => s + (fn(parseFloat(l.valor) || 0) ? Math.abs(parseFloat(l.valor) || 0) : 0), 0);
             const totais = { entradas: somar((v) => v > 0), saidas: somar((v) => v < 0) };
             totais.resultado = totais.entradas - totais.saidas;
+            res.locals.currency = conta.moeda || res.locals.currency; // o extrato inteiro (valores e campos) fala a moeda desta conta
             res.render('contas/extrato', {
                 title: `${req.t('contas.extrato.titulo')} - ${conta.nome}`,
                 conta,

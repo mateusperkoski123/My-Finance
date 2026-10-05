@@ -20,8 +20,14 @@
             </div>
 
             <div class="form-group">
-                <label for="ed-transf-valor"><%= t('modal.valor') %></label>
+                <label for="ed-transf-valor" data-transf-valor-rotulo data-t-valor="<%= t('modal.valor') %>" data-t-sai="<%= t('cambio.sai') %>"><%= t('modal.valor') %></label>
                 <input class="input lanc-form__valor" type="text" id="ed-transf-valor" name="valor" data-money data-money-positivo required>
+            </div>
+
+            <%# So em transferencia entre moedas diferentes: o valor que entra na conta de destino (a cotacao fica implicita). %>
+            <div class="form-group" data-transf-entrada data-t-entra="<%= t('cambio.entra') %>" hidden>
+                <label for="ed-transf-entrada"><%= t('cambio.entra') %></label>
+                <input class="input lanc-form__valor" type="text" id="ed-transf-entrada" name="valor_entrada" data-money data-money-positivo>
             </div>
 
             <div class="lanc-campo lanc-campo--linha">

@@ -10,7 +10,7 @@
 
     const fmtData = (ymd) => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(ymd || '')); return m ? `${m[3]}/${m[2]}/${m[1]}` : ''; };
     const dataYmd = (v) => String(v || '').slice(0, 10);
-    function fmtValor(v) { return window.GfFormatarValor ? window.GfFormatarValor(v) : String(v); }
+    function fmtValor(v, moeda) { return window.GfFormatarValor ? window.GfFormatarValor(v, moeda) : String(v); }
 
     function criar(tag, classe, texto) { const e = document.createElement(tag); if (classe) e.className = classe; if (texto != null) e.textContent = texto; return e; }
 
@@ -37,7 +37,7 @@
         tr_.appendChild(c);
         tr_.appendChild(criar('td', null, (contas.get(Number(l.conta_id)) || {}).nome || '—'));
         tr_.appendChild(criar('td', null, fmtData(l.data_competencia)));
-        const v = criar('td', null, fmtValor(Number(l.valor))); v.style.fontWeight = '700'; v.style.whiteSpace = 'nowrap'; v.style.color = Number(l.valor) < 0 ? 'var(--red)' : 'var(--green)';
+        const v = criar('td', null, fmtValor(Number(l.valor), (contas.get(Number(l.conta_id)) || {}).moeda)); v.style.fontWeight = '700'; v.style.whiteSpace = 'nowrap'; v.style.color = Number(l.valor) < 0 ? 'var(--red)' : 'var(--green)';
         tr_.appendChild(v);
         const e = criar('td'); const est = estadoDe(l); e.appendChild(criar('span', est.classe, est.texto)); tr_.appendChild(e);
         const a = criar('td', 'td-acoes'); const rel = criar('i', 'ph ph-clock-counter-clockwise'); rel.title = tr('aguardando_envio'); rel.style.color = 'var(--muted)'; const ed = criar('button', 'icon-btn gf-prov-editar'); ed.type = 'button'; ed.title = tr('editar'); ed.setAttribute('aria-label', tr('editar')); ed.setAttribute('data-gf-editar-fila', l.client_id); const edi = criar('i', 'ph ph-pencil-simple'); ed.appendChild(edi); a.appendChild(ed); a.appendChild(rel); tr_.appendChild(a);
@@ -54,7 +54,7 @@
         d.appendChild(criar('span', 'badge badge-neutro gf-prov-etiqueta', tr('aguardando_envio')));
         tr_.appendChild(d);
         const dt = criar('td', null, fmtData(l.data_competencia)); dt.style.whiteSpace = 'nowrap'; dt.style.fontSize = '13px'; tr_.appendChild(dt);
-        const v = criar('td', null, fmtValor(Number(l.valor))); v.style.fontWeight = '700'; v.style.whiteSpace = 'nowrap'; v.style.color = Number(l.valor) < 0 ? 'var(--red)' : 'var(--green)'; tr_.appendChild(v);
+        const v = criar('td', null, fmtValor(Number(l.valor), (contas.get(Number(l.conta_id)) || {}).moeda)); v.style.fontWeight = '700'; v.style.whiteSpace = 'nowrap'; v.style.color = Number(l.valor) < 0 ? 'var(--red)' : 'var(--green)'; tr_.appendChild(v);
         const a = criar('td'); const rel = criar('i', 'ph ph-clock-counter-clockwise'); rel.title = tr('aguardando_envio'); rel.style.color = 'var(--muted)'; const ed = criar('button', 'icon-btn gf-prov-editar'); ed.type = 'button'; ed.title = tr('editar'); ed.setAttribute('aria-label', tr('editar')); ed.setAttribute('data-gf-editar-fila', l.client_id); const edi = criar('i', 'ph ph-pencil-simple'); ed.appendChild(edi); a.appendChild(ed); a.appendChild(rel); tr_.appendChild(a);
         return tr_;
     }
@@ -83,7 +83,10 @@
             if (!locais.length) return;
             const contas = new Map((await window.AppDb.buscarTodos('contas')).map((c) => [Number(c.id), c]));
             const cats = new Map((await window.AppDb.buscarTodos('categorias')).filter((c) => c.id).map((c) => [Number(c.id), c]));
-            const novos = locais.filter((l) => !l.id); // criados offline (ainda sem numero do servidor)
+            // So aparecem aqui os da moeda que a tela esta mostrando (o painel mostra uma moeda por vez).
+            const moedaTela = (window.GF_OFF || {}).moeda;
+            const daMoedaDaTela = (l) => { const c = contas.get(Number(l.conta_id)); return !c || !c.moeda || !moedaTela || c.moeda === moedaTela; };
+            const novos = locais.filter((l) => !l.id && daMoedaDaTela(l)); // criados offline (ainda sem numero do servidor)
             const params = new URLSearchParams(location.search);
             const filtrado = FILTROS_QUE_ESCONDEM.some((k) => params.get(k));
 

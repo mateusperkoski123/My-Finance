@@ -103,7 +103,7 @@ const lembretesController = {
         const data = /^\d{4}-\d{2}-\d{2}$/.test(pedida) ? pedida : hoje;
         const itens = await Lembrete.pendentesDoDia(req.user.id, data);
         const atrasadas = data === hoje ? await Lembrete.despesasAtrasadas(req.user.id, hoje) : [];
-        const soma = (lista) => lista.reduce((s, i) => s + Number(i.valor_abs), 0);
+        const soma = (lista) => lembretes.totalTexto(lista, req.user.moeda); // por moeda: moedas diferentes nao se somam
         const pagar = itens.filter((i) => i.tipo === 'despesa');
         const receber = itens.filter((i) => i.tipo === 'receita');
         const transf = itens.filter((i) => i.tipo === 'transferencia');

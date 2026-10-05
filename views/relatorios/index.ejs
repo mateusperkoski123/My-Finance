@@ -8,6 +8,8 @@
     </div>
 </div>
 
+<%- include('../partials/moeda_foco') %>
+
 <%# Parametros que identificam o periodo nos links entre abas e presets. %>
 <% const _qs = (extra) => new URLSearchParams(Object.assign({}, periodoParams, extra || {})).toString(); %>
 <% const _mesLink = (m, a) => '/relatorios?' + new URLSearchParams({ aba: aba, preset: 'mes', mes: m, ano: a }).toString(); %>

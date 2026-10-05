@@ -1,0 +1,24 @@
+// Textos de moeda por conta e cambio entre moedas ([pt-BR, es-PY, en-US]).
+module.exports = {
+    'config.moeda': ['Moeda principal', 'Moneda principal', 'Main currency'],
+    'config.moeda_ajuda': ['Vale para as novas contas e é a moeda mostrada primeiro nos painéis. Cada conta mantém a própria moeda, escolhida ao criá-la.', 'Vale para las cuentas nuevas y es la moneda que se muestra primero en los paneles. Cada cuenta mantiene su propia moneda, elegida al crearla.', 'Applies to new accounts and is the currency shown first in the dashboards. Each account keeps its own currency, chosen when it was created.'],
+    'moeda.ver_em': ['Ver valores em', 'Ver valores en', 'Show amounts in'],
+    'moeda.foco_ajuda': ['Cada moeda é mostrada separada: moedas diferentes não se somam.', 'Cada moneda se muestra por separado: las monedas distintas no se suman.', 'Each currency is shown separately: different currencies are never added together.'],
+    'moeda.nome.PYG': ['Guarani', 'Guaraní', 'Guarani'],
+    'moeda.nome.BRL': ['Real', 'Real', 'Real'],
+    'moeda.nome.USD': ['Dólar', 'Dólar', 'Dollar'],
+    'moeda.nome.EUR': ['Euro', 'Euro', 'Euro'],
+    'moeda.nome.ARS': ['Peso argentino', 'Peso argentino', 'Argentine peso'],
+    'contas.moeda_label': ['Moeda', 'Moneda', 'Currency'],
+    'contas.moeda_travada_ajuda': ['A moeda não muda depois que a conta tem movimentos.', 'La moneda no cambia una vez que la cuenta tiene movimientos.', 'The currency cannot change once the account has entries.'],
+    'contas.moeda_ajuda': ['Cada conta tem a sua moeda. Para passar dinheiro entre moedas, use Transferir: o sistema pede a cotação.', 'Cada cuenta tiene su moneda. Para pasar dinero entre monedas, usá Transferir: el sistema pide la cotización.', 'Each account has its own currency. To move money between currencies, use Transfer: the system asks for the exchange rate.'],
+    'flash.conta_moeda_travada': ['Esta conta já tem movimentos, então a moeda não pode mais ser trocada. Os outros dados foram salvos.', 'Esta cuenta ya tiene movimientos, así que la moneda no se puede cambiar. Los demás datos se guardaron.', 'This account already has entries, so its currency can no longer be changed. The other details were saved.'],
+    'flash.cotacao_obrigatoria': ['Informe a cotação ou o valor que entra na conta de destino.', 'Informá la cotización o el valor que entra a la cuenta de destino.', 'Enter the exchange rate or the amount that goes into the destination account.'],
+    'cambio.titulo': ['Câmbio entre moedas', 'Cambio entre monedas', 'Currency exchange'],
+    'cambio.ajuda': ['As contas têm moedas diferentes. Informe a cotação ou o valor que você recebeu: o outro é calculado.', 'Las cuentas tienen monedas distintas. Informá la cotización o el valor que recibiste: el otro se calcula.', 'The accounts use different currencies. Enter the rate or the amount you received: the other one is calculated.'],
+    'cambio.cotacao': ['Cotação ({cotada} por 1 {base})', 'Cotización ({cotada} por 1 {base})', 'Rate ({cotada} per 1 {base})'],
+    'cambio.entra': ['Valor que entra ({moeda})', 'Valor que entra ({moeda})', 'Amount received ({moeda})'],
+    'cambio.sai': ['Valor que sai ({moeda})', 'Valor que sale ({moeda})', 'Amount sent ({moeda})'],
+    'cambio.resumo': ['Sai {saida} · entra {entrada}', 'Sale {saida} · entra {entrada}', 'Out {saida} · in {entrada}'],
+    'cambio.palavra': ['câmbio', 'cambio', 'rate']
+};

@@ -1,0 +1,9 @@
+<%# Escolhe a moeda que o painel/relatorio mostra (aparece so quando ha contas em mais de uma moeda). Moedas nao se somam. %>
+<% if (typeof moedasFoco !== 'undefined' && moedasFoco && moedasFoco.length > 1) { %>
+<nav class="moeda-foco" aria-label="<%= t('moeda.ver_em') %>" title="<%= t('moeda.foco_ajuda') %>">
+    <span class="moeda-foco__rotulo"><i class="ph ph-coins"></i> <%= t('moeda.ver_em') %></span>
+    <% moedasFoco.forEach((m) => { %>
+        <a href="<%= linkMoeda(m) %>" class="<%= m === moedaFoco ? 'is-active' : '' %>"<%= m === moedaFoco ? ' aria-current=true' : '' %>><%= t('moeda.nome.' + m) %> (<%= m %>)</a>
+    <% }) %>
+</nav>
+<% } %>

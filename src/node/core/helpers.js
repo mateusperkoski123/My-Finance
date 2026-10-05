@@ -166,6 +166,56 @@ function normalizarPeriodicidade(v) {
 }
 function passoMeses(v) { return PERIODICIDADES[normalizarPeriodicidade(v)]; }
 
+// Moedas aceitas nas contas e regras de cambio (o codigo vive em public/assets/js/app-regras.js, o mesmo que roda no navegador).
+const regrasCambio = require('../../../public/assets/js/app-regras');
+const MOEDAS_CONTA = ['PYG', 'BRL', 'USD', 'EUR', 'ARS'];
+function normalizarMoeda(v, padrao = 'PYG') {
+    const s = String(v || '').trim().toUpperCase();
+    return MOEDAS_CONTA.includes(s) ? s : padrao;
+}
+
+// Cotacao para mostrar: sem zeros sobrando ("1.190", "5,45"), com o separador de milhar/decimal da moeda cotada.
+function numeroCotacao(c, cotada) {
+    const n = Number(c);
+    if (!isFinite(n)) return '';
+    const dec = n >= 100 ? 2 : 4;
+    let [i, d] = n.toFixed(dec).split('.');
+    d = d.replace(/0+$/, '');
+    const usd = cotada === 'USD';
+    const milhar = (txt, sep) => txt.replace(/\B(?=(\d{3})+(?!\d))/g, sep);
+    return milhar(i, usd ? ',' : '.') + (d ? (usd ? '.' : ',') + d : '');
+}
+
+// Linha extra de uma transferencia entre moedas diferentes: "→ R$ 1.008,40 · câmbio: R$ 1 = Gs. 1.190".
+// l precisa trazer conta_moeda, par_valor e par_moeda (a outra perna) e cotacao.
+function textoCambio(l, t) {
+    if (!l || l.tipo !== 'transferencia' || !l.cotacao || l.par_valor == null || !l.par_moeda || !l.conta_moeda || l.par_moeda === l.conta_moeda) return '';
+    const saiu = parseFloat(l.valor) < 0;
+    const par = regrasCambio.parCambio(saiu ? l.conta_moeda : l.par_moeda, saiu ? l.par_moeda : l.conta_moeda);
+    const simbolo = (c) => SIMBOLOS[c] || c;
+    const palavra = typeof t === 'function' ? t('cambio.palavra') : 'câmbio';
+    return `${saiu ? '→' : '←'} ${moeda(Math.abs(parseFloat(l.par_valor)), l.par_moeda)} · ${palavra}: ${simbolo(par.base)} 1 = ${simbolo(par.cotada)} ${numeroCotacao(l.cotacao, par.cotada)}`;
+}
+
+// Transferencia entre moedas diferentes: o formulario traz o valor que sai e a cotacao e/ou o valor que entra.
+// Devolve { valorEntrada, cotacao } (nulos se a moeda e a mesma) ou { erro } se faltar cotacao.
+function calcularCambio(body, valorSaida, origem, destino) {
+    const mO = origem.moeda || 'PYG', mD = destino.moeda || 'PYG';
+    if (mO === mD) return { valorEntrada: null, cotacao: null };
+    let ent = parseMoeda(body.valor_entrada);
+    let cot = regrasCambio.lerCotacao(body.cotacao, mO, mD);
+    if (!(ent > 0) && !(cot > 0)) return { erro: 'flash.cotacao_obrigatoria' };
+    if (ent > 0) {
+        ent = regrasCambio.arredondarMoeda(ent, mD);
+        const bate = cot > 0 && Math.abs(regrasCambio.calcularEntrada(valorSaida, cot, mO, mD) - ent) < 0.0051 * Math.pow(10, 2 - regrasCambio.casasDaMoeda(mD));
+        if (!bate) cot = regrasCambio.calcularCotacao(valorSaida, ent, mO, mD);
+    } else {
+        ent = regrasCambio.calcularEntrada(valorSaida, cot, mO, mD);
+    }
+    if (!(ent > 0) || !(cot > 0)) return { erro: 'flash.cotacao_obrigatoria' };
+    return { valorEntrada: ent, cotacao: cot };
+}
+
 // Texto amigavel para lancamentos de sistema (ajuste/transferencia), inclusive os antigos com "#id" e valores no texto.
 function descricaoLancamento(l, t) {
     if (!l) return '';
@@ -190,6 +240,13 @@ module.exports = {
     descricaoLancamento,
     addMonthsYMD,
     PERIODICIDADES,
+    MOEDAS_CONTA,
+    calcularCambio,
+    SIMBOLOS,
+    numeroCotacao,
+    textoCambio,
+    normalizarMoeda,
+    regrasCambio,
     normalizarPeriodicidade,
     passoMeses,
     moeda,

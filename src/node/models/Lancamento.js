@@ -1,19 +1,20 @@
 const db = require('../config/db');
 const { randomUUID: uuidv4 } = require('crypto');
-const { toLocalYMD, formatDate, addMonthsYMD, hojeLocal, passoMeses } = require('../core/helpers');
+const { toLocalYMD, formatDate, addMonthsYMD, hojeLocal, passoMeses, regrasCambio } = require('../core/helpers');
 
 // Lancamento marcado como fixo (receita/despesa recorrente) gera 24 meses, a atual incluida.
 const MESES_FIXO = 24;
 
 const cleanParam = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '' && v !== 'sem_agrupamento') ? String(v).trim() : null;
 
-// Mesmo criterio do resumo e dos saldos: so contas ativas entram em listas, graficos e totais.
-const CONTA_ATIVA = "l.conta_id IN (SELECT id FROM contas WHERE user_id = l.user_id AND status = 'ativa')";
+// Mesmo criterio do resumo e dos saldos: so contas ativas entram em listas, graficos e totais, e so as da moeda em foco
+// (paineis e relatorios mostram uma moeda por vez; ver core/moedaFoco.js). CONTA_ATIVA vira SQL ao ser usado em texto.
+const { CONTA_ATIVA, filtroConta } = require('../core/moedaFoco');
 
 class Lancamento {
     static async buscarPorId(id, userId) {
         const [rows] = await db.query(
-            `SELECT l.*, c.nome as categoria_nome, c.parent_id as categoria_parent_id, cb.nome as conta_nome 
+            `SELECT l.*, c.nome as categoria_nome, c.parent_id as categoria_parent_id, cb.nome as conta_nome, cb.moeda as conta_moeda 
              FROM lancamentos l
              LEFT JOIN categorias c ON l.categoria_id = c.id
              LEFT JOIN contas cb ON l.conta_id = cb.id
@@ -106,7 +107,10 @@ class Lancamento {
                     IF(c.parent_id IS NULL, c.nome, (SELECT p.nome FROM categorias p WHERE p.id = c.parent_id)) as categoria_nome,
                     IF(c.parent_id IS NULL, c.cor, (SELECT p.cor FROM categorias p WHERE p.id = c.parent_id)) as categoria_cor,
                     IF(c.parent_id IS NOT NULL, c.nome, NULL) as subcategoria_nome,
-                    cb.nome as conta_nome, cb.cor as conta_cor,
+                    cb.nome as conta_nome, cb.cor as conta_cor, cb.moeda as conta_moeda,
+                    (SELECT p.valor FROM lancamentos p WHERE p.id = l.transferencia_par_id) AS par_valor,
+                    (SELECT cp.moeda FROM lancamentos p JOIN contas cp ON cp.id = p.conta_id WHERE p.id = l.transferencia_par_id) AS par_moeda,
+                    (SELECT cp.nome FROM lancamentos p JOIN contas cp ON cp.id = p.conta_id WHERE p.id = l.transferencia_par_id) AS par_conta_nome,
                     IF(l.serie_id IS NULL, NULL, (SELECT COUNT(*) FROM lancamentos s WHERE s.user_id = l.user_id AND s.serie_id = l.serie_id AND s.tipo = l.tipo AND (s.data_competencia < l.data_competencia OR (s.data_competencia = l.data_competencia AND s.id <= l.id)))) AS serie_pos,
                     IF(l.serie_id IS NULL, NULL, (SELECT COUNT(*) FROM lancamentos s WHERE s.user_id = l.user_id AND s.serie_id = l.serie_id AND s.tipo = l.tipo)) AS serie_total
              FROM lancamentos l
@@ -256,27 +260,29 @@ class Lancamento {
 
     // Transferencia entre contas: par de lancamentos (saida + entrada) ligados por transferencia_par_id.
     // Imediata = os dois ja pagos na data; agendada = os dois pendentes (o saldo so move ao marcar como pago).
-    static async criarTransferencia({ userId, origem, destino, valor, data, descricao = '', agendada = false, eFixo = false, quantidade = 1, periodicidade = 'mensal', clientId = null, idsCriados = null }) {
+    static async criarTransferencia({ userId, origem, destino, valor, data, descricao = '', agendada = false, eFixo = false, quantidade = 1, periodicidade = 'mensal', valorEntrada = null, cotacao = null, clientId = null, idsCriados = null }) {
         const Categoria = require('./Categoria');
         const catId = await Categoria.idSistema(userId, 'transferencia');
         const total = Math.max(1, quantidade);
         const passo = eFixo ? 1 : passoMeses(periodicidade);
         const serieId = total > 1 ? uuidv4() : null;
         const sufixo = descricao ? ' - ' + descricao : '';
+        // Entre moedas diferentes cada perna tem o seu valor (saida na moeda da origem, entrada na do destino).
+        const valorDestino = valorEntrada != null && valorEntrada > 0 ? valorEntrada : valor;
         const novosIds = [];
         const conn = await db.getConnection();
         try {
             await conn.beginTransaction();
             // clientId (sincronizacao do app) fica so na perna de saida da primeira ocorrencia.
             const inserir = (contaId, valorLinha, desc, dataComp, cid = null) => conn.query(
-                `INSERT INTO lancamentos (user_id, serie_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia, data_pagamento, status, recorrente, client_id, created_at, updated_at)
-                 VALUES (?, ?, ?, ?, 'transferencia', ?, ?, ?, ?, ?, ?, ?, NOW(3), NOW(3))`,
-                [userId, serieId, contaId, catId, desc, valorLinha, dataComp, agendada ? null : dataComp, agendada ? 'pendente' : 'pago', eFixo ? 1 : 0, cid]
+                `INSERT INTO lancamentos (user_id, serie_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia, data_pagamento, status, recorrente, client_id, cotacao, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, 'transferencia', ?, ?, ?, ?, ?, ?, ?, ?, NOW(3), NOW(3))`,
+                [userId, serieId, contaId, catId, desc, valorLinha, dataComp, agendada ? null : dataComp, agendada ? 'pendente' : 'pago', eFixo ? 1 : 0, cid, cotacao || null]
             );
             for (let i = 0; i < total; i++) {
                 const dataComp = addMonthsYMD(data, i * passo);
                 const [saida] = await inserir(origem.id, -valor, `Transferência enviada para ${destino.nome}${sufixo}`, dataComp, i === 0 ? clientId : null);
-                const [entrada] = await inserir(destino.id, valor, `Transferência recebida de ${origem.nome}${sufixo}`, dataComp);
+                const [entrada] = await inserir(destino.id, valorDestino, `Transferência recebida de ${origem.nome}${sufixo}`, dataComp);
                 await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [entrada.insertId, saida.insertId]);
                 await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ?', [saida.insertId, entrada.insertId]);
                 novosIds.push(saida.insertId, entrada.insertId);
@@ -410,7 +416,9 @@ class Lancamento {
 
     // Edita uma transferencia (as duas pernas juntas): valor, data e situacao. Em serie, o valor pode valer so para esta,
     // para esta e as proximas ou para toda a serie; data e situacao valem sempre so para a ocorrencia editada.
-    static async atualizarTransferencia(id, userId, { valor, data, pago, dataPagamento = null, escopo = 'apenas_esta' }) {
+    // "valor" e o que sai da conta de origem. Entre moedas diferentes, "valorEntrada" (ou "cotacao") define o que entra no destino;
+    // sem nenhum dos dois, mantem a cotacao que a transferencia ja tinha.
+    static async atualizarTransferencia(id, userId, { valor, valorEntrada = null, cotacao = null, data, pago, dataPagamento = null, escopo = 'apenas_esta' }) {
         const item = await this.buscarPorId(id, userId);
         if (!item || item.tipo !== 'transferencia') return false;
         const conn = await db.getConnection();
@@ -420,16 +428,38 @@ class Lancamento {
             const ids = par ? [item.id, par.id] : [item.id];
             const marcas = ids.map(() => '?').join(',');
 
+            // Moedas das duas pontas: a perna de saida e a negativa.
+            const saida = parseFloat(item.valor) < 0 ? item : par;
+            const entradaLeg = parseFloat(item.valor) < 0 ? par : item;
+            let moedaSaida = null, moedaEntrada = null;
+            if (saida && entradaLeg) {
+                const [ms] = await conn.query('SELECT id, moeda FROM contas WHERE user_id = ? AND id IN (?, ?)', [userId, saida.conta_id, entradaLeg.conta_id]);
+                moedaSaida = (ms.find((m) => m.id === saida.conta_id) || {}).moeda;
+                moedaEntrada = (ms.find((m) => m.id === entradaLeg.conta_id) || {}).moeda;
+            }
+            let entrada = valor, cot = null;
+            if (moedaSaida && moedaEntrada && moedaSaida !== moedaEntrada) {
+                if (valorEntrada > 0) entrada = valorEntrada;
+                else if (cotacao > 0) entrada = regrasCambio.calcularEntrada(valor, cotacao, moedaSaida, moedaEntrada);
+                else if (parseFloat(item.cotacao) > 0) entrada = regrasCambio.calcularEntrada(valor, parseFloat(item.cotacao), moedaSaida, moedaEntrada);
+                else { await conn.rollback(); return false; }
+                // Se o valor recebido bate com a cotacao informada (diferenca so de arredondamento), a cotacao digitada e mantida.
+                cot = cotacao > 0 && Math.abs(regrasCambio.calcularEntrada(valor, cotacao, moedaSaida, moedaEntrada) - entrada) < 0.0051 * Math.pow(10, 2 - regrasCambio.casasDaMoeda(moedaEntrada))
+                    ? cotacao : regrasCambio.calcularCotacao(valor, entrada, moedaSaida, moedaEntrada);
+            }
+
             // Valor: a perna de saida e negativa e a de entrada positiva.
             const sinal = 'CASE WHEN valor < 0 THEN -? ELSE ? END';
+            const campos = `valor = ${sinal}, cotacao = ?, updated_at = NOW(3)`;
+            const vals = [valor, entrada, cot];
             if (item.serie_id && escopo === 'esta_e_proximas') {
-                await conn.query(`UPDATE lancamentos SET valor = ${sinal}, updated_at = NOW(3) WHERE user_id = ? AND tipo = 'transferencia' AND serie_id = ? AND data_competencia >= ?`,
-                    [valor, valor, userId, item.serie_id, toLocalYMD(item.data_competencia)]);
+                await conn.query(`UPDATE lancamentos SET ${campos} WHERE user_id = ? AND tipo = 'transferencia' AND serie_id = ? AND data_competencia >= ?`,
+                    [...vals, userId, item.serie_id, toLocalYMD(item.data_competencia)]);
             } else if (item.serie_id && escopo === 'toda_serie') {
-                await conn.query(`UPDATE lancamentos SET valor = ${sinal}, updated_at = NOW(3) WHERE user_id = ? AND tipo = 'transferencia' AND serie_id = ?`,
-                    [valor, valor, userId, item.serie_id]);
+                await conn.query(`UPDATE lancamentos SET ${campos} WHERE user_id = ? AND tipo = 'transferencia' AND serie_id = ?`,
+                    [...vals, userId, item.serie_id]);
             } else {
-                await conn.query(`UPDATE lancamentos SET valor = ${sinal}, updated_at = NOW(3) WHERE user_id = ? AND id IN (${marcas})`, [valor, valor, userId, ...ids]);
+                await conn.query(`UPDATE lancamentos SET ${campos} WHERE user_id = ? AND id IN (${marcas})`, [...vals, userId, ...ids]);
             }
 
             // Data e situacao da ocorrencia editada (as duas pernas).
@@ -500,7 +530,7 @@ class Lancamento {
                 COALESCE(SUM(CASE WHEN l.tipo IN ('ajuste', 'transferencia') AND l.status = 'pago' AND l.data_competencia BETWEEN ? AND ? THEN l.valor ELSE 0 END), 0) as ajustes_periodo,
                 COALESCE(SUM(CASE WHEN l.status = 'pago' AND l.data_competencia < ? THEN l.valor ELSE 0 END), 0) as movimento_anterior
              FROM lancamentos l
-             JOIN contas c ON c.id = l.conta_id AND c.status = 'ativa'
+             JOIN contas c ON c.id = l.conta_id AND c.status = 'ativa'${filtroConta('c')}
              WHERE l.user_id = ?`,
             [
                 periodo.inicio, periodo.fim,
@@ -513,7 +543,7 @@ class Lancamento {
             ]
         );
         const [inicial] = await db.query(
-            "SELECT COALESCE(SUM(saldo_inicial), 0) AS total FROM contas WHERE user_id = ? AND status = 'ativa'",
+            "SELECT COALESCE(SUM(saldo_inicial), 0) AS total FROM contas WHERE user_id = ? AND status = 'ativa'" + filtroConta('contas'),
             [userId]
         );
 
@@ -546,7 +576,7 @@ class Lancamento {
                 COALESCE(SUM(CASE WHEN l.tipo = 'despesa' AND l.recorrente = 1 THEN ABS(l.valor) ELSE 0 END), 0) AS despesa_fixa,
                 COALESCE(SUM(CASE WHEN l.tipo = 'despesa' AND l.recorrente = 0 THEN ABS(l.valor) ELSE 0 END), 0) AS despesa_variavel
              FROM lancamentos l
-             JOIN contas c ON c.id = l.conta_id AND c.status = 'ativa'
+             JOIN contas c ON c.id = l.conta_id AND c.status = 'ativa'${filtroConta('c')}
              WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ?`,
             [userId, periodo.inicio, periodo.fim]
         );
@@ -571,7 +601,7 @@ class Lancamento {
     // Pendencias vencidas ou que vencem hoje (contas ativas), mais antigas primeiro.
     static async pendentesUrgentes(userId, hojeYMD, limite = 5) {
         const base = `FROM lancamentos l
-             JOIN contas cb ON cb.id = l.conta_id AND cb.status = 'ativa'
+             JOIN contas cb ON cb.id = l.conta_id AND cb.status = 'ativa'${filtroConta('cb')}
              WHERE l.user_id = ? AND l.status = 'pendente' AND l.data_competencia <= ?
                AND (l.tipo IN ('receita', 'despesa') OR (l.tipo = 'transferencia' AND l.transferencia_par_id IS NOT NULL AND l.valor < 0))`;
         const [rows] = await db.query(

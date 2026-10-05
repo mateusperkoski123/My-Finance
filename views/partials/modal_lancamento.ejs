@@ -86,7 +86,7 @@ const _salvar = _novo ? (_rec ? t('painel.salvar_receita') : t('painel.salvar_de
                 </label>
                 <select class="input" id="<%= _p %>-conta" name="conta_id" required>
                     <% (contas || []).forEach(c => { %>
-                        <option value="<%= c.id %>"><%= c.nome %></option>
+                        <option value="<%= c.id %>" data-moeda="<%= c.moeda %>"><%= c.nome %><%= (contas || []).some((x) => x.moeda !== c.moeda) ? ' (' + c.moeda + ')' : '' %></option>
                     <% }) %>
                 </select>
             </div>

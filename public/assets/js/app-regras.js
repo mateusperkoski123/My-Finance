@@ -132,7 +132,64 @@
         return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
     }
 
+    // ---- Cambio entre moedas (Guarani, Real, Dolar, Euro, Peso argentino) ----
+    // A cotacao e sempre "quantas unidades da moeda mais fraca valem 1 unidade da mais forte" (Gs. por 1 R$, Gs. por 1 US$,
+    // R$ por 1 US$...). Ordem das moedas, da mais forte para a mais fraca:
+    const FORCA_MOEDAS = ['EUR', 'USD', 'BRL', 'ARS', 'PYG'];
+    const CASAS_MOEDA = { PYG: 0 };
+
+    function casasDaMoeda(cod) { return CASAS_MOEDA[cod] === undefined ? 2 : CASAS_MOEDA[cod]; }
+
+    function arredondarMoeda(valor, cod) {
+        const f = Math.pow(10, casasDaMoeda(cod));
+        return Math.round((Number(valor) + Number.EPSILON) * f) / f;
+    }
+
+    // Qual e a moeda base (1 unidade) e qual a cotada no par origem/destino.
+    function parCambio(origem, destino) {
+        const iO = FORCA_MOEDAS.indexOf(origem), iD = FORCA_MOEDAS.indexOf(destino);
+        const baseEOrigem = (iO === -1 ? 99 : iO) <= (iD === -1 ? 99 : iD);
+        return baseEOrigem ? { base: origem, cotada: destino, origemEBase: true } : { base: destino, cotada: origem, origemEBase: false };
+    }
+
+    // Valor que entra na conta de destino: guarani -> real/dolar divide pela cotacao; real/dolar -> guarani multiplica.
+    function calcularEntrada(valorSaida, cotacao, origem, destino) {
+        const v = Number(valorSaida), c = Number(cotacao);
+        if (origem === destino) return arredondarMoeda(v, destino);
+        if (!(v > 0) || !(c > 0)) return 0;
+        const par = parCambio(origem, destino);
+        return arredondarMoeda(par.origemEBase ? v * c : v / c, destino);
+    }
+
+    // Cotacao implicita entre o que saiu e o que entrou (o banco arredonda: quem manda e o valor recebido).
+    function calcularCotacao(valorSaida, valorEntrada, origem, destino) {
+        const s = Number(valorSaida), e = Number(valorEntrada);
+        if (origem === destino || !(s > 0) || !(e > 0)) return 0;
+        const par = parCambio(origem, destino);
+        const c = par.origemEBase ? e / s : s / e;
+        return Math.round(c * 1000000) / 1000000;
+    }
+
+    // Cotacao digitada. Pares com guarani tem cotacao grande ("1.190" = 1190); os demais usam ponto ou virgula como decimal.
+    function lerCotacao(texto, origem, destino) {
+        if (typeof texto === 'number') return texto > 0 && isFinite(texto) ? texto : 0;
+        let s = String(texto == null ? '' : texto).replace(/[^0-9.,]/g, '');
+        if (!s) return 0;
+        const grande = origem === 'PYG' || destino === 'PYG';
+        if (grande) return parseMoeda(s) || 0;
+        const ultimo = Math.max(s.lastIndexOf(','), s.lastIndexOf('.'));
+        if (ultimo === -1) return parseFloat(s) || 0;
+        return parseFloat(s.slice(0, ultimo).replace(/[.,]/g, '') + '.' + s.slice(ultimo + 1)) || 0;
+    }
+
     exports.parseMoeda = parseMoeda;
+    exports.casasDaMoeda = casasDaMoeda;
+    exports.arredondarMoeda = arredondarMoeda;
+    exports.parCambio = parCambio;
+    exports.calcularEntrada = calcularEntrada;
+    exports.calcularCotacao = calcularCotacao;
+    exports.lerCotacao = lerCotacao;
+    exports.FORCA_MOEDAS = FORCA_MOEDAS;
     exports.hojeYMD = hojeYMD;
     exports.calcularSaldoConta = calcularSaldoConta;
     exports.calcularResumoMes = calcularResumoMes;

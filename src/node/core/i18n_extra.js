@@ -366,6 +366,7 @@ module.exports = {
     'off.descartar': ["Descartar", "Descartar", "Discard"],
     'off.editar': ["Editar", "Editar", "Edit"],
     'off.plano_sem_offline': ["Registrar sem internet faz parte do Plano Premium e do Plano Pro. Conecte-se para registrar.", "Registrar sin internet forma parte del Plan Premium y del Plan Pro. Conectate para registrar.", "Recording without internet is part of the Premium and Pro plans. Connect to record."],
+    'off.erro_cotacao_obrigatoria': ["informe a cotação ou o valor que entra (contas em moedas diferentes)", "informá la cotización o el valor que entra (cuentas en monedas distintas)", "enter the exchange rate or the amount received (accounts in different currencies)"],
     'off.erro_plano_sem_offline': ["o plano atual não inclui registro sem internet (Premium e Pro)", "el plan actual no incluye registro sin internet (Premium y Pro)", "your current plan does not include recording without internet (Premium and Pro)"],
     'off.editado': ["Alteração guardada. Será enviada quando a internet voltar.", "Cambio guardado. Se enviará cuando vuelva internet.", "Change saved. It will be sent when the internet is back."],
     'off.nao_editavel': ["Este item já está sendo enviado e não pode mais ser editado.", "Este ítem ya se está enviando y ya no se puede editar.", "This item is already being sent and can no longer be edited."],

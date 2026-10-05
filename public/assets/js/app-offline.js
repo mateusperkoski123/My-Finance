@@ -67,6 +67,14 @@
         return { repetir: true, quantidade_repeticoes: n, periodicidade: ['mensal', 'trimestral', 'semestral', 'anual'].includes(per) ? per : 'mensal' };
     }
 
+    // Moeda (data-moeda da opcao escolhida) de um select do formulario.
+    function moedaSelecionada(form, seletor) {
+        const sel = form.querySelector(seletor);
+        const op = sel && sel.options[sel.selectedIndex];
+        return op ? op.getAttribute('data-moeda') : null;
+    }
+    const moedaDaConta = (form, nome) => moedaSelecionada(form, 'select[name="' + nome + '"]');
+
     function montar(tipo, form) {
         const fd = new FormData(form);
         const R = window.AppRegras;
@@ -77,6 +85,7 @@
             const categoria = fd.get('subcategoria_id') || fd.get('categoria_id');
             const conta = fd.get('conta_id');
             if (!serie || !descricao || !(valor > 0) || !categoria || !conta) return { erro: 'invalido' };
+            const moedaConta = moedaDaConta(form, 'conta_id');
             const pago = fd.get('foi_pago') === '1' || fd.get('foi_recebida') === '1' || fd.get('status') === 'pago';
             const dados = Object.assign({
                 tipo: (form.dataset.gfTipo || fd.get('tipo')) === 'receita' ? 'receita' : 'despesa', conta_id: Number(conta), categoria_id: Number(categoria), descricao, valor,
@@ -86,7 +95,7 @@
             if (pago) dados.data_pagamento = form.elements.data_pagamento ? dataDe(form, 'data_pagamento') : dados.data_competencia;
             const obs = String(fd.get('observacoes') || '').trim();
             if (obs) dados.observacoes = obs;
-            return { acao: 'create', dados, resumo: { titulo: descricao, valor: dados.tipo === 'despesa' ? -valor : valor, tipo: dados.tipo, serie: serie.e_fixo ? 'fixo' : (serie.repetir ? serie.quantidade_repeticoes : null) } };
+            return { acao: 'create', dados, resumo: { titulo: descricao, valor: dados.tipo === 'despesa' ? -valor : valor, moeda: moedaConta, tipo: dados.tipo, serie: serie.e_fixo ? 'fixo' : (serie.repetir ? serie.quantidade_repeticoes : null) } };
         }
         if (tipo === 'pagar') {
             const id = Number((form.getAttribute('action').match(/\/lancamentos\/(\d+)\//) || [])[1]);
@@ -104,12 +113,20 @@
             const descricao = String(fd.get('descricao') || '').trim();
             const dados = { conta_origem_id: Number(origem), conta_destino_id: Number(destino), valor, data: dataDe(form, 'data') };
             if (descricao) dados.descricao = descricao;
+            // Moedas diferentes: o valor que entra e/ou a cotacao vao junto (o servidor calcula o que faltar).
+            const mO = moedaSelecionada(form, 'select[name="origem_id"]'), mD = moedaSelecionada(form, 'select[name="destino_id"]');
+            if (mO && mD && mO !== mD) {
+                const ent = R.parseMoeda(fd.get('valor_entrada')); const cot = R.lerCotacao(fd.get('cotacao'), mO, mD);
+                if (!(ent > 0) && !(cot > 0)) return { erro: 'invalido' };
+                if (ent > 0) dados.valor_entrada = ent;
+                if (cot > 0) dados.cotacao = cot;
+            }
             if (tipo === 'agendar') {
                 const serie = serieDe(fd);
                 if (!serie) return { erro: 'invalido' };
                 Object.assign(dados, serie);
             }
-            return { acao: tipo === 'agendar' ? 'agendar_transferencia' : 'transferir', dados, resumo: { titulo: descricao || tr(tipo === 'agendar' ? 'tipo_agendar' : 'tipo_transferencia'), valor: -valor, tipo: tipo === 'agendar' ? 'agendar' : 'transferencia' } };
+            return { acao: tipo === 'agendar' ? 'agendar_transferencia' : 'transferir', dados, resumo: { titulo: descricao || tr(tipo === 'agendar' ? 'tipo_agendar' : 'tipo_transferencia'), valor: -valor, moeda: moedaSelecionada(form, 'select[name="origem_id"]') || undefined, tipo: tipo === 'agendar' ? 'agendar' : 'transferencia' } };
         }
         // categoria
         const nome = String(fd.get('nome') || '').trim();
@@ -256,10 +273,11 @@
     });
 
     // ---------- Fila: contador e tela "Aguardando envio" ----------
-    function formatarValor(v) {
+    function formatarValor(v, moedaDoValor) {
         const n = Math.abs(Number(v));
-        const simbolo = { PYG: 'Gs.', BRL: 'R$', USD: 'US$' }[cfg.moeda] || cfg.moeda || '';
-        const casas = cfg.moeda === 'PYG' ? 0 : 2;
+        const m = moedaDoValor || cfg.moeda;
+        const simbolo = { PYG: 'Gs.', BRL: 'R$', USD: 'US$', EUR: '€', ARS: 'AR$' }[m] || m || '';
+        const casas = m === 'PYG' ? 0 : 2;
         const t = n.toLocaleString(cfg.lang || undefined, { minimumFractionDigits: casas, maximumFractionDigits: casas });
         return (v < 0 ? '- ' : '') + simbolo + ' ' + t;
     }
@@ -307,7 +325,7 @@
             const info = document.createElement('div'); info.className = 'fila-item__info';
             const tit = document.createElement('strong'); tit.textContent = (item.resumo && item.resumo.titulo) || rotuloTipo(item);
             const sub = document.createElement('span'); sub.className = 'muted';
-            sub.textContent = rotuloTipo(item) + (item.resumo && item.resumo.valor != null ? ' · ' + formatarValor(item.resumo.valor) : '') + ' · ' + rotuloEstado(item);
+            sub.textContent = rotuloTipo(item) + (item.resumo && item.resumo.valor != null ? ' · ' + formatarValor(item.resumo.valor, item.resumo.moeda) : '') + ' · ' + rotuloEstado(item);
             info.appendChild(tit); info.appendChild(sub);
             li.appendChild(info);
             if (item.status !== 'syncing') {
@@ -336,7 +354,7 @@
                 envios.slice(0, 8).forEach((x) => {
                     const l = document.createElement('div'); l.className = 'fila-historico__item' + (x.estado === 'ok' ? '' : ' fila-item--erro');
                     const hora = new Date(x.em).toLocaleString(cfg.lang || undefined, { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-                    l.textContent = (x.estado === 'ok' ? '✓ ' : '✗ ') + x.titulo + (x.valor != null ? ' · ' + formatarValor(x.valor) : '') + ' · ' + hora + (x.estado === 'ok' ? (x.id_servidor ? ' · #' + x.id_servidor : '') : ' · ' + tr('erro_' + x.erro, tr('erro_generico')));
+                    l.textContent = (x.estado === 'ok' ? '✓ ' : '✗ ') + x.titulo + (x.valor != null ? ' · ' + formatarValor(x.valor, x.moeda) : '') + ' · ' + hora + (x.estado === 'ok' ? (x.id_servidor ? ' · #' + x.id_servidor : '') : ' · ' + tr('erro_' + x.erro, tr('erro_generico')));
                     hist.appendChild(l);
                 });
             }

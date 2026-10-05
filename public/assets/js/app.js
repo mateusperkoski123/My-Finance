@@ -316,7 +316,17 @@ document.addEventListener('DOMContentLoaded', function () {
   // window.gfMoeda é embutido em views/layout.ejs com a moeda do usuário
   // (símbolo, casas decimais e separadores). O servidor (parseMoeda, em
   // src/node/core/helpers.js) lê de volta qualquer valor formatado assim.
-  function gfCfgMoeda() {
+  // Formato de cada moeda (um campo de valor pode estar numa moeda diferente da tela, ex.: conta em dolar).
+  var GF_CFG_MOEDAS = {
+    PYG: { simbolo: 'Gs.', decimais: 0, milhar: '.', decimal: ',' },
+    BRL: { simbolo: 'R$', decimais: 2, milhar: '.', decimal: ',' },
+    USD: { simbolo: '$', decimais: 2, milhar: ',', decimal: '.' },
+    EUR: { simbolo: '€', decimais: 2, milhar: '.', decimal: ',' },
+    ARS: { simbolo: '$', decimais: 2, milhar: '.', decimal: ',' }
+  };
+
+  function gfCfgMoeda(cod) {
+    if (cod && GF_CFG_MOEDAS[cod]) return GF_CFG_MOEDAS[cod];
     var rawCfg = window.gfMoeda || {};
     return {
       simbolo: rawCfg.simbolo !== undefined ? rawCfg.simbolo : '',
@@ -325,6 +335,9 @@ document.addEventListener('DOMContentLoaded', function () {
       decimal: rawCfg.decimal || rawCfg.separadorDecimal || ','
     };
   }
+
+  // Moeda do campo (atributo data-moeda-cod); sem ele vale a da tela.
+  function gfCfgDoCampo(input) { return gfCfgMoeda(input && input.getAttribute ? input.getAttribute('data-moeda-cod') : null); }
 
   function gfSoDigitos(texto) { return String(texto).replace(/[^0-9]/g, ''); }
 
@@ -343,8 +356,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // Formata um valor para exibir no campo.
   //  - número (ou texto no formato de número, "1500.5"): valor pronto, sai com todas as casas ("R$ 1.500,50");
   //  - texto no formato da moeda do usuário ("R$ 1.500,5"): o separador decimal da moeda divide, os de milhar são ignorados.
-  function gfFormatarValorMoeda(bruto) {
-    var cfg = gfCfgMoeda();
+  function gfFormatarValorMoeda(bruto, cod) {
+    var cfg = gfCfgMoeda(cod);
     if (bruto === null || bruto === undefined || bruto === '') return '';
 
     if (typeof bruto === 'string' && /^\s*-?\d+\.\d{1,2}\s*$/.test(bruto)) bruto = Number(bruto);
@@ -362,6 +375,26 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   window.gfFormatarValorMoeda = gfFormatarValorMoeda;
+
+  // Troca a moeda de um campo de valor (ex.: ao escolher outra conta): reescreve o numero no formato da nova moeda.
+  window.gfDefinirMoedaCampo = function (input, cod) {
+    var R = window.AppRegras;
+    var numero = R && input.value ? R.parseMoeda(input.value) : 0;
+    if (cod) input.setAttribute('data-moeda-cod', cod); else input.removeAttribute('data-moeda-cod');
+    var cfg = gfCfgMoeda(cod);
+    input.placeholder = cfg.decimais === 0 ? '0' : '0' + cfg.decimal + '00';
+    input.value = numero ? gfFormatarValorMoeda(numero, cod) : '';
+    input._gfAntes = input.value;
+  };
+
+  // Cotacao para mostrar no campo: sem zeros sobrando, com os separadores da tela.
+  window.gfFormatarCotacao = function (n) {
+    if (!isFinite(n) || n <= 0) return '';
+    var cfg = gfCfgMoeda();
+    var partes = n.toFixed(n >= 100 ? 2 : 4).split('.');
+    var dec = partes[1].replace(/0+$/, '');
+    return partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, cfg.milhar) + (dec ? cfg.decimal + dec : '');
+  };
 
   // Valor colado de outro lugar ("1.500,50", "1,500.50", "1500.5"): o separador que aparece por último é o decimal;
   // um separador sozinho seguido de exatamente 3 dígitos é de milhar. Mesma leitura do servidor (parseMoeda).
@@ -406,7 +439,8 @@ document.addEventListener('DOMContentLoaded', function () {
   // Reformata o campo depois de uma edição do usuário. Compara com o texto anterior para saber o que foi digitado:
   // vírgula ou ponto digitados viram o separador decimal da moeda (o teclado do celular nem sempre tem os dois).
   function gfAoEditarValor(input) {
-    var cfg = gfCfgMoeda();
+    var cfg = gfCfgDoCampo(input);
+    var codCampo = input.getAttribute('data-moeda-cod');
     var antes = input._gfAntes || '';
     var agora = input.value;
     var cursor = input.selectionStart == null ? agora.length : input.selectionStart;
@@ -436,11 +470,11 @@ document.addEventListener('DOMContentLoaded', function () {
     } else if (inserido.length > 1 && /[.,]/.test(inserido)) {
       // Valor colado já formatado.
       var colado = gfLerValorColado(agora);
-      novo = colado === null ? '' : gfFormatarValorMoeda(colado);
+      novo = colado === null ? '' : gfFormatarValorMoeda(colado, codCampo);
       contam = novo.length;
     } else {
       // Dígitos digitados ou algo apagado.
-      novo = gfFormatarValorMoeda(agora);
+      novo = gfFormatarValorMoeda(agora, codCampo);
       var antesDoCursor = agora.slice(0, cursor);
       contam = gfContam(antesDoCursor, cfg);
       // zeros à esquerda somem ao reformatar ("05" vira "5"): não contam para a posição
@@ -468,7 +502,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Ao sair do campo, completa os centavos ("R$ 12,5" vira "R$ 12,50").
   function gfCompletarCentavos(input) {
-    var cfg = gfCfgMoeda();
+    var cfg = gfCfgDoCampo(input);
     if (cfg.decimais === 0 || !input.value) return;
     var pos = input.value.lastIndexOf(cfg.decimal);
     if (pos === -1) return;
@@ -482,17 +516,34 @@ document.addEventListener('DOMContentLoaded', function () {
     root.querySelectorAll('[data-money]').forEach(function (input) {
       if (input.getAttribute('data-gf-bound') === '1') return;
       input.setAttribute('data-gf-bound', '1');
-      var cfg = gfCfgMoeda();
+      var cfg = gfCfgDoCampo(input);
       // Teclado numérico no celular (o saldo inicial pode ser negativo, então fica com o teclado completo).
       if (!input.hasAttribute('inputmode') && input.name !== 'saldo_inicial') input.setAttribute('inputmode', cfg.decimais === 0 ? 'numeric' : 'decimal');
       input.setAttribute('autocomplete', 'off');
       input.placeholder = cfg.decimais === 0 ? '0' : '0' + cfg.decimal + '00';
-      input.value = gfFormatarValorMoeda(input.value); // formata o valor inicial (ex.: modais de edição)
+      input.value = gfFormatarValorMoeda(input.value, input.getAttribute('data-moeda-cod')); // formata o valor inicial (ex.: modais de edição)
       input._gfAntes = input.value;
       // O valor pode ter sido trocado por código (modal de edição, limpar formulário): o ponto de partida é o que está no campo ao focar.
       input.addEventListener('focus', function () { input._gfAntes = input.value; gfValidarValor(input); });
       input.addEventListener('input', function () { gfAoEditarValor(input); });
       input.addEventListener('blur', function () { gfCompletarCentavos(input); gfValidarValor(input); });
+    });
+  });
+
+  // Formularios com valor e conta: o campo de valor fala a moeda da conta escolhida (conta em dolar, em real...).
+  gfBinders.push(function (root) {
+    root.querySelectorAll('form').forEach(function (form) {
+      var sel = form.querySelector('select[name="conta_id"]');
+      var valor = form.querySelector('input[name="valor"][data-money]');
+      if (!sel || !valor || sel.getAttribute('data-gf-moeda') === '1') return;
+      sel.setAttribute('data-gf-moeda', '1');
+      var aplicar = function () {
+        var op = sel.options[sel.selectedIndex];
+        var cod = op ? op.getAttribute('data-moeda') : null;
+        if (cod && cod !== valor.getAttribute('data-moeda-cod')) window.gfDefinirMoedaCampo(valor, cod);
+      };
+      sel.addEventListener('change', aplicar);
+      aplicar();
     });
   });
 
@@ -661,7 +712,13 @@ document.addEventListener('DOMContentLoaded', function () {
     form.action = '/lancamentos/' + d.id + '/atualizar';
     form.elements.descricao.value = d.descricao || '';
     var valor = form.elements.valor;
-    valor.value = window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(Number(d.valor) || 0) : String(d.valor);
+    var selConta = form.elements.conta_id;
+    selConta.value = d.conta_id;
+    disparar(selConta, 'change'); // o campo de valor passa para a moeda da conta
+    var opConta = selConta.options[selConta.selectedIndex];
+    var codConta = opConta ? opConta.getAttribute('data-moeda') : null;
+    valor.value = window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(Number(d.valor) || 0, codConta) : String(d.valor);
+    valor._gfAntes = valor.value;
     valor.setCustomValidity('');
 
     // Categoria/subcategoria: o lancamento guarda so um id (da subcategoria quando existe); acha o pai na arvore.
@@ -715,8 +772,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
     form.action = '/lancamentos/' + d.id + '/atualizar-transferencia';
     modal.querySelector('[data-transf-descricao]').textContent = d.descricao || '';
-    form.elements.valor.value = window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(Number(d.valor) || 0) : String(d.valor);
-    form.elements.valor.setCustomValidity('');
+    // Moedas diferentes: a perna negativa e a que sai; o formulario mostra o valor que sai e o que entra.
+    var cruzada = !!(d.par_moeda && d.moeda && d.par_moeda !== d.moeda);
+    var saiu = Number(d.valor_assinado) < 0;
+    var simb = { PYG: 'Gs.', BRL: 'R$', USD: 'US$', EUR: '€', ARS: 'AR$' };
+    var valSaida = cruzada && !saiu ? Math.abs(Number(d.par_valor)) : Number(d.valor);
+    var valEntrada = cruzada ? (saiu ? Math.abs(Number(d.par_valor)) : Number(d.valor)) : 0;
+    var moedaSaida = cruzada ? (saiu ? d.moeda : d.par_moeda) : (d.moeda || null);
+    var moedaEntrada = cruzada ? (saiu ? d.par_moeda : d.moeda) : null;
+    var campoValor = form.elements.valor, campoEntrada = form.elements.valor_entrada;
+    var grupoEntrada = form.querySelector('[data-transf-entrada]');
+    if (moedaSaida) campoValor.setAttribute('data-moeda-cod', moedaSaida); else campoValor.removeAttribute('data-moeda-cod');
+    campoValor.value = window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(valSaida || 0, moedaSaida) : String(valSaida);
+    campoValor._gfAntes = campoValor.value;
+    campoValor.setCustomValidity('');
+    var rotuloValor = form.querySelector('[data-transf-valor-rotulo]');
+    if (rotuloValor) rotuloValor.textContent = cruzada ? rotuloValor.getAttribute('data-t-sai').replace('{moeda}', simb[moedaSaida] || moedaSaida) : rotuloValor.getAttribute('data-t-valor');
+    if (grupoEntrada && campoEntrada) {
+      grupoEntrada.hidden = !cruzada;
+      campoEntrada.required = cruzada;
+      if (cruzada) {
+        campoEntrada.setAttribute('data-moeda-cod', moedaEntrada);
+        campoEntrada.value = window.gfFormatarValorMoeda(valEntrada || 0, moedaEntrada);
+        campoEntrada._gfAntes = campoEntrada.value;
+        grupoEntrada.querySelector('label').textContent = grupoEntrada.getAttribute('data-t-entra').replace('{moeda}', simb[moedaEntrada] || moedaEntrada);
+      } else {
+        campoEntrada.value = '';
+      }
+    }
     form.elements.data_competencia.value = d.data_competencia || '';
     var status = form.elements.status;
     status.checked = d.status === 'pago';

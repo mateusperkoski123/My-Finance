@@ -6,7 +6,7 @@ const db = require('../config/db');
 const User = require('../models/User');
 const Conta = require('../models/Conta');
 const Lancamento = require('../models/Lancamento');
-const { normalizarPeriodicidade } = require('../core/helpers');
+const { normalizarPeriodicidade, calcularCambio } = require('../core/helpers');
 const Categoria = require('../models/Categoria');
 const Dispositivo = require('../models/Dispositivo');
 const SyncExclusao = require('../models/SyncExclusao');
@@ -80,7 +80,7 @@ const CAMPOS_LANC = `id, client_id, conta_id, categoria_id, tipo, descricao, val
 async function contaDoUsuario(userId, v) {
     const ref = referencia(v);
     if (!ref) throw new ErroOp('conta_obrigatoria');
-    const c = await achar('contas', userId, ref, 'id, nome, status');
+    const c = await achar('contas', userId, ref, 'id, nome, status, moeda');
     if (!c || c.status !== 'ativa') throw new ErroOp('conta_invalida');
     return c;
 }
@@ -185,10 +185,14 @@ const OPERACOES = {
             const ja = await achar('lancamentos', userId, { client_id: clientId }, 'id');
             if (ja) return { id_servidor: ja.id, updated_at: await tsLinha('lancamentos', ja.id) };
         }
+        const valorSaida = valorPositivo(dados.valor);
+        const cambio = calcularCambio({ valor_entrada: dados.valor_entrada, cotacao: dados.cotacao }, valorSaida, origem, destino);
+        if (cambio.erro) throw new ErroOp('cotacao_obrigatoria');
         await Lancamento.criarTransferencia({
-            userId, origem, destino, valor: valorPositivo(dados.valor),
+            userId, origem, destino, valor: valorSaida,
             data: dataYMD(dados.data, { obrigatoria: true }),
             descricao: texto(dados.descricao, 100, { campo: 'descricao' }) || '',
+            valorEntrada: cambio.valorEntrada, cotacao: cambio.cotacao,
             clientId
         });
         const perna = clientId ? await achar('lancamentos', userId, { client_id: clientId }, 'id') : null;
@@ -206,10 +210,14 @@ const OPERACOES = {
             const ja = await achar('lancamentos', userId, { client_id: clientId }, 'id');
             if (ja) return { id_servidor: ja.id, updated_at: await tsLinha('lancamentos', ja.id) };
         }
+        const valorSaida = valorPositivo(dados.valor);
+        const cambio = calcularCambio({ valor_entrada: dados.valor_entrada, cotacao: dados.cotacao }, valorSaida, origem, destino);
+        if (cambio.erro) throw new ErroOp('cotacao_obrigatoria');
         await Lancamento.criarTransferencia({
-            userId, origem, destino, valor: valorPositivo(dados.valor), data: dataYMD(dados.data, { obrigatoria: true }),
+            userId, origem, destino, valor: valorSaida, data: dataYMD(dados.data, { obrigatoria: true }),
             descricao: texto(dados.descricao, 100, { campo: 'descricao' }) || '',
-            agendada: true, eFixo: serie.eFixo, quantidade: serie.eFixo ? 24 : serie.quantidade, periodicidade: serie.periodicidade, clientId
+            agendada: true, eFixo: serie.eFixo, quantidade: serie.eFixo ? 24 : serie.quantidade, periodicidade: serie.periodicidade,
+            valorEntrada: cambio.valorEntrada, cotacao: cambio.cotacao, clientId
         });
         const perna = clientId ? await achar('lancamentos', userId, { client_id: clientId }, 'id') : null;
         return { id_servidor: perna ? perna.id : null, updated_at: perna ? await tsLinha('lancamentos', perna.id) : null };
@@ -335,7 +343,7 @@ class ApiAppController {
                 return { rows, cheia, proximo };
             };
 
-            const contas = await pagina('contas', 'id, client_id, nome, tipo, cor, saldo_inicial, conta_padrao, status', 'c');
+            const contas = await pagina('contas', 'id, client_id, nome, moeda, tipo, cor, saldo_inicial, conta_padrao, status', 'c');
             const categorias = await pagina('categorias', 'id, client_id, parent_id, nome, cor, tipo, limite_gasto, sistema, chave_sistema, status', 'k');
             const lanc = await pagina('lancamentos',
                 `id, client_id, conta_id, categoria_id, tipo, descricao, valor, status, recorrente, transferencia_par_id, observacoes, serie_id,

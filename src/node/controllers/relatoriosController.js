@@ -2,6 +2,7 @@ const db = require('../config/db');
 const Lancamento = require('../models/Lancamento');
 const { toLocalYMD, hojeLocal, dataValida, mesAnoValidos } = require('../core/helpers');
 const { CONTA_ATIVA } = require('../models/Lancamento');
+const { filtroConta, moedaEmFoco, moedaBase } = require('../core/moedaFoco');
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 
@@ -199,6 +200,8 @@ async function carregarEstado(userId, periodo, periodoAnt) {
          GROUP BY l.tipo, p.id, c.id, p.nome, c.nome, p.cor, c.cor, p.limite_gasto, c.limite_gasto`,
         [inicio, fim, inicio, fim, inicio, fim, periodoAnt.inicio, periodoAnt.fim, userId, inicio, fim, periodoAnt.inicio, periodoAnt.fim]
     );
+    // O limite de gasto da categoria e na moeda principal do usuario: noutra moeda nao ha com o que comparar.
+    if (moedaEmFoco() && moedaBase() && moedaEmFoco() !== moedaBase()) linhas.forEach((l) => { l.cat_limite = null; l.sub_limite = null; });
     return { estado: montarEstado(linhas, orcamentoMult), orcamentoMult };
 }
 
@@ -215,7 +218,7 @@ async function carregarPorConta(userId, periodo) {
                 COALESCE(SUM(CASE WHEN l.status = 'pendente' AND l.tipo = 'despesa' AND l.data_competencia BETWEEN ? AND ? THEN ABS(l.valor) END), 0) AS a_pagar
          FROM contas c
          LEFT JOIN lancamentos l ON l.conta_id = c.id AND l.user_id = c.user_id
-         WHERE c.user_id = ? AND c.status = 'ativa'
+         WHERE c.user_id = ? AND c.status = 'ativa'${filtroConta('c')}
          GROUP BY c.id, c.nome, c.cor, c.saldo_inicial
          ORDER BY c.nome ASC`,
         [inicio, inicio, fim, inicio, fim, inicio, fim, inicio, fim, inicio, fim, userId]
@@ -396,7 +399,7 @@ const relatoriosController = {
             // Evolucao do saldo dia a dia (saldo anterior + movimentos pagos acumulados; contas ativas)
             const [movs] = await db.query(
                 `SELECT l.data_competencia AS dia, SUM(l.valor) AS total
-                 FROM lancamentos l JOIN contas c ON c.id = l.conta_id AND c.status = 'ativa'
+                 FROM lancamentos l JOIN contas c ON c.id = l.conta_id AND c.status = 'ativa'${filtroConta('c')}
                  WHERE l.user_id = ? AND l.status = 'pago' AND l.data_competencia BETWEEN ? AND ?
                  GROUP BY l.data_competencia`,
                 [userId, inicio, fim]
@@ -513,7 +516,7 @@ const relatoriosController = {
         linhas.push(['saldo_final_projetado', '', '', '', '', n(resumo.saldo_previsto), '', '', '', '', ''].join(';'));
         linhas.push(['saldo_realizado', '', '', '', '', n(resumo.saldo_disponivel), '', '', '', '', ''].join(';'));
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-        res.setHeader('Content-Disposition', `attachment; filename="estado-financeiro_${periodo.inicio}_a_${periodo.fim}.csv"`);
+        res.setHeader('Content-Disposition', `attachment; filename="estado-financeiro_${moedaEmFoco() ? moedaEmFoco() + '_' : ''}${periodo.inicio}_a_${periodo.fim}.csv"`);
         res.send(String.fromCharCode(0xFEFF) + linhas.join(String.fromCharCode(13, 10)) + String.fromCharCode(13, 10));
     },
 
@@ -559,7 +562,7 @@ relatoriosController.exportar = async (req, res) => {
     }
     const [rows] = await db.query(
         `SELECT l.data_competencia, l.tipo, l.descricao, l.valor, l.status, l.data_pagamento,
-                COALESCE(p.nome, c.nome) AS categoria, IF(p.id IS NOT NULL, c.nome, NULL) AS subcategoria, cb.nome AS conta
+                COALESCE(p.nome, c.nome) AS categoria, IF(p.id IS NOT NULL, c.nome, NULL) AS subcategoria, cb.nome AS conta, cb.moeda AS moeda
          FROM lancamentos l
          LEFT JOIN categorias c ON l.categoria_id = c.id
          LEFT JOIN categorias p ON c.parent_id = p.id
@@ -574,10 +577,10 @@ relatoriosController.exportar = async (req, res) => {
         const seguro = /^[=+\-@]/.test(t) && isNaN(Number(t)) ? "'" + t : t;
         return '"' + seguro.replace(/"/g, '""') + '"';
     };
-    const linhas = [['Data', 'Tipo', 'Descricao', 'Categoria', 'Subcategoria', 'Conta', 'Valor', 'Status', 'Data pagamento'].join(';')];
+    const linhas = [['Data', 'Tipo', 'Descricao', 'Categoria', 'Subcategoria', 'Conta', 'Valor', 'Status', 'Data pagamento', 'Moeda'].join(';')];
     rows.forEach(r => linhas.push([
         toLocalYMD(r.data_competencia), r.tipo, esc(r.descricao), esc(r.categoria), esc(r.subcategoria), esc(r.conta),
-        String(parseFloat(r.valor)).replace('.', ','), r.status, r.data_pagamento ? toLocalYMD(r.data_pagamento) : ''
+        String(parseFloat(r.valor)).replace('.', ','), r.status, r.data_pagamento ? toLocalYMD(r.data_pagamento) : '', r.moeda || ''
     ].join(';')));
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="lancamentos_${inicio}_a_${fim}.csv"`);

@@ -91,7 +91,7 @@ class Lembrete {
     // Pendencias com vencimento na data: despesas (a pagar), receitas (a receber) e transferencias programadas.
     static async pendentesDoDia(userId, dataYMD) {
         const [rows] = await db.query(
-            `SELECT l.id, l.tipo, l.descricao, l.valor, ABS(l.valor) AS valor_abs, l.data_competencia, cb.nome AS conta_nome
+            `SELECT l.id, l.tipo, l.descricao, l.valor, ABS(l.valor) AS valor_abs, l.data_competencia, cb.nome AS conta_nome, cb.moeda AS conta_moeda
              ${this._pendentes} AND l.data_competencia = ?
              ORDER BY ABS(l.valor) DESC, l.id ASC`,
             [userId, dataYMD]
@@ -102,7 +102,7 @@ class Lembrete {
     // Despesas pendentes que venceram antes de hoje, as mais antigas primeiro.
     static async despesasAtrasadas(userId, hojeYMD) {
         const [rows] = await db.query(
-            `SELECT l.id, l.tipo, l.descricao, l.valor, ABS(l.valor) AS valor_abs, l.data_competencia, cb.nome AS conta_nome
+            `SELECT l.id, l.tipo, l.descricao, l.valor, ABS(l.valor) AS valor_abs, l.data_competencia, cb.nome AS conta_nome, cb.moeda AS conta_moeda
              ${this._pendentes} AND l.tipo = 'despesa' AND l.data_competencia < ?
              ORDER BY l.data_competencia ASC, l.id ASC`,
             [userId, hojeYMD]
