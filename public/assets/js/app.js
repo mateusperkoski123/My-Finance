@@ -248,6 +248,46 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // Explicação dinâmica do "Repetir": o número é o total de transações (contando a de agora), então o texto mostra
+  // quantas serão criadas, a cada quanto tempo e até quando, conforme o número e a periodicidade escolhidos.
+  gfBinders.push(function (root) {
+    root.querySelectorAll('[data-gf-repetir-explica]').forEach(function (el) {
+      if (el.getAttribute('data-gf-bound') === '1') return;
+      var form = el.closest('form');
+      var txt = null;
+      try { txt = JSON.parse(el.getAttribute('data-txt')); } catch (e) { /* sem texto: nao explica */ }
+      if (!form || !txt) return;
+      el.setAttribute('data-gf-bound', '1');
+      var passos = { mensal: 1, trimestral: 3, semestral: 6, anual: 12 };
+      var dois = function (n) { return (n < 10 ? '0' : '') + n; };
+      // Mesma regra do servidor (addMonthsYMD): se o mês de destino é mais curto, usa o último dia dele.
+      function somarMeses(ymd, meses) {
+        var p = ymd.split('-').map(Number);
+        var alvo = new Date(p[0], p[1] - 1 + meses, 1);
+        var ultimo = new Date(alvo.getFullYear(), alvo.getMonth() + 1, 0).getDate();
+        return dois(Math.min(p[2], ultimo)) + '/' + dois(alvo.getMonth() + 1) + '/' + alvo.getFullYear();
+      }
+      function atualizar() {
+        var qtd = form.elements.quantidade_repeticoes, per = form.elements.periodicidade;
+        var campoData = form.elements.data_competencia || form.elements.data;
+        var n = parseInt(qtd && qtd.value, 10);
+        if (!(n >= 2)) { el.textContent = txt.minimo; return; }
+        n = Math.min(n, 60);
+        var periodo = per && passos[per.value] ? per.value : 'mensal';
+        var hoje = new Date();
+        var base = campoData && /^\d{4}-\d{2}-\d{2}$/.test(campoData.value) ? campoData.value
+          : hoje.getFullYear() + '-' + dois(hoje.getMonth() + 1) + '-' + dois(hoje.getDate());
+        var fim = somarMeses(base, (n - 1) * passos[periodo]);
+        el.textContent = n === 2
+          ? txt.dois[periodo].replace('{fim}', fim)
+          : txt.varias.replace('{total}', n).replace('{m}', n - 1).replace('{cada}', txt.cada[periodo]).replace('{fim}', fim);
+      }
+      form.addEventListener('input', atualizar);
+      form.addEventListener('change', atualizar);
+      atualizar();
+    });
+  });
+
   // "Fixa" e "Repetir" são excludentes: ligar um desliga o outro.
   gfBinders.push(function (root) {
     root.querySelectorAll('form').forEach(function (form) {
@@ -747,6 +787,7 @@ document.addEventListener('DOMContentLoaded', function () {
     disparar(repetir, 'change');
     form.elements.quantidade_repeticoes.value = 12;
     if (form.elements.periodicidade) form.elements.periodicidade.value = 'mensal';
+    disparar(form.elements.quantidade_repeticoes, 'input');
     var novo = form.querySelector('[data-ed-novo-serie]'), serie = form.querySelector('[data-ed-serie]');
     novo.hidden = !!d.serie;
     serie.hidden = !d.serie;

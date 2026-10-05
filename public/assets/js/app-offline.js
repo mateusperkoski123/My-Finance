@@ -242,6 +242,7 @@
         if (repetir) { repetir.checked = !!d.repetir && !d.e_fixo; repetir.dispatchEvent(new Event('change', { bubbles: true })); }
         if (form.elements.quantidade_repeticoes) form.elements.quantidade_repeticoes.value = d.repetir ? d.quantidade_repeticoes : 12;
         if (form.elements.periodicidade) form.elements.periodicidade.value = d.repetir && d.periodicidade ? d.periodicidade : 'mensal';
+        if (form.elements.quantidade_repeticoes) form.elements.quantidade_repeticoes.dispatchEvent(new Event('input', { bubbles: true }));
         const novo = form.querySelector('[data-ed-novo-serie]'); if (novo) novo.hidden = false; // fixa/repetir continuam editaveis
         const serie = form.querySelector('[data-ed-serie]'); if (serie) serie.hidden = true;
         return true;

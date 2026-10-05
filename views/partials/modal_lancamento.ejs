@@ -130,6 +130,7 @@ const _salvar = _novo ? (_rec ? t('painel.salvar_receita') : t('painel.salvar_de
                     </select>
                     <label class="lanc-campo__rotulo" for="<%= _p %>-qtd" style="margin-top: 10px;"><strong><%= t('modal.qtd_repeticoes') %></strong></label>
                     <input class="input" type="number" id="<%= _p %>-qtd" name="quantidade_repeticoes" min="2" max="60" value="12" inputmode="numeric">
+                    <%- include('repetir_explica') %>
                 </div>
             </div>
 

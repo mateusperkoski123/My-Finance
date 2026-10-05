@@ -1,0 +1,10 @@
+<%# Explicacao dinamica do "Repetir": quantas transacoes serao criadas e quando, conforme o total e a periodicidade (app.js). %>
+<%
+const _txt = {
+    minimo: t('modal.rep_minimo'),
+    varias: t('modal.rep_varias'),
+    dois: {}, cada: {}
+};
+['mensal', 'trimestral', 'semestral', 'anual'].forEach((p) => { _txt.dois[p] = t('modal.rep_dois_' + p); _txt.cada[p] = t('modal.rep_cada_' + p); });
+%>
+<p class="muted" data-gf-repetir-explica data-txt="<%= JSON.stringify(_txt) %>" aria-live="polite" style="margin: 8px 0 0; font-size: 13px; line-height: 1.4;"></p>
