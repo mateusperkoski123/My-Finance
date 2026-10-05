@@ -33,7 +33,7 @@ const SHELL_OPCIONAL = [
 // Rotas que nunca passam pelo cache (autenticacao, admin, IA, pagamentos, API).
 const NUNCA_CACHEAR = [
     /^\/login/, /^\/logout/, /^\/cadastro/, /^\/esqueci-senha/, /^\/redefinir-senha/, /^\/auth\//,
-    /^\/admin/, /^\/ia(\/|$)/, /^\/assinatura/, /^\/comunidade/, /^\/api\//, /^\/lembretes/, /^\/cron\//, /^\/service-worker\.js$/, /^\/verificar-email/, /^\/aceitar-termos/
+    /^\/admin/, /^\/ia(\/|$)/, /^\/assinatura/, /^\/comunidade/, /^\/api\//, /^\/lembretes/, /^\/financeiro/, /^\/cron\//, /^\/service-worker\.js$/, /^\/verificar-email/, /^\/aceitar-termos/
 ];
 
 function deveIgnorar(pathname) {
@@ -190,19 +190,55 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
     let dados = {};
     try { dados = event.data ? event.data.json() : {}; } catch (e) { dados = {}; }
-    event.waitUntil(self.registration.showNotification(dados.title || 'MyFinance', {
+    // O servidor pode mandar icone, imagem, botoes e vibracao (Financeiro); sem eles vale o visual padrao.
+    const opcoes = {
         body: dados.body || '',
-        icon: '/assets/icons/icon-192.png',
-        badge: '/assets/icons/icon-192.png',
+        icon: dados.icon || '/assets/icons/icon-192.png',
+        badge: dados.badge || '/assets/icons/icon-192.png',
         tag: dados.tag || 'myfinance',
         renotify: true,
-        data: { url: dados.url || '/' }
-    }));
+        timestamp: Date.now(),
+        data: { url: dados.url || '/', token: dados.token || null }
+    };
+    if (dados.image) opcoes.image = dados.image;
+    if (dados.vibrate) opcoes.vibrate = dados.vibrate;
+    if (Array.isArray(dados.actions) && dados.actions.length) opcoes.actions = dados.actions.slice(0, 2);
+    event.waitUntil(self.registration.showNotification(dados.title || 'MyFinance', opcoes));
 });
+
+// Botoes da notificacao do Financeiro (nao ha sessao aqui: a acao vai com um token assinado pelo servidor).
+async function acaoFinanceiro(acao, token, destino) {
+    try {
+        const resp = await fetch('/financeiro/acao', {
+            method: 'POST',
+            credentials: 'omit',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ acao, token })
+        });
+        const r = await resp.json();
+        await self.registration.showNotification(r.titulo || 'MyFinance', {
+            body: r.mensagem || '',
+            icon: '/assets/financeiro/avatar-192.png',
+            badge: '/assets/financeiro/badge-96.png',
+            tag: 'financeiro-confirma'
+        });
+        await new Promise((ok) => setTimeout(ok, 6000));
+        const abertas = await self.registration.getNotifications({ tag: 'financeiro-confirma' });
+        abertas.forEach((n) => n.close());
+    } catch (e) {
+        // Sem internet ou token vencido: abre a tela do Financeiro, onde os mesmos botoes funcionam.
+        await self.clients.openWindow(destino);
+    }
+}
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const destino = new URL((event.notification.data && event.notification.data.url) || '/', self.location.origin).href;
+    const info = event.notification.data || {};
+    const destino = new URL(info.url || '/', self.location.origin).href;
+    if ((event.action === 'pausar' || event.action === 'desativar') && info.token) {
+        event.waitUntil(acaoFinanceiro(event.action, info.token, destino));
+        return;
+    }
     event.waitUntil((async () => {
         const abas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
         for (const aba of abas) {

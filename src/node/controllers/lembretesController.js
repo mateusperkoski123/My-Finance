@@ -1,7 +1,9 @@
 const crypto = require('crypto');
 const Lembrete = require('../models/Lembrete');
+const Financeiro = require('../models/Financeiro');
 const push = require('../core/push');
 const lembretes = require('../core/lembretes');
+const financeiro = require('../core/financeiro');
 
 const HORARIOS = Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`);
 
@@ -18,7 +20,13 @@ const lembretesController = {
     index: async (req, res) => {
         const config = await Lembrete.config(req.user.id);
         const aparelhos = await Lembrete.inscricoes(req.user.id);
+        const fin = await Financeiro.config(req.user.id);
         res.render('configuracoes/lembretes', {
+            financeiro: {
+                visivel: financeiro.liberadoPara(req.user),
+                ativo: !!fin.ativo,
+                pausadoAte: fin.pausado_ate && Number(fin.pausado_ate) > Date.now() ? Number(fin.pausado_ate) : null
+            },
             title: req.t('lembrete.titulo'),
             menuAtivo: 'lembretes',
             horarios: HORARIOS,
@@ -64,6 +72,9 @@ const lembretesController = {
             auth: chaves.auth.slice(0, 255),
             nome: String(req.get('user-agent') || '').slice(0, 120)
         });
+        // Financeiro (cobrancas por inatividade) nasce ligado para quem tem aparelho; guarda o fuso do navegador.
+        // Na fase de teste (FINANCEIRO_LIBERADO != todos) nasce desligado; admins ligam na tela de Lembretes.
+        await Financeiro.garantir(req.user.id, lembretes.fusoValido(req.body.fuso) ? req.body.fuso : null, financeiro.liberadoParaTodos());
         res.json({ sucesso: true });
     },
 

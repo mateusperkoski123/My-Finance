@@ -1,0 +1,41 @@
+<div class="page-header">
+    <h1><i class="ph ph-coins"></i> <%= t('financeiro.pagina_titulo') %></h1>
+</div>
+
+<section class="card" style="max-width: 640px; overflow: hidden; padding: 0;">
+    <img src="/assets/financeiro/banner-<%= tom %>.png" alt="" style="display: block; width: 100%; height: auto; aspect-ratio: 2 / 1; object-fit: cover;">
+    <div style="padding: 20px;">
+        <p style="font-size: 18px; font-weight: 600; line-height: 1.4; margin: 0 0 20px; overflow-wrap: anywhere;">
+            <%= mensagem || t('financeiro.pagina_sem_msg') %>
+        </p>
+
+        <a href="/?source=pwa&action=despesa" class="btn btn-primary" style="width: 100%; justify-content: center; margin-bottom: 20px;">
+            <i class="ph ph-plus-circle"></i> <%= t('financeiro.registrar_agora') %>
+        </a>
+
+        <% if (!ativo) { %>
+            <p class="muted" style="margin: 0 0 12px;"><%= t('financeiro.estado_desativado') %></p>
+            <form method="post" action="/financeiro/config" style="margin: 0;">
+                <%- csrfCampo %>
+                <input type="hidden" name="acao" value="ativar">
+                <button type="submit" class="btn"><i class="ph ph-bell-ringing"></i> <%= t('financeiro.btn_ativar') %></button>
+            </form>
+        <% } else { %>
+            <% if (pausadoAte) { %>
+                <p class="muted" style="margin: 0 0 12px;"><%= t('financeiro.estado_pausado', { data: formatDate(new Date(pausadoAte).toISOString().slice(0, 10), 'DD/MM/YYYY') }) %></p>
+            <% } %>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <form method="post" action="/financeiro/config" style="margin: 0;">
+                    <%- csrfCampo %>
+                    <input type="hidden" name="acao" value="<%= pausadoAte ? 'retomar' : 'pausar' %>">
+                    <button type="submit" class="btn"><i class="ph ph-<%= pausadoAte ? 'play' : 'moon' %>"></i> <%= pausadoAte ? t('financeiro.btn_retomar') : t('financeiro.btn_pausar') %></button>
+                </form>
+                <form method="post" action="/financeiro/config" style="margin: 0;">
+                    <%- csrfCampo %>
+                    <input type="hidden" name="acao" value="desativar">
+                    <button type="submit" class="btn"><i class="ph ph-bell-slash"></i> <%= t('financeiro.btn_desativar') %></button>
+                </form>
+            </div>
+        <% } %>
+    </div>
+</section>

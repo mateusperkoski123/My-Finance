@@ -23,6 +23,11 @@
         }).then(function (r) { return r.json().catch(function () { return { sucesso: false }; }); });
     }
 
+    // Fuso do navegador: o Financeiro avisa no horario local da pessoa.
+    function fusoLocal() {
+        try { return Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (e) { return null; }
+    }
+
     function inscricaoAtual() {
         return navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); });
     }
@@ -45,7 +50,7 @@
                     return existente || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: chaveParaBytes(chavePublica) });
                 });
             }).then(function (sub) {
-                return enviar('/configuracoes/lembretes/inscrever', { subscription: sub.toJSON() }, csrf).then(function (r) {
+                return enviar('/configuracoes/lembretes/inscrever', { subscription: sub.toJSON(), fuso: fusoLocal() }, csrf).then(function (r) {
                     return r.sucesso ? 'ativo' : 'inativo';
                 });
             });
@@ -65,7 +70,7 @@
     // Mantem o servidor com a inscricao mais recente (o navegador pode renova-la sem avisar).
     function sincronizar(csrf) {
         return inscricaoAtual().then(function (sub) {
-            if (sub && Notification.permission === 'granted') return enviar('/configuracoes/lembretes/inscrever', { subscription: sub.toJSON() }, csrf);
+            if (sub && Notification.permission === 'granted') return enviar('/configuracoes/lembretes/inscrever', { subscription: sub.toJSON(), fuso: fusoLocal() }, csrf);
         }).catch(function () {});
     }
 

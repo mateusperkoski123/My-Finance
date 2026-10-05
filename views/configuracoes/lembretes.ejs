@@ -69,6 +69,37 @@
                 <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('config.salvar') %></button>
             </form>
         </div>
+
+        <% if (financeiro.visivel) { %>
+        <div class="card" style="margin-top: 16px;">
+            <h2><i class="ph ph-coins"></i> <%= t('financeiro.cfg_titulo') %></h2>
+            <p class="muted" style="margin-bottom: 16px;"><%= t('financeiro.cfg_texto') %></p>
+            <% if (!financeiro.ativo) { %>
+                <p style="font-weight: 600; margin: 0 0 12px;"><%= t('financeiro.estado_desativado') %></p>
+            <% } else if (financeiro.pausadoAte) { %>
+                <p style="font-weight: 600; margin: 0 0 12px;"><%= t('financeiro.estado_pausado', { data: formatDate(new Date(financeiro.pausadoAte).toISOString().slice(0, 10), 'DD/MM/YYYY') }) %></p>
+            <% } %>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <% if (financeiro.ativo && financeiro.pausadoAte) { %>
+                <form method="post" action="/financeiro/config" style="margin: 0;">
+                    <%- csrfCampo %>
+                    <input type="hidden" name="voltar" value="/configuracoes/lembretes">
+                    <input type="hidden" name="acao" value="retomar">
+                    <button type="submit" class="btn"><i class="ph ph-play"></i> <%= t('financeiro.btn_retomar') %></button>
+                </form>
+                <% } %>
+                <form method="post" action="/financeiro/config" style="margin: 0;">
+                    <%- csrfCampo %>
+                    <input type="hidden" name="voltar" value="/configuracoes/lembretes">
+                    <input type="hidden" name="acao" value="<%= financeiro.ativo ? 'desativar' : 'ativar' %>">
+                    <button type="submit" class="btn"><i class="ph ph-<%= financeiro.ativo ? 'bell-slash' : 'bell-ringing' %>"></i> <%= financeiro.ativo ? t('financeiro.cfg_desativar') : t('financeiro.cfg_ativar') %></button>
+                </form>
+            </div>
+            <% if (financeiro.ativo && totalAparelhos === 0) { %>
+                <p class="muted" style="margin: 12px 0 0; font-size: 13px;"><%= t('financeiro.cfg_precisa_aparelho') %></p>
+            <% } %>
+        </div>
+        <% } %>
         <% } %>
     </section>
 </div>

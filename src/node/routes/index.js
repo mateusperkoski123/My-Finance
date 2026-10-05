@@ -220,6 +220,11 @@ router.post('/configuracoes/lembretes/desinscrever', requireAuth, lembretesContr
 router.post('/configuracoes/lembretes/testar', requireAuth, lembretesController.testar);
 router.get('/lembretes/vencimentos', requireAuth, lembretesController.vencimentos);
 router.all('/cron/lembretes', cronLimiter, lembretesController.cron);
+// Financeiro (cobrancas por inatividade). /financeiro/acao recebe os botoes da notificacao (token assinado, sem sessao).
+const financeiroController = require('../controllers/financeiroController');
+router.get('/financeiro', requireAuth, financeiroController.index);
+router.post('/financeiro/config', requireAuth, financeiroController.configurar);
+router.post('/financeiro/acao', cronLimiter, financeiroController.acaoNotificacao);
 router.get('/configuracoes/dispositivos', requireAuth, configuracoesController.dispositivos);
 router.post('/configuracoes/dispositivos/:id/revogar', requireAuth, configuracoesController.revogarDispositivo);
 

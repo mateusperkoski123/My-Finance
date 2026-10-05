@@ -308,3 +308,8 @@ Cada usuario ativa em **Configuracoes > Lembretes** (por aparelho), escolhe o ho
 3. A rota e leve: so processa quem tem `proximo_envio` vencido e reserva o envio antes de mandar (sem avisos duplicados, mesmo com varias instancias).
 
 No iPhone o push so funciona com o app instalado na tela inicial (iOS 16.4+).
+
+### Financeiro (cobrancas por inatividade)
+
+Mesmo agendador e mesmas chaves VAPID dos lembretes. **Fase de teste:** vem desligado para todos e so admins veem a opcao (Configuracoes > Lembretes > Financeiro) e recebem. Para liberar, ponha `FINANCEIRO_LIBERADO=todos` no `.env` e reinicie: a opcao aparece para todos e os aparelhos que se inscreverem dali em diante ja entram ligados (quem ja tinha aparelho continua desligado ate ligar). Quando ligado: por volta das 20h (hora local, `FINANCEIRO_HORA` muda), se a pessoa nao registrou nada, manda **um** push com o tom conforme os dias sem registrar (1 dia brincalhao, 2 cobrando, 3-4 dramatico, 5+ saudade; depois do 4o dia so nos dias 5, 7, 14, 21 e 28; passado 1 mes, para). Textos em `src/node/core/i18n_financeiro.js` (5 por tom, pt/es/en).
+A pessoa pode **pausar 7 dias** ou **desativar** pelos botoes da notificacao (Android/desktop), pela tela `/financeiro` (iPhone) ou em Configuracoes > Lembretes. Estado em `financeiro_config`. As imagens (avatar, selo e banners) saem de `node scripts/financeiro/gerar-imagens.js`.

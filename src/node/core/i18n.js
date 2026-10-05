@@ -788,7 +788,7 @@ const esPY = {
     'flash.lancamento_marcado_pago': '¡Movimiento marcado como pagado/cobrado!'
 };
 
-const extra = Object.assign({}, require('./i18n_extra'), require('./i18n_assinatura'), require('./i18n_comunidade'), require('./i18n_ia'), require('./i18n_lembretes'), require('./i18n_extrato'));
+const extra = Object.assign({}, require('./i18n_extra'), require('./i18n_assinatura'), require('./i18n_comunidade'), require('./i18n_ia'), require('./i18n_lembretes'), require('./i18n_financeiro'), require('./i18n_extrato'));
 const enUS = require('./i18n_en');
 
 // Mescla as chaves adicionais ([pt, es, en]) nos tres dicionarios.

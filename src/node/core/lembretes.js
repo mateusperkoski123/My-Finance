@@ -157,6 +157,12 @@ async function processarDevidos() {
             }
         }));
     }
+    // Financeiro (cobrancas por inatividade): um erro aqui nunca atrapalha os lembretes de vencimento.
+    try {
+        resumo.financeiro = await require('./financeiro').processarDevidos(agora);
+    } catch (err) {
+        console.error('Falha no Financeiro:', err.message);
+    }
     return resumo;
 }
 

@@ -15,6 +15,11 @@ function csrfProtection(req, res, next) {
         return next();
     }
 
+    // Botoes da notificacao do Financeiro: o service worker chama sem sessao, com token assinado no corpo.
+    if (req.path === '/financeiro/acao') {
+        return next();
+    }
+
     if (!req.session.csrfToken) {
         req.session.csrfToken = crypto.randomBytes(32).toString('hex');
     }
