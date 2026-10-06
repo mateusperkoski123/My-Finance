@@ -53,7 +53,7 @@
                 <div class="conta-card__body" style="margin: 16px 0;">
                     <span class="muted" style="font-size: 13px;"><%= t('contas.saldo_atual') %></span>
                     <div class="conta-card__saldo val-saldo-display" id="saldo-display-<%= c.id %>" style="font-size: 22px; font-weight: 700; color: <%= c.saldo_atual >= 0 ? 'var(--green)' : 'var(--red)' %>;">
-                        <%= moeda(c.saldo_atual) %>
+                        <%= moeda(c.saldo_atual, c.moeda) %>
                     </div>
                 </div>
                 <div class="conta-card__footer" style="display: flex; gap: 6px; flex-wrap: wrap; border-top: 1px solid var(--border); padding-top: 12px;">
@@ -95,7 +95,7 @@
                         <p class="muted" style="font-size: 13px; margin-top: 8px; color: var(--red);"><%= t('contas.eliminar_aviso') %></p>
                         <div class="aviso-exclusao">
                             <i class="ph ph-warning"></i>
-                            <span><%- t('contas.aviso_exclusao', { n: parseInt(c.total_lancamentos, 10) || 0, saldo: moeda(c.saldo_atual) }) %></span>
+                            <span><%- t('contas.aviso_exclusao', { n: parseInt(c.total_lancamentos, 10) || 0, saldo: moeda(c.saldo_atual, c.moeda) }) %></span>
                         </div>
                     </div>
                     <div class="modal__actions" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
@@ -124,7 +124,7 @@
                         <div style="background: var(--bg); padding: 14px; border-radius: 12px; margin-bottom: 16px;">
                             <span style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--muted);"><%= t('contas.origem') %></span>
                             <div style="font-weight: 600; font-size: 15px;"><%= c.nome %></div>
-                            <div style="font-size: 13px; margin-top: 4px;"><%= t('contas.saldo') %>: <strong style="color: var(--green);"><%= moeda(c.saldo_atual) %></strong></div>
+                            <div style="font-size: 13px; margin-top: 4px;"><%= t('contas.saldo') %>: <strong style="color: var(--green);"><%= moeda(c.saldo_atual, c.moeda) %></strong></div>
                         </div>
 
                         <div class="form-group">
