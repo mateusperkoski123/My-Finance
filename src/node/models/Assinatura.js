@@ -100,14 +100,14 @@ class Assinatura {
         return r.affectedRows === 1 ? plano : null;
     }
 
-    // Troca o plano em teste enquanto o teste do plano escolhido esta em andamento. O prazo nao reinicia.
+    // Troca o plano em teste enquanto o teste esta em andamento (inclusive o antigo "Plano de Teste" de 7 dias, que passa a
+    // ser o plano escolhido). O prazo nao reinicia.
     static async trocarPlanoTeste(userId, planoCodigo) {
         const plano = await this.planoPorCodigo(planoCodigo);
         if (!plano || !PLANOS_VENDA.includes(plano.codigo)) return null;
         const [r] = await db.query(
             `UPDATE assinaturas SET plano_id = ?
-             WHERE user_id = ? AND status = 'trial' AND trial_fim > NOW()
-               AND plano_id <> (SELECT id FROM planos WHERE codigo = 'prueba')`,
+             WHERE user_id = ? AND status = 'trial' AND trial_fim > NOW()`,
             [plano.id, userId]
         );
         return r.affectedRows === 1 ? plano : null;

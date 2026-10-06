@@ -109,7 +109,7 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
 
             <div class="plano-card__acoes">
                 <%# Durante o teste do plano escolhido da para passar a testar outro plano (o prazo nao reinicia); "Adquirir" fica logo abaixo. %>
-                <% if (ass && ass.teste_plano && ass.plano_codigo !== p.codigo) { %>
+                <% if (ass && st === 'trial' && ass.plano_codigo !== p.codigo) { %>
                     <form method="post" action="/teste/trocar" class="plano-card__testar">
                         <%- csrfCampo %>
                         <input type="hidden" name="plano" value="<%= p.codigo %>">
