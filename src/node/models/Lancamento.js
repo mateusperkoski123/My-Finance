@@ -609,7 +609,9 @@ class Lancamento {
     }
 
     // Pendencias vencidas ou que vencem hoje (contas ativas), mais antigas primeiro.
-    static async pendentesUrgentes(userId, hojeYMD, limite = 5) {
+    // filtro: 'receber' (so receitas), 'pagar' (despesas e transferencias, que saem da conta) ou null (tudo).
+    // total = quantos itens o filtro tem; totalGeral/totalReceber/totalPagar alimentam os botoes do cartao.
+    static async pendentesUrgentes(userId, hojeYMD, limite = 5, filtro = null) {
         const base = `FROM lancamentos l
              JOIN contas cb ON cb.id = l.conta_id AND cb.status = 'ativa'${filtroConta('cb')}
              WHERE l.user_id = ? AND l.status = 'pendente' AND l.data_competencia <= ?
@@ -617,11 +619,15 @@ class Lancamento {
         const [rows] = await db.query(
             `SELECT l.id, l.tipo, l.descricao, l.valor, l.data_competencia, cb.nome AS conta_nome,
                     DATEDIFF(?, l.data_competencia) AS dias_atraso
-             ${base} ORDER BY l.data_competencia ASC, l.id ASC LIMIT ?`,
+             ${base}${filtro === 'receber' ? " AND l.tipo = 'receita'" : (filtro === 'pagar' ? " AND l.tipo <> 'receita'" : '')}
+             ORDER BY l.data_competencia ASC, l.id ASC LIMIT ?`,
             [hojeYMD, userId, hojeYMD, limite]
         );
-        const [cnt] = await db.query(`SELECT COUNT(*) AS total ${base}`, [userId, hojeYMD]);
-        return { itens: rows, total: cnt[0].total || 0 };
+        const [cnt] = await db.query(`SELECT COUNT(*) AS total, COALESCE(SUM(l.tipo = 'receita'), 0) AS receber ${base}`, [userId, hojeYMD]);
+        const totalGeral = Number(cnt[0].total) || 0;
+        const totalReceber = Number(cnt[0].receber) || 0;
+        const totalPagar = totalGeral - totalReceber;
+        return { itens: rows, total: filtro === 'receber' ? totalReceber : (filtro === 'pagar' ? totalPagar : totalGeral), totalGeral, totalReceber, totalPagar };
     }
 
     // Total por categoria (subcategorias somadas na categoria pai), so receitas/despesas do periodo.

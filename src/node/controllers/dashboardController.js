@@ -80,12 +80,14 @@ const dashboardController = {
         // As consultas abaixo nao dependem umas das outras: rodam juntas (antes eram uma de cada vez, e cada ida e volta
         // ao banco somava; so as categorias precisam garantir as basicas antes de listar a arvore).
         // Saldo previsto (ate o fim do periodo) = disponivel + a receber - nao pago (calculado em resumoPeriodo)
+        // Cartao "Vencidas ou de hoje": filtro opcional pelos botoes A receber / A pagar (?pend=receber|pagar).
+        const filtroPend = ['receber', 'pagar'].includes(query.pend) ? query.pend : null;
         const [contas, categoriasArvore, resumo, dadosLancamentos, pendenciasUrgentes, despesasPorCategoria] = await Promise.all([
             Conta.buscarPorUsuario(userId, false),
             Categoria.garantirCategoriasBasicas(userId).then(() => Categoria.buscarArvore(userId, false)), // contas antigas sem categorias de despesa/receita
             Lancamento.resumoPeriodo(userId, periodo),
             Lancamento.buscarFiltrados(userId, periodo, filtros, ordenacao, pagina, porPagina, agrupamento),
-            Lancamento.pendentesUrgentes(userId, toLocalYMD(hojeLocal())),
+            Lancamento.pendentesUrgentes(userId, toLocalYMD(hojeLocal()), 5, filtroPend),
             Lancamento.resumoPorCategoriaPai(userId, periodo, 'despesa')
         ]);
 
@@ -115,6 +117,7 @@ const dashboardController = {
             categoriasArvore,
             resumo,
             pendenciasUrgentes,
+            filtroPend,
             despesasPorCategoria,
             lancamentos: dadosLancamentos.lancamentos,
             grupos: dadosLancamentos.grupos,

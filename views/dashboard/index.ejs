@@ -57,7 +57,7 @@ const nomesMeses = {
     </div>
 <% } else { %>
 
-<% const _temPend = Boolean(pendenciasUrgentes && pendenciasUrgentes.total > 0); %>
+<% const _temPend = Boolean(pendenciasUrgentes && pendenciasUrgentes.totalGeral > 0); %>
 <%# Duas colunas no computador: saldo, resumo do mes e botoes a esquerda; o que vence agora a direita (sem rolar para achar). %>
 <div class="painel-grid<%= _temPend ? '' : ' painel-grid--uma' %>">
 <div class="painel-grid__esq">
@@ -123,12 +123,28 @@ const nomesMeses = {
 <% if (_temPend) { %>
 <div class="painel-grid__dir">
 <!-- Pendencias vencidas ou que vencem hoje -->
-<section class="card pendencias" aria-label="<%= t('painel.pendencias') %>">
+<section class="card pendencias" id="pendencias" aria-label="<%= t('painel.pendencias') %>">
     <div class="pendencias__topo">
         <span class="pendencias__titulo"><i class="ph ph-warning-circle" style="color: var(--pendente); font-size: 18px;"></i> <%= t('painel.vencidas_hoje', { n: pendenciasUrgentes.total }) %></span>
         <a href="/relatorios?aba=pendentes" class="muted" style="font-size: 13px; font-weight: 600;"><%= t('painel.ver_todas') %></a>
     </div>
+    <%# Filtro do cartao: A receber / A pagar (clicar de novo no ativo volta a mostrar tudo). O servidor filtra, porque o cartao so lista os 5 primeiros. %>
+    <%
+    const _qsPend = new URLSearchParams(String(currentUrl || '').split('?')[1] || '');
+    _qsPend.delete('pend');
+    const _linkPend = (v) => { const q = new URLSearchParams(_qsPend); if (v) q.set('pend', v); const s = q.toString(); return currentRoute + (s ? '?' + s : '') + '#pendencias'; };
+    %>
+    <div class="pendencias__filtros" role="group" aria-label="<%= t('painel.pend_filtrar') %>">
+        <% [['receber', 'painel.pend_receber', pendenciasUrgentes.totalReceber], ['pagar', 'painel.pend_pagar', pendenciasUrgentes.totalPagar]].forEach(function (f) { const _ativo = filtroPend === f[0]; %>
+            <% if (f[2] > 0 || _ativo) { %>
+                <a class="pendencias__filtro pendencias__filtro--<%= f[0] %><%= _ativo ? ' is-active' : '' %>" href="<%= _linkPend(_ativo ? null : f[0]) %>" aria-pressed="<%= _ativo ? 'true' : 'false' %>"><%= t(f[1]) %> <span>(<%= f[2] %>)</span></a>
+            <% } else { %>
+                <span class="pendencias__filtro pendencias__filtro--<%= f[0] %> is-vazio" aria-disabled="true"><%= t(f[1]) %> <span>(0)</span></span>
+            <% } %>
+        <% }) %>
+    </div>
     <div class="pendencias__lista">
+        <% if (!pendenciasUrgentes.itens.length) { %><p class="muted" style="margin: 8px 0 0; font-size: 13px;"><%= t('painel.pend_vazio') %></p><% } %>
         <% pendenciasUrgentes.itens.forEach(p => { const dias = parseInt(p.dias_atraso, 10) || 0; %>
             <div class="pendencias__item">
                 <div class="pendencias__info">
