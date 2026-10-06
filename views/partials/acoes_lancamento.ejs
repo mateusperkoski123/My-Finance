@@ -2,6 +2,7 @@
 const _editavel = l.tipo === 'receita' || l.tipo === 'despesa';
 const _agendada = l.tipo === 'transferencia' && !!l.transferencia_par_id; // par de transferencia agendada
 const _transf = l.tipo === 'transferencia';
+const _ajuste = l.tipo === 'ajuste'; // ajuste de saldo da conta: pode ser editado (valor, sentido e data) e excluido
 const _rotuloPagar = l.tipo === 'receita' ? t('acao.receber') : t('acao.pagar');
 %>
 <div class="acoes-linha">
@@ -13,11 +14,12 @@ const _rotuloPagar = l.tipo === 'receita' ? t('acao.receber') : t('acao.pagar');
             <button type="submit" class="btn-pagar" title="<%= l.tipo === 'receita' ? t('acao.marcar_recebido') : t('acao.marcar_pago') %>"><i class="ph ph-check-circle"></i><span><%= _rotuloPagar %></span></button>
         </form>
     <% } %>
-    <% if (_editavel || _agendada || _transf) { %>
+    <% if (_editavel || _agendada || _transf || _ajuste) { %>
         <details class="menu-acoes">
             <summary aria-label="<%= t('acao.mais') %>" title="<%= t('acao.mais') %>"><i class="ph ph-dots-three-vertical"></i></summary>
             <div class="menu-acoes__lista">
                 <% if (_transf) { %><button type="button" data-editar-transf="<%= JSON.stringify({ id: l.id, descricao: descricaoLancamento(l), valor: Math.abs(parseFloat(l.valor)), valor_assinado: parseFloat(l.valor), moeda: l.conta_moeda || null, par_valor: l.par_valor == null ? null : parseFloat(l.par_valor), par_moeda: l.par_moeda || null, data_competencia: formatDate(l.data_competencia, 'YYYY-MM-DD'), data_pagamento: l.data_pagamento ? formatDate(l.data_pagamento, 'YYYY-MM-DD') : '', status: l.status, serie: !!l.serie_id }) %>"><i class="ph ph-pencil-simple"></i> <%= t('acao.editar') %></button><% } %>
+                <% if (_ajuste) { %><button type="button" data-editar-ajuste="<%= JSON.stringify({ id: l.id, valor: Math.abs(parseFloat(l.valor)), entrada: parseFloat(l.valor) >= 0, moeda: l.conta_moeda || null, data_competencia: formatDate(l.data_competencia, 'YYYY-MM-DD') }) %>"><i class="ph ph-pencil-simple"></i> <%= t('acao.editar') %></button><% } %>
                 <% if (_editavel) { %><button type="button" data-editar-lanc="<%= JSON.stringify({ id: l.id, tipo: l.tipo, descricao: l.descricao, valor: Math.abs(parseFloat(l.valor)), conta_id: l.conta_id, categoria_id: l.categoria_id, data_competencia: formatDate(l.data_competencia, 'YYYY-MM-DD'), data_pagamento: l.data_pagamento ? formatDate(l.data_pagamento, 'YYYY-MM-DD') : '', status: l.status, serie: !!l.serie_id }) %>"><i class="ph ph-pencil-simple"></i> <%= t('acao.editar') %></button><% } %>
                 <% if (l.status === 'pago') { %>
                     <form method="post" action="/lancamentos/<%= l.id %>/marcar-pago" data-ajax>

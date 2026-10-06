@@ -477,6 +477,16 @@ class Lancamento {
         }
     }
 
+    // Ajuste de saldo: o valor guarda o sentido (positivo = entrada, negativo = saida) e o texto acompanha. So mexe em lancamento do tipo ajuste.
+    static async atualizarAjuste(id, userId, { valor, entrada, data }) {
+        const [res] = await db.query(
+            `UPDATE lancamentos SET valor = ?, descricao = ?, data_competencia = ?, data_pagamento = ?, updated_at = NOW(3)
+             WHERE id = ? AND user_id = ? AND tipo = 'ajuste'`,
+            [entrada ? Math.abs(valor) : -Math.abs(valor), entrada ? 'Ajuste de saldo (entrada)' : 'Ajuste de saldo (saída)', data, data, id, userId]
+        );
+        return res.affectedRows > 0;
+    }
+
     static async excluir(id, userId, escopoSerie = 'apenas_esta') {
         const SyncExclusao = require('./SyncExclusao');
         const item = await this.buscarPorId(id, userId);

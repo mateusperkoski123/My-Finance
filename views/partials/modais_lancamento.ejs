@@ -1,4 +1,4 @@
-<%# Modais de receita/despesa (cadastrar e editar), editar transferencia e botao flutuante. Usado no Painel e em Relatorios.
+<%# Modais de receita/despesa (cadastrar e editar), editar transferencia, editar ajuste de saldo e botao flutuante. Usado no Painel e em Relatorios.
    Espera: contas, categoriasArvore, dataHoje; opcional: voltar (caminho para onde retornar depois de salvar).
    O formulario em si esta em partials/modal_lancamento.ejs (um so, para os quatro casos). %>
 <%- include('./modal_lancamento', { modo: 'novo', tipo: 'receita' }) %>
@@ -6,6 +6,7 @@
 <%- include('./modal_lancamento', { modo: 'editar', tipo: 'receita' }) %>
 <%- include('./modal_lancamento', { modo: 'editar', tipo: 'despesa' }) %>
 <%- include('./modal_editar_transferencia') %>
+<%- include('./modal_editar_ajuste') %>
 
 <script>
 window.gfCategoriasArvore = <%- jsonScript(categoriasArvore || []) %>;

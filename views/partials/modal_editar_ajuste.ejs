@@ -1,0 +1,47 @@
+<%# Modal "Editar ajuste de saldo" (lancamento do tipo ajuste): sentido, valor e data. Preenchido por public/assets/js/app.js (botao com data-editar-ajuste). %>
+<div class="modal-backdrop modal-backdrop--lanc" id="modal-editar-ajuste" data-modal>
+    <div class="modal card modal--lanc">
+        <div class="modal__header">
+            <div class="modal__titulo">
+                <span class="modal__icone"><i class="ph ph-scales"></i></span>
+                <h2><%= t('modal.editar_ajuste') %></h2>
+            </div>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+
+        <form method="post" action="#" class="form lanc-form" data-editar-form data-ajax>
+            <%- csrfCampo %>
+            <input type="hidden" name="voltar" value="<%= currentUrl %>">
+
+            <div class="lanc-campo">
+                <span class="muted" style="font-size: 12.5px;"><%= t('modal.ajuste_aviso') %></span>
+            </div>
+
+            <div class="form-group">
+                <label for="ed-ajuste-tipo"><%= t('modal.ajuste_sentido') %></label>
+                <select class="input" id="ed-ajuste-tipo" name="tipo_ajuste">
+                    <option value="ingreso"><%= t('contas.adicionar_saldo') %></option>
+                    <option value="saida"><%= t('contas.subtrair_saldo') %></option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="ed-ajuste-valor"><%= t('modal.valor') %></label>
+                <input class="input lanc-form__valor" type="text" id="ed-ajuste-valor" name="valor" data-money data-money-positivo required>
+            </div>
+
+            <div class="lanc-campo">
+                <label class="lanc-campo__rotulo" for="ed-ajuste-data">
+                    <span class="lanc-campo__ico"><i class="ph ph-calendar"></i></span>
+                    <strong><%= t('painel.lancamento.data_label') %></strong>
+                </label>
+                <input class="input" type="date" id="ed-ajuste-data" name="data_competencia" required>
+            </div>
+
+            <div class="modal-rodape">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
+                <button type="submit" class="btn btn-salvar"><i class="ph ph-floppy-disk"></i> <%= t('modal.salvar') %></button>
+            </div>
+        </form>
+    </div>
+</div>

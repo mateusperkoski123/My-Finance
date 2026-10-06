@@ -282,6 +282,25 @@ const dashboardController = {
         res.redirect(destinoRetorno(req));
     },
 
+    // Ajuste de saldo da conta: troca sentido (entrada/saida), valor e data.
+    atualizarAjuste: async (req, res) => {
+        const valor = parseMoeda(req.body.valor);
+        const data = String(req.body.data_competencia || '');
+        if (!(valor > 0)) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_valor_invalido') };
+            return res.redirect(destinoRetorno(req));
+        }
+        if (!dataValida(data)) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.agendar_invalido') };
+            return res.redirect(destinoRetorno(req));
+        }
+        const ok = await Lancamento.atualizarAjuste(req.params.id, req.user.id, { valor, entrada: req.body.tipo_ajuste !== 'saida', data });
+        req.session.flash = ok
+            ? { tipo: 'sucesso', mensagem: req.t('flash.ajuste_atualizado') }
+            : { tipo: 'erro', mensagem: req.t('flash.generico_erro') };
+        res.redirect(destinoRetorno(req));
+    },
+
     excluirLancamento: async (req, res) => {
         const userId = req.user.id;
         const id = req.params.id;

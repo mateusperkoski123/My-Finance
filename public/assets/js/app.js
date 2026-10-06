@@ -798,6 +798,31 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 })();
 
+// Editar ajuste de saldo da conta: sentido (adicionar/subtrair), valor e data, a partir do botao [data-editar-ajuste].
+(function () {
+  document.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('[data-editar-ajuste]');
+    if (!btn) return;
+    var d;
+    try { d = JSON.parse(btn.getAttribute('data-editar-ajuste')); } catch (e) { return; }
+    var modal = document.getElementById('modal-editar-ajuste');
+    var form = modal && modal.querySelector('[data-editar-form]');
+    if (!form) return;
+    var menu = btn.closest('details');
+    if (menu) menu.removeAttribute('open');
+
+    form.action = '/lancamentos/' + d.id + '/atualizar-ajuste';
+    form.elements.tipo_ajuste.value = d.entrada ? 'ingreso' : 'saida';
+    var campo = form.elements.valor;
+    if (d.moeda) campo.setAttribute('data-moeda-cod', d.moeda); else campo.removeAttribute('data-moeda-cod');
+    campo.value = window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(d.valor || 0, d.moeda || null) : String(d.valor);
+    campo._gfAntes = campo.value;
+    campo.setCustomValidity('');
+    form.elements.data_competencia.value = d.data_competencia || '';
+    modal.classList.add('is-open');
+  });
+})();
+
 // Editar transferencia entre contas: valor, data e situacao (as duas pernas juntas), a partir do botao [data-editar-transf].
 (function () {
   document.addEventListener('click', function (ev) {
