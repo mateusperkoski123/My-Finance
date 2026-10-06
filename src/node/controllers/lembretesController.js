@@ -73,7 +73,7 @@ const lembretesController = {
             nome: String(req.get('user-agent') || '').slice(0, 120)
         });
         // Financeiro (cobrancas por inatividade) nasce ligado para quem tem aparelho; guarda o fuso do navegador.
-        // Na fase de teste (FINANCEIRO_LIBERADO != todos) nasce desligado; admins ligam na tela de Lembretes.
+        // Na fase de teste (FINANCEIRO_LIBERADO=admins) nasce desligado; admins ligam na tela de Lembretes.
         await Financeiro.garantir(req.user.id, lembretes.fusoValido(req.body.fuso) ? req.body.fuso : null, financeiro.liberadoParaTodos());
         res.json({ sucesso: true });
     },

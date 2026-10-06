@@ -18,10 +18,10 @@ const MAX_DIAS_COBRANDO = 30;
 
 const TONS = ['brincalhao', 'cobrando', 'dramatico', 'saudade'];
 
-// Liberacao: com FINANCEIRO_LIBERADO=todos o recurso vale para todos (aparelhos novos entram ligados); sem isso
-// (fase de teste) so admins veem a opcao, ligam e recebem.
+// Liberacao: vale para todos (aparelhos novos entram ligados). Para voltar a fase de teste (so admins veem a opcao,
+// ligam e recebem) basta FINANCEIRO_LIBERADO=admins no .env.
 function liberadoParaTodos() {
-    return String(process.env.FINANCEIRO_LIBERADO || '').toLowerCase() === 'todos';
+    return String(process.env.FINANCEIRO_LIBERADO || '').toLowerCase() !== 'admins';
 }
 
 function liberadoPara(user) {
