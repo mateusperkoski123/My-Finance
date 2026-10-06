@@ -174,6 +174,6 @@ async function processarDevidos() {
 }
 
 module.exports = {
-    FUSO_PADRAO, fusoValido, horaValida, proximoEnvio, dataLocalYMD, somarDias,
+    FUSO_PADRAO, fusoValido, horaValida, partesNoFuso, proximoEnvio, dataLocalYMD, somarDias,
     montarNotificacao, totalTexto, enviarParaUsuario, processarDevidos
 };

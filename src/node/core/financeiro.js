@@ -1,5 +1,5 @@
 // "Financeiro": notificacoes de cobranca por inatividade (estilo Duolingo). Quando a pessoa fica dias sem registrar
-// movimentos, manda um push por noite, e o tom muda conforme os dias passam. Ligado por padrao; a pessoa pode
+// movimentos, manda um push as 8h e outro (variacao) as 13h, e o tom muda conforme os dias passam. Ligado por padrao; a pessoa pode
 // pausar por 7 dias ou desativar (botoes da notificacao, tela /financeiro e Configuracoes > Lembretes).
 const crypto = require('crypto');
 const Financeiro = require('../models/Financeiro');
@@ -8,7 +8,8 @@ const Lembrete = require('../models/Lembrete');
 const lembretes = require('./lembretes');
 const { t } = require('./i18n');
 
-const HORA = /^([01]\d|2[0-3]):(00|30)$/.test(process.env.FINANCEIRO_HORA || '') ? process.env.FINANCEIRO_HORA : '20:00';
+// Dois envios por dia (hora local da pessoa): 8h com as mensagens 1-5 de cada tom e 13h com a variacao (6-10).
+const HORAS = ['08:00', '13:00'];
 const PAUSA_DIAS = 7;
 const MENSAGENS_POR_TOM = 5;
 const MAX_ATRASO_MS = 2 * 3600 * 1000; // se o servidor ficou fora do ar, nao manda o aviso de madrugada
@@ -50,9 +51,21 @@ function deveEnviar(dias) {
     return dias === 5 || dias % 7 === 0;
 }
 
-function sortearMensagem(ultima) {
+// Proximo envio entre os dois horarios do dia.
+function proximoHorario(fuso, agoraMs) {
+    return Math.min(...HORAS.map((h) => lembretes.proximoEnvio(h, fuso, agoraMs)));
+}
+
+// Turno de um instante: 'manha' (antes do meio-dia, hora local) ou 'tarde'.
+function turnoDe(ms, fuso) {
+    return lembretes.partesNoFuso(ms, fuso).hour < 12 ? 'manha' : 'tarde';
+}
+
+// Manha sorteia entre 1 e 5; tarde, entre 6 e 10 (a variacao). Nunca repete a ultima enviada.
+function sortearMensagem(ultima, turno) {
+    const base = turno === 'tarde' ? MENSAGENS_POR_TOM : 0;
     let i;
-    do { i = 1 + Math.floor(Math.random() * MENSAGENS_POR_TOM); } while (i === ultima && MENSAGENS_POR_TOM > 1);
+    do { i = base + 1 + Math.floor(Math.random() * MENSAGENS_POR_TOM); } while (i === ultima && MENSAGENS_POR_TOM > 1);
     return i;
 }
 
@@ -111,7 +124,7 @@ async function podeReceber(cfg) {
 // Avalia uma pessoa cujo horario chegou. Retorna true se enviou a notificacao.
 async function avaliar(cfg, agoraMs) {
     const fuso = cfg.fuso_efetivo && lembretes.fusoValido(cfg.fuso_efetivo) ? cfg.fuso_efetivo : lembretes.FUSO_PADRAO;
-    const novo = lembretes.proximoEnvio(HORA, fuso, agoraMs);
+    const novo = proximoHorario(fuso, agoraMs);
     const anterior = cfg.proximo_envio === null || cfg.proximo_envio === undefined ? null : Number(cfg.proximo_envio);
     if (!(await Financeiro.reservar(cfg.user_id, anterior, novo))) return false;
     // Primeira vez (sem horario) ou horario perdido: so agenda o proximo.
@@ -124,7 +137,7 @@ async function avaliar(cfg, agoraMs) {
     if (!tom || !deveEnviar(dias)) return false;
     if (!(await podeReceber(cfg))) return false;
 
-    const indice = sortearMensagem(cfg.ultima_msg);
+    const indice = sortearMensagem(cfg.ultima_msg, turnoDe(anterior, fuso));
     const entregues = await lembretes.enviarParaUsuario(cfg.user_id, montarNotificacao({ userId: cfg.user_id, tom, indice, dias, idioma: cfg.idioma }));
     if (entregues > 0) await Financeiro.marcarEnvio(cfg.user_id, indice);
     return entregues > 0;
@@ -148,7 +161,7 @@ async function verificarAgora(userId, agoraMs = Date.now()) {
     if (!deveEnviar(dias)) return { motivo: 'fora_do_dia', dias };
     if (!(await podeReceber(cfg))) return { motivo: 'plano', dias };
 
-    const indice = sortearMensagem(cfg.ultima_msg);
+    const indice = sortearMensagem(cfg.ultima_msg, turnoDe(agoraMs, fuso));
     const entregues = await lembretes.enviarParaUsuario(userId, montarNotificacao({ userId, tom, indice, dias, idioma: cfg.idioma }));
     return { motivo: entregues > 0 ? 'enviado' : 'falha', dias, tom };
 }
@@ -176,7 +189,7 @@ async function pausar(userId, agoraMs = Date.now()) {
 }
 
 module.exports = {
-    TONS, MENSAGENS_POR_TOM, PAUSA_DIAS, liberadoParaTodos, liberadoPara,
+    TONS, MENSAGENS_POR_TOM, HORAS, PAUSA_DIAS, liberadoParaTodos, liberadoPara,
     diferencaDias, tomPara, deveEnviar, texto, gerarToken, validarToken, montarNotificacao,
     processarDevidos, verificarAgora, pausar
 };

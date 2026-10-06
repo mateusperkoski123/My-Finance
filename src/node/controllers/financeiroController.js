@@ -14,7 +14,7 @@ const financeiroController = {
         const tom = financeiro.TONS.includes(req.query.tom) ? req.query.tom : null;
         const indice = parseInt(req.query.m, 10);
         const dias = Math.min(Math.max(parseInt(req.query.n, 10) || 1, 1), 999);
-        const mensagem = tom && indice >= 1 && indice <= financeiro.MENSAGENS_POR_TOM ? financeiro.texto(tom, indice, dias, req.lang) : null;
+        const mensagem = tom && indice >= 1 && indice <= financeiro.MENSAGENS_POR_TOM * 2 ? financeiro.texto(tom, indice, dias, req.lang) : null;
         const pausadoAte = config.pausado_ate && Number(config.pausado_ate) > Date.now() ? Number(config.pausado_ate) : null;
         res.render('financeiro/index', {
             title: req.t('financeiro.pagina_titulo'),
