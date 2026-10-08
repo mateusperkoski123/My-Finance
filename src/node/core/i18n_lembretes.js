@@ -14,7 +14,6 @@ module.exports = {
     'lembrete.rot_transf': ['Transf.', 'Transf.', 'Transfer'],
     'lembrete.total_receber': ['Total a receber: {valor}', 'Total a cobrar: {valor}', 'Total to receive: {valor}'],
     'lembrete.atrasadas': ['Atrasadas: {n} ({valor})', 'Atrasados: {n} ({valor})', 'Overdue: {n} ({valor})'],
-    'lembrete.mais': ['+ {n} outras (toque para ver)', '+ {n} más (tocá para ver)', '+ {n} more (tap to see)'],
     'lembrete.total': ['Total a pagar: {valor}', 'Total a pagar: {valor}', 'Total to pay: {valor}'],
     'lembrete.teste_titulo': ['Notificações ativadas', 'Notificaciones activadas', 'Notifications enabled'],
     'lembrete.teste_corpo': ['Você receberá aqui os avisos das despesas que vencem.', 'Recibirás aquí los avisos de los gastos que vencen.', 'You will get your due-expense alerts here.'],

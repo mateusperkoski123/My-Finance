@@ -209,9 +209,16 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
                 </div>
                 <small class="muted"><%= t('assinatura.telefone_dica') %></small>
             </label>
+            <% if (pagoOnline) { %>
+            <label class="lanc-campo">
+                <span><%= t('assinatura.documento') %></span>
+                <input class="input" type="text" name="documento" inputmode="numeric" autocomplete="off" required maxlength="20" placeholder="1234567">
+                <small class="muted"><%= t('assinatura.documento_dica') %></small>
+            </label>
+            <% } %>
             <div class="modal-rodape">
                 <button type="button" class="btn btn-outline" data-modal-close><%= t('assinatura.cancelar') %></button>
-                <button type="submit" class="btn btn-primary btn-salvar"><%= t('assinatura.enviar_pedido') %></button>
+                <button type="submit" class="btn btn-primary btn-salvar"><%= t(pagoOnline ? 'assinatura.pagar_agora' : 'assinatura.enviar_pedido') %></button>
             </div>
         </form>
     </div>

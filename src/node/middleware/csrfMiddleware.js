@@ -10,6 +10,11 @@ function csrfProtection(req, res, next) {
         return next();
     }
 
+    // Aviso de pagamento do Pagopar: sem sessao, autenticado pelo token do corpo.
+    if (req.path === '/pagopar/resposta') {
+        return next();
+    }
+
     // Cron externo dos lembretes: autenticado por CRON_TOKEN, sem sessao.
     if (req.path === '/cron/lembretes') {
         return next();

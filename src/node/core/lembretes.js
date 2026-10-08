@@ -5,7 +5,7 @@ const { t } = require('./i18n');
 const { moeda, descricaoLancamento } = require('./helpers');
 
 const FUSO_PADRAO = process.env.IA_TIMEZONE || 'America/Asuncion';
-const MAX_ITENS_NA_NOTIFICACAO = 4;
+const MAX_ITENS_NA_NOTIFICACAO = 3;
 const LOTE = 10;
 
 function fusoValido(fuso) {
@@ -102,8 +102,8 @@ function montarNotificacao(itens, atrasadas, dataYMD, deslocamentoDias, { idioma
         ...g.receber.map((i) => [tr('lembrete.rot_receber'), i.descricao, i.valor_abs, i.conta_moeda]),
         ...g.transf.map((i) => [tr('lembrete.rot_transf'), descricaoLancamento(i, (k) => tr(k)), i.valor_abs, i.conta_moeda])
     ];
-    todos.slice(0, MAX_ITENS_NA_NOTIFICACAO).forEach(([rot, nome, valor, moedaItem]) => linhas.push(`${rot} ${nome}: ${moeda(valor, moedaItem || cod)}`));
-    if (todos.length > MAX_ITENS_NA_NOTIFICACAO) linhas.push(tr('lembrete.mais', { n: todos.length - MAX_ITENS_NA_NOTIFICACAO }));
+    // Ate 3 itens: lista cada um (nome e valor). Mais que isso: so a quantidade (no titulo) e os totais, sem listar.
+    if (todos.length <= MAX_ITENS_NA_NOTIFICACAO) todos.forEach(([rot, nome, valor, moedaItem]) => linhas.push(`${rot} ${nome}: ${moeda(valor, moedaItem || cod)}`));
     if (g.pagar.length) linhas.push(tr('lembrete.total', { valor: totalTexto(g.pagar, cod) }));
     if (g.receber.length) linhas.push(tr('lembrete.total_receber', { valor: totalTexto(g.receber, cod) }));
     if (atrasadas.length) linhas.push(tr('lembrete.atrasadas', { n: atrasadas.length, valor: totalTexto(atrasadas, cod) }));

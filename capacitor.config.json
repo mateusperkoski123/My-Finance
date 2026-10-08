@@ -3,10 +3,10 @@
   "appName": "MyFinance",
   "webDir": "public",
   "server": {
-    "url": "https://darkred-porcupine-963236.hostingersite.com",
+    "url": "https://myfinanceacess.systempy.com",
     "androidScheme": "https",
     "cleartext": false,
-    "allowNavigation": ["darkred-porcupine-963236.hostingersite.com"]
+    "allowNavigation": ["myfinanceacess.systempy.com", "darkred-porcupine-963236.hostingersite.com"]
   },
   "plugins": {
     "SplashScreen": { "launchShowDuration": 1500, "backgroundColor": "#0b0d12", "showSpinner": false },

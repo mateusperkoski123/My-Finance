@@ -100,6 +100,9 @@ router.post('/verificar-email/reenviar', requireAuth, contaController.reenviarVe
 // Assinatura
 router.get('/assinatura', requireAuth, assinaturaController.index);
 router.post('/assinatura/solicitar', requireAuth, assinaturaController.solicitar);
+router.get('/assinatura/pagopar/retorno/:hash', requireAuth, assinaturaController.retornoPagopar);
+// Aviso do Pagopar (sem sessao; autenticado pelo token do corpo).
+router.post('/pagopar/resposta', cronLimiter, assinaturaController.webhookPagopar);
 // Guia de uso (caso pratico passo a passo, nos tres idiomas)
 router.get('/guia', requireAuth, (req, res) => {
     res.render('guia/index', { title: req.t('guia.titulo'), secoes: require('../core/guia').montar(req.lang) });

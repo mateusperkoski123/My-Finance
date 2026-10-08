@@ -37,6 +37,18 @@ app.all('/ping', (req, res) => {
     res.status(204).end();
 });
 
+// Endereco antigo (*.hostingersite.com) -> endereco oficial. So paginas abertas no navegador (GET/HEAD): a API do app,
+// o cron, o aviso do Pagopar e o app Android (WebView, que ainda aponta para o endereco antigo) seguem sem redirecionar.
+const HOST_OFICIAL = process.env.HOST_OFICIAL || (process.env.NODE_ENV === 'production' ? 'myfinanceacess.systempy.com' : '');
+app.use((req, res, next) => {
+    if (!HOST_OFICIAL || (req.method !== 'GET' && req.method !== 'HEAD')) return next();
+    const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim().toLowerCase().replace(/:\d+$/, '');
+    if (!host.endsWith('.hostingersite.com')) return next();
+    if (/^\/(api\/|cron\/|pagopar\/|ping$|service-worker\.js$)/.test(req.path)) return next();
+    if (/; wv\)|capacitor/i.test(String(req.headers['user-agent'] || ''))) return next();
+    res.redirect(301, `https://${HOST_OFICIAL}${req.originalUrl}`);
+});
+
 // Body parsing
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
