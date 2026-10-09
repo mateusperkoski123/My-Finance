@@ -140,6 +140,10 @@
                                 </button>
                                 <input class="input" type="text" name="valor_ajuste" data-money data-money-positivo data-moeda-cod="<%= c.moeda %>" required style="flex: 1;">
                             </div>
+                            <div class="ajuste-previa" data-ajuste-previa data-saldo="<%= c.saldo_atual %>" data-moeda="<%= c.moeda %>" style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 10px; font-size: 13px;">
+                                <span class="muted"><%= t('contas.saldo_apos_ajuste') %></span>
+                                <strong data-ajuste-previa-valor><%= moeda(c.saldo_atual, c.moeda) %></strong>
+                            </div>
                         </div>
 
                         <div class="modal__actions">
@@ -458,7 +462,26 @@ function gfAlternarAjuste(btn) {
     btn.querySelector('i').className = 'ph ' + (adicionando ? 'ph-minus' : 'ph-plus');
     btn.querySelector('span').textContent = btn.getAttribute(adicionando ? 'data-rotulo-sub' : 'data-rotulo-add');
     btn.style.color = adicionando ? 'var(--red)' : 'var(--green)';
+    gfAtualizarPreviaAjuste(btn.closest('form'));
 }
+
+// Mostra o saldo que a conta vai ter depois do ajuste (saldo atual +/- valor digitado).
+function gfAtualizarPreviaAjuste(form) {
+    if (!form) return;
+    var previa = form.querySelector('[data-ajuste-previa]');
+    var campo = form.querySelector('[name="valor_ajuste"]');
+    var tipo = form.querySelector('[name="tipo_ajuste"]');
+    if (!previa || !campo || !tipo || !window.AppRegras || !window.gfFormatarValorMoeda) return;
+    var saldo = parseFloat(previa.getAttribute('data-saldo')) || 0;
+    var valor = Math.abs(window.AppRegras.parseMoeda(campo.value) || 0);
+    var novo = saldo + (tipo.value === 'ingreso' ? valor : -valor);
+    var destino = previa.querySelector('[data-ajuste-previa-valor]');
+    destino.textContent = window.gfFormatarValorMoeda(Math.round(novo * 100) / 100, previa.getAttribute('data-moeda'));
+    destino.style.color = novo < 0 ? 'var(--red)' : 'var(--green)';
+}
+document.addEventListener('input', function (e) {
+    if (e.target && e.target.name === 'valor_ajuste') gfAtualizarPreviaAjuste(e.target.form);
+});
 
 function toggleOlhoConta(contaId) {
     if (ocultasSet.has(contaId)) {

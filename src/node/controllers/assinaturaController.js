@@ -126,7 +126,7 @@ const assinaturaController = {
         try {
             const descricao = `${NOME_APP} - ${plano.nome} (${ciclo})`;
             const r = await pagopar.criarPedido({
-                pedidoId, valor, descricao, usuario: req.user, documento, telefone: `${tel.codigo}${tel.numero}`.replace(/\D/g, '')
+                pedidoId, valor, descricao, usuario: req.user, documento, telefone: '+' + `${tel.codigo}${tel.numero}`.replace(/\D/g, '')
             });
             await pagopar.Pedido.definirHash(pedidoId, r.hash);
             return r.url;

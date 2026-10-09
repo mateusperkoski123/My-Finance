@@ -289,6 +289,7 @@ module.exports = {
     'contas.origem': 'SOURCE ACCOUNT',
     'contas.saldo': 'BALANCE',
     'contas.inf_valor': 'Enter the adjustment amount',
+    'contas.saldo_apos_ajuste': 'Balance after adjustment',
     'contas.adicionar_saldo': 'Add Balance',
     'contas.subtrair_saldo': 'Subtract Balance',
     'contas.confirmar_ajuste': 'Confirm Adjustment',

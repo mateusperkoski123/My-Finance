@@ -15,9 +15,9 @@ const SECOES = [
             s('Crie **Banco Itaú** com saldo inicial de **Gs. 2.000.000** e **Carteira** com **Gs. 150.000**.', 'Creá **Banco Itaú** con saldo inicial de **Gs. 2.000.000** y **Billetera** con **Gs. 150.000**.', 'Create **Banco Itaú** with an opening balance of **Gs. 2,000,000** and **Wallet** with **Gs. 150,000**.'),
             s('A conta marcada como **padrão** já vem escolhida nos formulários, para você digitar menos.', 'La cuenta marcada como **predeterminada** ya viene elegida en los formularios, para que escribas menos.', 'The account marked as **default** comes pre-selected in the forms, so you type less.')
         ],
-        dica: s('O saldo inicial é só o que você tem hoje; o app soma e subtrai os lançamentos a partir daí. Se um dia o saldo do app não bater com o do banco, use **Ajustar saldo** na conta. O número de contas depende do plano: até 2 no Básico, 3 no Premium e ilimitadas no Pro.',
-            'El saldo inicial es solo lo que tenés hoy; la app suma y resta los movimientos desde ahí. Si algún día el saldo de la app no coincide con el del banco, usá **Ajustar saldo** en la cuenta. La cantidad de cuentas depende del plan: hasta 2 en el Básico, 3 en el Premium e ilimitadas en el Pro.',
-            'The opening balance is only what you have today; the app adds and subtracts entries from there. If the app balance ever differs from your bank, use **Adjust balance** on the account. The number of accounts depends on the plan: up to 2 on Basic, 3 on Premium and unlimited on Pro.')
+        dica: s('O saldo inicial é só o que você tem hoje; o app soma e subtrai os lançamentos a partir daí. Se um dia o saldo do app não bater com o do banco, use **Ajustar saldo** na conta. O número de contas depende do plano: até 2 no Básico, 4 no Premium e ilimitadas no Pro.',
+            'El saldo inicial es solo lo que tenés hoy; la app suma y resta los movimientos desde ahí. Si algún día el saldo de la app no coincide con el del banco, usá **Ajustar saldo** en la cuenta. La cantidad de cuentas depende del plan: hasta 2 en el Básico, 4 en el Premium e ilimitadas en el Pro.',
+            'The opening balance is only what you have today; the app adds and subtracts entries from there. If the app balance ever differs from your bank, use **Adjust balance** on the account. The number of accounts depends on the plan: up to 2 on Basic, 4 on Premium and unlimited on Pro.')
     },
     {
         id: 'receita', icone: 'ph-arrow-circle-up',
