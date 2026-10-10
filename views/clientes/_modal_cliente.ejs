@@ -1,0 +1,44 @@
+<%# Parametros: idModal, acao, titulo, cliente (opcional: preenche o formulario), voltar (opcional) %>
+<% const _c = typeof cliente !== 'undefined' && cliente ? cliente : {}; %>
+<div class="modal-backdrop" id="<%= idModal %>" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= titulo %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="<%= acao %>" class="form">
+            <%- csrfCampo %>
+            <% if (typeof voltar !== 'undefined' && voltar) { %><input type="hidden" name="voltar" value="<%= voltar %>"><% } %>
+            <div class="form-group">
+                <label for="<%= idModal %>-nome"><%= t('clientes.campo_nome') %> *</label>
+                <input class="input" type="text" id="<%= idModal %>-nome" name="nome" maxlength="150" required value="<%= _c.nome || '' %>">
+            </div>
+            <div class="form-group">
+                <label for="<%= idModal %>-celular"><%= t('clientes.campo_celular') %></label>
+                <input class="input" type="text" id="<%= idModal %>-celular" name="celular" maxlength="40" inputmode="tel" value="<%= _c.celular || '' %>">
+            </div>
+            <div class="clientes-fila">
+                <div class="form-group">
+                    <label for="<%= idModal %>-cedula"><%= t('clientes.campo_cedula') %></label>
+                    <input class="input" type="text" id="<%= idModal %>-cedula" name="cedula" maxlength="40" value="<%= _c.cedula || '' %>">
+                </div>
+                <div class="form-group">
+                    <label for="<%= idModal %>-ruc"><%= t('clientes.campo_ruc') %></label>
+                    <input class="input" type="text" id="<%= idModal %>-ruc" name="ruc" maxlength="40" value="<%= _c.ruc || '' %>">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="<%= idModal %>-email"><%= t('clientes.campo_email') %></label>
+                <input class="input" type="email" id="<%= idModal %>-email" name="email" maxlength="190" value="<%= _c.email || '' %>">
+            </div>
+            <div class="form-group">
+                <label for="<%= idModal %>-obs"><%= t('clientes.campo_obs') %></label>
+                <textarea class="input" id="<%= idModal %>-obs" name="observacoes" rows="3" maxlength="1000"><%= _c.observacoes || '' %></textarea>
+            </div>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('clientes.salvar') %></button>
+            </div>
+        </form>
+    </div>
+</div>

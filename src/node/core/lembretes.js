@@ -142,7 +142,39 @@ async function enviarAvisos(cfg, agoraMs) {
         gerados++;
         await enviarParaUsuario(cfg.user_id, payload);
     }
+    // Modulo Clientes: renova as cuotas dos contratos sem prazo e, se o usuario quiser, avisa os vencimentos de hoje.
+    if (cfg.clientes_habilitado) {
+        try {
+            const Cliente = require('../models/Cliente');
+            await Cliente.renovarContratos(cfg.user_id);
+            if (cfg.aviso_clientes) {
+                const payload = montarAvisoClientes(await Cliente.vencimentosDoDia(cfg.user_id, hoje), hoje, cfg);
+                if (payload) {
+                    gerados++;
+                    await enviarParaUsuario(cfg.user_id, payload);
+                }
+            }
+        } catch (err) {
+            console.error('Falha no aviso de clientes do usuario', cfg.user_id, err.message);
+        }
+    }
     return gerados;
+}
+
+// "Hoje vencem N clientes": so a quantidade e o total a cobrar por moeda (a lista completa fica na tela de Clientes).
+function montarAvisoClientes(v, dataYMD, { idioma, moeda: cod }) {
+    const tr = (k, p) => t(k, p, idioma);
+    const n = v.porMoeda.reduce((s, r) => s + Number(r.clientes), 0);
+    if (!n && !v.atrasados) return null;
+    const linhas = [];
+    if (n) linhas.push(tr('lembrete.clientes_total', { valor: v.porMoeda.map((r) => moeda(r.valor, r.moeda || cod)).join(' + ') }));
+    if (n && v.atrasados) linhas.push(tr('lembrete.clientes_atrasados', { n: v.atrasados }));
+    return {
+        title: n ? tr('lembrete.clientes_titulo', { n }) : tr('lembrete.clientes_so_atrasados', { n: v.atrasados }),
+        body: linhas.join('\n'),
+        url: n ? `/clientes?dia=${dataYMD}` : '/clientes?mes=todos&estado=vencidas',
+        tag: `clientes-${dataYMD}`
+    };
 }
 
 // Chamado pelo cron externo: processa todo mundo cujo horario ja chegou.
@@ -175,5 +207,5 @@ async function processarDevidos() {
 
 module.exports = {
     FUSO_PADRAO, fusoValido, horaValida, partesNoFuso, proximoEnvio, dataLocalYMD, somarDias,
-    montarNotificacao, totalTexto, enviarParaUsuario, processarDevidos
+    montarNotificacao, montarAvisoClientes, totalTexto, enviarParaUsuario, processarDevidos
 };

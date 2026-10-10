@@ -235,7 +235,7 @@ class Assinatura {
                     CASE WHEN u.ultimo_login_em IS NULL AND u.ultimo_acesso_em IS NULL THEN NULL
                          ELSE GREATEST(COALESCE(u.ultimo_login_em, '1970-01-01 00:00:00'), COALESCE(u.ultimo_acesso_em, '1970-01-01 00:00:00')) END AS ultimo_acesso,
                     u.telefone_codigo, u.telefone_numero,
-                    u.email_verificado_em, u.ia_habilitada, u.ia_nivel, u.origem, u.google_id IS NOT NULL AS via_google,
+                    u.email_verificado_em, u.ia_habilitada, u.ia_nivel, u.clientes_habilitado, u.origem, u.google_id IS NOT NULL AS via_google,
                     a.status AS ass_status, a.ciclo, a.trial_fim, a.periodo_fim, a.ciclo_solicitado,
                     p.codigo AS plano_codigo, ps.codigo AS solicitado_codigo,
                     TIMESTAMPDIFF(HOUR, NOW(), a.trial_fim) AS horas_trial,

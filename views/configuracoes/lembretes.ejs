@@ -59,6 +59,13 @@
                         <input type="checkbox" name="aviso_antes" value="1" <%= config.aviso_antes ? 'checked' : '' %>>
                         <%= t('lembrete.um_dia_antes') %>
                     </label>
+                    <% if (clientesVisivel) { %>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 6px;">
+                        <input type="checkbox" name="aviso_clientes" value="1" <%= config.aviso_clientes ? 'checked' : '' %>>
+                        <%= t('lembrete.clientes_opcao') %>
+                    </label>
+                    <p class="muted" style="font-size: 13px; margin: 4px 0 0 26px;"><%= t('lembrete.clientes_ajuda') %></p>
+                    <% } %>
                 </div>
 
                 <p class="muted" style="font-size: 13px; margin-bottom: 16px;">

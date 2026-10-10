@@ -1,0 +1,6 @@
+<div class="tabs clientes-abas">
+    <a href="/clientes" class="tabs__item <%= aba === 'cobrancas' ? 'is-active' : '' %>"><i class="ph ph-receipt"></i> <%= t('clientes.aba_cobrancas') %></a>
+    <a href="/clientes/lista" class="tabs__item <%= aba === 'clientes' ? 'is-active' : '' %>"><i class="ph ph-users"></i> <%= t('clientes.aba_clientes') %></a>
+    <a href="/clientes/servicos" class="tabs__item <%= aba === 'servicos' ? 'is-active' : '' %>"><i class="ph ph-tag"></i> <%= t('clientes.aba_servicos') %></a>
+    <a href="/clientes/importar" class="tabs__item <%= aba === 'importar' ? 'is-active' : '' %>"><i class="ph ph-upload-simple"></i> <%= t('clientes.aba_importar') %></a>
+</div>

@@ -33,7 +33,8 @@ const lembretesController = {
             pushDisponivel: push.disponivel(),
             chavePublica: push.chavePublica,
             totalAparelhos: aparelhos.length,
-            config: config || { ativo: 0, hora: '08:00', aviso_dia: 1, aviso_antes: 0, fuso: lembretes.FUSO_PADRAO }
+            clientesVisivel: Boolean(req.ehAdmin || req.user.clientes_habilitado),
+            config: config || { ativo: 0, hora: '08:00', aviso_dia: 1, aviso_antes: 0, aviso_clientes: 0, fuso: lembretes.FUSO_PADRAO }
         });
     },
 
@@ -42,6 +43,8 @@ const lembretesController = {
         const hora = String(req.body.hora || '');
         const avisoDia = req.body.aviso_dia === '1';
         const avisoAntes = req.body.aviso_antes === '1';
+        // So vale para quem tem o modulo Clientes liberado.
+        const avisoClientes = req.body.aviso_clientes === '1' && Boolean(req.ehAdmin || req.user.clientes_habilitado);
         const fuso = lembretes.fusoValido(req.body.fuso) ? req.body.fuso : lembretes.FUSO_PADRAO;
         const voltar = (mensagem) => {
             req.session.flash = mensagem;
@@ -49,10 +52,10 @@ const lembretesController = {
         };
 
         if (!lembretes.horaValida(hora)) return voltar({ tipo: 'erro', mensagem: req.t('lembrete.horario_invalido') });
-        if (ativo && !avisoDia && !avisoAntes) return voltar({ tipo: 'erro', mensagem: req.t('lembrete.escolha_quando') });
+        if (ativo && !avisoDia && !avisoAntes && !avisoClientes) return voltar({ tipo: 'erro', mensagem: req.t('lembrete.escolha_quando') });
 
         await Lembrete.salvarConfig(req.user.id, {
-            ativo, hora, avisoDia, avisoAntes, fuso,
+            ativo, hora, avisoDia, avisoAntes, avisoClientes, fuso,
             proximoEnvio: lembretes.proximoEnvio(hora, fuso)
         });
         voltar({ tipo: 'sucesso', mensagem: req.t('lembrete.salvo') });

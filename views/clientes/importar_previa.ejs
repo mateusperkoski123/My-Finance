@@ -1,0 +1,81 @@
+<%
+    const r = imp.resumo;
+    const _msg = function (e) { return t('clientes.erro_' + e.codigo, { max: e.max }); };
+%>
+<div class="page-header">
+    <h1><i class="ph ph-users"></i> <%= t('clientes.imp.previa_titulo') %></h1>
+    <p class="muted"><%= t('clientes.imp.previa_arquivo', { nome: imp.arquivo, n: r.lidas }) %></p>
+</div>
+
+<%- include('_abas') %>
+
+<div class="resumo-grid">
+    <div class="card resumo-card"><span class="resumo-card__label"><%= t('clientes.imp.res_clientes') %></span><span class="resumo-card__valor"><%= r.clientes %></span></div>
+    <div class="card resumo-card"><span class="resumo-card__label"><%= t('clientes.imp.res_contratos') %></span><span class="resumo-card__valor"><%= r.contratos %></span></div>
+    <div class="card resumo-card"><span class="resumo-card__label"><%= t('clientes.imp.res_cuotas') %></span><span class="resumo-card__valor"><%= r.cuotasTotal %></span><span class="resumo-card__sub muted"><%= t('clientes.imp.res_cuotas_pagas', { n: r.cuotasPagas }) %></span></div>
+    <div class="card resumo-card"><span class="resumo-card__label"><%= t('clientes.imp.res_omitidas') %></span><span class="resumo-card__valor"><%= r.duplicadas %></span></div>
+    <div class="card resumo-card"><span class="resumo-card__label"><%= t('clientes.imp.res_erros') %></span><span class="resumo-card__valor" style="color: <%= r.erros ? 'var(--red)' : 'inherit' %>;"><%= r.erros %></span></div>
+</div>
+
+<% if (r.semPagadas > 0) { %>
+<div class="alert alert-erro clientes-aviso"><i class="ph-bold ph-warning-circle"></i> <span><%= t('clientes.imp.aviso_sem_pagadas', { n: r.semPagadas, cuotas: r.cuotasVencidas }) %></span></div>
+<% } %>
+<% if (imp.novosServicos.length) { %>
+<div class="card" style="margin-bottom: 16px;">
+    <strong><%= t('clientes.imp.servicos_novos') %></strong>
+    <p class="muted" style="margin: 4px 0 0;"><%= imp.novosServicos.map(function (s) { return s.nome; }).join(', ') %></p>
+</div>
+<% } %>
+
+<% if (imp.erros.length) { %>
+<div class="card tabela-wrapper" style="margin-bottom: 16px;">
+    <h3 style="margin: 0 0 8px; font-size: 15px;"><%= t('clientes.imp.erros_titulo') %></h3>
+    <table class="tabela">
+        <thead><tr><th><%= t('clientes.imp.col_linha') %></th><th><%= t('clientes.campo_nome') %></th><th><%= t('clientes.imp.col_problema') %></th></tr></thead>
+        <tbody>
+        <% imp.erros.forEach(function (e) { %><tr><td><%= e.linha %></td><td><%= e.nome || '-' %></td><td><%= _msg(e) %></td></tr><% }) %>
+        </tbody>
+    </table>
+    <% if (r.erros > imp.erros.length) { %><p class="muted" style="font-size: 13px; margin: 8px 0 0;"><%= t('clientes.imp.e_mais', { n: r.erros - imp.erros.length }) %></p><% } %>
+</div>
+<% } %>
+
+<% if (imp.duplicadas.length) { %>
+<div class="card tabela-wrapper" style="margin-bottom: 16px;">
+    <h3 style="margin: 0 0 8px; font-size: 15px;"><%= t('clientes.imp.omitidas_titulo') %></h3>
+    <table class="tabela">
+        <thead><tr><th><%= t('clientes.imp.col_linha') %></th><th><%= t('clientes.campo_nome') %></th><th><%= t('clientes.campo_cedula') %></th></tr></thead>
+        <tbody>
+        <% imp.duplicadas.forEach(function (e) { %><tr><td><%= e.linha %></td><td><%= e.nome %></td><td><%= e.cedula %></td></tr><% }) %>
+        </tbody>
+    </table>
+    <% if (r.duplicadas > imp.duplicadas.length) { %><p class="muted" style="font-size: 13px; margin: 8px 0 0;"><%= t('clientes.imp.e_mais', { n: r.duplicadas - imp.duplicadas.length }) %></p><% } %>
+</div>
+<% } %>
+
+<div class="card">
+    <% if (r.clientes > 0) { %>
+    <form method="post" action="/clientes/importar/confirmar" class="form" data-confirm="<%= t('clientes.imp.confirmar', { n: r.clientes }) %>">
+        <%- csrfCampo %>
+        <% if (r.contratos > 0) { %>
+        <div class="form-group">
+            <label for="imp-conta"><%= t('clientes.imp.conta') %></label>
+            <select class="input" id="imp-conta" name="conta_id" required>
+                <% contas.forEach(function (c) { %><option value="<%= c.id %>" <%= c.conta_padrao ? 'selected' : '' %>><%= c.nome %> (<%= c.moeda %>)</option><% }) %>
+            </select>
+            <p class="muted" style="font-size: 13px; margin: 6px 0 0;"><%= t('clientes.imp.conta_ajuda') %></p>
+            <% if (r.cuotasPagas > 0) { %><p style="font-size: 13px; margin: 6px 0 0;"><i class="ph ph-warning"></i> <%= t('clientes.imp.aviso_saldo', { n: r.cuotasPagas }) %></p><% } %>
+        </div>
+        <% } %>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="submit" class="btn btn-primary"><i class="ph ph-check-circle"></i> <%= t('clientes.imp.importar_btn', { n: r.clientes }) %></button>
+        </div>
+    </form>
+    <% } else { %>
+    <p style="margin-top: 0;"><%= t('clientes.imp.erro_nada') %></p>
+    <% } %>
+    <form method="post" action="/clientes/importar/cancelar" style="margin-top: 8px;">
+        <%- csrfCampo %>
+        <button type="submit" class="btn btn-outline"><%= t('clientes.imp.escolher_outro') %></button>
+    </form>
+</div>

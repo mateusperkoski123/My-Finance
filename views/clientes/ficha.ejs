@@ -1,0 +1,261 @@
+<%
+    const _voltar = '/clientes/' + cliente.id;
+    const _hojeP = hoje.split('-').map(Number);
+    const _atraso = (venc) => Math.max(0, Math.round((Date.UTC(_hojeP[0], _hojeP[1] - 1, _hojeP[2]) - Date.UTC(+venc.slice(0, 4), +venc.slice(5, 7) - 1, +venc.slice(8, 10))) / 86400000));
+%>
+<div class="page-header page-header--acoes">
+    <div>
+        <h1><i class="ph ph-user"></i> <%= cliente.nome %>
+            <% if (cliente.status === 'inativo') { %><span class="badge badge-neutro"><%= t('clientes.inativo') %></span><% } %>
+        </h1>
+        <p class="muted"><a href="/clientes/lista"><i class="ph ph-arrow-left"></i> <%= t('clientes.voltar_lista') %></a></p>
+    </div>
+    <div class="page-header__botoes">
+        <button type="button" class="btn btn-outline" data-modal-open="modal-editar-cliente"><i class="ph ph-pencil-simple"></i> <%= t('clientes.editar') %></button>
+        <% if (cliente.status === 'ativo') { %>
+        <button type="button" class="btn btn-primary" data-modal-open="modal-novo-contrato"><i class="ph ph-plus-circle"></i> <%= t('clientes.novo_contrato') %></button>
+        <% } %>
+        <details class="menu-acoes">
+            <summary class="btn btn-outline" aria-label="<%= t('acao.mais') %>"><i class="ph ph-dots-three-vertical"></i></summary>
+            <div class="menu-acoes__lista">
+                <form method="post" action="/clientes/<%= cliente.id %>/estado" <% if (cliente.status === 'ativo') { %>data-confirm="<%= t('clientes.confirmar_inativar') %>"<% } %>>
+                    <%- csrfCampo %><input type="hidden" name="estado" value="<%= cliente.status === 'ativo' ? 'inativo' : 'ativo' %>">
+                    <button type="submit"><i class="ph ph-<%= cliente.status === 'ativo' ? 'user-minus' : 'user-check' %>"></i> <%= t(cliente.status === 'ativo' ? 'clientes.inativar' : 'clientes.reativar') %></button>
+                </form>
+                <button type="button" class="perigo" data-modal-open="modal-excluir-cliente"><i class="ph ph-trash"></i> <%= t('clientes.excluir') %></button>
+            </div>
+        </details>
+    </div>
+</div>
+
+<div class="card clientes-dados">
+    <dl>
+        <div><dt><%= t('clientes.campo_celular') %></dt><dd><%= cliente.celular || '-' %></dd></div>
+        <div><dt><%= t('clientes.campo_cedula') %></dt><dd><%= cliente.cedula || '-' %></dd></div>
+        <div><dt><%= t('clientes.campo_ruc') %></dt><dd><%= cliente.ruc || '-' %></dd></div>
+        <div><dt><%= t('clientes.campo_email') %></dt><dd><%= cliente.email || '-' %></dd></div>
+    </dl>
+    <% if (cliente.observacoes) { %><p class="muted" style="margin: 12px 0 0; white-space: pre-line;"><%= cliente.observacoes %></p><% } %>
+</div>
+
+<h2 class="clientes-subtitulo"><%= t('clientes.contratos') %></h2>
+<% if (!contratos.length) { %>
+    <div class="card placeholder-card"><p class="muted" style="margin: 0;"><%= t('clientes.sem_contratos') %></p></div>
+<% } %>
+
+<% contratos.forEach(function (k) {
+    const pagas = k.cuotas.filter(function (c) { return c.status === 'pago'; }).length;
+    const total = k.cuotas_total || k.cuotas.length;
+    const ativo = k.status === 'ativo';
+%>
+<div class="card clientes-contrato <%= ativo ? '' : 'is-cancelado' %>">
+    <div class="clientes-contrato__topo">
+        <div>
+            <strong style="font-size: 16px;"><%= k.servico_nome %></strong>
+            <% if (!ativo) { %><span class="badge badge-neutro"><%= t('clientes.cancelado_em', { data: formatDate(k.cancelado, 'DD/MM/YYYY') }) %></span><% } %>
+            <div class="muted" style="font-size: 13px;">
+                <%= moeda(k.valor, k.conta_moeda) %> · <%= t('clientes.per_' + k.periodicidade) %>
+                · <%= k.prazo_meses ? t('clientes.prazo_n', { n: k.prazo_meses }) : t('clientes.sem_prazo') %>
+                · <%= t('clientes.vence_dia', { dia: k.dia_vencimento }) %>
+                · <%= k.conta_nome %>
+            </div>
+            <div class="muted" style="font-size: 13px;"><%= t('clientes.inicio_em', { data: formatDate(k.inicio, 'DD/MM/YYYY') }) %><% if (k.motivo_cancelamento) { %> · <%= k.motivo_cancelamento %><% } %></div>
+        </div>
+        <div class="clientes-contrato__resumo">
+            <span class="badge badge-sucesso"><%= t('clientes.pagaram_de', { pagas: pagas, total: total }) %></span>
+            <% if (ativo) { %>
+            <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-editar-contrato-<%= k.id %>"><i class="ph ph-pencil-simple"></i> <%= t('clientes.editar') %></button>
+            <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-cancelar-contrato-<%= k.id %>"><i class="ph ph-prohibit"></i> <%= t('clientes.cancelar_contrato') %></button>
+            <% } %>
+        </div>
+    </div>
+    <div class="cuotas-grid">
+        <% k.cuotas.forEach(function (c) {
+            const pago = c.status === 'pago';
+            const atraso = !pago ? _atraso(c.venc) : 0;
+            const clase = pago ? 'pago' : (atraso > 0 ? 'vencida' : 'pendente');
+            const titulo = pago ? t('clientes.st_paga') + (c.pago_em ? ' · ' + formatDate(c.pago_em, 'DD/MM/YYYY') : '') : (atraso > 0 ? t('clientes.st_vencida', { n: atraso }) : t('clientes.st_pendente'));
+        %>
+        <form method="post" action="/clientes/cuotas/<%= c.id %>/pagar" class="cuota-chip cuota-chip--<%= clase %>" <% if (pago) { %>data-confirm="<%= t('clientes.confirmar_desfazer') %>"<% } %>>
+            <%- csrfCampo %><input type="hidden" name="voltar" value="<%= _voltar %>">
+            <% if (pago) { %><input type="hidden" name="acao" value="desfazer"><% } %>
+            <button type="submit" title="<%= titulo %> — <%= pago ? t('clientes.desfazer') : t('clientes.pagar') %>">
+                <span class="cuota-chip__n"><i class="ph-bold ph-<%= pago ? 'check-circle' : (atraso > 0 ? 'warning-circle' : 'circle') %>"></i> <%= c.cuota_num %></span>
+                <span class="cuota-chip__data"><%= formatDate(c.venc, 'DD/MM/YYYY').slice(0, 5) %>/<%= c.venc.slice(2, 4) %></span>
+                <span class="cuota-chip__valor"><%= moeda(c.valor, k.conta_moeda) %></span>
+            </button>
+        </form>
+        <% }) %>
+    </div>
+    <p class="muted" style="font-size: 12px; margin: 10px 0 0;"><i class="ph ph-info"></i> <%= t('clientes.dica_chip') %></p>
+</div>
+
+<% if (ativo) { %>
+<div class="modal-backdrop" id="modal-editar-contrato-<%= k.id %>" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('clientes.editar_contrato') %> · <%= k.servico_nome %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="/clientes/contratos/<%= k.id %>/atualizar" class="form">
+            <%- csrfCampo %>
+            <div class="form-group">
+                <label><%= t('clientes.campo_valor') %></label>
+                <input class="input" type="text" name="valor" data-money data-money-positivo data-moeda-cod="<%= k.conta_moeda %>" value="<%= Number(k.valor) %>" required>
+            </div>
+            <div class="form-group">
+                <label><%= t('clientes.campo_dia') %></label>
+                <input class="input" type="number" name="dia" min="1" max="31" value="<%= k.dia_vencimento %>" required>
+            </div>
+            <p class="muted" style="font-size: 13px;"><%= t('clientes.editar_contrato_ajuda') %></p>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('clientes.salvar') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="modal-backdrop" id="modal-cancelar-contrato-<%= k.id %>" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('clientes.cancelar_contrato') %> · <%= k.servico_nome %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="/clientes/contratos/<%= k.id %>/cancelar" class="form">
+            <%- csrfCampo %>
+            <p style="margin-top: 0;"><%= t('clientes.cancelar_contrato_ajuda') %></p>
+            <div class="form-group">
+                <label><%= t('clientes.motivo') %></label>
+                <input class="input" type="text" name="motivo" maxlength="255">
+            </div>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-danger"><i class="ph ph-prohibit"></i> <%= t('clientes.cancelar_contrato') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+<% } %>
+<% }) %>
+
+<%- include('_modal_cliente', { idModal: 'modal-editar-cliente', acao: '/clientes/' + cliente.id + '/atualizar', titulo: t('clientes.editar'), cliente: cliente }) %>
+
+<div class="modal-backdrop" id="modal-excluir-cliente" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('clientes.excluir') %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="/clientes/<%= cliente.id %>/excluir" class="form">
+            <%- csrfCampo %>
+            <p style="margin-top: 0;"><%= t('clientes.excluir_ajuda') %></p>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-danger"><i class="ph ph-trash"></i> <%= t('clientes.excluir') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<% if (cliente.status === 'ativo') { %>
+<div class="modal-backdrop" id="modal-novo-contrato" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('clientes.novo_contrato') %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <% if (!servicos.length) { %>
+            <p><%= t('clientes.sem_servicos_aviso') %></p>
+            <a class="btn btn-primary" href="/clientes/servicos"><%= t('clientes.criar_servico') %></a>
+        <% } else if (!contas.length) { %>
+            <p><%= t('clientes.sem_contas_aviso') %></p>
+            <a class="btn btn-primary" href="/contas"><%= t('nav.contas') %></a>
+        <% } else { %>
+        <form method="post" action="/clientes/<%= cliente.id %>/contratos" class="form" id="form-contrato">
+            <%- csrfCampo %>
+            <div class="form-group">
+                <label for="ct-servico"><%= t('clientes.campo_servico') %></label>
+                <select class="input" id="ct-servico" name="servico_id" required>
+                    <% servicos.forEach(function (s) { %><option value="<%= s.id %>" data-valor="<%= Number(s.valor_padrao) %>" data-dia="<%= s.dia_vencimento || '' %>"><%= s.nome %></option><% }) %>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="ct-conta"><%= t('clientes.campo_conta') %></label>
+                <select class="input" id="ct-conta" name="conta_id" required>
+                    <% contas.forEach(function (c) { %><option value="<%= c.id %>" data-moeda="<%= c.moeda %>" <%= c.conta_padrao ? 'selected' : '' %>><%= c.nome %> (<%= c.moeda %>)</option><% }) %>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="ct-valor"><%= t('clientes.campo_valor') %></label>
+                <input class="input" type="text" id="ct-valor" name="valor" data-money data-money-positivo required>
+            </div>
+            <div class="clientes-fila">
+                <div class="form-group">
+                    <label for="ct-per"><%= t('clientes.campo_periodicidade') %></label>
+                    <select class="input" id="ct-per" name="periodicidade">
+                        <option value="mensal"><%= t('clientes.per_mensal') %></option>
+                        <option value="anual"><%= t('clientes.per_anual') %></option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ct-prazo"><%= t('clientes.campo_prazo') %></label>
+                    <select class="input" id="ct-prazo" name="prazo">
+                        <option value=""><%= t('clientes.sem_prazo') %></option>
+                        <option value="1" data-mensal="1"><%= t('clientes.prazo_1m') %></option>
+                        <option value="3" data-mensal="1"><%= t('clientes.prazo_3m') %></option>
+                        <option value="6" data-mensal="1"><%= t('clientes.prazo_6m') %></option>
+                        <option value="12" selected><%= t('clientes.prazo_1a') %></option>
+                        <option value="24"><%= t('clientes.prazo_2a') %></option>
+                        <option value="36"><%= t('clientes.prazo_3a') %></option>
+                    </select>
+                </div>
+            </div>
+            <div class="clientes-fila">
+                <div class="form-group">
+                    <label for="ct-dia"><%= t('clientes.campo_dia') %></label>
+                    <input class="input" type="number" id="ct-dia" name="dia" min="1" max="31" required>
+                </div>
+                <div class="form-group">
+                    <label for="ct-inicio"><%= t('clientes.campo_inicio') %></label>
+                    <input class="input" type="date" id="ct-inicio" name="inicio" value="<%= hoje %>" required>
+                </div>
+            </div>
+            <p class="muted" style="font-size: 13px;"><%= t('clientes.contrato_ajuda') %></p>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-check"></i> <%= t('clientes.criar_contrato') %></button>
+            </div>
+        </form>
+        <% } %>
+    </div>
+</div>
+<script>
+(function () {
+    var f = document.getElementById('form-contrato');
+    if (!f) return;
+    var sel = f.querySelector('[name="servico_id"]'), valor = f.querySelector('[name="valor"]'), dia = f.querySelector('[name="dia"]');
+    var conta = f.querySelector('#ct-conta'), per = f.querySelector('[name="periodicidade"]'), prazo = f.querySelector('[name="prazo"]'), inicio = f.querySelector('[name="inicio"]');
+    function moedaConta() { var o = conta.options[conta.selectedIndex]; return o ? o.getAttribute('data-moeda') : null; }
+    function aplicarServico() {
+        var o = sel.options[sel.selectedIndex];
+        if (!o) return;
+        var v = parseFloat(o.getAttribute('data-valor')) || 0;
+        valor.value = v > 0 && window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(v, moedaConta()) : (v > 0 ? String(v) : '');
+        dia.value = o.getAttribute('data-dia') || (inicio.value ? parseInt(inicio.value.slice(8, 10), 10) : '');
+    }
+    function aplicarPeriodicidade() {
+        var anual = per.value === 'anual';
+        Array.prototype.forEach.call(prazo.options, function (op) {
+            var soMensal = op.getAttribute('data-mensal') === '1';
+            op.disabled = anual && soMensal;
+            op.hidden = anual && soMensal;
+        });
+        if (prazo.options[prazo.selectedIndex].disabled) prazo.value = '12';
+    }
+    sel.addEventListener('change', aplicarServico);
+    conta.addEventListener('change', function () { setTimeout(aplicarServico, 0); });
+    per.addEventListener('change', aplicarPeriodicidade);
+    document.addEventListener('click', function (e) { if (e.target.closest('[data-modal-open="modal-novo-contrato"]')) { aplicarServico(); aplicarPeriodicidade(); } });
+})();
+</script>
+<% } %>

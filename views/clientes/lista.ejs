@@ -1,0 +1,69 @@
+<%
+    const _href = function (extra) {
+        const p = new URLSearchParams();
+        const todo = Object.assign({ status: status === 'ativo' ? '' : status, q: q }, extra);
+        Object.keys(todo).forEach(function (k) { if (todo[k] !== '' && todo[k] !== undefined) p.set(k, todo[k]); });
+        const s = p.toString();
+        return '/clientes/lista' + (s ? '?' + s : '');
+    };
+%>
+<div class="page-header page-header--acoes">
+    <div>
+        <h1><i class="ph ph-users"></i> <%= t('clientes.titulo') %></h1>
+        <p class="muted"><%= t('clientes.subtitulo') %></p>
+    </div>
+    <div class="page-header__botoes">
+        <button type="button" class="btn btn-primary" data-modal-open="modal-novo-cliente"><i class="ph ph-user-plus"></i> <%= t('clientes.novo') %></button>
+    </div>
+</div>
+
+<%- include('_abas') %>
+
+<div class="clientes-barra">
+    <div class="tabs">
+        <a href="<%= _href({ status: '', pagina: '' }) %>" class="tabs__item <%= status === 'ativo' ? 'is-active' : '' %>"><%= t('clientes.ativos_n', { n: totais.ativos }) %></a>
+        <a href="<%= _href({ status: 'inativo', pagina: '' }) %>" class="tabs__item <%= status === 'inativo' ? 'is-active' : '' %>"><%= t('clientes.inativos_n', { n: totais.inativos }) %></a>
+    </div>
+    <form method="get" action="/clientes/lista" class="clientes-busca">
+        <% if (status !== 'ativo') { %><input type="hidden" name="status" value="<%= status %>"><% } %>
+        <input class="input" type="search" name="q" value="<%= q %>" placeholder="<%= t('clientes.buscar_ph') %>" aria-label="<%= t('clientes.buscar') %>">
+        <button type="submit" class="btn btn-outline"><i class="ph ph-magnifying-glass"></i> <%= t('clientes.buscar') %></button>
+    </form>
+</div>
+
+<div class="card tabela-wrapper clientes-tabela">
+    <% if (!clientes.length) { %>
+        <p class="muted" style="padding: 20px; margin: 0;"><%= q ? t('clientes.sem_resultados') : t('clientes.lista_vazia') %></p>
+    <% } else { %>
+    <table class="tabela">
+        <thead>
+            <tr>
+                <th><%= t('clientes.campo_nome') %></th>
+                <th><%= t('clientes.campo_celular') %></th>
+                <th><%= t('clientes.campo_cedula') %></th>
+                <th class="tabela__num"><%= t('clientes.col_contratos') %></th>
+                <th><%= t('clientes.col_situacao') %></th>
+            </tr>
+        </thead>
+        <tbody>
+        <% clientes.forEach(function (c) { %>
+            <tr>
+                <td><a href="/clientes/<%= c.id %>"><strong><%= c.nome %></strong></a><% if (c.email) { %><div class="muted" style="font-size: 12px;"><%= c.email %></div><% } %></td>
+                <td><%= c.celular || '-' %></td>
+                <td><%= c.cedula || c.ruc || '-' %></td>
+                <td class="tabela__num"><%= c.contratos_ativos %></td>
+                <td>
+                    <% if (c.status === 'inativo') { %><span class="badge badge-neutro"><%= t('clientes.inativo') %></span>
+                    <% } else if (Number(c.vencidas) > 0) { %><span class="badge badge-pendente"><%= t('clientes.vencidas_n', { n: c.vencidas }) %></span>
+                    <% } else if (Number(c.contratos_ativos) > 0) { %><span class="badge badge-sucesso"><%= t('clientes.em_dia') %></span>
+                    <% } else { %><span class="badge badge-neutro"><%= t('clientes.sem_contrato') %></span><% } %>
+                </td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+    <% } %>
+</div>
+
+<%- include('_paginacao', { pagina, paginas, hrefPagina: function (n) { return _href({ pagina: n }); } }) %>
+<%- include('_modal_cliente', { idModal: 'modal-novo-cliente', acao: '/clientes/criar', titulo: t('clientes.novo'), cliente: null }) %>

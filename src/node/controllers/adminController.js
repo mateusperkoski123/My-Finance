@@ -162,6 +162,20 @@ const adminController = {
         redirecionar(res);
     },
 
+    // Libera (ou desliga) o modulo Clientes para um usuario.
+    alternarClientes: async (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        const ligar = req.body.clientes === '1';
+        const alvo = await User.findById(id);
+        if (!alvo) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_usuario_nao_encontrado') };
+            return redirecionar(res);
+        }
+        await User.definirClientesHabilitado(id, ligar);
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t(ligar ? 'flash.admin_clientes_ativado' : 'flash.admin_clientes_desativado') };
+        redirecionar(res);
+    },
+
     alternarIaNivel: async (req, res) => {
         const id = parseInt(req.params.id, 10);
         const nivel = req.body.nivel === '2' ? 2 : 1;

@@ -2799,3 +2799,66 @@ a.navbar__avatar { text-decoration: none; }
   .barra-inf.barra-inf--ia { grid-template-columns: repeat(6, 1fr); }
   .barra-inf--ia > a span, .barra-inf--ia > button span:not(.barra-inf__ponto) { font-size: 10.5px; }
 }
+
+/* ==========================================================================
+   Modulo Clientes (cuotas de servicos)
+   ========================================================================== */
+.clientes-abas { margin-bottom: 16px; }
+.clientes-periodo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.clientes-periodo__mes { min-width: 150px; text-align: center; font-size: 16px; display: inline-block; }
+.clientes-periodo__mes::first-letter { text-transform: uppercase; }
+.clientes-periodo__ativos { margin-left: auto; font-size: 13px; }
+.clientes-aviso { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 16px; }
+.clientes-aviso span { flex: 1; min-width: 200px; }
+.clientes-resumo { margin-bottom: 8px; }
+.clientes-resumo > .badge { margin-bottom: 8px; }
+.clientes-progresso { padding: 14px 16px; margin-bottom: 20px; }
+.clientes-progresso__topo { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-weight: 600; margin-bottom: 8px; }
+.progresso { height: 10px; border-radius: 999px; background: var(--bg); border: 1px solid var(--border); overflow: hidden; }
+.progresso > span { display: block; height: 100%; background: var(--green); border-radius: 999px; }
+.clientes-filtros { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 12px; margin-bottom: 16px; }
+.clientes-filtros .input { flex: 1; min-width: 150px; }
+.clientes-tabela { padding: 4px; }
+.clientes-tabela .tabela { white-space: normal; }
+.clientes-tabela .tabela td, .clientes-tabela .tabela th { vertical-align: middle; }
+.clientes-acoes { text-align: right; white-space: nowrap; }
+.clientes-paginacao { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 16px 0; }
+.clientes-barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.clientes-busca { display: flex; gap: 8px; flex-wrap: wrap; }
+.clientes-busca .input { min-width: 220px; }
+.clientes-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.clientes-dados { margin-bottom: 20px; }
+.clientes-dados dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px 20px; margin: 0; }
+.clientes-dados dt { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .02em; }
+.clientes-dados dd { margin: 2px 0 0; font-weight: 600; word-break: break-word; }
+.clientes-subtitulo { font-size: 17px; margin: 24px 0 12px; }
+.clientes-contrato { margin-bottom: 16px; }
+.clientes-contrato.is-cancelado { opacity: .75; }
+.clientes-contrato__topo { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.clientes-contrato__resumo { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.cuotas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.cuota-chip { margin: 0; }
+.cuota-chip button {
+    width: 100%; display: flex; flex-direction: column; gap: 2px; align-items: flex-start; text-align: left;
+    padding: 8px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--card);
+    color: var(--text); font-family: inherit; cursor: pointer; min-height: 62px;
+}
+.cuota-chip__n { font-weight: 700; font-size: 14px; }
+.cuota-chip__data { font-size: 12px; color: var(--muted); }
+.cuota-chip__valor { font-size: 12px; font-weight: 600; }
+.cuota-chip--pago button { background: var(--green-bg); border-color: var(--green); }
+.cuota-chip--pago .cuota-chip__n { color: var(--green); }
+.cuota-chip--vencida button { background: var(--red-bg); border-color: var(--red); }
+.cuota-chip--vencida .cuota-chip__n { color: var(--red); }
+.cuota-chip button:hover { filter: brightness(.97); }
+.clientes-passo {
+    display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; margin-right: 6px;
+    border-radius: 50%; background: var(--primary); color: var(--primary-text); font-size: 14px;
+}
+.clientes-lista-regras { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+@media (max-width: 768px) {
+    .clientes-fila { grid-template-columns: 1fr; }
+    .clientes-periodo__ativos { margin-left: 0; width: 100%; }
+    .clientes-busca, .clientes-busca .input { width: 100%; }
+    .cuotas-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+}

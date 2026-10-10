@@ -7,7 +7,7 @@
     const T = window.GF_OFF_T || {};
     const tr = (k, vazio) => T[k] || vazio || k;
     // Modulos que so funcionam com internet (IA, comunidade, administracao, assinatura/pagamentos).
-    const SO_ONLINE = /^\/(ia|comunidade|admin|assinatura)(\/|\?|$)/;
+    const SO_ONLINE = /^\/(ia|comunidade|admin|assinatura|clientes)(\/|\?|$)/;
     const estado = { online: navigator.onLine };
     window.GfConexao = estado;
 

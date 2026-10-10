@@ -134,6 +134,7 @@ router.post('/admin/usuarios/:id/trial', requireAuth, exigirAdmin, adminControll
 router.post('/admin/usuarios/:id/cancelar', requireAuth, exigirAdmin, adminController.cancelar);
 router.post('/admin/usuarios/:id/status', requireAuth, exigirAdmin, adminController.alterarStatus);
 router.post('/admin/usuarios/:id/ia-nivel', requireAuth, exigirAdmin, adminController.alternarIaNivel);
+router.post('/admin/usuarios/:id/clientes', requireAuth, exigirAdmin, adminController.alternarClientes);
 router.post('/admin/usuarios/:id/ia', requireAuth, exigirAdmin, adminController.alternarIa);
 router.post('/admin/usuarios/:id/arquivar', requireAuth, exigirAdmin, adminController.arquivar);
 router.get('/admin/arquivados', requireAuth, exigirAdmin, adminController.arquivados);
@@ -171,6 +172,40 @@ router.post('/contas/:id/ajustar', requireAuth, contasController.ajustarSaldo);
 router.post('/contas/transferir', requireAuth, contasController.transferir);
 router.post('/contas/agendar-transferencia', requireAuth, contasController.agendarTransferencia);
 router.get('/contas/:id/extrato', requireAuth, contasController.extrato);
+
+// Modulo Clientes (cuotas de servicos): liberado por usuario pelo admin. As rotas fixas vem antes de /clientes/:id.
+const clientesController = require('../controllers/clientesController');
+const { exigirClientes } = require('../middleware/clientesMiddleware');
+const uploadClientes = (req, res, next) => {
+    multer({ storage: multer.memoryStorage(), limits: { fileSize: 5 * 1024 * 1024, files: 1 } }).single('arquivo')(req, res, (err) => {
+        if (err) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t(err.code === 'LIMIT_FILE_SIZE' ? 'clientes.imp.erro_grande' : 'clientes.imp.erro_formato') };
+            return res.redirect('/clientes/importar');
+        }
+        next();
+    });
+};
+router.get('/clientes', requireAuth, exigirClientes, clientesController.painel);
+router.get('/clientes/lista', requireAuth, exigirClientes, clientesController.lista);
+router.get('/clientes/servicos', requireAuth, exigirClientes, clientesController.servicos);
+router.post('/clientes/servicos/criar', requireAuth, exigirClientes, clientesController.criarServico);
+router.post('/clientes/servicos/:id/atualizar', requireAuth, exigirClientes, clientesController.atualizarServico);
+router.post('/clientes/servicos/:id/arquivar', requireAuth, exigirClientes, clientesController.arquivarServico);
+router.get('/clientes/importar', requireAuth, exigirClientes, clientesController.importarPagina);
+router.get('/clientes/importar/modelo.:formato(xlsx|csv)', requireAuth, exigirClientes, clientesController.modelo);
+router.post('/clientes/importar', requireAuth, exigirClientes, uploadClientes, clientesController.importarEnviar);
+router.get('/clientes/importar/previa', requireAuth, exigirClientes, clientesController.importarPrevia);
+router.post('/clientes/importar/confirmar', requireAuth, exigirClientes, clientesController.importarConfirmar);
+router.post('/clientes/importar/cancelar', requireAuth, exigirClientes, clientesController.importarCancelar);
+router.post('/clientes/criar', requireAuth, exigirClientes, clientesController.criarCliente);
+router.post('/clientes/contratos/:id/atualizar', requireAuth, exigirClientes, clientesController.atualizarContrato);
+router.post('/clientes/contratos/:id/cancelar', requireAuth, exigirClientes, clientesController.cancelarContrato);
+router.post('/clientes/cuotas/:id/pagar', requireAuth, exigirClientes, clientesController.pagarCuota);
+router.get('/clientes/:id(\\d+)', requireAuth, exigirClientes, clientesController.ficha);
+router.post('/clientes/:id(\\d+)/atualizar', requireAuth, exigirClientes, clientesController.atualizarCliente);
+router.post('/clientes/:id(\\d+)/estado', requireAuth, exigirClientes, clientesController.definirEstado);
+router.post('/clientes/:id(\\d+)/excluir', requireAuth, exigirClientes, clientesController.excluirCliente);
+router.post('/clientes/:id(\\d+)/contratos', requireAuth, exigirClientes, clientesController.criarContrato);
 
 // Categorias routes
 router.get('/categorias', requireAuth, categoriasController.index);

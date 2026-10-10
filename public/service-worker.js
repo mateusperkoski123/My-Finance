@@ -33,7 +33,7 @@ const SHELL_OPCIONAL = [
 // Rotas que nunca passam pelo cache (autenticacao, admin, IA, pagamentos, API).
 const NUNCA_CACHEAR = [
     /^\/login/, /^\/logout/, /^\/cadastro/, /^\/esqueci-senha/, /^\/redefinir-senha/, /^\/auth\//,
-    /^\/admin/, /^\/ia(\/|$)/, /^\/assinatura/, /^\/comunidade/, /^\/api\//, /^\/lembretes/, /^\/financeiro/, /^\/cron\//, /^\/service-worker\.js$/, /^\/verificar-email/, /^\/aceitar-termos/
+    /^\/admin/, /^\/ia(\/|$)/, /^\/assinatura/, /^\/clientes/, /^\/comunidade/, /^\/api\//, /^\/lembretes/, /^\/financeiro/, /^\/cron\//, /^\/service-worker\.js$/, /^\/verificar-email/, /^\/aceitar-termos/
 ];
 
 function deveIgnorar(pathname) {

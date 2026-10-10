@@ -1,0 +1,32 @@
+<%# Pagamento com outra data: qualquer botao [data-pagar-id] abre este modal. Parametros: voltar, hoje %>
+<div class="modal-backdrop" id="modal-pagar-data" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('clientes.pagar_titulo') %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="" id="form-pagar-data" class="form">
+            <%- csrfCampo %>
+            <input type="hidden" name="voltar" value="<%= voltar %>">
+            <p id="pagar-data-resumo" class="muted" style="margin: 0 0 12px;"></p>
+            <div class="form-group">
+                <label for="pagar-data-campo"><%= t('clientes.pagar_data') %></label>
+                <input class="input" type="date" id="pagar-data-campo" name="data_pagamento" value="<%= hoje %>" required>
+            </div>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-check-circle"></i> <%= t('clientes.pagar') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-pagar-id]');
+    if (!b) return;
+    var f = document.getElementById('form-pagar-data');
+    f.action = '/clientes/cuotas/' + b.getAttribute('data-pagar-id') + '/pagar';
+    document.getElementById('pagar-data-resumo').textContent = b.getAttribute('data-pagar-resumo') || '';
+    document.getElementById('modal-pagar-data').classList.add('is-open');
+});
+</script>

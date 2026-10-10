@@ -1,0 +1,8 @@
+<%# Parametros: pagina, paginas, hrefPagina(n) %>
+<% if (paginas > 1) { %>
+<nav class="clientes-paginacao" aria-label="<%= t('clientes.paginacao') %>">
+    <% if (pagina > 1) { %><a class="btn btn-outline btn-sm" href="<%= hrefPagina(pagina - 1) %>"><i class="ph ph-caret-left"></i> <%= t('clientes.anterior') %></a><% } else { %><span></span><% } %>
+    <span class="muted"><%= t('clientes.pagina_de', { n: pagina, total: paginas }) %></span>
+    <% if (pagina < paginas) { %><a class="btn btn-outline btn-sm" href="<%= hrefPagina(pagina + 1) %>"><%= t('clientes.seguinte') %> <i class="ph ph-caret-right"></i></a><% } else { %><span></span><% } %>
+</nav>
+<% } %>

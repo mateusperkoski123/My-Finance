@@ -110,6 +110,12 @@
                     <span class="navbar__icon"><i class="ph ph-bank"></i></span>
                     <span class="navbar__label"><%= t('nav.contas') %></span>
                 </a>
+                <% if (_adm || usuarioLogado.clientes_habilitado) { %>
+                <a href="/clientes" title="<%= t('nav.clientes') %>" class="navbar__link <%= currentRoute.startsWith('/clientes') ? 'is-active' : '' %>">
+                    <span class="navbar__icon"><i class="ph ph-users"></i></span>
+                    <span class="navbar__label"><%= t('nav.clientes') %></span>
+                </a>
+                <% } %>
                 <% if (typeof ehAdmin !== 'undefined' && ehAdmin) { %>
                 <a href="/admin" title="<%= t('nav.admin') %>" class="navbar__link <%= currentRoute.startsWith('/admin') ? 'is-active' : '' %>">
                     <span class="navbar__icon"><i class="ph ph-shield-star"></i></span>
@@ -212,6 +218,7 @@
     </div>
     <div class="folha" id="folha-mais" role="menu" hidden>
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/categorias') ? 'is-active' : '' %>" href="/categorias"><i class="ph ph-tag"></i> <%= t('nav.categorias') %></a>
+        <% if (_adm || usuarioLogado.clientes_habilitado) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/clientes') ? 'is-active' : '' %>" href="/clientes"><i class="ph ph-users"></i> <%= t('nav.clientes') %></a><% } %>
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/comunidade') ? 'is-active' : '' %>" href="/comunidade"><i class="ph ph-users-three"></i> <%= t('nav.comunidad') %><% if (novidadesNovas > 0) { %> <span class="selo-novidade" title="<%= t('novidades.selo_titulo', { n: novidadesNovas }) %>"><%= novidadesNovas > 9 ? '9+' : novidadesNovas %></span><% } %></a>
         <% if (_mostrarIa && !_iaNaBarra) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/ia') ? 'is-active' : '' %>" href="/ia"><i class="ph ph-sparkle"></i> <%= t('nav.ia') %><% if (_seloIa) { %> <%- include('partials/selo_plano', { plano: 'premium' }) %><% } %></a><% } %>
         <% if (_adm) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/admin') ? 'is-active' : '' %>" href="/admin"><i class="ph ph-shield-star"></i> <%= t('nav.admin') %></a><% } %>

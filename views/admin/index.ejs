@@ -63,6 +63,7 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                         <% if (u.role === 'admin') { %><span class="badge badge-neutro">admin</span><% } %>
                         <%# O Chat IA vem do plano; o selo so aparece para quem o admin desligou ou deixou no nivel basico. %>
                         <% if (!u.ia_habilitada) { %><span class="badge badge-pendente"><i class="ph ph-sparkle"></i> <%= t('admin.ia_desligada') %></span><% } else if (u.ia_nivel !== 2) { %><span class="badge badge-neutro"><i class="ph ph-sparkle"></i> <%= t('admin.ia_nivel1') %></span><% } %>
+                        <% if (u.clientes_habilitado) { %><span class="badge badge-sucesso"><i class="ph ph-users"></i> <%= t('admin.clientes_ligado') %></span><% } %>
                         <% if (u.user_status !== 'ativo') { %><span class="badge badge-pendente"><%= t('admin.suspenso') %></span><% } %>
                         <div class="muted" style="font-size: 13px;"><%= u.email %> <% if (!u.email_verificado_em) { %>· <%= t('admin.sem_verificar') %><% } %></div>
                         <% if (u.telefone_numero) { %><div class="muted" style="font-size: 13px;"><i class="ph ph-phone"></i> <%= u.telefone_codigo %> <%= u.telefone_numero %></div><% } %>
@@ -127,6 +128,11 @@ const corStatus = { beta: 'badge-sucesso', trial: 'badge-sucesso', ativa: 'badge
                                     <%- csrfCampo %>
                                     <input type="hidden" name="ia" value="<%= u.ia_habilitada ? '0' : '1' %>">
                                     <button type="submit"><i class="ph ph-sparkle"></i> <%= t(u.ia_habilitada ? 'admin.ia_desativar' : 'admin.ia_ativar') %></button>
+                                </form>
+                                <form method="post" action="/admin/usuarios/<%= u.id %>/clientes" class="admin-form">
+                                    <%- csrfCampo %>
+                                    <input type="hidden" name="clientes" value="<%= u.clientes_habilitado ? '0' : '1' %>">
+                                    <button type="submit"><i class="ph ph-users"></i> <%= t(u.clientes_habilitado ? 'admin.clientes_desativar' : 'admin.clientes_ativar') %></button>
                                 </form>
                                 <% if (u.ia_habilitada) { %>
                                 <form method="post" action="/admin/usuarios/<%= u.id %>/ia-nivel" class="admin-form">

@@ -9,20 +9,20 @@ class Lembrete {
         return rows[0] || null;
     }
 
-    static async salvarConfig(userId, { ativo, hora, avisoDia, avisoAntes, fuso, proximoEnvio }) {
+    static async salvarConfig(userId, { ativo, hora, avisoDia, avisoAntes, avisoClientes = false, fuso, proximoEnvio }) {
         await db.query(
-            `INSERT INTO lembretes_config (user_id, ativo, hora, aviso_dia, aviso_antes, fuso, proximo_envio)
-             VALUES (?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO lembretes_config (user_id, ativo, hora, aviso_dia, aviso_antes, aviso_clientes, fuso, proximo_envio)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE ativo = VALUES(ativo), hora = VALUES(hora), aviso_dia = VALUES(aviso_dia),
-                aviso_antes = VALUES(aviso_antes), fuso = VALUES(fuso), proximo_envio = VALUES(proximo_envio)`,
-            [userId, ativo ? 1 : 0, hora, avisoDia ? 1 : 0, avisoAntes ? 1 : 0, fuso, ativo ? proximoEnvio : null]
+                aviso_antes = VALUES(aviso_antes), aviso_clientes = VALUES(aviso_clientes), fuso = VALUES(fuso), proximo_envio = VALUES(proximo_envio)`,
+            [userId, ativo ? 1 : 0, hora, avisoDia ? 1 : 0, avisoAntes ? 1 : 0, avisoClientes ? 1 : 0, fuso, ativo ? proximoEnvio : null]
         );
     }
 
     // Quem esta com o horario vencido (proximo_envio <= agora), com idioma e moeda da conta.
     static async devidos(agoraMs, limite = 200) {
         const [rows] = await db.query(
-            `SELECT c.*, u.idioma, u.moeda FROM lembretes_config c
+            `SELECT c.*, u.idioma, u.moeda, u.clientes_habilitado FROM lembretes_config c
              JOIN users u ON u.id = c.user_id AND u.status = 'ativo'
              WHERE c.ativo = 1 AND c.proximo_envio IS NOT NULL AND c.proximo_envio <= ?
              ORDER BY c.proximo_envio ASC LIMIT ?`,
@@ -85,6 +85,7 @@ class Lembrete {
         return `FROM lancamentos l
              JOIN contas cb ON cb.id = l.conta_id AND cb.status = 'ativa'
              WHERE l.user_id = ? AND l.status = 'pendente'
+               AND l.contrato_id IS NULL
                AND (l.tipo IN ('receita', 'despesa') OR (l.tipo = 'transferencia' AND l.transferencia_par_id IS NOT NULL AND l.valor < 0))`;
     }
 

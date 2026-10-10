@@ -1,0 +1,38 @@
+<div class="page-header">
+    <h1><i class="ph ph-users"></i> <%= t('clientes.titulo') %></h1>
+    <p class="muted"><%= t('clientes.imp.subtitulo') %></p>
+</div>
+
+<%- include('_abas') %>
+
+<div class="card">
+    <h2 style="font-size: 17px; margin-top: 0;"><span class="clientes-passo">1</span> <%= t('clientes.imp.passo1') %></h2>
+    <p class="muted"><%= t('clientes.imp.passo1_texto') %></p>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <a class="btn btn-primary" href="/clientes/importar/modelo.xlsx"><i class="ph ph-microsoft-excel-logo"></i> <%= t('clientes.imp.baixar_xlsx') %></a>
+        <a class="btn btn-outline" href="/clientes/importar/modelo.csv"><i class="ph ph-file-csv"></i> <%= t('clientes.imp.baixar_csv') %></a>
+    </div>
+</div>
+
+<div class="card" style="margin-top: 16px;">
+    <h2 style="font-size: 17px; margin-top: 0;"><span class="clientes-passo">2</span> <%= t('clientes.imp.passo2') %></h2>
+    <ul class="clientes-lista-regras">
+        <li><%= t('clientes.imp.regra_nome') %></li>
+        <li><%= t('clientes.imp.regra_cedula') %></li>
+        <li><%= t('clientes.imp.regra_contrato') %></li>
+        <li><%= t('clientes.imp.regra_pagadas') %></li>
+        <li><%= t('clientes.imp.regra_servicio') %></li>
+    </ul>
+</div>
+
+<div class="card" style="margin-top: 16px;">
+    <h2 style="font-size: 17px; margin-top: 0;"><span class="clientes-passo">3</span> <%= t('clientes.imp.passo3') %></h2>
+    <form method="post" action="/clientes/importar?_csrf=<%= csrfToken %>" enctype="multipart/form-data" class="form">
+        <div class="form-group">
+            <label for="imp-arquivo"><%= t('clientes.imp.arquivo') %></label>
+            <input class="input" type="file" id="imp-arquivo" name="arquivo" accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required>
+        </div>
+        <button type="submit" class="btn btn-primary"><i class="ph ph-magnifying-glass"></i> <%= t('clientes.imp.revisar') %></button>
+        <p class="muted" style="font-size: 13px; margin: 12px 0 0;"><%= t('clientes.imp.nada_grava') %></p>
+    </form>
+</div>
