@@ -238,6 +238,17 @@ class Cliente {
         return { ok: true };
     }
 
+    // Exclusao em massa: reaproveita a regra individual (quem ja pagou parcela e pulado).
+    static async excluirClientes(userId, ids) {
+        const r = { excluidos: 0, comPagas: 0 };
+        for (const id of ids) {
+            const x = await this.excluirCliente(userId, id);
+            if (x.ok) r.excluidos++;
+            else if (x.temPagas) r.comPagas++;
+        }
+        return r;
+    }
+
     // Todas as cedulas ja cadastradas (normalizadas): usado na importacao para pular repetidos sem consultar linha a linha.
     static async cedulasCadastradas(userId) {
         const [rows] = await db.query('SELECT cedula FROM clientes WHERE user_id = ? AND cedula IS NOT NULL', [userId]);

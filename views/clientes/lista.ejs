@@ -35,9 +35,15 @@
     <% if (!clientes.length) { %>
         <p class="muted" style="padding: 20px; margin: 0;"><%= q ? t('clientes.sem_resultados') : t('clientes.lista_vazia') %></p>
     <% } else { %>
+    <form method="post" action="/clientes/excluir-lote" id="form-lote" class="clientes-lote" hidden>
+        <%- csrfCampo %>
+        <span class="muted" id="lote-contagem"></span>
+        <button type="submit" class="btn btn-danger"><i class="ph ph-trash"></i> <%= t('clientes.lote_excluir') %></button>
+    </form>
     <table class="tabela">
         <thead>
             <tr>
+                <th style="width: 32px;"><input type="checkbox" id="lote-todos" aria-label="<%= t('clientes.selecionar_todos') %>"></th>
                 <th><%= t('clientes.campo_nome') %></th>
                 <th><%= t('clientes.campo_celular') %></th>
                 <th><%= t('clientes.campo_cedula') %></th>
@@ -48,6 +54,7 @@
         <tbody>
         <% clientes.forEach(function (c) { %>
             <tr>
+                <td><input type="checkbox" class="lote-item" name="ids" value="<%= c.id %>" form="form-lote" aria-label="<%= t('clientes.selecionar') %>"></td>
                 <td><a href="/clientes/<%= c.id %>"><strong><%= c.nome %></strong></a><% if (c.email) { %><div class="muted" style="font-size: 12px;"><%= c.email %></div><% } %></td>
                 <td><%= c.celular || '-' %></td>
                 <td><%= c.cedula || c.ruc || '-' %></td>
@@ -65,5 +72,31 @@
     <% } %>
 </div>
 
+<% if (clientes.length) { %>
+<script>
+(function () {
+    var form = document.getElementById('form-lote');
+    var todos = document.getElementById('lote-todos');
+    var itens = Array.prototype.slice.call(document.querySelectorAll('.lote-item'));
+    var contagem = document.getElementById('lote-contagem');
+    var txtContagem = <%- JSON.stringify(t('clientes.lote_selecionados', { n: '{n}' })) %>;
+    var txtConfirmar = <%- JSON.stringify(t('clientes.lote_confirmar', { n: '{n}' })) %>;
+    function atualizar() {
+        var n = itens.filter(function (i) { return i.checked; }).length;
+        form.hidden = n === 0;
+        contagem.textContent = txtContagem.replace('{n}', n);
+        form.setAttribute('data-confirm', txtConfirmar.replace('{n}', n));
+        todos.checked = n > 0 && n === itens.length;
+        todos.indeterminate = n > 0 && n < itens.length;
+    }
+    todos.addEventListener('change', function () {
+        itens.forEach(function (i) { i.checked = todos.checked; });
+        atualizar();
+    });
+    itens.forEach(function (i) { i.addEventListener('change', atualizar); });
+    atualizar();
+})();
+</script>
+<% } %>
 <%- include('_paginacao', { pagina, paginas, hrefPagina: function (n) { return _href({ pagina: n }); } }) %>
 <%- include('_modal_cliente', { idModal: 'modal-novo-cliente', acao: '/clientes/criar', titulo: t('clientes.novo'), cliente: null }) %>

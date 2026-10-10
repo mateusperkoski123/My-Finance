@@ -177,6 +177,19 @@ const clientesController = {
         res.redirect('/clientes/lista');
     },
 
+    excluirClientesLote: async (req, res) => {
+        const bruto = [].concat(req.body.ids || []);
+        const ids = [...new Set(bruto.map((v) => inteiro(v)).filter(Boolean))];
+        if (!ids.length) {
+            avisar(req, 'erro', req.t('clientes.lote_nenhum'));
+            return res.redirect('/clientes/lista');
+        }
+        const r = await Cliente.excluirClientes(req.user.id, ids);
+        if (r.comPagas) avisar(req, r.excluidos ? 'sucesso' : 'erro', req.t('clientes.lote_resultado_pagas', { n: r.excluidos, p: r.comPagas }));
+        else avisar(req, 'sucesso', req.t('clientes.lote_resultado', { n: r.excluidos }));
+        res.redirect('/clientes/lista');
+    },
+
     // ---------- Contratos ----------
     criarContrato: async (req, res) => {
         const clienteId = inteiro(req.params.id);

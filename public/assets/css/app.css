@@ -2824,6 +2824,8 @@ a.navbar__avatar { text-decoration: none; }
 .clientes-acoes { text-align: right; white-space: nowrap; }
 .clientes-paginacao { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin: 16px 0; }
 .clientes-barra { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.clientes-lote { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border, #e5e7eb); }
+.clientes-lote[hidden] { display: none; }
 .clientes-busca { display: flex; gap: 8px; flex-wrap: wrap; }
 .clientes-busca .input { min-width: 220px; }
 .clientes-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

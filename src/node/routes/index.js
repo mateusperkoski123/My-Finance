@@ -198,6 +198,7 @@ router.get('/clientes/importar/previa', requireAuth, exigirClientes, clientesCon
 router.post('/clientes/importar/confirmar', requireAuth, exigirClientes, clientesController.importarConfirmar);
 router.post('/clientes/importar/cancelar', requireAuth, exigirClientes, clientesController.importarCancelar);
 router.post('/clientes/criar', requireAuth, exigirClientes, clientesController.criarCliente);
+router.post('/clientes/excluir-lote', requireAuth, exigirClientes, clientesController.excluirClientesLote);
 router.post('/clientes/contratos/:id/atualizar', requireAuth, exigirClientes, clientesController.atualizarContrato);
 router.post('/clientes/contratos/:id/cancelar', requireAuth, exigirClientes, clientesController.cancelarContrato);
 router.post('/clientes/cuotas/:id/pagar', requireAuth, exigirClientes, clientesController.pagarCuota);
