@@ -110,7 +110,7 @@ const clientesController = {
         const totais = await Cliente.totaisClientes(req.user.id);
         res.render('clientes/lista', {
             title: req.t('clientes.aba_clientes'), menuAtivo: 'clientes', aba: 'clientes',
-            clientes: lista.clientes, status, q, totais, ...pag
+            clientes: lista.clientes, status, q, totais, totalFiltrado: lista.total, ...pag
         });
     },
 
@@ -178,14 +178,22 @@ const clientesController = {
     },
 
     excluirClientesLote: async (req, res) => {
-        const bruto = [].concat(req.body.ids || []);
-        const ids = [...new Set(bruto.map((v) => inteiro(v)).filter(Boolean))];
+        // "todos" = todos os clientes do filtro (busca + situacao), em todas as paginas; senao so os marcados.
+        let ids;
+        if (req.body.todos === '1') {
+            const status = ['ativo', 'inativo'].includes(req.body.status) ? req.body.status : 'ativo';
+            ids = await Cliente.idsClientes(req.user.id, { q: String(req.body.q || '').trim().slice(0, 80), status });
+        } else {
+            ids = [].concat(req.body.ids || []).map((v) => inteiro(v)).filter(Boolean);
+        }
         if (!ids.length) {
             avisar(req, 'erro', req.t('clientes.lote_nenhum'));
             return res.redirect('/clientes/lista');
         }
-        const r = await Cliente.excluirClientes(req.user.id, ids);
-        if (r.comPagas) avisar(req, r.excluidos ? 'sucesso' : 'erro', req.t('clientes.lote_resultado_pagas', { n: r.excluidos, p: r.comPagas }));
+        const incluirPagas = req.body.incluir_pagas === '1';
+        const r = await Cliente.excluirClientes(req.user.id, ids, { incluirPagas });
+        if (incluirPagas) avisar(req, 'sucesso', req.t('clientes.lote_resultado_tudo', { n: r.excluidos, l: r.lancamentos }));
+        else if (r.comPagas) avisar(req, r.excluidos ? 'sucesso' : 'erro', req.t('clientes.lote_resultado_pagas', { n: r.excluidos, p: r.comPagas }));
         else avisar(req, 'sucesso', req.t('clientes.lote_resultado', { n: r.excluidos }));
         res.redirect('/clientes/lista');
     },

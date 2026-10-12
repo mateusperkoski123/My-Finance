@@ -37,7 +37,15 @@
     <% } else { %>
     <form method="post" action="/clientes/excluir-lote" id="form-lote" class="clientes-lote" hidden>
         <%- csrfCampo %>
-        <span class="muted" id="lote-contagem"></span>
+        <input type="hidden" name="todos" id="lote-todos-campo" value="">
+        <input type="hidden" name="q" value="<%= q %>">
+        <input type="hidden" name="status" value="<%= status %>">
+        <div class="clientes-lote__topo">
+            <span class="muted" id="lote-contagem"></span>
+            <button type="button" class="link-botao" id="lote-todas-paginas" hidden></button>
+            <button type="button" class="link-botao" id="lote-limpar" hidden><%= t('clientes.lote_todos_limpar') %></button>
+        </div>
+        <label class="clientes-lote__pagas"><input type="checkbox" name="incluir_pagas" value="1" id="lote-pagas"> <span><%= t('clientes.lote_incluir_pagas') %></span></label>
         <button type="submit" class="btn btn-danger"><i class="ph ph-trash"></i> <%= t('clientes.lote_excluir') %></button>
     </form>
     <table class="tabela">
@@ -79,21 +87,42 @@
     var todos = document.getElementById('lote-todos');
     var itens = Array.prototype.slice.call(document.querySelectorAll('.lote-item'));
     var contagem = document.getElementById('lote-contagem');
-    var txtContagem = <%- JSON.stringify(t('clientes.lote_selecionados', { n: '{n}' })) %>;
-    var txtConfirmar = <%- JSON.stringify(t('clientes.lote_confirmar', { n: '{n}' })) %>;
+    var campoTodos = document.getElementById('lote-todos-campo');
+    var linkPaginas = document.getElementById('lote-todas-paginas');
+    var limpar = document.getElementById('lote-limpar');
+    var pagas = document.getElementById('lote-pagas');
+    var TOTAL = <%= totalFiltrado %>;
+    var T = {
+        sel: <%- JSON.stringify(t('clientes.lote_selecionados', { n: '{n}' })) %>,
+        pagina: <%- JSON.stringify(t('clientes.lote_todos_pagina', { n: '{n}' })) %>,
+        link: <%- JSON.stringify(t('clientes.lote_todos_link', { total: '{total}' })) %>,
+        ativo: <%- JSON.stringify(t('clientes.lote_todos_ativo', { total: '{total}' })) %>,
+        confirmar: <%- JSON.stringify(t('clientes.lote_confirmar', { n: '{n}' })) %>,
+        confirmarTudo: <%- JSON.stringify(t('clientes.lote_confirmar_tudo', { n: '{n}' })) %>
+    };
+    function marcados() { return itens.filter(function (i) { return i.checked; }).length; }
     function atualizar() {
-        var n = itens.filter(function (i) { return i.checked; }).length;
+        var todasPaginas = campoTodos.value === '1';
+        var n = todasPaginas ? TOTAL : marcados();
         form.hidden = n === 0;
-        contagem.textContent = txtContagem.replace('{n}', n);
-        form.setAttribute('data-confirm', txtConfirmar.replace('{n}', n));
-        todos.checked = n > 0 && n === itens.length;
-        todos.indeterminate = n > 0 && n < itens.length;
+        contagem.textContent = todasPaginas ? T.ativo.replace('{total}', TOTAL) : T.sel.replace('{n}', n);
+        // so oferece "todas as paginas" quando a pagina inteira esta marcada e existem mais clientes na busca
+        linkPaginas.hidden = todasPaginas || !(marcados() === itens.length && TOTAL > itens.length);
+        if (!linkPaginas.hidden) linkPaginas.textContent = T.link.replace('{total}', TOTAL);
+        limpar.hidden = !todasPaginas;
+        todos.checked = todasPaginas || (marcados() > 0 && marcados() === itens.length);
+        todos.indeterminate = !todasPaginas && marcados() > 0 && marcados() < itens.length;
+        form.setAttribute('data-confirm', (pagas.checked ? T.confirmarTudo : T.confirmar).replace('{n}', n));
     }
     todos.addEventListener('change', function () {
+        campoTodos.value = '';
         itens.forEach(function (i) { i.checked = todos.checked; });
         atualizar();
     });
-    itens.forEach(function (i) { i.addEventListener('change', atualizar); });
+    itens.forEach(function (i) { i.addEventListener('change', function () { campoTodos.value = ''; atualizar(); }); });
+    linkPaginas.addEventListener('click', function () { campoTodos.value = '1'; atualizar(); });
+    limpar.addEventListener('click', function () { campoTodos.value = ''; itens.forEach(function (i) { i.checked = false; }); atualizar(); });
+    pagas.addEventListener('change', atualizar);
     atualizar();
 })();
 </script>

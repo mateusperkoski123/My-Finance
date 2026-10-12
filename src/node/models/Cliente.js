@@ -238,13 +238,52 @@ class Cliente {
         return { ok: true };
     }
 
-    // Exclusao em massa: reaproveita a regra individual (quem ja pagou parcela e pulado).
-    static async excluirClientes(userId, ids) {
-        const r = { excluidos: 0, comPagas: 0 };
-        for (const id of ids) {
-            const x = await this.excluirCliente(userId, id);
-            if (x.ok) r.excluidos++;
-            else if (x.temPagas) r.comPagas++;
+    // Ids dos clientes de um filtro (busca e situacao), sem paginar: serve para "selecionar todos os N" na exclusao em massa.
+    static async idsClientes(userId, filtros = {}, limite = 5000) {
+        const { where, params } = this._filtroClientes(userId, filtros);
+        const [rows] = await db.query(`SELECT c.id FROM clientes c WHERE ${where} ORDER BY c.nome ASC LIMIT ?`, [...params, limite]);
+        return rows.map((r) => r.id);
+    }
+
+    // Exclusao em massa (uma transacao por lote de 400, com SQL de conjunto: centenas de clientes em poucos segundos).
+    // Por padrao quem ja pagou alguma cuota e mantido. Com incluirPagas, as cuotas pagas tambem sao apagadas junto
+    // (o saldo das contas muda): e a saida para limpar uma base importada por engano.
+    static async excluirClientes(userId, ids, { incluirPagas = false } = {}) {
+        const unicos = [...new Set((ids || []).map((v) => parseInt(v, 10)).filter((n) => Number.isFinite(n) && n > 0))];
+        const r = { excluidos: 0, comPagas: 0, lancamentos: 0 };
+        for (let i = 0; i < unicos.length; i += 400) {
+            const lote = unicos.slice(i, i + 400);
+            const marcas = lote.map(() => '?').join(',');
+            const [existentes] = await db.query(`SELECT id FROM clientes WHERE user_id = ? AND id IN (${marcas})`, [userId, ...lote]);
+            let alvo = existentes.map((x) => x.id);
+            if (!alvo.length) continue;
+            if (!incluirPagas) {
+                const [pagos] = await db.query(
+                    `SELECT DISTINCT k.cliente_id AS id FROM lancamentos l JOIN cliente_contratos k ON k.id = l.contrato_id
+                     WHERE k.user_id = ? AND l.status = 'pago' AND k.cliente_id IN (${alvo.map(() => '?').join(',')})`, [userId, ...alvo]
+                );
+                const comPagas = new Set(pagos.map((x) => x.id));
+                r.comPagas += comPagas.size;
+                alvo = alvo.filter((id) => !comPagas.has(id));
+                if (!alvo.length) continue;
+            }
+            const conn = await db.getConnection();
+            try {
+                await conn.beginTransaction();
+                const onde = `user_id = ? AND contrato_id IN (SELECT id FROM cliente_contratos WHERE user_id = ? AND cliente_id IN (${alvo.map(() => '?').join(',')}))`;
+                const prm = [userId, userId, ...alvo];
+                await SyncExclusao.registrar('lancamentos', onde, prm, conn);
+                const [del] = await conn.query(`DELETE FROM lancamentos WHERE ${onde}`, prm);
+                r.lancamentos += del.affectedRows;
+                await conn.query(`DELETE FROM clientes WHERE user_id = ? AND id IN (${alvo.map(() => '?').join(',')})`, [userId, ...alvo]);
+                await conn.commit();
+                r.excluidos += alvo.length;
+            } catch (err) {
+                await conn.rollback();
+                throw err;
+            } finally {
+                conn.release();
+            }
         }
         return r;
     }

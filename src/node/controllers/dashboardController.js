@@ -75,7 +75,7 @@ const dashboardController = {
         const ordenacao = ORDENAR_VALIDOS.includes(query.ordenar) ? query.ordenar : 'data';
         const agrupamento = AGRUPAR_VALIDOS.includes(query.agrupar) ? query.agrupar : 'sem_agrupamento';
         const pagina = Math.max(parseInt(query.pagina || '1', 10) || 1, 1);
-        const porPagina = Math.min(Math.max(parseInt(query.por_pagina || '30', 10) || 30, 10), 200);
+        const porPagina = Math.min(Math.max(parseInt(query.por_pagina || '30', 10) || 30, 10), 500);
 
         // As consultas abaixo nao dependem umas das outras: rodam juntas (antes eram uma de cada vez, e cada ida e volta
         // ao banco somava; so as categorias precisam garantir as basicas antes de listar a arvore).
@@ -309,6 +309,18 @@ const dashboardController = {
         const id = req.params.id;
         await Lancamento.excluir(id, userId, req.body.escopo_serie || 'apenas_esta');
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.lancamento_excluido') };
+        res.redirect(destinoRetorno(req));
+    },
+
+    // Excluir varios lancamentos de uma vez (os marcados na lista). Transferencias levam as duas pernas.
+    excluirLancamentosLote: async (req, res) => {
+        const ids = [].concat(req.body.ids || []);
+        if (!ids.length) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('lote.nenhum') };
+            return res.redirect(destinoRetorno(req));
+        }
+        const n = await Lancamento.excluirLote(req.user.id, ids);
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t('lote.excluidos', { n }) };
         res.redirect(destinoRetorno(req));
     },
 

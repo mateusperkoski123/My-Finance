@@ -98,6 +98,38 @@ function gfAtualizarParam(chave, valor) {
 
 <!-- Conteúdo: Exibição Agrupada (Accordion) ou Tabela Padrão -->
 <div class="card lista-card">
+    <% if (lancamentos && lancamentos.length || (grupos && grupos.length)) { %>
+    <form method="post" action="/lancamentos/excluir-lote" id="form-lote-lanc" class="lote-barra" data-confirm="">
+        <%- csrfCampo %>
+        <input type="hidden" name="voltar" value="<%= currentUrl %>">
+        <label class="check" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px;"><input type="checkbox" class="lote-check" id="lote-lanc-todos" aria-label="<%= t('lote.selecionar_todos') %>"> <%= t('lote.selecionar_todos') %></label>
+        <span class="muted" id="lote-lanc-contagem" style="font-size: 13px;"></span>
+        <button type="submit" class="btn btn-danger btn-sm" id="lote-lanc-excluir" hidden><i class="ph ph-trash"></i> <%= t('lote.excluir') %></button>
+    </form>
+    <script>
+    (function () {
+        var form = document.getElementById('form-lote-lanc');
+        var todos = document.getElementById('lote-lanc-todos');
+        var contagem = document.getElementById('lote-lanc-contagem');
+        var botao = document.getElementById('lote-lanc-excluir');
+        var txtSel = <%- JSON.stringify(t('lote.selecionados', { n: '{n}' })) %>;
+        var txtConf = <%- JSON.stringify(t('lote.confirmar', { n: '{n}' })) %>;
+        function itens() { return Array.prototype.slice.call(document.querySelectorAll('.lote-lanc')); }
+        function atualizar() {
+            var lista = itens();
+            var n = lista.filter(function (i) { return i.checked; }).length;
+            contagem.textContent = n ? txtSel.replace('{n}', n) : '';
+            botao.hidden = n === 0;
+            todos.checked = n > 0 && n === lista.length;
+            todos.indeterminate = n > 0 && n < lista.length;
+            form.setAttribute('data-confirm', txtConf.replace('{n}', n));
+        }
+        todos.addEventListener('change', function () { itens().forEach(function (i) { i.checked = todos.checked; }); atualizar(); });
+        document.addEventListener('change', function (e) { if (e.target && e.target.classList && e.target.classList.contains('lote-lanc')) atualizar(); });
+        atualizar();
+    })();
+    </script>
+    <% } %>
     <% if (agrupamento && agrupamento !== 'sem_agrupamento' && grupos && grupos.length > 0) { %>
         <!-- Renderização de Acordeões Agrupados estilo Referência -->
         <div style="display: flex; flex-direction: column; gap: 12px;">
@@ -130,6 +162,7 @@ function gfAtualizarParam(chave, valor) {
                             <table class="tabela tabela-lanc">
                                 <thead>
                                     <tr>
+                                        <th class="lote-col"></th>
                                         <th><%= t('painel.lancamento.descricao_label') %></th>
                                         <th><%= t('painel.lancamento.categoria_label') %></th>
                                         <th><%= t('painel.lancamento.conta_label') %></th>
@@ -142,6 +175,7 @@ function gfAtualizarParam(chave, valor) {
                                 <tbody>
                                     <% g.lancamentos.forEach(l => { %>
                                         <tr class="lanc-linha lanc-linha--<%= l.tipo %>">
+                                            <td class="lote-col"><input type="checkbox" class="lote-check lote-lanc" name="ids" value="<%= l.id %>" form="form-lote-lanc" aria-label="<%= t('lote.selecionar') %>"></td>
                                             <td>
                                                 <% const _sis = (l.tipo === 'ajuste' || l.tipo === 'transferencia'); const _desc = descricaoLancamento(l); %>
                                                 <strong title="<%= _desc %>"><% if (_sis) { %><i class="ph <%= l.tipo === 'ajuste' ? 'ph-scales' : 'ph-arrows-left-right' %>" style="color: var(--muted);"></i> <% } %><%= _sis ? _desc : truncarTexto(l.descricao, 45) %></strong>
@@ -188,7 +222,8 @@ function gfAtualizarParam(chave, valor) {
             <table class="tabela tabela-lanc">
                 <thead>
                     <tr>
-                        <th><%= t('painel.lancamento.descricao_label') %></th>
+                        <th class="lote-col"></th>
+                                        <th><%= t('painel.lancamento.descricao_label') %></th>
                         <th><%= t('painel.lancamento.categoria_label') %></th>
                         <th><%= t('painel.lancamento.conta_label') %></th>
                         <th><%= t('painel.lancamento.data_label') %></th>
@@ -200,11 +235,12 @@ function gfAtualizarParam(chave, valor) {
                 <tbody>
                     <% if (!lancamentos || lancamentos.length === 0) { %>
                         <tr>
-                            <td colspan="7" class="tabela__vazio"><div class="vazio"><i class="ph ph-receipt"></i><strong><%= t('painel.lista_vazia') %></strong><%= t('painel.vazio_dica') %></div></td>
+                            <td colspan="8" class="tabela__vazio"><div class="vazio"><i class="ph ph-receipt"></i><strong><%= t('painel.lista_vazia') %></strong><%= t('painel.vazio_dica') %></div></td>
                         </tr>
                     <% } else { %>
                         <% lancamentos.forEach(l => { %>
                             <tr class="lanc-linha lanc-linha--<%= l.tipo %>">
+                                            <td class="lote-col"><input type="checkbox" class="lote-check lote-lanc" name="ids" value="<%= l.id %>" form="form-lote-lanc" aria-label="<%= t('lote.selecionar') %>"></td>
                                 <td>
                                     <% const _sis = (l.tipo === 'ajuste' || l.tipo === 'transferencia'); const _desc = descricaoLancamento(l); %>
                                                 <strong title="<%= _desc %>"><% if (_sis) { %><i class="ph <%= l.tipo === 'ajuste' ? 'ph-scales' : 'ph-arrows-left-right' %>" style="color: var(--muted);"></i> <% } %><%= _sis ? _desc : truncarTexto(l.descricao, 45) %></strong>
@@ -255,7 +291,7 @@ const _fim = Math.min(paginaAtual * porPagina, totalRegistros);
     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
         <label class="muted" style="display: flex; align-items: center; gap: 6px; margin: 0;"><%= t('paginacao.por_pagina') %>
             <select class="input" style="padding: 4px 8px; font-size: 13px; width: auto; border-radius: 8px;" onchange="gfAtualizarParam('por_pagina', this.value)">
-                <% [30, 50, 100, 200].forEach(n => { %><option value="<%= n %>" <%= porPagina === n ? 'selected' : '' %>><%= n %></option><% }) %>
+                <% [30, 50, 100, 200, 500].forEach(n => { %><option value="<%= n %>" <%= porPagina === n ? 'selected' : '' %>><%= n %></option><% }) %>
             </select>
         </label>
         <% if (paginaAtual > 1) { %><a class="btn btn-outline btn-sm" href="<%= buildQueryLink({ pagina: paginaAtual - 1 }) %>"><i class="ph ph-caret-left"></i> <%= t('paginacao.voltar') %></a><% } %>

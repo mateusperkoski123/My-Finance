@@ -506,6 +506,43 @@ class Lancamento {
         await db.query(`DELETE FROM lancamentos WHERE ${onde}`, params);
     }
 
+    // Exclusao em lote de lancamentos escolhidos. As duas pernas de uma transferencia andam juntas. Devolve quantos foram apagados.
+    static async excluirLote(userId, ids) {
+        const SyncExclusao = require('./SyncExclusao');
+        const unicos = [...new Set((ids || []).map((v) => parseInt(v, 10)).filter((n) => Number.isFinite(n) && n > 0))].slice(0, 2000);
+        if (!unicos.length) return 0;
+        const alvo = new Set();
+        for (let i = 0; i < unicos.length; i += 400) {
+            const lote = unicos.slice(i, i + 400);
+            const [rows] = await db.query(`SELECT id, tipo FROM lancamentos WHERE user_id = ? AND id IN (${lote.map(() => '?').join(',')})`, [userId, ...lote]);
+            for (const l of rows) {
+                alvo.add(l.id);
+                if (l.tipo === 'transferencia') (await this.idsDoPar(l.id, userId)).ids.forEach((x) => alvo.add(x));
+            }
+        }
+        const lista = [...alvo];
+        let apagados = 0;
+        for (let i = 0; i < lista.length; i += 400) {
+            const lote = lista.slice(i, i + 400);
+            const onde = `user_id = ? AND id IN (${lote.map(() => '?').join(',')})`;
+            const prm = [userId, ...lote];
+            const conn = await db.getConnection();
+            try {
+                await conn.beginTransaction();
+                await SyncExclusao.registrar('lancamentos', onde, prm, conn);
+                const [del] = await conn.query(`DELETE FROM lancamentos WHERE ${onde}`, prm);
+                apagados += del.affectedRows;
+                await conn.commit();
+            } catch (err) {
+                await conn.rollback();
+                throw err;
+            } finally {
+                conn.release();
+            }
+        }
+        return apagados;
+    }
+
     // Transferencia agendada = duas pernas (saida e entrada) ligadas por transferencia_par_id; as duas andam juntas.
     static async idsDoPar(id, userId) {
         const item = await this.buscarPorId(id, userId);
