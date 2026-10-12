@@ -506,6 +506,16 @@ class Lancamento {
         await db.query(`DELETE FROM lancamentos WHERE ${onde}`, params);
     }
 
+    // Ids de TODOS os lancamentos de um filtro (periodo + tipo + categoria + busca), sem paginar. `manter` e um texto: quem tiver
+    // esse texto na descricao (ex.: o nome de um cliente) fica de fora. Devolve tambem quantos foram mantidos, para a simulacao.
+    static async idsPorFiltro(userId, periodo, filtros = {}, { manter = '' } = {}) {
+        const r = await this.buscarFiltrados(userId, periodo, filtros, 'data', 1, 100000, 'sem_agrupamento');
+        const termo = String(manter || '').trim().toLowerCase();
+        const lista = r.lancamentos || [];
+        const fica = new Set(termo ? lista.filter((l) => String(l.descricao || '').toLowerCase().includes(termo)).map((l) => l.id) : []);
+        return { ids: lista.filter((l) => !fica.has(l.id)).map((l) => l.id), mantidos: fica.size, total: lista.length };
+    }
+
     // Exclusao em lote de lancamentos escolhidos. As duas pernas de uma transferencia andam juntas. Devolve quantos foram apagados.
     static async excluirLote(userId, ids) {
         const SyncExclusao = require('./SyncExclusao');

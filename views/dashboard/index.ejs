@@ -9,6 +9,18 @@ const dataAnoFim = hojeLocal().getFullYear() + '-12-31';
 
 const e7Dias = periodo.customizado && periodo.inicio === data7Dias && periodo.fim === dataHoje;
 const eAno = periodo.customizado && periodo.inicio === dataAnoInicio && periodo.fim === dataAnoFim;
+// Qualquer ano inteiro (1/1 a 31/12) e tratado como visao anual, com setas de ano a ano.
+const _anoInteiro = periodo.customizado && /^\d{4}-01-01$/.test(periodo.inicio) && periodo.fim === periodo.inicio.slice(0, 4) + '-12-31' ? Number(periodo.inicio.slice(0, 4)) : null;
+const _livre = periodo.customizado && !_anoInteiro;
+const _ymd = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+const _dt = (iso) => { const p = iso.split('-').map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+const _linkAno = (a) => '/?data_inicio=' + a + '-01-01&data_fim=' + a + '-12-31';
+// Periodo livre: as setas andam o mesmo numero de dias para tras / para frente.
+const _dias = _livre ? Math.round((_dt(periodo.fim) - _dt(periodo.inicio)) / 86400000) + 1 : 0;
+const _deslocar = (sinal) => { const i = _dt(periodo.inicio); i.setDate(i.getDate() + sinal * _dias); const f = _dt(periodo.fim); f.setDate(f.getDate() + sinal * _dias); return '/?data_inicio=' + _ymd(i) + '&data_fim=' + _ymd(f); };
+const _hoje = hojeLocal();
+const _mesPassado = new Date(_hoje.getFullYear(), _hoje.getMonth() - 1, 1);
+const _ultimos30 = new Date(_hoje.getFullYear(), _hoje.getMonth(), _hoje.getDate() - 29);
 const eMes = !periodo.customizado && periodo.e_mes_atual;
 const eHoje = periodo.customizado && periodo.inicio === dataHoje && periodo.fim === dataHoje;
 
@@ -24,19 +36,21 @@ const nomesMeses = {
     <!-- Top row: Month navigator & Period Badge -->
     <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;">
         <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 220px; justify-content: space-between; background: var(--bg); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border);">
-            <a class="btn btn-outline btn-sm" href="/?mes=<%= periodo.mes_anterior %>&ano=<%= periodo.ano_anterior %>" style="border-radius: 8px;"><i class="ph ph-caret-left"></i></a>
+            <a class="btn btn-outline btn-sm" href="<%= _anoInteiro ? _linkAno(_anoInteiro - 1) : (_livre ? _deslocar(-1) : '/?mes=' + periodo.mes_anterior + '&ano=' + periodo.ano_anterior) %>" style="border-radius: 8px;" aria-label="<%= t('painel.periodo_anterior') %>"><i class="ph ph-caret-left"></i></a>
             <div style="text-align: center;">
-                <strong style="font-size: 15px; font-weight: 700; display: block; color: var(--text);"><%= nomesMeses[periodo.mes] %> <%= periodo.ano %></strong>
+                <strong style="font-size: 15px; font-weight: 700; display: block; color: var(--text);"><% if (_anoInteiro) { %><%= t('painel.ano_titulo', { ano: _anoInteiro }) %><% } else if (_livre) { %><%= t('painel.periodo_personalizado') %><% } else { %><%= nomesMeses[periodo.mes] %> <%= periodo.ano %><% } %></strong>
                 <span class="muted" style="font-size: 12px; font-weight: 500;"><%= formatDate(periodo.inicio, 'DD/MM/YYYY') %> - <%= formatDate(periodo.fim, 'DD/MM/YYYY') %></span>
             </div>
-            <a class="btn btn-outline btn-sm" href="/?mes=<%= periodo.mes_proximo %>&ano=<%= periodo.ano_proximo %>" style="border-radius: 8px;"><i class="ph ph-caret-right"></i></a>
+            <a class="btn btn-outline btn-sm" href="<%= _anoInteiro ? _linkAno(_anoInteiro + 1) : (_livre ? _deslocar(1) : '/?mes=' + periodo.mes_proximo + '&ano=' + periodo.ano_proximo) %>" style="border-radius: 8px;" aria-label="<%= t('painel.periodo_proximo') %>"><i class="ph ph-caret-right"></i></a>
         </div>
 
         <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
             <a href="/?data_inicio=<%= dataHoje %>&data_fim=<%= dataHoje %>" class="btn <%= eHoje ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('painel.hoje') %></a>
             <a href="/?mes=<%= hojeLocal().getMonth() + 1 %>&ano=<%= hojeLocal().getFullYear() %>" class="btn <%= eMes ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
-            <%# O filtro so existe quando ha contas (o formulario dele fica mais abaixo, junto com a lista). %>
+            <a href="/?data_inicio=<%= dataAnoInicio %>&data_fim=<%= dataAnoFim %>" class="btn <%= eAno ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('painel.este_ano') %></a>
+            <%# Periodo livre e filtro so existem quando ha contas (os formularios ficam mais abaixo, junto com a lista). %>
             <% if (contas && contas.length > 0) { %>
+            <button type="button" class="btn <%= _livre && !eHoje && !e7Dias ? 'btn-primary' : 'btn-outline' %> btn-sm" data-modal-open="modal-periodo" style="border-radius: 20px;"><i class="ph ph-calendar-dots"></i> <%= t('painel.personalizado') %></button>
             <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-filtro-avancado" style="border-radius: 20px;"><i class="ph ph-sliders-horizontal"></i> <%= t('filtro.filtrar') %></button>
             <% } %>
         </div>
@@ -242,6 +256,56 @@ const linhasCmp = [
 </div>
 
 <%- include('../partials/lista_lancamentos') %>
+
+<!-- Modal Periodo personalizado: de / ate + atalhos -->
+<div class="modal-backdrop" id="modal-periodo">
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('painel.periodo_personalizado') %></h3>
+            <button type="button" class="modal__close" data-modal-close>&times;</button>
+        </div>
+        <div class="periodo-atalhos">
+            <a class="btn btn-outline btn-sm" href="/?data_inicio=<%= data7Dias %>&data_fim=<%= dataHoje %>"><%= t('painel.preset_7') %></a>
+            <a class="btn btn-outline btn-sm" href="/?data_inicio=<%= _ymd(_ultimos30) %>&data_fim=<%= dataHoje %>"><%= t('painel.preset_30') %></a>
+            <a class="btn btn-outline btn-sm" href="/?mes=<%= _mesPassado.getMonth() + 1 %>&ano=<%= _mesPassado.getFullYear() %>"><%= t('painel.preset_mes_passado') %></a>
+            <a class="btn btn-outline btn-sm" href="<%= _linkAno(_hoje.getFullYear() - 1) %>"><%= t('painel.preset_ano_passado') %></a>
+        </div>
+        <form method="get" action="/" class="form" id="form-periodo">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="periodo-de"><%= t('painel.periodo_de') %></label>
+                    <input class="input" type="date" id="periodo-de" name="data_inicio" value="<%= periodo.inicio %>" required>
+                </div>
+                <div class="form-group">
+                    <label for="periodo-ate"><%= t('painel.periodo_ate') %></label>
+                    <input class="input" type="date" id="periodo-ate" name="data_fim" value="<%= periodo.fim %>" min="<%= periodo.inicio %>" required>
+                </div>
+            </div>
+            <p class="form-help" id="periodo-erro" style="color: var(--red);" hidden><%= t('painel.periodo_invalido') %></p>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><%= t('painel.aplicar_periodo') %></button>
+            </div>
+        </form>
+        <script>
+        (function () {
+            var de = document.getElementById('periodo-de');
+            var ate = document.getElementById('periodo-ate');
+            var erro = document.getElementById('periodo-erro');
+            var form = document.getElementById('form-periodo');
+            // A data final nunca pode ficar antes da inicial: se a inicial passar dela, a final acompanha.
+            de.addEventListener('change', function () {
+                ate.min = de.value;
+                if (ate.value && ate.value < de.value) ate.value = de.value;
+                erro.hidden = true;
+            });
+            form.addEventListener('submit', function (e) {
+                if (!de.value || !ate.value || ate.value < de.value) { e.preventDefault(); erro.hidden = false; }
+            });
+        })();
+        </script>
+    </div>
+</div>
 
 <!-- Modal Filtro Avançado por Categoria/Subcategoria -->
 <div class="modal-backdrop" id="modal-filtro-avancado">

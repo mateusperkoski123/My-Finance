@@ -102,9 +102,26 @@ function gfAtualizarParam(chave, valor) {
     <form method="post" action="/lancamentos/excluir-lote" id="form-lote-lanc" class="lote-barra" data-confirm="">
         <%- csrfCampo %>
         <input type="hidden" name="voltar" value="<%= currentUrl %>">
-        <label class="check" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px;"><input type="checkbox" class="lote-check" id="lote-lanc-todos" aria-label="<%= t('lote.selecionar_todos') %>"> <%= t('lote.selecionar_todos') %></label>
-        <span class="muted" id="lote-lanc-contagem" style="font-size: 13px;"></span>
-        <button type="submit" class="btn btn-danger btn-sm" id="lote-lanc-excluir" hidden><i class="ph ph-trash"></i> <%= t('lote.excluir') %></button>
+        <input type="hidden" name="todos" id="lote-lanc-modo" value="">
+        <input type="hidden" name="simular" id="lote-lanc-simular" value="">
+        <% Object.keys(_listaParams).forEach(function (k) { if (_listaParams[k] !== null && _listaParams[k] !== undefined && _listaParams[k] !== '') { %><input type="hidden" name="<%= k %>" value="<%= _listaParams[k] %>"><% } }) %>
+        <input type="hidden" name="tipo" value="<%= filtros.tipo || '' %>">
+        <input type="hidden" name="busca" value="<%= filtros.busca || '' %>">
+        <input type="hidden" name="categoria_id" value="<%= filtros.categoria_id || '' %>">
+        <input type="hidden" name="subcategoria_id" value="<%= filtros.subcategoria_id || '' %>">
+        <div class="lote-barra__linha">
+            <label class="check" style="margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px;"><input type="checkbox" class="lote-check" id="lote-lanc-todos" aria-label="<%= t('lote.selecionar_todos') %>"> <%= t('lote.selecionar_todos') %></label>
+            <span class="muted" id="lote-lanc-contagem" style="font-size: 13px;"></span>
+            <button type="button" class="link-botao" id="lote-lanc-filtro" hidden></button>
+            <button type="button" class="link-botao" id="lote-lanc-limpar" hidden><%= t('lote.limpar') %></button>
+            <button type="submit" class="btn btn-danger btn-sm" id="lote-lanc-excluir" hidden><i class="ph ph-trash"></i> <%= t('lote.excluir') %></button>
+        </div>
+        <div class="lote-barra__todos" id="lote-lanc-extra" hidden>
+            <label for="lote-lanc-manter" class="muted" style="font-size: 13px;"><%= t('lote.manter_texto') %></label>
+            <input class="input" type="text" name="manter" id="lote-lanc-manter" maxlength="80" style="max-width: 320px;">
+            <label class="check" style="margin: 0; font-size: 13px; display: flex; align-items: center; gap: 8px;"><input type="checkbox" name="todo_periodo" value="1"> <%= t('lote.todo_periodo') %></label>
+            <button type="button" class="btn btn-outline btn-sm" id="lote-lanc-ensaio"><i class="ph ph-magnifying-glass"></i> <%= t('lote.simular') %></button>
+        </div>
     </form>
     <script>
     (function () {
@@ -112,20 +129,44 @@ function gfAtualizarParam(chave, valor) {
         var todos = document.getElementById('lote-lanc-todos');
         var contagem = document.getElementById('lote-lanc-contagem');
         var botao = document.getElementById('lote-lanc-excluir');
+        var modo = document.getElementById('lote-lanc-modo');
+        var linkFiltro = document.getElementById('lote-lanc-filtro');
+        var limpar = document.getElementById('lote-lanc-limpar');
+        var extra = document.getElementById('lote-lanc-extra');
+        var simular = document.getElementById('lote-lanc-simular');
+        var TOTAL = <%= totalRegistros || 0 %>;
         var txtSel = <%- JSON.stringify(t('lote.selecionados', { n: '{n}' })) %>;
         var txtConf = <%- JSON.stringify(t('lote.confirmar', { n: '{n}' })) %>;
+        var txtConfTodos = <%- JSON.stringify(t('lote.confirmar_todos')) %>;
+        var txtFiltro = <%- JSON.stringify(t('lote.todos_filtro', { total: '{total}' })) %>;
+        var txtAtivo = <%- JSON.stringify(t('lote.todos_ativo')) %>;
         function itens() { return Array.prototype.slice.call(document.querySelectorAll('.lote-lanc')); }
         function atualizar() {
             var lista = itens();
             var n = lista.filter(function (i) { return i.checked; }).length;
-            contagem.textContent = n ? txtSel.replace('{n}', n) : '';
-            botao.hidden = n === 0;
-            todos.checked = n > 0 && n === lista.length;
-            todos.indeterminate = n > 0 && n < lista.length;
-            form.setAttribute('data-confirm', txtConf.replace('{n}', n));
+            var todasPaginas = modo.value === '1';
+            contagem.textContent = todasPaginas ? txtAtivo : (n ? txtSel.replace('{n}', n) : '');
+            botao.hidden = n === 0 && !todasPaginas;
+            todos.checked = todasPaginas || (n > 0 && n === lista.length);
+            todos.indeterminate = !todasPaginas && n > 0 && n < lista.length;
+            // so oferece "todos do filtro" quando a pagina inteira esta marcada e ha mais lancamentos alem dela
+            linkFiltro.hidden = todasPaginas || !(n === lista.length && n > 0 && TOTAL > lista.length);
+            if (!linkFiltro.hidden) linkFiltro.textContent = txtFiltro.replace('{total}', TOTAL);
+            limpar.hidden = !todasPaginas;
+            extra.hidden = !todasPaginas;
+            form.setAttribute('data-confirm', todasPaginas ? txtConfTodos : txtConf.replace('{n}', n));
         }
-        todos.addEventListener('change', function () { itens().forEach(function (i) { i.checked = todos.checked; }); atualizar(); });
-        document.addEventListener('change', function (e) { if (e.target && e.target.classList && e.target.classList.contains('lote-lanc')) atualizar(); });
+        todos.addEventListener('change', function () { modo.value = ''; itens().forEach(function (i) { i.checked = todos.checked; }); atualizar(); });
+        document.addEventListener('change', function (e) { if (e.target && e.target.classList && e.target.classList.contains('lote-lanc')) { modo.value = ''; atualizar(); } });
+        linkFiltro.addEventListener('click', function () { modo.value = '1'; atualizar(); });
+        limpar.addEventListener('click', function () { modo.value = ''; itens().forEach(function (i) { i.checked = false; }); atualizar(); });
+        // Ensaio: manda o formulario pedindo so a contagem (sem confirmacao, porque nada e apagado).
+        document.getElementById('lote-lanc-ensaio').addEventListener('click', function () {
+            simular.value = '1';
+            form.setAttribute('data-confirm', '');
+            form.submit();
+        });
+        form.addEventListener('submit', function () { simular.value = ''; });
         atualizar();
     })();
     </script>

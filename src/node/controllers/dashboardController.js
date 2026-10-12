@@ -314,13 +314,39 @@ const dashboardController = {
 
     // Excluir varios lancamentos de uma vez (os marcados na lista). Transferencias levam as duas pernas.
     excluirLancamentosLote: async (req, res) => {
-        const ids = [].concat(req.body.ids || []);
+        const b = req.body || {};
+        let ids;
+        let mantidos = 0;
+        let total = 0;
+        if (b.todos === '1') {
+            // "Todos os N do filtro": refaz a consulta da tela (periodo, tipo, categoria, busca) no servidor, em todas as paginas.
+            const hoje = hojeLocal();
+            let periodo;
+            if (b.todo_periodo === '1') {
+                periodo = { inicio: '2000-01-01', fim: '2100-12-31' };
+            } else if (dataValida(b.data_inicio) && dataValida(b.data_fim) && b.data_inicio <= b.data_fim) {
+                periodo = { inicio: b.data_inicio, fim: b.data_fim };
+            } else {
+                const { mes, ano } = mesAnoValidos(b.mes, b.ano, hoje);
+                periodo = { inicio: toLocalYMD(new Date(ano, mes - 1, 1)), fim: toLocalYMD(new Date(ano, mes, 0)) };
+            }
+            const filtros = { tipo: cleanVal(b.tipo) || 'todas', busca: cleanVal(b.busca) || '', categoria_id: cleanVal(b.categoria_id), subcategoria_id: cleanVal(b.subcategoria_id) };
+            const r = await Lancamento.idsPorFiltro(req.user.id, periodo, filtros, { manter: String(b.manter || '').slice(0, 80) });
+            ids = r.ids; mantidos = r.mantidos; total = r.total;
+            if (b.simular === '1') {
+                // Ensaio: so conta, nao apaga nada.
+                req.session.flash = { tipo: 'sucesso', mensagem: req.t('lote.simulacao', { n: ids.length, m: mantidos, total }) };
+                return res.redirect(destinoRetorno(req));
+            }
+        } else {
+            ids = [].concat(b.ids || []);
+        }
         if (!ids.length) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('lote.nenhum') };
             return res.redirect(destinoRetorno(req));
         }
         const n = await Lancamento.excluirLote(req.user.id, ids);
-        req.session.flash = { tipo: 'sucesso', mensagem: req.t('lote.excluidos', { n }) };
+        req.session.flash = { tipo: 'sucesso', mensagem: mantidos ? req.t('lote.excluidos_mantidos', { n, m: mantidos }) : req.t('lote.excluidos', { n }) };
         res.redirect(destinoRetorno(req));
     },
 
