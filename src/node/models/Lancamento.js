@@ -137,6 +137,8 @@ class Lancamento {
                 } else if (agrupamento === 'vencimento' || agrupamento === 'criacao') {
                     const rawDate = (agrupamento === 'criacao' && l.created_at) ? l.created_at : l.data_competencia;
                     key = rawDate ? formatDate(rawDate, 'DD/MM/YYYY') : 'Sem Data';
+                } else if (agrupamento === 'conta') {
+                    key = l.conta_nome || 'Sem conta';
                 } else if (agrupamento === 'status') {
                     key = l.status === 'pago' ? 'Pagos' : 'Pendentes';
                 }

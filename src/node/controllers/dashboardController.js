@@ -3,7 +3,7 @@ const Categoria = require('../models/Categoria');
 const Lancamento = require('../models/Lancamento');
 const { parseMoeda, toLocalYMD, moeda, hojeLocal, dataValida, mesAnoValidos } = require('../core/helpers');
 
-const AGRUPAR_VALIDOS = ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'status'];
+const AGRUPAR_VALIDOS = ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'conta', 'status'];
 const ORDENAR_VALIDOS = ['data', 'vencimento', 'valor', 'criacao'];
 
 // Destino pos-acao: campo 'voltar' do formulario (somente caminho local), senao Referer, senao '/'.

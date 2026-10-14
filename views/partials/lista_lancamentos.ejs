@@ -7,7 +7,7 @@
 <%
 const _listaBase = typeof listaBase !== 'undefined' ? listaBase : '/';
 const _listaParams = typeof listaParams !== 'undefined' ? listaParams : (periodo.customizado ? { data_inicio: periodo.inicio, data_fim: periodo.fim } : { mes: periodo.mes, ano: periodo.ano });
-const _agruparOpcoes = typeof agruparOpcoes !== 'undefined' ? agruparOpcoes : ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'status'];
+const _agruparOpcoes = typeof agruparOpcoes !== 'undefined' ? agruparOpcoes : ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'conta', 'status'];
 const _limparUrl = typeof limparUrl !== 'undefined' ? limparUrl : (_listaBase + '?' + new URLSearchParams(_listaParams).toString());
 %>
 <!-- Sub-filtros por tipo (Todas / Despesas / Receitas) -->
@@ -54,6 +54,7 @@ const _limparUrl = typeof limparUrl !== 'undefined' ? limparUrl : (_listaBase + 
             <% if (_agruparOpcoes.includes('subcategoria')) { %><option value="subcategoria" <%= agrupamento === 'subcategoria' ? 'selected' : '' %>> <%= t('modal.subcategoria') %></option><% } %>
             <% if (_agruparOpcoes.includes('vencimento')) { %><option value="vencimento" <%= agrupamento === 'vencimento' ? 'selected' : '' %>> <%= t('filtro.vencimento') %></option><% } %>
             <% if (_agruparOpcoes.includes('criacao')) { %><option value="criacao" <%= agrupamento === 'criacao' ? 'selected' : '' %>> <%= t('filtro.criacao') %></option><% } %>
+            <% if (_agruparOpcoes.includes('conta')) { %><option value="conta" <%= agrupamento === 'conta' ? 'selected' : '' %>> <%= t('modal.conta') %></option><% } %>
             <% if (_agruparOpcoes.includes('status')) { %><option value="status" <%= agrupamento === 'status' ? 'selected' : '' %>> <%= t('filtro.status') %></option><% } %>
         </select>
     </div>

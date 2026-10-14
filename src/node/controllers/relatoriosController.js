@@ -339,7 +339,7 @@ const relatoriosController = {
             subcategoria_id: cleanVal(query.subcategoria_id)
         };
         const ordenacao = cleanVal(query.ordenar) || (aba === 'pendentes' ? 'vencimento' : 'data');
-        const AGRUPAR_VALIDOS = ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'status'];
+        const AGRUPAR_VALIDOS = ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'conta', 'status'];
         const agrupamento = AGRUPAR_VALIDOS.includes(query.agrupar) ? query.agrupar : 'sem_agrupamento';
         const pagina = Math.max(parseInt(query.pagina || '1', 10) || 1, 1);
         const porPagina = Math.min(Math.max(parseInt(query.por_pagina || '30', 10) || 30, 10), 200);
@@ -454,7 +454,7 @@ const relatoriosController = {
             listaBase: '/relatorios',
             listaParams,
             limparUrl,
-            agruparOpcoes: ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao'].concat(aba === 'pendentes' ? [] : ['status']),
+            agruparOpcoes: ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'conta'].concat(aba === 'pendentes' ? [] : ['status']),
             lancamentos: dadosLista ? dadosLista.lancamentos : [],
             grupos: dadosLista ? dadosLista.grupos : null,
             totalRegistros: dadosLista ? dadosLista.totalRegistros : 0,
