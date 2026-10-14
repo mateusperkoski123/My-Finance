@@ -315,7 +315,7 @@ const clientesController = {
         }
         const r = await importacao.validar(req.user.id, lido.linhas);
         // A planilha validada fica no banco (sao centenas de linhas); a sessao guarda so o numero.
-        req.session.clientesImportId = await Cliente.guardarImportacao(req.user.id, String(req.file.originalname).slice(0, 120), {
+        req.session.clientesImportId = await Cliente.guardarImportacao(req.user.id, importacao.nomeDoArquivo(req.file.originalname).slice(0, 120), {
             validas: r.validas, resumo: r.resumo, novosServicos: r.novosServicos,
             erros: r.erros.slice(0, importacao.MAX_ERROS_NA_TELA), duplicadas: r.duplicadas.slice(0, importacao.MAX_ERROS_NA_TELA)
         });

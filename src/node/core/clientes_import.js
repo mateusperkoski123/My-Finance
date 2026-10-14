@@ -138,6 +138,25 @@ function paraLinhas(matriz) {
     return linhas;
 }
 
+// CSV salvo pelo Excel costuma vir em Windows-1252 (acentos viram "?" ao ler como UTF-8): tenta UTF-8 estrito e, se
+// houver bytes invalidos, le como Windows-1252. UTF-16 (BOM FF FE / FE FF) tambem e aceito.
+function decodificarTexto(buffer) {
+    if (buffer.length >= 2 && buffer[0] === 0xFF && buffer[1] === 0xFE) return new TextDecoder('utf-16le').decode(buffer);
+    if (buffer.length >= 2 && buffer[0] === 0xFE && buffer[1] === 0xFF) return new TextDecoder('utf-16be').decode(buffer);
+    try {
+        return new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+    } catch (_) {
+        return new TextDecoder('windows-1252').decode(buffer);
+    }
+}
+
+// O multer entrega o nome do arquivo lido como latin1: "título" chega como "tÃ­tulo". Refaz a leitura em UTF-8.
+function nomeDoArquivo(nome) {
+    const original = String(nome || '');
+    const refeito = Buffer.from(original, 'latin1').toString('utf8');
+    return refeito.includes('�') ? original : refeito;
+}
+
 function lerCsv(texto) {
     const limpo = texto.replace(/^﻿/, '');
     const primeira = limpo.split(/\r?\n/, 1)[0] || '';
@@ -169,7 +188,7 @@ async function lerArquivo(buffer, nome) {
     let matriz;
     try {
         if (ext === 'csv' || ext === 'txt') {
-            matriz = lerCsv(buffer.toString('utf8'));
+            matriz = lerCsv(decodificarTexto(buffer));
         } else if (ext === 'xlsx') {
             const wb = new ExcelJS.Workbook();
             await wb.xlsx.load(buffer);
@@ -300,8 +319,9 @@ async function aplicar(userId, contaId, validas) {
     const conn = await db.getConnection();
     try {
         await conn.beginTransaction();
+        // A conta so importa quando ha contrato (e parcelas) a gravar; sem contratos a tela nem pede a conta.
         const [[conta]] = await conn.query("SELECT id FROM contas WHERE id = ? AND user_id = ? AND status = 'ativa' LIMIT 1", [contaId, userId]);
-        if (!conta) throw Object.assign(new Error('conta_invalida'), { codigo: 'conta_invalida' });
+        if (!conta && validas.some((v) => v.contrato)) throw Object.assign(new Error('conta_invalida'), { codigo: 'conta_invalida' });
         const servicos = {};
         (await conn.query('SELECT id, nome FROM cliente_servicos WHERE user_id = ?', [userId]))[0]
             .forEach((s) => { servicos[regras.chave(s.nome)] = s.id; });
@@ -338,4 +358,4 @@ async function aplicar(userId, contaId, validas) {
     }
 }
 
-module.exports = { COLUNAS, MAX_ERROS_NA_TELA, modeloXlsx, modeloCsv, lerArquivo, lerCsv, validar, aplicar, paraData };
+module.exports = { nomeDoArquivo, COLUNAS, MAX_ERROS_NA_TELA, modeloXlsx, modeloCsv, lerArquivo, lerCsv, validar, aplicar, paraData };
