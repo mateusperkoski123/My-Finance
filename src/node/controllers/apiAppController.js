@@ -233,7 +233,11 @@ const OPERACOES = {
         if (cor && !/^#[0-9a-fA-F]{6}$/.test(cor)) throw new ErroOp('cor_invalida');
         const pai = dados.parent_id ? await categoriaDoUsuario(userId, dados.parent_id) : null;
         const limite = dados.limite_gasto === undefined || dados.limite_gasto === null || dados.limite_gasto === '' ? null : valorPositivo(dados.limite_gasto);
-        const id = await Categoria.criar(userId, { parent_id: pai, nome: texto(dados.nome, 100, { obrigatorio: true, campo: 'nome' }), cor, limite_gasto: limite, client_id: clientId });
+        const nome = texto(dados.nome, 100, { obrigatorio: true, campo: 'nome' });
+        // Mesmo nome no mesmo nivel (criada em outro aparelho ou no site): o app passa a usar a que ja existe.
+        const existente = await Categoria.buscarPorNome(userId, nome, pai);
+        if (existente) return { id_servidor: existente.id, updated_at: await tsLinha('categorias', existente.id) };
+        const id = await Categoria.criar(userId, { parent_id: pai, nome, cor, limite_gasto: limite, client_id: clientId });
         return { id_servidor: id, updated_at: await tsLinha('categorias', id) };
     }
 };

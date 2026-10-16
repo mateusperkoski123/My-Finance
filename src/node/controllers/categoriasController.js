@@ -38,13 +38,19 @@ const categoriasController = {
             return res.redirect('/categorias');
         }
 
-        await Categoria.criar(userId, {
-            nome,
-            cor: corValida(b.cor) ? b.cor : '#3b82f6',
-            categoria_pai_id: b.categoria_pai_id || null,
-            // Orcamento (limite por categoria) faz parte do Demonstrativo Financeiro (Premium e Pro).
-            limite_gasto: req.pode('rec_estado') ? limiteDe(b) : null
-        });
+        try {
+            await Categoria.criar(userId, {
+                nome,
+                cor: corValida(b.cor) ? b.cor : '#3b82f6',
+                categoria_pai_id: b.categoria_pai_id || null,
+                // Orcamento (limite por categoria) faz parte do Demonstrativo Financeiro (Premium e Pro).
+                limite_gasto: req.pode('rec_estado') ? limiteDe(b) : null
+            });
+        } catch (err) {
+            if (err.codigo !== 'categoria_duplicada') throw err;
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.categoria_duplicada') };
+            return res.redirect('/categorias');
+        }
 
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.categoria_criada') };
         res.redirect('/categorias');
@@ -62,7 +68,9 @@ const categoriasController = {
             }
         }
         const cor = /^#[0-9a-fA-F]{6}$/.test(String(req.body.cor || '')) ? req.body.cor : undefined;
-        const id = await Categoria.criar(req.user.id, { nome, cor, categoria_pai_id: paiId });
+        // Ja existe com esse nome: usa a existente (o modal seleciona a categoria em vez de criar uma repetida).
+        const existente = await Categoria.buscarPorNome(req.user.id, nome, paiId);
+        const id = existente ? existente.id : await Categoria.criar(req.user.id, { nome, cor, categoria_pai_id: paiId });
         const cat = await Categoria.buscarPorId(id, req.user.id);
         return res.json({ sucesso: true, categoria: { id: cat.id, nome: cat.nome, parent_id: cat.parent_id } });
     },
@@ -75,6 +83,12 @@ const categoriasController = {
         const atual = await Categoria.buscarPorId(id, userId);
         if (!nome || !atual || atual.sistema) {
             req.session.flash = { tipo: 'erro', mensagem: req.t(nome ? 'flash.generico_erro' : 'flash.categoria_nome_obrigatorio') };
+            return res.redirect('/categorias');
+        }
+
+        // So confere quando o nome muda: quem ja tem repetidas de antes ainda consegue editar cor e limite.
+        if (nome.trim() !== String(atual.nome).trim() && await Categoria.buscarPorNome(userId, nome, atual.parent_id, atual.id)) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.categoria_duplicada') };
             return res.redirect('/categorias');
         }
 

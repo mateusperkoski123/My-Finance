@@ -48,6 +48,16 @@ class Categoria {
         return rows[0] || null;
     }
 
+    // Categoria ativa com o mesmo nome no mesmo nivel (raiz ou sob o mesmo pai), sem diferenciar maiusculas nem acentos
+    // (collation do banco). Subcategorias com o mesmo nome em pais diferentes continuam permitidas.
+    static async buscarPorNome(userId, nome, parentId, ignorarId = null) {
+        const [rows] = await db.query(
+            "SELECT * FROM categorias WHERE user_id = ? AND status = 'ativa' AND TRIM(nome) = TRIM(?) AND parent_id <=> ? AND id <> ? LIMIT 1",
+            [userId, nome, parentId || null, ignorarId || 0]
+        );
+        return rows[0] || null;
+    }
+
     static async garantirCategoriasSistema(userId, idioma) {
         const { para, nomesDeSistema } = require('../core/categorias_padrao');
         const p = para(idioma || await this.idiomaDoUsuario(userId));
@@ -143,6 +153,9 @@ class Categoria {
         if (parent_id) {
             const pai = await this.buscarPorId(parent_id, userId);
             if (!pai || pai.parent_id) parent_id = null; // pai invalido/de outro usuario ou ja e sub (so 1 nivel)
+        }
+        if (await this.buscarPorNome(userId, nome, parent_id)) {
+            throw Object.assign(new Error('categoria_duplicada'), { codigo: 'categoria_duplicada' });
         }
         const [res] = await db.query(
             `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, limite_gasto, sistema, status, client_id, created_at, updated_at) 

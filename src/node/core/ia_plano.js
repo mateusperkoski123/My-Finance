@@ -77,6 +77,7 @@ async function executarOp(userId, op) {
         }
 
         case 'categoria_criar': {
+            if (await Categoria.buscarPorNome(userId, op.nome, op.pai_id || null)) throw new Error(`Categoria já existe: ${op.nome}`);
             const id = await Categoria.criar(userId, { nome: op.nome, categoria_pai_id: op.pai_id || null });
             return { t: 'categoria_excluir', id };
         }
@@ -84,6 +85,7 @@ async function executarOp(userId, op) {
         case 'categoria_renomear': {
             const c = await Categoria.buscarPorId(op.id, userId);
             if (!c || c.sistema) throw new Error(`Categoria não encontrada: ${op.de}`);
+            if (await Categoria.buscarPorNome(userId, op.para, c.parent_id, c.id)) throw new Error(`Categoria já existe: ${op.para}`);
             await Categoria.atualizar(op.id, userId, { nome: op.para, cor: c.cor, limite_gasto: c.limite_gasto });
             return { t: 'categoria_renomear', id: op.id, nome: c.nome, cor: c.cor, limite_gasto: c.limite_gasto };
         }

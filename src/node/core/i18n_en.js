@@ -361,6 +361,7 @@ module.exports = {
     'flash.email_em_uso': 'This e-mail is already registered in the system.',
     'flash.cadastro_sucesso': 'Account created successfully! Welcome.',
     'flash.categoria_nome_obrigatorio': 'The category name is required.',
+    'flash.categoria_duplicada': 'A category with this name already exists.',
     'flash.categoria_criada': 'Category created successfully!',
     'flash.categoria_atualizada': 'Category updated successfully!',
     'flash.categoria_arquivada': 'Category archived successfully!',
