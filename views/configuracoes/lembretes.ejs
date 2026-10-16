@@ -124,7 +124,7 @@
 </div>
 
 <% if (pushDisponivel) { %>
-<script src="/assets/js/app-push.js"></script>
+<script src="/assets/js/app-push.js?v=<%= assetVersion %>"></script>
 <script>
 (function () {
     var CSRF = <%- JSON.stringify(csrfToken) %>;

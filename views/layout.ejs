@@ -10,7 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="MyFinance">
     <meta name="csrf-token" content="<%= csrfToken %>">
-    <script src="/assets/js/app-instalar.js"></script>
+    <script src="/assets/js/app-instalar.js?v=<%= assetVersion %>"></script>
     <title><%= title ? title + ' - ' + t('app.nome') : t('app.nome') %></title>
     <script>
     window.GF_T = {
@@ -353,14 +353,14 @@ window.GF_OFF_T = {
 <% ['st_pago','st_recebido','st_pendente','aguardando_envio','confirmar_sair','historico','serie_fixo','serie_repetir','tipo_agendar','tipo_categoria','salvo','serie','invalido','falha_guardar','vazia','descartar','confirmar_descartar','enviadas','enviando','aguardando_internet','aguardando_servidor','conflito','tipo_despesa','tipo_receita','tipo_transferencia','tipo_pagar','tipo_desfazer','editar','editado','nao_editavel','plano_sem_offline','erro_plano_sem_offline','erro_cotacao_obrigatoria','tipo_generico','erro_generico','erro_somente_leitura','erro_conta_invalida','erro_categoria_invalida','erro_nao_encontrado','erro_valor_invalido','erro_data_invalida','erro_contas_iguais','erro_quantidade_invalida','erro_nome_obrigatorio','erro_cor_invalida'].forEach(function (k) { %>    <%- JSON.stringify(k) %>: <%- JSON.stringify(t('off.' + k)) %>,
 <% }) %>};
 </script>
-<script src="/assets/js/app-conexao.js"></script>
-<script src="/assets/js/app-db.js"></script>
-<script src="/assets/js/app-regras.js"></script>
-<script src="/assets/js/app-sync.js"></script>
-<script src="/assets/js/app-offline.js"></script>
-<script src="/assets/js/app-provisorios.js"></script>
-<script src="/assets/js/app-foto.js"></script>
-<script src="/assets/js/app.js"></script>
+<script src="/assets/js/app-conexao.js?v=<%= assetVersion %>"></script>
+<script src="/assets/js/app-db.js?v=<%= assetVersion %>"></script>
+<script src="/assets/js/app-regras.js?v=<%= assetVersion %>"></script>
+<script src="/assets/js/app-sync.js?v=<%= assetVersion %>"></script>
+<script src="/assets/js/app-offline.js?v=<%= assetVersion %>"></script>
+<script src="/assets/js/app-provisorios.js?v=<%= assetVersion %>"></script>
+<script src="/assets/js/app-foto.js?v=<%= assetVersion %>"></script>
+<script src="/assets/js/app.js?v=<%= assetVersion %>"></script>
 <script>
 // PWA Service Worker Registration & Installation Handler
 (function() {
