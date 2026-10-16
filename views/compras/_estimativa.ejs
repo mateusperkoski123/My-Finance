@@ -1,0 +1,16 @@
+<%# Parametro: estimativa (de Compra.estimativa). Mostra o melhor palpite que o app tem, sem inventar numero. %>
+<% if (estimativa.nivel === 'itens') { %>
+    <div class="compras-estimativa__rotulo"><%= t('compras.estimativa') %></div>
+    <div class="compras-estimativa__valor num"><%= moeda(estimativa.valor) %></div>
+<% } else if (estimativa.nivel === 'parcial') { %>
+    <div class="compras-estimativa__rotulo"><%= t('compras.estimativa_parcial') %></div>
+    <div class="compras-estimativa__valor num"><%= moeda(estimativa.valor) %></div>
+    <div class="muted compras-estimativa__nota"><%= t('compras.faltam_precos', { n: estimativa.semPreco }) %></div>
+<% } else if (estimativa.nivel === 'media') { %>
+    <div class="compras-estimativa__rotulo"><%= t('compras.estimativa_media') %></div>
+    <div class="compras-estimativa__valor num">≈ <%= moeda(estimativa.valor) %></div>
+    <div class="muted compras-estimativa__nota"><%= t('compras.estimativa_media_nota') %></div>
+<% } else { %>
+    <div class="compras-estimativa__rotulo"><%= t('compras.estimativa') %></div>
+    <div class="muted compras-estimativa__nota"><%= t('compras.estimativa_vazia') %></div>
+<% } %>

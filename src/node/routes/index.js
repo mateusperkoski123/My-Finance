@@ -105,7 +105,7 @@ router.get('/assinatura/pagopar/retorno/:hash', requireAuth, assinaturaControlle
 router.post('/pagopar/resposta', cronLimiter, assinaturaController.webhookPagopar);
 // Guia de uso (caso pratico passo a passo, nos tres idiomas)
 router.get('/guia', requireAuth, (req, res) => {
-    res.render('guia/index', { title: req.t('guia.titulo'), secoes: require('../core/guia').montar(req.lang) });
+    res.render('guia/index', { title: req.t('guia.titulo'), secoes: require('../core/guia').montar(req.lang, { modulos: (req.ehAdmin || req.user.compras_habilitado) ? ['compras'] : [] }) });
 });
 // Teste gratis: escolher o plano do teste (uma vez) e trocar o plano enquanto o teste esta em andamento.
 router.get('/teste', requireAuth, assinaturaController.escolherTeste);
@@ -135,6 +135,7 @@ router.post('/admin/usuarios/:id/cancelar', requireAuth, exigirAdmin, adminContr
 router.post('/admin/usuarios/:id/status', requireAuth, exigirAdmin, adminController.alterarStatus);
 router.post('/admin/usuarios/:id/ia-nivel', requireAuth, exigirAdmin, adminController.alternarIaNivel);
 router.post('/admin/usuarios/:id/clientes', requireAuth, exigirAdmin, adminController.alternarClientes);
+router.post('/admin/usuarios/:id/compras', requireAuth, exigirAdmin, adminController.alternarCompras);
 router.post('/admin/usuarios/:id/ia', requireAuth, exigirAdmin, adminController.alternarIa);
 router.post('/admin/usuarios/:id/arquivar', requireAuth, exigirAdmin, adminController.arquivar);
 router.get('/admin/arquivados', requireAuth, exigirAdmin, adminController.arquivados);
@@ -208,6 +209,32 @@ router.post('/clientes/:id(\\d+)/atualizar', requireAuth, exigirClientes, client
 router.post('/clientes/:id(\\d+)/estado', requireAuth, exigirClientes, clientesController.definirEstado);
 router.post('/clientes/:id(\\d+)/excluir', requireAuth, exigirClientes, clientesController.excluirCliente);
 router.post('/clientes/:id(\\d+)/contratos', requireAuth, exigirClientes, clientesController.criarContrato);
+
+// Modulo Compras (lista de compras que vira lancamento): liberado por usuario pelo admin.
+const comprasController = require('../controllers/comprasController');
+const { exigirCompras } = require('../middleware/comprasMiddleware');
+router.get('/compras', requireAuth, exigirCompras, comprasController.index);
+router.post('/compras/criar', requireAuth, exigirCompras, comprasController.criarLista);
+router.get('/compras/:id(\\d+)', requireAuth, exigirCompras, comprasController.lista);
+router.post('/compras/:id(\\d+)/atualizar', requireAuth, exigirCompras, comprasController.atualizarLista);
+router.post('/compras/:id(\\d+)/arquivar', requireAuth, exigirCompras, comprasController.arquivarLista);
+router.post('/compras/:id(\\d+)/itens', requireAuth, exigirCompras, comprasController.adicionarItem);
+router.post('/compras/:id(\\d+)/marcar-todos', requireAuth, exigirCompras, comprasController.marcarTodos);
+router.get('/compras/:id(\\d+)/fechar', requireAuth, exigirCompras, comprasController.fecharPagina);
+router.post('/compras/:id(\\d+)/fechar', requireAuth, exigirCompras, comprasController.fechar);
+router.post('/compras/itens/:itemId(\\d+)/marcar', requireAuth, exigirCompras, comprasController.marcarItem);
+router.post('/compras/itens/:itemId(\\d+)/preco', requireAuth, exigirCompras, comprasController.definirPreco);
+router.post('/compras/itens/:itemId(\\d+)/excluir', requireAuth, exigirCompras, comprasController.excluirItem);
+router.post('/compras/produtos/:produtoId(\\d+)/dispensar', requireAuth, exigirCompras, comprasController.dispensarAviso);
+// Leitura de nota por foto: usa a IA (plano, cota de fotos e limite de pedidos do Chat IA). A foto fica so em memoria.
+const { exigirIa: exigirIaNota, limiteMensagens: limiteIaNota } = require('../middleware/iaMiddleware');
+const uploadNota = (req, res, next) => {
+    multer({ storage: multer.memoryStorage(), limits: { fileSize: 6 * 1024 * 1024, files: 1, fields: 5 } }).single('nota')(req, res, (err) => {
+        if (err) return res.status(400).json({ sucesso: false, erro: req.t(err.code === 'LIMIT_FILE_SIZE' ? 'ia.erro_imagem_grande' : 'ia.erro_imagem') });
+        next();
+    });
+};
+router.post('/compras/:id(\\d+)/nota', requireAuth, exigirCompras, exigirIaNota, limiteIaNota, uploadNota, comprasController.lerNota);
 
 // Categorias routes
 router.get('/categorias', requireAuth, categoriasController.index);

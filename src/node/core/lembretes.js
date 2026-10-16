@@ -158,7 +158,31 @@ async function enviarAvisos(cfg, agoraMs) {
             console.error('Falha no aviso de clientes do usuario', cfg.user_id, err.message);
         }
     }
+    // Modulo Compras: itens que provavelmente estao acabando (pelo ritmo de compra de cada um), se o usuario quiser o aviso.
+    if (cfg.compras_habilitado && cfg.aviso_compras) {
+        try {
+            const Compra = require('../models/Compra');
+            const avisos = await Compra.avisos(cfg.user_id, hoje, { paraNotificacao: true });
+            const payload = montarAvisoCompras(avisos, hoje, cfg);
+            if (payload) {
+                gerados++;
+                await enviarParaUsuario(cfg.user_id, payload);
+                await Compra.marcarNotificados(cfg.user_id, avisos.map((a) => a.id), hoje);
+            }
+        } catch (err) {
+            console.error('Falha no aviso de compras do usuario', cfg.user_id, err.message);
+        }
+    }
     return gerados;
+}
+
+// "N itens provavelmente acabando": nomes dos tres primeiros; a lista completa e a tela de Compras.
+function montarAvisoCompras(avisos, dataYMD, { idioma }) {
+    if (!avisos.length) return null;
+    const tr = (k, p) => t(k, p, idioma);
+    const nomes = avisos.slice(0, 3).map((a) => a.nome).join(', ');
+    const resto = avisos.length > 3 ? ' ' + tr('lembrete.compras_mais', { n: avisos.length - 3 }) : '';
+    return { title: tr('lembrete.compras_titulo', { n: avisos.length }), body: nomes + resto, url: '/compras', tag: `compras-${dataYMD}` };
 }
 
 // "Hoje vencem N clientes": so a quantidade e o total a cobrar por moeda (a lista completa fica na tela de Clientes).
@@ -207,5 +231,5 @@ async function processarDevidos() {
 
 module.exports = {
     FUSO_PADRAO, fusoValido, horaValida, partesNoFuso, proximoEnvio, dataLocalYMD, somarDias,
-    montarNotificacao, montarAvisoClientes, totalTexto, enviarParaUsuario, processarDevidos
+    montarNotificacao, montarAvisoClientes, montarAvisoCompras, totalTexto, enviarParaUsuario, processarDevidos
 };

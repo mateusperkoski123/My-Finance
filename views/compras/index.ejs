@@ -1,0 +1,52 @@
+<div class="page-header page-header--acoes">
+    <div>
+        <h1><i class="ph ph-shopping-cart"></i> <%= t('compras.titulo') %></h1>
+        <p class="muted"><%= t('compras.subtitulo') %> <a href="/guia#compras"><i class="ph ph-book-open"></i> <%= t('compras.como_funciona') %></a></p>
+    </div>
+    <div class="page-header__botoes">
+        <button type="button" class="btn btn-primary" data-modal-open="modal-nova-lista"><i class="ph ph-plus-circle"></i> <%= t('compras.nova_lista') %></button>
+    </div>
+</div>
+
+<div class="tabs" style="margin-bottom: 16px;">
+    <a href="/compras" class="tabs__item <%= !arquivadas ? 'is-active' : '' %>"><%= t('compras.listas_ativas') %></a>
+    <a href="/compras?aba=arquivadas" class="tabs__item <%= arquivadas ? 'is-active' : '' %>"><%= t('compras.listas_arquivadas') %></a>
+</div>
+
+<% if (acabando.length && listas.length) { %>
+    <a class="card compras-aviso" href="/compras/<%= listas[0].id %>">
+        <i class="ph ph-hourglass-medium"></i>
+        <span><strong><%= t('compras.acabando_banner', { n: acabando.length }) %></strong> <span class="muted"><%= acabando.slice(0, 3).map(function (a) { return a.nome; }).join(', ') %><%= acabando.length > 3 ? '…' : '' %></span></span>
+        <i class="ph ph-arrow-right"></i>
+    </a>
+<% } %>
+
+<% if (!listas.length) { %>
+    <div class="card" style="padding: 24px;">
+        <% if (arquivadas) { %>
+            <p class="muted" style="margin: 0;"><%= t('compras.sem_arquivadas') %></p>
+        <% } else { %>
+            <h3 style="margin: 0 0 6px;"><%= t('compras.vazio_titulo') %></h3>
+            <p class="muted" style="margin: 0 0 16px; max-width: 60ch;"><%= t('compras.vazio_texto') %></p>
+            <button type="button" class="btn btn-primary" data-modal-open="modal-nova-lista"><i class="ph ph-plus-circle"></i> <%= t('compras.criar_primeira') %></button>
+        <% } %>
+    </div>
+<% } else { %>
+    <div class="compras-grid">
+    <% listas.forEach(function (l) { %>
+        <a class="card compras-card" href="/compras/<%= l.id %>">
+            <div class="compras-card__topo">
+                <strong><%= l.nome %></strong>
+                <% if (!l.categoria_id) { %><span class="badge badge-alerta"><%= t('compras.sem_categoria') %></span><% } %>
+            </div>
+            <div class="muted compras-card__linha"><i class="ph ph-tag"></i> <%= l.categoria_nome || t('compras.categoria_pendente') %></div>
+            <div class="compras-card__rodape">
+                <span><%= t('compras.n_itens', { n: l.itens }) %><% if (Number(l.marcados) > 0) { %> · <%= t('compras.n_marcados', { n: l.marcados }) %><% } %></span>
+                <% if (Number(l.soma_preco) > 0) { %><b class="num">≈ <%= moeda(l.soma_preco) %></b><% } %>
+            </div>
+        </a>
+    <% }) %>
+    </div>
+<% } %>
+
+<%- include('_modal_lista', { idModal: 'modal-nova-lista', acao: '/compras/criar', titulo: t('compras.nova_lista'), categorias, contas }) %>

@@ -176,6 +176,20 @@ const adminController = {
         redirecionar(res);
     },
 
+    // Libera (ou desliga) o modulo Compras (lista de compras) para um usuario.
+    alternarCompras: async (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        const ligar = req.body.compras === '1';
+        const alvo = await User.findById(id);
+        if (!alvo) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.admin_usuario_nao_encontrado') };
+            return redirecionar(res);
+        }
+        await User.definirComprasHabilitado(id, ligar);
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t(ligar ? 'flash.admin_compras_ativado' : 'flash.admin_compras_desativado') };
+        redirecionar(res);
+    },
+
     alternarIaNivel: async (req, res) => {
         const id = parseInt(req.params.id, 10);
         const nivel = req.body.nivel === '2' ? 2 : 1;

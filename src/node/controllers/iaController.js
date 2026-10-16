@@ -269,3 +269,7 @@ const iaController = {
 };
 
 module.exports = iaController;
+// Usados tambem pela leitura de nota do modulo Compras: mesma cota de foto e audio, mesmo registro de custo.
+module.exports.cotaMidia = cotaMidia;
+module.exports.textoCotaEsgotada = textoCotaEsgotada;
+module.exports.registrarConsumo = registrarConsumo;

@@ -1,0 +1,45 @@
+<%# Parametros: idModal, acao, titulo, categorias, contas, lista (opcional: preenche o formulario) %>
+<% const _l = typeof lista !== 'undefined' && lista ? lista : {}; %>
+<div class="modal-backdrop" id="<%= idModal %>" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= titulo %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="<%= acao %>" class="form">
+            <%- csrfCampo %>
+            <div class="form-group">
+                <label for="<%= idModal %>-nome"><%= t('compras.campo_nome') %> *</label>
+                <input class="input" type="text" id="<%= idModal %>-nome" name="nome" maxlength="80" required value="<%= _l.nome || '' %>" placeholder="<%= t('compras.campo_nome_exemplo') %>">
+            </div>
+            <div class="form-group">
+                <label for="<%= idModal %>-categoria"><%= t('compras.campo_categoria') %></label>
+                <select class="input" id="<%= idModal %>-categoria" name="categoria_id">
+                    <option value=""><%= t('compras.escolher_depois') %></option>
+                    <% categorias.forEach(function (c) { %>
+                        <% if (c.subcategorias.length) { %>
+                        <optgroup label="<%= c.nome %>">
+                            <option value="<%= c.id %>" <%= Number(_l.categoria_id) === c.id ? 'selected' : '' %>><%= c.nome %></option>
+                            <% c.subcategorias.forEach(function (s) { %><option value="<%= s.id %>" <%= Number(_l.categoria_id) === s.id ? 'selected' : '' %>><%= c.nome %> › <%= s.nome %></option><% }) %>
+                        </optgroup>
+                        <% } else { %>
+                        <option value="<%= c.id %>" <%= Number(_l.categoria_id) === c.id ? 'selected' : '' %>><%= c.nome %></option>
+                        <% } %>
+                    <% }) %>
+                </select>
+                <small class="muted"><%= t('compras.ajuda_categoria') %></small>
+            </div>
+            <div class="form-group">
+                <label for="<%= idModal %>-conta"><%= t('compras.campo_conta') %></label>
+                <select class="input" id="<%= idModal %>-conta" name="conta_id">
+                    <option value=""><%= t('compras.escolher_depois') %></option>
+                    <% contas.forEach(function (c) { %><option value="<%= c.id %>" <%= Number(_l.conta_id) === c.id ? 'selected' : '' %>><%= c.nome %></option><% }) %>
+                </select>
+            </div>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('clientes.salvar') %></button>
+            </div>
+        </form>
+    </div>
+</div>

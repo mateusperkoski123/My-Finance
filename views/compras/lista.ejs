@@ -1,0 +1,107 @@
+<div class="page-header page-header--acoes">
+    <div>
+        <p class="muted" style="margin: 0 0 4px;"><a href="/compras"><i class="ph ph-arrow-left"></i> <%= t('compras.titulo') %></a></p>
+        <h1><i class="ph ph-shopping-cart"></i> <%= lista.nome %></h1>
+        <p class="muted">
+            <i class="ph ph-tag"></i>
+            <% if (lista.categoria_id) { %><%= t('compras.lancamento_vai_para', { categoria: lista.categoria_nome }) %><% } else { %><%= t('compras.categoria_pendente') %><% } %>
+        </p>
+    </div>
+    <div class="page-header__botoes">
+        <button type="button" class="btn btn-outline" data-modal-open="modal-editar-lista"><i class="ph ph-pencil-simple"></i> <%= t('clientes.editar') %></button>
+        <form method="post" action="/compras/<%= lista.id %>/arquivar" style="display: inline;" data-confirm="<%= t('compras.confirmar_arquivar') %>">
+            <%- csrfCampo %>
+            <button type="submit" class="btn btn-outline"><i class="ph ph-archive"></i> <%= t('clientes.arquivar') %></button>
+        </form>
+    </div>
+</div>
+
+<div class="compras-layout">
+    <div class="compras-principal">
+        <% if (acabando.length) { %>
+        <section class="card compras-acabando" aria-labelledby="compras-acabando-titulo">
+            <h2 id="compras-acabando-titulo"><i class="ph ph-hourglass-medium"></i> <%= t('compras.acabando_titulo') %></h2>
+            <p class="muted"><%= t('compras.acabando_ajuda') %></p>
+            <% acabando.forEach(function (a) { %>
+            <div class="compras-acabando__item">
+                <div class="compras-acabando__texto">
+                    <strong><%= a.nome %></strong>
+                    <span class="muted"><%= t('compras.acabando_ritmo', { intervalo: a.intervalo, dias: a.diasDesde }) %></span>
+                </div>
+                <div class="compras-acabando__acoes">
+                    <form method="post" action="/compras/<%= lista.id %>/itens">
+                        <%- csrfCampo %><input type="hidden" name="nome" value="<%= a.nome %>">
+                        <button type="submit" class="btn btn-primary btn-sm"><i class="ph ph-plus"></i> <%= t('compras.adicionar_botao') %></button>
+                    </form>
+                    <form method="post" action="/compras/produtos/<%= a.id %>/dispensar">
+                        <%- csrfCampo %><input type="hidden" name="lista" value="<%= lista.id %>"><input type="hidden" name="modo" value="ciclo">
+                        <button type="submit" class="btn btn-outline btn-sm"><%= t('compras.acabando_agora_nao') %></button>
+                    </form>
+                    <form method="post" action="/compras/produtos/<%= a.id %>/dispensar" data-confirm="<%= t('compras.acabando_confirmar', { nome: a.nome }) %>">
+                        <%- csrfCampo %><input type="hidden" name="lista" value="<%= lista.id %>"><input type="hidden" name="modo" value="nunca">
+                        <button type="submit" class="btn-icone" aria-label="<%= t('compras.acabando_nunca', { nome: a.nome }) %>" title="<%= t('compras.acabando_nunca', { nome: a.nome }) %>"><i class="ph ph-x"></i></button>
+                    </form>
+                </div>
+            </div>
+            <% }) %>
+        </section>
+        <% } %>
+        <form method="post" action="/compras/<%= lista.id %>/itens" class="card compras-novo" id="novo-item">
+            <%- csrfCampo %>
+            <label for="compras-novo-nome" class="compras-novo__rotulo"><%= t('compras.adicionar') %></label>
+            <div class="compras-novo__linha">
+                <input class="input" type="text" id="compras-novo-nome" name="nome" maxlength="400" list="compras-sugestoes" autocomplete="off" placeholder="<%= t('compras.adicionar_exemplo') %>" required>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-plus"></i> <%= t('compras.adicionar_botao') %></button>
+            </div>
+            <small class="muted"><%= t('compras.adicionar_ajuda') %></small>
+            <datalist id="compras-sugestoes">
+                <% sugestoes.forEach(function (n) { %><option value="<%= n %>"></option><% }) %>
+            </datalist>
+        </form>
+
+        <div class="card compras-itens" id="compras-itens">
+            <% if (!itens.length) { %>
+                <p class="muted" style="padding: 20px; margin: 0;"><%= t('compras.lista_vazia') %></p>
+            <% } else { %>
+            <% itens.forEach(function (i) { %>
+                <div class="compras-item <%= i.marcado ? 'is-marcado' : '' %>" data-item="<%= i.id %>">
+                    <form method="post" action="/compras/itens/<%= i.id %>/marcar" data-compras-ajax="marcar">
+                        <%- csrfCampo %>
+                        <input type="hidden" name="marcado" value="<%= i.marcado ? '0' : '1' %>">
+                        <button type="submit" class="compras-check" aria-pressed="<%= i.marcado ? 'true' : 'false' %>" aria-label="<%= t('compras.marcar_item', { nome: i.nome }) %>"><i class="ph ph-check"></i></button>
+                    </form>
+                    <span class="compras-item__nome"><%= i.nome %></span>
+                    <form method="post" action="/compras/itens/<%= i.id %>/preco" class="compras-preco" data-compras-ajax="preco">
+                        <%- csrfCampo %>
+                        <input class="input" type="text" name="preco" inputmode="decimal" maxlength="20" value="<%= i.preco !== null ? Number(i.preco).toFixed(2) : '' %>" placeholder="<%= t('compras.preco') %>" aria-label="<%= t('compras.preco_de', { nome: i.nome }) %>">
+                    </form>
+                    <form method="post" action="/compras/itens/<%= i.id %>/excluir">
+                        <%- csrfCampo %>
+                        <button type="submit" class="btn-icone" aria-label="<%= t('compras.remover_item', { nome: i.nome }) %>"><i class="ph ph-trash"></i></button>
+                    </form>
+                </div>
+            <% }) %>
+            <% } %>
+        </div>
+    </div>
+
+    <aside class="compras-lateral">
+        <div class="card compras-estimativa">
+            <%- include('_estimativa', { estimativa }) %>
+            <div class="compras-progresso muted" id="compras-progresso" data-modelo="<%= t('compras.progresso', { marcados: '{marcados}', total: '{total}' }) %>">
+                <%= t('compras.progresso', { marcados: estimativa.marcados, total: estimativa.itens }) %>
+            </div>
+        </div>
+        <% if (itens.length) { %>
+        <a class="btn btn-primary compras-fechar" href="/compras/<%= lista.id %>/fechar"><i class="ph ph-receipt"></i> <%= t('compras.fechar_botao') %></a>
+        <form method="post" action="/compras/<%= lista.id %>/marcar-todos">
+            <%- csrfCampo %>
+            <input type="hidden" name="marcado" value="<%= estimativa.marcados === estimativa.itens ? '0' : '1' %>">
+            <button type="submit" class="btn btn-outline" style="width: 100%;"><i class="ph ph-checks"></i> <%= t(estimativa.marcados === estimativa.itens ? 'compras.desmarcar_todos' : 'compras.marcar_todos') %></button>
+        </form>
+        <% } %>
+    </aside>
+</div>
+
+<%- include('_modal_lista', { idModal: 'modal-editar-lista', acao: '/compras/' + lista.id + '/atualizar', titulo: t('compras.editar_lista'), categorias, contas, lista }) %>
+<script src="/assets/js/compras.js?v=<%= assetVersion %>"></script>

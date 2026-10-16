@@ -164,6 +164,64 @@ const SECOES = [
         dica: s('A IA só fala das suas finanças e de como usar o app. Os limites mensais de mensagens são 300 no Premium e 600 no Pro.', 'La IA solo habla de tus finanzas y de cómo usar la app. Los límites mensuales de mensajes son 300 en el Premium y 600 en el Pro.', 'The AI only talks about your finances and how to use the app. The monthly message limits are 300 on Premium and 600 on Pro.')
     },
     {
+        id: 'compras', icone: 'ph-shopping-cart', modulo: 'compras', link: { href: '/compras', rot: s('Abrir Compras', 'Abrir Compras', 'Open Shopping') },
+        titulo: s('11. Lista de compras do mercado', '11. Lista de compras del supermercado', '11. Grocery shopping list'),
+        intro: s('A Marina sempre volta do mercado esquecendo alguma coisa. Com o módulo **Compras**, a lista fica no celular e o gasto vira lançamento sozinho.',
+            'Marina siempre vuelve del supermercado olvidándose de algo. Con el módulo **Compras**, la lista queda en el celular y el gasto se registra solo.',
+            'Marina always comes home from the supermarket having forgotten something. With the **Shopping** module, the list lives on her phone and the spending is recorded automatically.'),
+        passos: [
+            s('Abra **Compras** (no celular, **Mais › Compras**) e toque em **Nova lista**. Nome **Mercado do mês**, categoria do gasto **Supermercado** e conta **Banco Itaú**. A categoria é uma das suas e a lista guarda essa escolha para as próximas compras.',
+                'Abrí **Compras** (en el celular, **Más › Compras**) y tocá **Nueva lista**. Nombre **Supermercado del mes**, categoría del gasto **Supermercado** y cuenta **Banco Itaú**. La categoría es una de las tuyas y la lista guarda esa elección para las próximas compras.',
+                'Open **Shopping** (on your phone, **More › Shopping**) and tap **New list**. Name it **Monthly groceries**, spending category **Supermarket** and account **Banco Itaú**. The category is one of yours and the list remembers it for future purchases.'),
+            s('Dentro da lista, digite os itens e toque em **Adicionar**. Dá para colocar vários de uma vez, separados por vírgula: *leite, arroz, café*. Os produtos que você já comprou aparecem como sugestão e voltam com o último preço pago.',
+                'Dentro de la lista, escribí los ítems y tocá **Agregar**. Podés poner varios a la vez, separados por coma: *leche, arroz, café*. Los productos que ya compraste aparecen como sugerencia y vuelven con el último precio pagado.',
+                'Inside the list, type the items and tap **Add**. You can add several at once, separated by commas: *milk, rice, coffee*. Products you already bought show up as suggestions and come back with the last price you paid.'),
+            s('No mercado, toque no círculo de cada item que colocar no carrinho. Se quiser, informe o preço ao lado: com os preços, a **Estimativa** mostra quanto a compra deve custar.',
+                'En el supermercado, tocá el círculo de cada ítem que pongas en el carrito. Si querés, ingresá el precio al lado: con los precios, la **Estimación** muestra cuánto debería costar la compra.',
+                'At the supermarket, tap the circle next to each item you put in the cart. If you like, enter the price beside it: with prices, the **Estimate** shows how much the purchase should cost.'),
+            s('Na saída, toque em **Fechar compra**. Informe o **total pago** (o app mostra se ficou acima ou abaixo da estimativa), confira a conta e a categoria e toque em **Salvar compra e lançar gasto**.',
+                'A la salida, tocá **Cerrar compra**. Ingresá el **total pagado** (la app muestra si quedó por encima o por debajo de la estimación), revisá la cuenta y la categoría y tocá **Guardar compra y registrar gasto**.',
+                'On the way out, tap **Close purchase**. Enter the **total paid** (the app shows whether it was above or below the estimate), check the account and category and tap **Save purchase and record expense**.'),
+            s('O gasto entra como despesa já paga, na categoria da lista. O que você não marcou fica para a próxima compra, ou sai da lista se você escolher **Tirar da lista**.',
+                'El gasto entra como un gasto ya pagado, en la categoría de la lista. Lo que no marcaste queda para la próxima compra, o sale de la lista si elegís **Quitar de la lista**.',
+                'The spending is recorded as an expense already paid, in the list category. What you did not check stays for the next purchase, or leaves the list if you choose **Remove from the list**.')
+        ],
+        exemplo: [{ tipo: 'des', rot: s('Mercado do mês · pago', 'Supermercado del mes · pagado', 'Monthly groceries · paid'), val: '- Gs. 420.000' }],
+        dica: s('Sem preços a estimativa não aparece, para não inventar um número. Informe o preço dos itens que mais pesam ou feche algumas compras: o app passa a mostrar *Você costuma gastar cerca de...*, pela média das últimas compras.',
+            'Sin precios la estimación no aparece, para no inventar un número. Ingresá el precio de los ítems que más pesan o cerrá algunas compras: la app pasa a mostrar *Solés gastar alrededor de...*, por el promedio de las últimas compras.',
+            'Without prices the estimate does not appear, so the app never makes up a number. Enter the price of the items that weigh most or close a few purchases: the app then shows *You usually spend about...*, from the average of your last purchases.')
+    },
+    {
+        id: 'compras-avisos', icone: 'ph-hourglass-medium', modulo: 'compras', plano: 'premium', link: { href: '/compras', rot: s('Abrir Compras', 'Abrir Compras', 'Open Shopping') },
+        titulo: s('12. Itens acabando e leitura da nota', '12. Ítems que se acaban y lectura de la factura', '12. Items running out and receipt reading'),
+        intro: s('Depois de algumas compras, o app aprende o ritmo de cada produto e a Marina ganha dois atalhos.',
+            'Después de algunas compras, la app aprende el ritmo de cada producto y Marina gana dos atajos.',
+            'After a few purchases, the app learns the rhythm of each product and Marina gets two shortcuts.'),
+        passos: [
+            s('Depois de **3 compras** do mesmo produto, o app descobre a cada quantos dias você o compra. Quando chega perto da hora e ele não está em nenhuma lista, aparece o bloco **Provavelmente acabando** com o botão **Adicionar**.',
+                'Después de **3 compras** del mismo producto, la app descubre cada cuántos días lo comprás. Cuando se acerca la hora y no está en ninguna lista, aparece el bloque **Probablemente se está acabando** con el botón **Agregar**.',
+                'After **3 purchases** of the same product, the app works out how many days apart you buy it. When the time is near and it is on no list, the **Probably running out** block appears with an **Add** button.'),
+            s('**Agora não** esconde o aviso por um ciclo inteiro. O **X** para de avisar daquele item (os avisos voltam se você o adicionar a uma lista de novo).',
+                '**Ahora no** esconde el aviso por un ciclo entero. La **X** deja de avisar de ese ítem (los avisos vuelven si lo agregás a una lista otra vez).',
+                '**Not now** hides the reminder for a whole cycle. The **X** stops reminders for that item (they come back if you add it to a list again).'),
+            s('Para receber como notificação, abra **Configurações › Lembretes** e ligue **Avisar quando itens de compras estiverem acabando**. O mesmo item avisa no máximo a cada 3 dias.',
+                'Para recibirlo como notificación, abrí **Configuración › Recordatorios** y activá **Avisar cuando ítems de compras se estén acabando**. El mismo ítem avisa como máximo cada 3 días.',
+                'To get it as a notification, open **Settings › Reminders** and turn on **Notify me when shopping items are running out**. The same item reminds you at most every 3 days.'),
+            s('Na tela **Fechar compra**, toque em **Foto da nota**. O app lê o total, a data e o preço de cada item e já reconhece o que estava na sua lista. O que você comprou fora da lista também é registrado.',
+                'En la pantalla **Cerrar compra**, tocá **Foto de la factura**. La app lee el total, la fecha y el precio de cada ítem y ya reconoce lo que estaba en tu lista. Lo que compraste fuera de la lista también se registra.',
+                'On the **Close purchase** screen, tap **Receipt photo**. The app reads the total, the date and each item price and recognizes what was on your list. Things you bought outside the list are recorded too.'),
+            s('Confira os valores e desmarque o que não quiser. **Nada é salvo até você tocar em Salvar compra e lançar gasto.** A foto não é guardada.',
+                'Revisá los valores y desmarcá lo que no quieras. **No se guarda nada hasta que toques Guardar compra y registrar gasto.** La foto no se guarda.',
+                'Check the amounts and uncheck anything you do not want. **Nothing is saved until you tap Save purchase and record expense.** The photo is not stored.'),
+            s('A leitura de nota usa a IA e conta como uma foto na cota do mês do seu plano (**10 no Premium e 30 no Pro**, a mesma do Chat IA). Se a foto não mostrar uma nota legível, a tentativa não gasta a cota.',
+                'La lectura de facturas usa la IA y cuenta como una foto en la cuota del mes de tu plan (**10 en el Premium y 30 en el Pro**, la misma del Chat IA). Si la foto no muestra una factura legible, el intento no gasta la cuota.',
+                'Receipt reading uses AI and counts as one photo in your plan\'s monthly quota (**10 on Premium and 30 on Pro**, the same as AI Chat). If the photo does not show a readable receipt, the attempt does not use up the quota.')
+        ],
+        dica: s('Fotografe a nota inteira, reta e bem iluminada. Se o total lido não bater com a soma dos itens, o app avisa: confira os valores antes de salvar. Os avisos de consumo funcionam melhor quando você fecha as compras no app, porque é ali que as datas ficam guardadas.',
+            'Fotografiá la factura entera, recta y bien iluminada. Si el total leído no coincide con la suma de los ítems, la app avisa: revisá los valores antes de guardar. Los avisos de consumo funcionan mejor cuando cerrás las compras en la app, porque ahí se guardan las fechas.',
+            'Photograph the whole receipt, flat and well lit. If the total it reads does not match the sum of the items, the app warns you: check the amounts before saving. Consumption reminders work best when you close purchases in the app, because that is where the dates are kept.')
+    },
+    {
         id: 'rotina', icone: 'ph-calendar-check',
         titulo: s('12. A rotina de 5 minutos da Marina', '12. La rutina de 5 minutos de Marina', '12. Marina\'s 5-minute routine'),
         intro: s('Com tudo configurado, manter o controle dá pouco trabalho:', 'Con todo configurado, mantener el control da poco trabajo:', 'With everything set up, staying in control takes little effort:'),
@@ -183,13 +241,14 @@ const idx = (lang) => {
 };
 
 // Devolve as secoes no idioma pedido, prontas para a tela.
-function montar(lang) {
+// modulos: modulos liberados para a pessoa (ex.: ['compras']). Secoes de um modulo so aparecem para quem o tem, e a numeracao dos titulos e refeita.
+function montar(lang, { modulos = [] } = {}) {
     const i = idx(lang);
-    return SECOES.map((sec) => ({
+    return SECOES.filter((sec) => !sec.modulo || modulos.includes(sec.modulo)).map((sec, n) => ({
         id: sec.id,
         icone: sec.icone,
         plano: sec.plano || null,
-        titulo: sec.titulo[i],
+        titulo: `${n + 1}. ${sec.titulo[i].replace(/^\d+\.\s*/, '')}`,
         intro: sec.intro ? sec.intro[i] : '',
         passos: sec.passos.map((p) => p[i]),
         exemplo: (sec.exemplo || []).map((e) => ({ tipo: e.tipo, rot: e.rot[i], val: e.val })),

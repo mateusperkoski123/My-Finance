@@ -2881,3 +2881,81 @@ a.navbar__avatar { text-decoration: none; }
 }
 
 .periodo-atalhos { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
+
+/* ---- Modulo Compras (lista de compras) ---- */
+.compras-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+.compras-card { display: flex; flex-direction: column; gap: 8px; padding: 16px; text-decoration: none; color: inherit; }
+.compras-card:hover { border-color: var(--primary); }
+.compras-card__topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.compras-card__linha { font-size: 13px; }
+.compras-card__rodape { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; margin-top: 4px; }
+.compras-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 20px; align-items: start; }
+.compras-principal { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.compras-lateral { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.compras-novo { padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+.compras-novo__rotulo { font-weight: 600; }
+.compras-novo__linha { display: flex; gap: 8px; }
+.compras-novo__linha .input { flex: 1; min-width: 0; }
+.compras-itens { padding: 0; overflow: hidden; }
+.compras-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.compras-item:last-child { border-bottom: 0; }
+.compras-item__nome { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.compras-item.is-marcado .compras-item__nome { text-decoration: line-through; color: var(--muted); }
+.compras-check {
+    width: 28px; height: 28px; flex: none; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 50%; border: 2px solid var(--border); background: var(--card); color: transparent; cursor: pointer; padding: 0;
+}
+.compras-check[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: var(--on-accent, #fff); }
+.compras-check:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.compras-preco { width: 110px; flex: none; }
+.compras-preco .input { padding: 6px 10px; font-size: 13px; text-align: right; }
+.compras-estimativa { padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+.compras-estimativa__rotulo { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.compras-estimativa__valor { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.compras-estimativa__nota { font-size: 13px; }
+.compras-progresso { font-size: 13px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+.compras-fechar { width: 100%; justify-content: center; text-align: center; }
+.compras-diff { min-height: 20px; margin-top: 6px; font-size: 14px; }
+.compras-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.compras-subtitulo { margin: 4px 0 -8px; font-size: 15px; }
+.compras-restantes { margin: 8px 0 12px; padding-left: 18px; }
+.compras-radio { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 14px; cursor: pointer; }
+@media (max-width: 800px) {
+    .compras-layout { grid-template-columns: minmax(0, 1fr); }
+    .compras-fila { grid-template-columns: 1fr; }
+    .compras-preco { width: 90px; }
+}
+.btn-icone { border: 0; background: transparent; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 8px; font-size: 18px; line-height: 1; }
+.btn-icone:hover { color: var(--red); background: var(--red-bg); }
+.btn-icone:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+/* Compras: aviso de consumo e leitura de nota */
+.compras-aviso { display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 16px; text-decoration: none; color: inherit; }
+.compras-aviso > i:first-child { font-size: 22px; color: var(--pendente, #b45309); }
+.compras-aviso > span { flex: 1; min-width: 0; }
+.compras-acabando { padding: 16px; }
+.compras-acabando h2 { margin: 0 0 4px; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+.compras-acabando > p { margin: 0 0 8px; font-size: 13px; }
+.compras-acabando__item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--border); flex-wrap: wrap; }
+.compras-acabando__texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 200px; }
+.compras-acabando__texto .muted { font-size: 12.5px; }
+.compras-acabando__acoes { display: flex; align-items: center; gap: 8px; }
+.compras-acabando__acoes form { margin: 0; }
+.compras-nota { padding: 16px; }
+.compras-nota__topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.compras-nota__cota { font-size: 12.5px; }
+.compras-nota__arquivo { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.compras-nota__arquivo:focus-visible + .compras-nota__status, .compras-nota__botao:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+.compras-nota__botao { cursor: pointer; }
+.compras-nota.is-lendo .compras-nota__botao { opacity: .6; pointer-events: none; }
+.compras-nota__status { margin-top: 10px; font-size: 13.5px; min-height: 18px; }
+.compras-nota__status.is-erro { color: var(--red); }
+.compras-nota__linhas { margin-top: 10px; display: flex; flex-direction: column; gap: 8px; }
+.compras-nota__ajuda { margin: 0; font-size: 13px; }
+.compras-nota__aviso { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--red-bg); color: var(--red); font-size: 13px; }
+.compras-nota__linha { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+.compras-nota__linha.is-fora { opacity: .5; }
+.compras-nota__linha input[type=checkbox] { width: 20px; height: 20px; flex: none; accent-color: var(--green); }
+.compras-nota__nome { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow-wrap: anywhere; cursor: pointer; }
+.compras-nota__nome small { font-size: 12px; }
+.compras-nota__linha .input { width: 110px; flex: none; padding: 6px 10px; font-size: 13px; text-align: right; }
+@media (max-width: 800px) { .compras-nota__linha .input { width: 92px; } }

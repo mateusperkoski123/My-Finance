@@ -165,6 +165,11 @@ class User {
         await db.query('UPDATE users SET clientes_habilitado = ? WHERE id = ?', [ligar ? 1 : 0, id]);
     }
 
+    // Modulo Compras (lista de compras) liberado pelo admin para um usuario.
+    static async definirComprasHabilitado(id, ligar) {
+        await db.query('UPDATE users SET compras_habilitado = ? WHERE id = ?', [ligar ? 1 : 0, id]);
+    }
+
     static async definirIaVarios(ids, ligar) {
         if (!ids.length) return;
         await db.query(`UPDATE users SET ia_habilitada = ? WHERE id IN (${ids.map(() => '?').join(',')})`, [ligar ? 1 : 0, ...ids]);

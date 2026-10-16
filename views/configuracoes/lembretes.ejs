@@ -66,6 +66,13 @@
                     </label>
                     <p class="muted" style="font-size: 13px; margin: 4px 0 0 26px;"><%= t('lembrete.clientes_ajuda') %></p>
                     <% } %>
+                    <% if (comprasVisivel) { %>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 6px;">
+                        <input type="checkbox" name="aviso_compras" value="1" <%= config.aviso_compras ? 'checked' : '' %>>
+                        <%= t('lembrete.compras_opcao') %>
+                    </label>
+                    <p class="muted" style="font-size: 13px; margin: 4px 0 0 26px;"><%= t('lembrete.compras_ajuda') %></p>
+                    <% } %>
                 </div>
 
                 <p class="muted" style="font-size: 13px; margin-bottom: 16px;">
