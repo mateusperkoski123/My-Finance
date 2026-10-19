@@ -198,7 +198,8 @@ class Conta {
             where += ' AND (l.descricao LIKE ? OR c.nome LIKE ?)';
             params.push(`%${f.busca}%`, `%${f.busca}%`);
         }
-        let orderBy = 'l.data_competencia DESC, l.id DESC';
+        // Padrao ("mais recentes primeiro"): o ultimo lancamento registrado vem no topo, nao o de maior data de vencimento.
+        let orderBy = 'l.created_at DESC, l.id DESC';
         if (f.ordenar === 'vencimento') orderBy = 'l.data_competencia ASC, l.id ASC';
         else if (f.ordenar === 'valor') orderBy = 'ABS(l.valor) DESC, l.id DESC';
         const [rows] = await db.query(
