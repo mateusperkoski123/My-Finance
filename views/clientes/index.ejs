@@ -120,11 +120,13 @@
             const atraso = !pago ? _atraso(c.venc) : 0;
             const resumoPagar = c.cliente_nome + ' · ' + c.servico_nome + ' · ' + moeda(c.valor, c.moeda);
             // Cobranca pelo WhatsApp: mensagem no idioma da conta; so aparece com celular utilizavel e parcela em aberto.
-            const _wa = pago ? '' : linkWhatsapp(c.celular, t(atraso > 0 ? 'clientes.wa_vencida' : 'clientes.wa_pendente', {
+            const _waTexto = pago ? '' : t(atraso > 0 ? 'clientes.wa_vencida' : 'clientes.wa_pendente', {
                 nome: String(c.cliente_nome).trim().split(/\s+/)[0], servico: c.servico_nome,
                 parcela: c.cuotas_total ? (c.cuota_num + '/' + c.cuotas_total) : ('#' + c.cuota_num),
                 valor: moeda(c.valor, c.moeda), data: formatDate(c.venc, 'DD/MM/YYYY')
-            }));
+            });
+            const _wa = pago ? '' : linkWhatsapp(c.celular, _waTexto);
+            const _waApp = pago ? '' : linkWhatsappApp(c.celular, _waTexto);
         %>
             <tr>
                 <td><%= formatDate(c.venc, 'DD/MM/YYYY') %></td>
@@ -142,7 +144,7 @@
                 </td>
                 <td class="clientes-acoes">
                     <% if (!pago) { %>
-                        <% if (_wa) { %><a class="btn btn-sm btn-outline" href="<%= _wa %>" target="whatsapp" title="<%= t('clientes.cobrar_whatsapp') %>" aria-label="<%= t('clientes.cobrar_whatsapp') %>"><i class="ph ph-whatsapp-logo" style="color: #25d366;"></i></a><% } %>
+                        <% if (_wa) { %><a class="btn btn-sm btn-outline" href="<%= _wa %>" data-wa-app="<%= _waApp %>" target="whatsapp" title="<%= t('clientes.cobrar_whatsapp') %>" aria-label="<%= t('clientes.cobrar_whatsapp') %>"><i class="ph ph-whatsapp-logo" style="color: #25d366;"></i></a><% } %>
                         <form method="post" action="/clientes/cuotas/<%= c.id %>/pagar" style="display: inline;">
                             <%- csrfCampo %><input type="hidden" name="voltar" value="<%= _voltar %>">
                             <button type="submit" class="btn btn-sm btn-primary"><i class="ph ph-check"></i> <%= t('clientes.pagar') %></button>
@@ -162,6 +164,29 @@
     <% } %>
 </div>
 
+<script>
+// Cobrar pelo WhatsApp no computador: tenta abrir o aplicativo do WhatsApp (sem aba do navegador). Se o aplicativo nao
+// assumir o foco em instantes (nao instalado ou bloqueado), cai no WhatsApp Web, sempre na mesma aba nomeada "whatsapp".
+// No celular o proprio link normal ja abre o aplicativo.
+(function () {
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+    document.addEventListener('click', function (ev) {
+        const a = ev.target.closest && ev.target.closest('a[data-wa-app]');
+        if (!a || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.button) return;
+        ev.preventDefault();
+        let abriu = false;
+        const marcar = function () { abriu = true; };
+        window.addEventListener('blur', marcar, { once: true });
+        document.addEventListener('visibilitychange', marcar, { once: true });
+        window.location.href = a.getAttribute('data-wa-app');
+        setTimeout(function () {
+            window.removeEventListener('blur', marcar);
+            document.removeEventListener('visibilitychange', marcar);
+            if (!abriu) window.open(a.href, 'whatsapp');
+        }, 2000);
+    });
+})();
+</script>
 <%- include('_paginacao', { pagina, paginas, hrefPagina: function (n) { return link({ pagina: n }); } }) %>
 <%- include('_modal_pagar', { voltar: _voltar, hoje }) %>
 <%- include('_modal_cliente', { idModal: 'modal-novo-cliente', acao: '/clientes/criar', titulo: t('clientes.novo'), cliente: null }) %>

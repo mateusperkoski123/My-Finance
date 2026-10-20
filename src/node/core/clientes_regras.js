@@ -127,7 +127,13 @@ function linkWhatsapp(celular, texto) {
     return numero ? `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(texto || '')}` : '';
 }
 
+// Mesmo destino, mas pelo protocolo do aplicativo do WhatsApp (computador): abre direto no app, sem aba do navegador.
+function linkWhatsappApp(celular, texto) {
+    const numero = numeroWhatsapp(celular);
+    return numero ? `whatsapp://send?phone=${numero}&text=${encodeURIComponent(texto || '')}` : '';
+}
+
 module.exports = {
-    numeroWhatsapp, linkWhatsapp, ultimoDiaDoMes, vencimento, primeiroVencimento, passoMeses, vencimentoDaCuota, totalDeCuotas,
+    numeroWhatsapp, linkWhatsapp, linkWhatsappApp, ultimoDiaDoMes, vencimento, primeiroVencimento, passoMeses, vencimentoDaCuota, totalDeCuotas,
     somarMeses, horizonte, cuotasAGerar, rotuloCuota, descricaoDaCuota, chave, validarContrato
 };
