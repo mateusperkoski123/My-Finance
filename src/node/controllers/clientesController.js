@@ -80,7 +80,7 @@ const clientesController = {
             title: req.t('clientes.titulo'), menuAtivo: 'clientes', aba: 'cobrancas',
             periodo, resumo, acumulado, totais, servicos, hoje: h,
             cuotas: lista.cuotas, filtro: { estado, servico: servicoId, q, dia: diaPedido },
-            ...pag, link
+            ...pag, link, linkWhatsapp: regras.linkWhatsapp
         });
     },
 

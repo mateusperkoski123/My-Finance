@@ -110,7 +110,24 @@ function validarContrato({ valor, periodicidade, prazo, dia, inicio }) {
     };
 }
 
+// Celular digitado como texto livre -> numero internacional so com digitos, ou '' se nao der para usar no WhatsApp.
+// Sem codigo de pais assume Paraguai (595): "0981 123 456" e "981123456" viram 595981123456; "+55 41 99999-8888" e "0055..." ficam como estao.
+function numeroWhatsapp(celular) {
+    let d = String(celular || '').replace(/\D/g, '');
+    if (d.startsWith('00')) d = d.slice(2);
+    else if (d.startsWith('0')) d = '595' + d.slice(1);
+    else if (d.length <= 9) d = '595' + d;
+    return d.length >= 10 && d.length <= 15 ? d : '';
+}
+
+// Link que abre a conversa com a pessoa ja com a mensagem escrita. Usado com target="whatsapp" (aba nomeada): todo clique
+// reaproveita a mesma aba do WhatsApp Web, ou entrega ao aplicativo instalado, em vez de abrir uma aba nova a cada cobranca.
+function linkWhatsapp(celular, texto) {
+    const numero = numeroWhatsapp(celular);
+    return numero ? `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(texto || '')}` : '';
+}
+
 module.exports = {
-    ultimoDiaDoMes, vencimento, primeiroVencimento, passoMeses, vencimentoDaCuota, totalDeCuotas,
+    numeroWhatsapp, linkWhatsapp, ultimoDiaDoMes, vencimento, primeiroVencimento, passoMeses, vencimentoDaCuota, totalDeCuotas,
     somarMeses, horizonte, cuotasAGerar, rotuloCuota, descricaoDaCuota, chave, validarContrato
 };
