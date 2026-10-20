@@ -61,6 +61,9 @@ module.exports = {
     'clientes.st_vencida': ['Vencida há {n} dia(s)', 'Vencida hace {n} día(s)', 'Overdue by {n} day(s)'],
     'clientes.st_hoje': ['Vence hoje', 'Vence hoy', 'Due today'],
     'clientes.st_pendente': ['A vencer', 'Por vencer', 'Upcoming'],
+    'clientes.wa_escolha': ['Abrir o WhatsApp em:', 'Abrir WhatsApp en:', 'Open WhatsApp in:'],
+    'clientes.wa_app': ['Aplicativo do WhatsApp', 'Aplicación de WhatsApp', 'WhatsApp app'],
+    'clientes.wa_web': ['WhatsApp Web (navegador)', 'WhatsApp Web (navegador)', 'WhatsApp Web (browser)'],
     'clientes.cobrar_whatsapp': ['Cobrar pelo WhatsApp', 'Cobrar por WhatsApp', 'Send a WhatsApp reminder'],
     'clientes.wa_pendente': [
         'Olá {nome}! Passando para lembrar da parcela de {servico} ({parcela}) no valor de {valor}, com vencimento em {data}. Qualquer dúvida, é só me avisar. Obrigado!',

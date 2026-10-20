@@ -165,26 +165,48 @@
 </div>
 
 <script>
-// Cobrar pelo WhatsApp no computador: tenta abrir o aplicativo do WhatsApp (sem aba do navegador). Se o aplicativo nao
-// assumir o foco em instantes (nao instalado ou bloqueado), cai no WhatsApp Web, sempre na mesma aba nomeada "whatsapp".
-// No celular o proprio link normal ja abre o aplicativo.
+// Cobrar pelo WhatsApp no computador: o clique pergunta onde abrir, no aplicativo (sem aba do navegador) ou no WhatsApp Web
+// (sempre na mesma aba nomeada "whatsapp"). No celular o proprio link normal ja abre o aplicativo.
 (function () {
     if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) return;
+    const TXT = <%- JSON.stringify({ titulo: t('clientes.wa_escolha'), app: t('clientes.wa_app'), web: t('clientes.wa_web') }) %>;
+    let menu = null;
+    const fechar = function () { if (menu) { menu.remove(); menu = null; } };
     document.addEventListener('click', function (ev) {
         const a = ev.target.closest && ev.target.closest('a[data-wa-app]');
+        if (menu && !(ev.target.closest && ev.target.closest('.wa-escolha'))) fechar();
         if (!a || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.button) return;
         ev.preventDefault();
-        let abriu = false;
-        const marcar = function () { abriu = true; };
-        window.addEventListener('blur', marcar, { once: true });
-        document.addEventListener('visibilitychange', marcar, { once: true });
-        window.location.href = a.getAttribute('data-wa-app');
-        setTimeout(function () {
-            window.removeEventListener('blur', marcar);
-            document.removeEventListener('visibilitychange', marcar);
-            if (!abriu) window.open(a.href, 'whatsapp');
-        }, 2000);
+        fechar();
+        menu = document.createElement('div');
+        menu.className = 'card wa-escolha';
+        menu.setAttribute('role', 'menu');
+        menu.style.cssText = 'position:absolute;z-index:1000;padding:10px;display:flex;flex-direction:column;gap:6px;min-width:220px;box-shadow:0 8px 24px rgba(0,0,0,.35);';
+        const titulo = document.createElement('div');
+        titulo.className = 'muted';
+        titulo.style.fontSize = '12px';
+        titulo.textContent = TXT.titulo;
+        menu.appendChild(titulo);
+        [['app', TXT.app], ['web', TXT.web]].forEach(function (op) {
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.className = 'btn btn-sm btn-outline';
+            b.setAttribute('role', 'menuitem');
+            b.innerHTML = '<i class="ph ph-' + (op[0] === 'app' ? 'desktop' : 'globe') + '"></i> ';
+            b.appendChild(document.createTextNode(op[1]));
+            b.addEventListener('click', function () {
+                if (op[0] === 'app') window.location.href = a.getAttribute('data-wa-app');
+                else window.open(a.href, 'whatsapp');
+                fechar();
+            });
+            menu.appendChild(b);
+        });
+        document.body.appendChild(menu);
+        const r = a.getBoundingClientRect();
+        menu.style.top = (window.scrollY + r.bottom + 6) + 'px';
+        menu.style.left = Math.max(8, Math.min(window.scrollX + r.left, window.scrollX + document.documentElement.clientWidth - menu.offsetWidth - 8)) + 'px';
     });
+    document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') fechar(); });
 })();
 </script>
 <%- include('_paginacao', { pagina, paginas, hrefPagina: function (n) { return link({ pagina: n }); } }) %>
