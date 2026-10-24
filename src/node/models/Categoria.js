@@ -58,6 +58,41 @@ class Categoria {
         return rows[0] || null;
     }
 
+    // Visao de uma categoria (ou subcategoria): lancamentos do mes escolhido e totais mensais ao redor dele.
+    // Categoria pai inclui as subcategorias. So receitas e despesas de contas ativas, numa moeda por vez.
+    // `inicio`/`fim` = limites do historico (YYYY-MM-DD); `mesInicio`/`mesFim` = o mes escolhido.
+    static async detalhe(userId, id, { inicio, fim, mesInicio, mesFim, moeda = '' }) {
+        const cat = await this.buscarPorId(id, userId);
+        if (!cat) return null;
+        const pai = cat.parent_id ? await this.buscarPorId(cat.parent_id, userId) : null;
+        const [subs] = cat.parent_id ? [[]] : await db.query('SELECT id, nome FROM categorias WHERE parent_id = ? AND user_id = ? ORDER BY nome', [cat.id, userId]);
+        const ids = [cat.id, ...subs.map((s) => s.id)];
+
+        const base = `FROM lancamentos l
+             LEFT JOIN categorias c ON c.id = l.categoria_id
+             JOIN contas cb ON cb.id = l.conta_id AND cb.status = 'ativa'
+             WHERE l.user_id = ? AND l.categoria_id IN (?) AND l.tipo IN ('receita', 'despesa')`;
+        const [moedasRows] = await db.query(`SELECT DISTINCT cb.moeda ${base} ORDER BY cb.moeda`, [userId, ids]);
+        const moedas = moedasRows.map((r) => r.moeda);
+        const moedaUsada = moedas.includes(moeda) ? moeda : (moedas[0] || '');
+
+        const [totais] = await db.query(
+            `SELECT DATE_FORMAT(l.data_competencia, '%Y-%m') AS ym, l.tipo, l.status, SUM(ABS(l.valor)) AS total, COUNT(*) AS n
+             ${base} AND cb.moeda = ? AND l.data_competencia BETWEEN ? AND ?
+             GROUP BY ym, l.tipo, l.status`,
+            [userId, ids, moedaUsada, inicio, fim]
+        );
+        const [lancamentos] = await db.query(
+            `SELECT l.id, l.descricao, l.tipo, l.status, ABS(l.valor) AS valor, DATE_FORMAT(l.data_competencia, '%Y-%m-%d') AS data,
+                    DATE_FORMAT(l.data_pagamento, '%Y-%m-%d') AS pago_em, cb.nome AS conta_nome,
+                    IF(c.id = ?, NULL, c.nome) AS sub_nome
+             ${base} AND cb.moeda = ? AND l.data_competencia BETWEEN ? AND ?
+             ORDER BY l.data_competencia ASC, l.id ASC`,
+            [cat.id, userId, ids, moedaUsada, mesInicio, mesFim]
+        );
+        return { categoria: cat, pai, subs, moedas, moeda: moedaUsada, totais, lancamentos };
+    }
+
     static async garantirCategoriasSistema(userId, idioma) {
         const { para, nomesDeSistema } = require('../core/categorias_padrao');
         const p = para(idioma || await this.idiomaDoUsuario(userId));

@@ -1,0 +1,147 @@
+<%
+    const _nomeMes = (h, curto) => new Date(Date.UTC(h.ano, h.numero - 1, 1)).toLocaleDateString(lang, { month: curto ? 'short' : 'long', year: curto ? '2-digit' : 'numeric', timeZone: 'UTC' });
+    const _link = (extra) => { const p = new URLSearchParams({ mes: mes.chave, ...(moedas.length > 1 ? { moeda: moedaSel } : {}), ...extra }); return '/categorias/' + categoria.id + '?' + p.toString(); };
+    const _pend = lancamentos.filter(function (l) { return l.status !== 'pago'; });
+    const _proc = lancamentos.filter(function (l) { return l.status === 'pago'; });
+    const _m = function (v) { return moeda(v, moedaSel); };
+%>
+<div class="page-header">
+    <div>
+        <h1>
+            <span class="categoria-dot" style="background: <%= categoria.cor || '#3b82f6' %>; width: 14px; height: 14px; border-radius: 50%; display: inline-block;"></span>
+            <% if (pai) { %><a href="/categorias/<%= pai.id %>" class="muted"><%= pai.nome %></a> <span class="muted">/</span> <% } %><%= categoria.nome %>
+        </h1>
+        <p class="muted"><a href="/categorias"><i class="ph ph-arrow-left"></i> <%= t('categorias.det_voltar') %></a></p>
+    </div>
+</div>
+
+<% if (subs.length) { %>
+<div class="card" style="padding: 10px 14px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px;">
+    <span class="muted" style="font-size: 13px;"><%= t('categorias.det_subs') %></span>
+    <% subs.forEach(function (s) { %><a class="badge badge-neutro" href="/categorias/<%= s.id %>?mes=<%= mes.chave %>"><%= s.nome %></a><% }) %>
+</div>
+<% } %>
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px;">
+    <div style="display: inline-flex; align-items: center; gap: 4px;">
+        <a class="btn btn-outline btn-sm" href="<%= _link({ mes: mes.anterior }) %>" aria-label="<%= t('categorias.det_mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
+        <strong><%= _nomeMes(mes) %></strong>
+        <a class="btn btn-outline btn-sm" href="<%= _link({ mes: mes.proximo }) %>" aria-label="<%= t('categorias.det_mes_seguinte') %>"><i class="ph ph-caret-right"></i></a>
+    </div>
+    <% if (mes.chave !== mes.atual) { %><a class="btn btn-outline btn-sm" href="<%= _link({ mes: mes.atual }) %>"><%= t('categorias.det_este_mes') %></a><% } %>
+    <% if (moedas.length > 1) { %>
+        <span style="display: inline-flex; gap: 4px;"><% moedas.forEach(function (c) { %><a class="btn btn-sm <%= c === moedaSel ? 'btn-primary' : 'btn-outline' %>" href="<%= _link({ moeda: c }) %>"><%= c %></a><% }) %></span>
+    <% } %>
+</div>
+
+<% if (!moedaSel) { %>
+    <div class="card placeholder-card"><p class="muted" style="margin: 0;"><%= t('categorias.det_sem_movimentos') %></p></div>
+<% } else { %>
+
+<div class="resumo-grid">
+    <div class="card resumo-card">
+        <span class="resumo-card__label"><%= t('categorias.det_gasto_processado') %></span>
+        <span class="resumo-card__valor" style="color: var(--red, #ef4444);"><%= _m(atual.gasto_pago) %></span>
+        <span class="resumo-card__sub muted"><%= t('categorias.det_ja_pago') %></span>
+    </div>
+    <div class="card resumo-card">
+        <span class="resumo-card__label"><%= t('categorias.det_gasto_faltante') %></span>
+        <span class="resumo-card__valor" style="color: var(--pendente);"><%= _m(atual.gasto_pend) %></span>
+        <span class="resumo-card__sub muted"><%= t('categorias.det_total_mes', { valor: _m(atual.gasto) }) %></span>
+    </div>
+    <div class="card resumo-card">
+        <span class="resumo-card__label"><%= t('categorias.det_receita_mes') %></span>
+        <span class="resumo-card__valor" style="color: var(--green);"><%= _m(atual.rec_pago) %></span>
+        <span class="resumo-card__sub muted"><%= atual.rec_pend > 0 ? t('categorias.det_a_receber', { valor: _m(atual.rec_pend) }) : t('categorias.det_recebido') %></span>
+    </div>
+</div>
+
+<div class="card tabela-wrapper" style="margin-top: 14px;">
+    <table class="tabela">
+        <thead>
+            <tr>
+                <th></th>
+                <th class="tabela__num"><%= t('categorias.det_mes_anterior') %> <span class="muted">(<%= _nomeMes(anterior, true) %>)</span></th>
+                <th class="tabela__num"><%= t('categorias.det_este_mes') %> <span class="muted">(<%= _nomeMes(atual, true) %>)</span></th>
+                <th class="tabela__num"><%= t('categorias.det_previsao') %> <span class="muted">(<%= _nomeMes(proximoMes, true) %>)</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong><%= t('categorias.det_gastos') %></strong></td>
+                <td class="tabela__num"><%= _m(anterior.gasto) %></td>
+                <td class="tabela__num"><%= _m(atual.gasto) %></td>
+                <td class="tabela__num"><%= _m(proximoMes.gasto) %></td>
+            </tr>
+            <tr>
+                <td><strong><%= t('categorias.det_receitas') %></strong></td>
+                <td class="tabela__num"><%= _m(anterior.rec) %></td>
+                <td class="tabela__num"><%= _m(atual.rec) %></td>
+                <td class="tabela__num"><%= _m(proximoMes.rec) %></td>
+            </tr>
+        </tbody>
+    </table>
+    <p class="muted" style="font-size: 12px; margin: 8px 14px 12px;"><%= t('categorias.det_previsao_nota') %></p>
+</div>
+
+<h2 style="font-size: 17px; margin: 22px 0 10px;"><%= t('categorias.det_pendentes') %> <span class="muted">(<%= _pend.length %>)</span></h2>
+<div class="card tabela-wrapper">
+    <% if (!_pend.length) { %><p class="muted" style="padding: 16px; margin: 0;"><%= t('categorias.det_nada_pendente') %></p><% } else { %>
+    <table class="tabela">
+        <tbody>
+        <% _pend.forEach(function (l) { %>
+            <tr>
+                <td><%= formatDate(l.data, 'DD/MM/YYYY') %></td>
+                <td><strong><%= l.descricao %></strong><% if (l.sub_nome) { %> <span class="muted">· <%= l.sub_nome %></span><% } %></td>
+                <td class="muted"><%= l.conta_nome %></td>
+                <td class="tabela__num" style="color: <%= l.tipo === 'despesa' ? 'var(--red, #ef4444)' : 'var(--green)' %>;"><%= l.tipo === 'despesa' ? '-' : '+' %> <%= _m(l.valor) %></td>
+                <td><% if (l.data < hoje) { %><span class="badge badge-pendente"><%= t('categorias.det_vencida') %></span><% } else { %><span class="badge badge-neutro"><%= t('categorias.det_pendente') %></span><% } %></td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+    <% } %>
+</div>
+
+<h2 style="font-size: 17px; margin: 22px 0 10px;"><%= t('categorias.det_processados') %> <span class="muted">(<%= _proc.length %>)</span></h2>
+<div class="card tabela-wrapper">
+    <% if (!_proc.length) { %><p class="muted" style="padding: 16px; margin: 0;"><%= t('categorias.det_nada_processado') %></p><% } else { %>
+    <table class="tabela">
+        <tbody>
+        <% _proc.forEach(function (l) { %>
+            <tr>
+                <td><%= formatDate(l.pago_em || l.data, 'DD/MM/YYYY') %></td>
+                <td><strong><%= l.descricao %></strong><% if (l.sub_nome) { %> <span class="muted">· <%= l.sub_nome %></span><% } %></td>
+                <td class="muted"><%= l.conta_nome %></td>
+                <td class="tabela__num" style="color: <%= l.tipo === 'despesa' ? 'var(--red, #ef4444)' : 'var(--green)' %>;"><%= l.tipo === 'despesa' ? '-' : '+' %> <%= _m(l.valor) %></td>
+                <td><span class="badge badge-sucesso"><%= t('categorias.det_pago') %></span></td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+    <% } %>
+</div>
+
+<h2 style="font-size: 17px; margin: 22px 0 10px;"><%= t('categorias.det_historico') %></h2>
+<div class="card" style="padding: 14px 16px;">
+    <% historico.forEach(function (h) { %>
+    <div style="display: grid; grid-template-columns: 70px 1fr; gap: 10px; align-items: center; padding: 6px 0; <%= h.chave === mes.chave ? 'font-weight: 700;' : '' %>">
+        <a href="<%= _link({ mes: h.chave }) %>" class="muted" style="text-transform: capitalize;"><%= _nomeMes(h, true) %></a>
+        <div style="display: flex; flex-direction: column; gap: 3px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: block; height: 8px; border-radius: 4px; background: var(--red, #ef4444); width: <%= Math.round(h.gasto / maximo * 100) %>%; min-width: <%= h.gasto > 0 ? 3 : 0 %>px;"></span>
+                <span style="font-size: 12px; white-space: nowrap;"><%= _m(h.gasto) %></span>
+            </div>
+            <% if (h.rec > 0) { %>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="display: block; height: 8px; border-radius: 4px; background: var(--green); width: <%= Math.round(h.rec / maximo * 100) %>%; min-width: 3px;"></span>
+                <span style="font-size: 12px; white-space: nowrap;"><%= _m(h.rec) %></span>
+            </div>
+            <% } %>
+        </div>
+    </div>
+    <% }) %>
+    <p class="muted" style="font-size: 12px; margin: 10px 0 0;"><span style="color: var(--red, #ef4444);">&#9632;</span> <%= t('categorias.det_gastos') %> &nbsp; <span style="color: var(--green);">&#9632;</span> <%= t('categorias.det_receitas') %></p>
+</div>
+
+<% } %>

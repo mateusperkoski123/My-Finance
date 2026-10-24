@@ -238,6 +238,7 @@ router.post('/compras/:id(\\d+)/nota', requireAuth, exigirCompras, exigirIaNota,
 
 // Categorias routes
 router.get('/categorias', requireAuth, categoriasController.index);
+router.get('/categorias/:id([0-9]+)', requireAuth, categoriasController.detalhe);
 router.post('/categorias/criar', requireAuth, categoriasController.criar);
 router.post('/categorias/rapida', requireAuth, categoriasController.criarRapida);
 router.post('/categorias/:id/atualizar', requireAuth, categoriasController.atualizar);

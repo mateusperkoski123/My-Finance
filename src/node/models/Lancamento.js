@@ -106,7 +106,7 @@ class Lancamento {
             `SELECT l.*, 
                     IF(c.parent_id IS NULL, c.nome, (SELECT p.nome FROM categorias p WHERE p.id = c.parent_id)) as categoria_nome,
                     IF(c.parent_id IS NULL, c.cor, (SELECT p.cor FROM categorias p WHERE p.id = c.parent_id)) as categoria_cor,
-                    IF(c.parent_id IS NOT NULL, c.nome, NULL) as subcategoria_nome,
+                    IF(c.parent_id IS NOT NULL, c.nome, NULL) as subcategoria_nome, c.parent_id AS categoria_parent_id,
                     cb.nome as conta_nome, cb.cor as conta_cor, cb.moeda as conta_moeda,
                     (SELECT p.valor FROM lancamentos p WHERE p.id = l.transferencia_par_id) AS par_valor,
                     (SELECT cp.moeda FROM lancamentos p JOIN contas cp ON cp.id = p.conta_id WHERE p.id = l.transferencia_par_id) AS par_moeda,

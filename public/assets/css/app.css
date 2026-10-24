@@ -2366,6 +2366,9 @@ b.orc--ok { background: none; color: var(--green); } b.orc--alerta { color: var(
 /* ---- Estado financeiro: o nome da categoria/conta pode quebrar linha (a tabela nao precisa rolar no computador) ---- */
 .estado-t td:first-child { white-space: normal; min-width: 130px; }
 
+a.link-categoria { text-decoration: none; }
+a.link-categoria:hover { text-decoration: underline; }
+
 /* ---- Tablet e notebook pequeno: a barra do topo cabe em UMA linha (antes os atalhos quebravam em 2 ou 3 linhas
    e a barra ocupava ate um quarto da tela). Sai o nome do usuario, o indicador de conexao vira so a bolinha
    (o texto volta quando esta sem conexao) e, abaixo de 900px, so o atalho da tela atual mostra o nome. ---- */

@@ -228,10 +228,10 @@ function gfAtualizarParam(chave, valor) {
                                                     <div style="display: flex; flex-direction: column; gap: 2px;">
                                                         <span style="font-weight: 600; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
                                                             <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: <%= l.categoria_cor || '#3b82f6' %>; flex-shrink: 0;"></span>
-                                                            <%= l.categoria_nome %>
+                                                            <a href="/categorias/<%= l.categoria_parent_id || l.categoria_id %>" class="link-categoria" title="<%= t('categorias.det_abrir') %>" style="color: inherit;"><%= l.categoria_nome %></a>
                                                         </span>
                                                         <% if (l.subcategoria_nome) { %>
-                                                            <span class="muted" style="font-size: 12px; padding-left: 14px; white-space: nowrap;"><%= l.subcategoria_nome %></span>
+                                                            <a href="/categorias/<%= l.categoria_id %>" class="link-categoria muted" title="<%= t('categorias.det_abrir') %>" style="font-size: 12px; padding-left: 14px; white-space: nowrap;"><%= l.subcategoria_nome %></a>
                                                         <% } %>
                                                     </div>
                                                 <% } else { %>
@@ -293,10 +293,10 @@ function gfAtualizarParam(chave, valor) {
                                         <div style="display: flex; flex-direction: column; gap: 2px;">
                                             <span style="font-weight: 600; font-size: 13px; color: var(--text); display: flex; align-items: center; gap: 6px; white-space: nowrap;">
                                                 <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background-color: <%= l.categoria_cor || '#3b82f6' %>; flex-shrink: 0;"></span>
-                                                <%= l.categoria_nome %>
+                                                <a href="/categorias/<%= l.categoria_parent_id || l.categoria_id %>" class="link-categoria" title="<%= t('categorias.det_abrir') %>" style="color: inherit;"><%= l.categoria_nome %></a>
                                             </span>
                                             <% if (l.subcategoria_nome) { %>
-                                                <span class="muted" style="font-size: 12px; padding-left: 14px; white-space: nowrap;"><%= l.subcategoria_nome %></span>
+                                                <a href="/categorias/<%= l.categoria_id %>" class="link-categoria muted" title="<%= t('categorias.det_abrir') %>" style="font-size: 12px; padding-left: 14px; white-space: nowrap;"><%= l.subcategoria_nome %></a>
                                             <% } %>
                                         </div>
                                     <% } else { %>

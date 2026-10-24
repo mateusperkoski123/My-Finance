@@ -5,7 +5,61 @@ const nomeDe = (b) => (typeof b.nome === 'string' ? b.nome.trim().slice(0, 120) 
 // Limite de gasto mensal: vazio, zero ou negativo = sem limite.
 const limiteDe = (b) => { const v = b.limite_gasto ? parseMoeda(b.limite_gasto) : 0; return v > 0 ? v : null; };
 
+const { hojeLocal, toLocalYMD } = require('../core/helpers');
+
+const pad = (n) => String(n).padStart(2, '0');
+// Mes a partir de 'YYYY-MM' (ou o atual): { chave, ano, numero } com a aritmetica de meses feita em UTC.
+function mesDe(pedido, hojeYmd) {
+    const m = /^(\d{4})-(\d{2})$/.exec(String(pedido || ''));
+    let ano = +hojeYmd.slice(0, 4), numero = +hojeYmd.slice(5, 7);
+    if (m && +m[2] >= 1 && +m[2] <= 12 && +m[1] >= 2000 && +m[1] <= 2100) { ano = +m[1]; numero = +m[2]; }
+    return { ano, numero };
+}
+const somarMes = (ano, numero, n) => { const d = new Date(Date.UTC(ano, numero - 1 + n, 1)); return { ano: d.getUTCFullYear(), numero: d.getUTCMonth() + 1 }; };
+const chaveMes = (m) => `${m.ano}-${pad(m.numero)}`;
+const ultimoDia = (m) => new Date(Date.UTC(m.ano, m.numero, 0)).getUTCDate();
+
 const categoriasController = {
+    // Tela de uma categoria/subcategoria: o que ja foi processado e o que falta no mes, historico mensal, mes anterior e previsao.
+    detalhe: async (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        if (!Number.isFinite(id)) return res.redirect('/categorias');
+        const hoje = toLocalYMD(hojeLocal());
+        const sel = mesDe(req.query.mes, hoje);
+        // Historico: 5 meses antes do escolhido ate o mes seguinte (a previsao).
+        const meses = [];
+        for (let i = -5; i <= 1; i++) meses.push(somarMes(sel.ano, sel.numero, i));
+        const primeiro = meses[0], ultimo = meses[meses.length - 1];
+        const d = await Categoria.detalhe(req.user.id, id, {
+            inicio: `${chaveMes(primeiro)}-01`, fim: `${chaveMes(ultimo)}-${pad(ultimoDia(ultimo))}`,
+            mesInicio: `${chaveMes(sel)}-01`, mesFim: `${chaveMes(sel)}-${pad(ultimoDia(sel))}`,
+            moeda: String(req.query.moeda || '')
+        });
+        if (!d || d.categoria.sistema) return res.redirect('/categorias');
+
+        const historico = meses.map((m) => {
+            const chave = chaveMes(m);
+            const linha = { chave, ano: m.ano, numero: m.numero, gasto_pago: 0, gasto_pend: 0, rec_pago: 0, rec_pend: 0 };
+            d.totais.filter((t) => t.ym === chave).forEach((t) => {
+                const campo = (t.tipo === 'despesa' ? 'gasto_' : 'rec_') + (t.status === 'pago' ? 'pago' : 'pend');
+                linha[campo] += parseFloat(t.total) || 0;
+            });
+            linha.gasto = linha.gasto_pago + linha.gasto_pend;
+            linha.rec = linha.rec_pago + linha.rec_pend;
+            return linha;
+        });
+        const maximo = Math.max(1, ...historico.map((h) => Math.max(h.gasto, h.rec)));
+        const aoLado = (m) => chaveMes(m);
+        const ant = somarMes(sel.ano, sel.numero, -1), prox = somarMes(sel.ano, sel.numero, 1);
+
+        res.render('categorias/detalhe', {
+            title: d.categoria.nome, menuAtivo: 'categorias',
+            categoria: d.categoria, pai: d.pai, subs: d.subs, moedas: d.moedas, moedaSel: d.moeda,
+            lancamentos: d.lancamentos, historico, maximo, hoje,
+            mes: { ...sel, chave: chaveMes(sel), anterior: aoLado(ant), proximo: aoLado(prox), atual: hoje.slice(0, 7) },
+            atual: historico[5], anterior: historico[4], proximoMes: historico[6]
+        });
+    },
     index: async (req, res) => {
         const userId = req.user.id;
         const abaArquivadas = req.query.aba === 'arquivadas';
