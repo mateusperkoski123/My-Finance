@@ -1,0 +1,1590 @@
+<!DOCTYPE html><html lang="es" data-tema="claro" class="scroll-smooth" data-prerender=""><head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <script>
+        /* Tema antes da pintura (evita piscar): escolha salva ou preferencia do sistema. */
+        try { var t = localStorage.getItem('gf_tema') || (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'escuro' : 'claro'); document.documentElement.setAttribute('data-tema', t); } catch (e) {}
+    </script>
+    <title id="meta-title">MyFinance: control financiero con IA para cuentas y cuotas</title>
+    <meta name="description" content="Organice cuentas, cuotas y gastos en un solo lugar. La IA registra por texto, foto o voz. Pruebe gratis 3 días, sin tarjeta. Para Gs., R$, US$ y €.">
+    <link rel="canonical" href="https://myfinance.systempy.com/es/">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    <meta name="theme-color" content="#15803d">
+    <link rel="icon" type="image/png" href="/icon-192.png">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin="">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@5.1.0/index.css" crossorigin="anonymous">
+
+    <style>
+        :root[data-tema="claro"] {
+            --bg: #f4f7f5;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #566173;
+            --border: #e2e8e4;
+            --nav-bg: #15803d;
+            --nav-text: #ffffff;
+            --nav-text-muted: #f0fdf4;
+            --primary: #0f172a;
+            --primary-text: #ffffff;
+            --accent: #15803d;
+            --accent-solid: #15803d;
+            --accent-bg: #ecfdf3;
+            --red: #c81e1e;
+            --red-bg: #fdecec;
+            --blue: #2563eb;
+            --blue-bg: #eff6ff;
+            --ouro: #d97706;
+            --ouro-bg: #fef3c7;
+            --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 8px 20px rgba(16, 24, 40, .07);
+            --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 20px 25px -5px rgba(0, 0, 0, 0.08);
+            color-scheme: light;
+        }
+
+        :root[data-tema="escuro"] {
+            --bg: #0b1210;
+            --card: #121b17;
+            --text: #e6efe9;
+            --muted: #9db0a5;
+            --border: #24332c;
+            --nav-bg: #0f2a1c;
+            --nav-text: #e7e9ee;
+            --nav-text-muted: #8b909b;
+            --primary: #e7e9ee;
+            --primary-text: #14161b;
+            --accent: #4ade80;
+            --accent-solid: #15803d;
+            --accent-bg: #10291c;
+            --red: #f87171;
+            --red-bg: #3a1618;
+            --blue: #60a5fa;
+            --blue-bg: #1e293b;
+            --ouro: #fbbf24;
+            --ouro-bg: #451a03;
+            --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 24px rgba(0, 0, 0, .4);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.6);
+            color-scheme: dark;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        i[class*="ph"] { font-style: normal; display: inline-flex; vertical-align: -0.125em; }
+        i[class*="ph"] > svg { width: 1em; height: 1em; fill: currentColor; display: block; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-size: 14.5px;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.5;
+            overflow-x: hidden;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        a { color: inherit; text-decoration: none; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: var(--nav-bg);
+            color: var(--nav-text);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .navbar__inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+        .navbar__brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--nav-text);
+        }
+        .navbar__logo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            background: #ffffff;
+            color: #16a34a;
+            font-size: 24px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
+        }
+        .navbar__links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .navbar__link {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--nav-text-muted);
+            transition: color 0.15s;
+        }
+        .navbar__link:hover { color: #ffffff; }
+        /* Topo verde: o botao de teste gratis fica branco com texto verde (verde sobre verde sumia) */
+        .navbar .btn { white-space: nowrap; }
+        .navbar .btn-accent { background: #ffffff; color: #15803d; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+        .navbar .btn-accent:hover { box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18); }
+
+        /* Idioma Switcher */
+        .lang-select {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #ffffff;
+            padding: 5px 8px;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            cursor: pointer;
+            outline: none;
+        }
+        .lang-select option {
+            background: #14532d;
+            color: #ffffff;
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.15s ease;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: var(--primary-text);
+        }
+        .btn-primary:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+        .btn-outline {
+            background: var(--card);
+            color: var(--text);
+            border-color: var(--border);
+        }
+        .btn-outline:hover {
+            background: var(--bg);
+            border-color: var(--muted);
+        }
+        .btn-accent {
+            background: var(--accent-solid);
+            color: #ffffff;
+        }
+        .btn-accent:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(21, 128, 61, 0.3);
+        }
+        .btn-pro {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            color: #ffffff;
+        }
+        .btn-pro:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+        .btn-sm { padding: 6px 12px; font-size: 13px; border-radius: 8px; }
+        .btn-lg { padding: 13px 26px; font-size: 16px; border-radius: 12px; }
+
+        /* Cards */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-accent { background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(22, 163, 74, 0.25); }
+        .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(37, 99, 235, 0.2); }
+        .badge-ouro { background: var(--ouro-bg); color: var(--ouro); border: 1px solid rgba(217, 119, 6, 0.2); }
+
+        /* Hero */
+        .hero {
+            padding: 64px 0 84px;
+            background:
+                radial-gradient(760px 380px at 88% -8%, var(--accent-bg), transparent 62%),
+                radial-gradient(620px 320px at -6% 108%, var(--ouro-bg), transparent 66%);
+        }
+        .hero-chips { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13.5px; color: var(--muted); }
+        .hero-chips span { display: inline-flex; align-items: center; gap: 6px; }
+        .hero-chips i { color: var(--accent); font-size: 16px; }
+        .hero h1 em { font-style: normal; color: var(--accent); }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 48px;
+            align-items: center;
+        }
+        .hero h1 {
+            font-size: 44px;
+            line-height: 1.15;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin: 18px 0;
+            color: var(--text);
+        }
+        .hero p {
+            font-size: 16.5px;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 28px;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+        .stars { color: #f59e0b; font-size: 16px; display: flex; gap: 2px; }
+
+        /* Mockup */
+        .mockup-card {
+            border-radius: 20px;
+            padding: 22px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+        }
+        .mockup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .mockup-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            background: var(--bg);
+            padding: 3px 10px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+        }
+        .saldo-display {
+            font-size: 34px;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+            margin-top: 4px;
+        }
+        .resumo-duplo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        .resumo-box {
+            padding: 12px 14px;
+            border-radius: 12px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+        }
+        .resumo-box small { font-size: 11px; color: var(--muted); display: block; }
+        .resumo-box strong { font-size: 16px; font-weight: 700; margin-top: 2px; display: block; }
+        .val-receita { color: var(--accent); }
+        .val-despesa { color: var(--red); }
+
+        .transacao-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13.5px;
+        }
+        .transacao-item:last-child { border-bottom: none; }
+        .transacao-icone {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+
+        /* Seções */
+        .section {
+            padding: 70px 0;
+        }
+        .section-header {
+            text-align: center;
+            max-width: 680px;
+            margin: 0 auto 50px;
+        }
+        .section-header h2 {
+            font-size: 34px;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            margin-top: 10px;
+            color: var(--text);
+        }
+        .section-header p {
+            color: var(--muted);
+            font-size: 16px;
+        }
+
+        /* Features Grid */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 22px;
+        }
+        .feature-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 26px;
+            box-shadow: var(--shadow);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .feature-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--accent);
+        }
+        .feature-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 16px;
+        }
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: var(--text);
+        }
+        .feature-card p {
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.55;
+        }
+
+        /* Pricing Section (Exata Estrutura de Colunas do Sistema) */
+        .planos-topo {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .planos-ciclo {
+            display: inline-flex;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 4px;
+            gap: 4px;
+            margin-top: 18px;
+            box-shadow: var(--shadow);
+        }
+        .planos-ciclo button {
+            border: none;
+            background: none;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--muted);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .planos-ciclo button.is-ativo {
+            background: var(--primary);
+            color: var(--primary-text);
+        }
+        .planos-ciclo button small {
+            color: var(--accent);
+            font-weight: 700;
+            margin-left: 4px;
+        }
+
+        .planos-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            align-items: stretch;
+        }
+        .plano-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px 24px;
+            box-shadow: var(--shadow);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .plano-card:hover {
+            transform: translateY(-4px);
+        }
+        .plano-card--destaque {
+            border: 2px solid var(--accent);
+            box-shadow: 0 8px 26px rgba(21, 128, 61, 0.18);
+        }
+        .plano-card--pro {
+            border: 2px solid var(--ouro);
+            box-shadow: 0 8px 26px rgba(217, 119, 6, 0.15);
+        }
+        .plano-faixa {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            white-space: nowrap;
+        }
+        .plano-faixa--accent { background: var(--accent-solid); color: #ffffff; }
+        .plano-faixa--ouro { background: var(--ouro); color: #ffffff; }
+
+        .plano-card h3 { font-size: 22px; font-weight: 800; }
+        .plano-sub { font-size: 13px; color: var(--muted); min-height: 38px; margin-top: 4px; }
+        .plano-preco {
+            font-size: 32px;
+            font-weight: 800;
+            color: var(--text);
+            margin: 16px 0 4px;
+        }
+        .plano-preco small { font-size: 14px; font-weight: 500; color: var(--muted); }
+        .plano-cobranca { font-size: 12px; color: var(--muted); margin-bottom: 20px; }
+
+        /* Grupos de recursos detalhados das colunas */
+        .plano-grupo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--muted);
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-top: 1px solid var(--border);
+            padding-top: 14px;
+        }
+        .plano-grupo-header:first-of-type {
+            margin-top: 16px;
+        }
+
+        .plano-recursos {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 13px;
+        }
+        .plano-recursos li {
+            display: flex;
+            align-items: flex-start;
+            gap: 9px;
+            line-height: 1.45;
+        }
+        .plano-recursos li i { font-size: 16px; margin-top: 2px; flex-shrink: 0; }
+        .plano-recursos li.is-on i { color: var(--accent); }
+        .plano-recursos li.is-off { color: var(--muted); opacity: 0.55; }
+        .plano-recursos li.is-off i { color: var(--muted); }
+
+        /* Trial Banner */
+        .trial-banner {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 22px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            margin-top: 36px;
+            flex-wrap: wrap;
+        }
+
+        /* FAQ */
+        .faq-list {
+            max-width: 760px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .faq-item {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        .faq-question {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 18px 22px;
+            text-align: left;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .faq-answer {
+            display: none;
+            padding: 0 22px 18px;
+            font-size: 14px;
+            color: var(--muted);
+            line-height: 1.6;
+        }
+        .faq-item.is-open .faq-answer { display: block; }
+        .faq-item.is-open .faq-question i { transform: rotate(180deg); }
+
+        /* Footer */
+        .footer {
+            background: var(--nav-bg);
+            color: var(--nav-text-muted);
+            padding: 40px 0 30px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            font-size: 13.5px;
+        }
+        .footer-inner {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        .footer-links {
+            display: flex;
+            gap: 20px;
+        }
+        .footer-links a:hover { color: #ffffff; }
+
+        /* Dores (problema) */
+        .dores-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .dor-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--red);
+            border-radius: 14px;
+            padding: 22px 22px 20px;
+            box-shadow: var(--shadow);
+        }
+        .dor-card i { font-size: 26px; color: var(--red); display: block; margin-bottom: 10px; }
+        .dor-card h3 { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+        .dor-card p { font-size: 14px; color: var(--muted); line-height: 1.55; }
+        .dores-fecho {
+            text-align: center;
+            margin: 34px auto 0;
+            max-width: 640px;
+            font-size: 17px;
+            font-weight: 600;
+        }
+        .dores-fecho em { font-style: normal; color: var(--accent); }
+
+        /* Casos de uso */
+        .casos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+        .caso-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 24px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+        .caso-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+        .caso-topo { display: flex; align-items: center; gap: 12px; }
+        .caso-icone {
+            width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center; font-size: 23px;
+            background: var(--accent-bg); color: var(--accent);
+        }
+        .caso-quem { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+        .caso-card h3 { font-size: 18px; font-weight: 800; line-height: 1.25; }
+        .caso-bloco { font-size: 13.5px; line-height: 1.55; color: var(--muted); }
+        .caso-bloco b { display: block; font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 2px; color: var(--text); }
+        .caso-bloco--solucao { color: var(--text); }
+        .caso-bloco--solucao b { color: var(--accent); }
+        .caso-plano {
+            margin-top: auto; padding-top: 14px; border-top: 1px dashed var(--border);
+            display: flex; align-items: center; justify-content: space-between; gap: 10px;
+            font-size: 12.5px; color: var(--muted);
+        }
+        .caso-plano a { font-weight: 700; color: var(--accent); white-space: nowrap; }
+        .caso-plano a:hover { text-decoration: underline; }
+
+        /* Como funciona */
+        .passos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; counter-reset: passo; }
+        .passo {
+            position: relative;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px 24px 24px;
+            box-shadow: var(--shadow);
+        }
+        .passo::before {
+            counter-increment: passo;
+            content: counter(passo);
+            position: absolute; top: -16px; left: 22px;
+            width: 34px; height: 34px; border-radius: 50%;
+            background: var(--accent-solid); color: #ffffff;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 800; font-size: 16px;
+            box-shadow: 0 4px 12px rgba(21, 128, 61, 0.3);
+        }
+        .passo h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+        .passo p { font-size: 14px; color: var(--muted); line-height: 1.55; }
+
+        /* CTA final */
+        .cta-final {
+            background: linear-gradient(135deg, #14532d 0%, #166534 55%, #15803d 100%);
+            color: #ffffff;
+            border-radius: 24px;
+            padding: 52px 32px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+        .cta-final h2 { font-size: 34px; font-weight: 800; letter-spacing: -0.01em; max-width: 700px; margin: 0 auto 12px; line-height: 1.2; }
+        .cta-final p { font-size: 16.5px; color: rgba(255,255,255,0.8); max-width: 620px; margin: 0 auto 26px; }
+        .cta-final .btn-cta { background: #ffffff; color: #166534; font-weight: 800; }
+        .cta-final .btn-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
+        .cta-final small { display: block; margin-top: 14px; font-size: 13px; color: rgba(255,255,255,0.7); }
+
+        /* Responsive */
+        @media (max-width: 960px) {
+            .dores-grid, .casos-grid, .passos-grid { grid-template-columns: 1fr; }
+            .passos-grid { gap: 30px; }
+            .cta-final h2 { font-size: 26px; }
+            .hero-grid { grid-template-columns: 1fr; gap: 36px; }
+            .hero h1 { font-size: 34px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .planos-grid { grid-template-columns: 1fr; }
+            .navbar__links { display: none; }
+        }
+        /* Celular: a barra do topo cabe na tela (o botao de teste gratis ja esta logo abaixo, no destaque)
+           e nenhum bloco passa da largura da tela. */
+        @media (max-width: 600px) {
+            .navbar__brand > span:not(.navbar__logo) { display: none; }
+            .navbar__inner > div:last-child { gap: 6px !important; }
+            /* *= e nao $=: a versao gerada (scripts/landing) acrescenta ?lang= ao endereco */
+            .navbar__inner a[href*="/cadastro"] { display: none; }
+            .ia-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
+            .ia-grid > * { min-width: 0; }
+            #ia .card { padding: 22px 16px !important; }
+            #ia h2 { font-size: 24px !important; }
+        }
+    </style>
+
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <link rel="alternate" hreflang="pt" href="https://myfinance.systempy.com/">
+    <link rel="alternate" hreflang="es" href="https://myfinance.systempy.com/es/">
+    <link rel="alternate" hreflang="en" href="https://myfinance.systempy.com/en/">
+    <link rel="alternate" hreflang="x-default" href="https://myfinance.systempy.com/">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="MyFinance">
+    <meta property="og:title" content="MyFinance: control financiero con IA para cuentas y cuotas">
+    <meta property="og:description" content="Organice cuentas, cuotas y gastos en un solo lugar. La IA registra por texto, foto o voz. Pruebe gratis 3 días, sin tarjeta. Para Gs., R$, US$ y €.">
+    <meta property="og:url" content="https://myfinance.systempy.com/es/">
+    <meta property="og:locale" content="es_PY">
+    <meta property="og:locale:alternate" content="pt_BR">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta property="og:image" content="https://myfinance.systempy.com/og-es.jpg">
+    <meta property="og:image:alt" content="MyFinance: control financiero con inteligencia artificial">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MyFinance: control financiero con IA para cuentas y cuotas">
+    <meta name="twitter:description" content="Organice cuentas, cuotas y gastos en un solo lugar. La IA registra por texto, foto o voz. Pruebe gratis 3 días, sin tarjeta. Para Gs., R$, US$ y €.">
+    <meta name="twitter:image" content="https://myfinance.systempy.com/og-es.jpg">
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"MyFinance","applicationCategory":"FinanceApplication","operatingSystem":"Web, Android, iOS","url":"https://myfinance.systempy.com/es/","inLanguage":"es","description":"Organice cuentas, cuotas y gastos en un solo lugar. La IA registra por texto, foto o voz. Pruebe gratis 3 días, sin tarjeta. Para Gs., R$, US$ y €.","offers":[{"@type":"Offer","name":"basico&lang=es","price":"29990","priceCurrency":"PYG","url":"https://myfinanceacess.systempy.com/cadastro?plano=basico&lang=es","availability":"https://schema.org/InStock"},{"@type":"Offer","name":"premium&lang=es","price":"49990","priceCurrency":"PYG","url":"https://myfinanceacess.systempy.com/cadastro?plano=premium&lang=es","availability":"https://schema.org/InStock"},{"@type":"Offer","name":"pro&lang=es","price":"84990","priceCurrency":"PYG","url":"https://myfinanceacess.systempy.com/cadastro?plano=pro&lang=es","availability":"https://schema.org/InStock"}]}</script>
+    <script type="application/ld+json">{"@context":"https://schema.org","@type":"FAQPage","inLanguage":"es","mainEntity":[{"@type":"Question","name":"¿Cómo funciona la prueba gratis de 3 días?","acceptedAnswer":{"@type":"Answer","text":"Al crear su cuenta usted elige el plan que quiere probar (Básico, Premium o Pro) y lo usa gratis por 3 días, sin tarjeta de crédito. Durante la prueba puede cambiar de plan, sin reiniciar el plazo. La prueba vale una vez por cuenta: después, para continuar hay que contratar un plan, y sus datos quedan guardados."}},{"@type":"Question","name":"¿Cómo funciona la Inteligencia Artificial en el sistema?","acceptedAnswer":{"@type":"Answer","text":"Puede chatear con la IA para registrar gastos por texto (\"Gasté 50 mil en súper\"), enviar foto del ticket o nota de voz. La IA reconoce el monto, fecha y categoría y lo registra al instante con 10 segundos para deshacer."}},{"@type":"Question","name":"¿Cómo funciona el modo sin conexión?","acceptedAnswer":{"@type":"Answer","text":"En los planes Premium y Pro, al instalar MyFinance como app en el celular (iOS/Android), usted registra movimientos incluso sin señal de internet. Cuando el teléfono se reconecte, todo se sincroniza automáticamente."}},{"@type":"Question","name":"¿Qué monedas son compatibles?","acceptedAnswer":{"@type":"Answer","text":"MyFinance trabaja con Guaraníes (Gs. PYG), Real (R$ BRL), Dólar ($ USD), Peso argentino (ARS) y Euro (€ EUR). Usted elige la moneda en Configuración, y el sistema está disponible en portugués, español e inglés."}},{"@type":"Question","name":"¿Mis datos están seguros?","acceptedAnswer":{"@type":"Answer","text":"Sí. Cada cuenta solo ve sus propios datos, las contraseñas se guardan con hash, la conexión usa HTTPS y las acciones están protegidas contra CSRF. En el plan Pro además exporta una copia de seguridad en JSON cuando quiera, y puede eliminar su cuenta y sus datos en cualquier momento."}},{"@type":"Question","name":"¿Qué plan debo elegir?","acceptedAnswer":{"@type":"Answer","text":"El Básico sirve para registrar y seguir el mes (hasta 2 cuentas). El Premium agrega presupuesto por categoría, IA y registro sin conexión, y tiene la mejor relación costo-beneficio. El Pro incluye cuentas ilimitadas, flujo de caja, exportación y más registros por foto y audio. Como la prueba de 3 días vale para cualquier plan y se puede cambiar durante ella, la mejor forma de decidir es probar."}},{"@type":"Question","name":"¿Cómo contrato y pago un plan?","acceptedAnswer":{"@type":"Answer","text":"Elija el plan en la pantalla de suscripción y haga la solicitud. Nos ponemos en contacto con los datos de pago (transferencia bancaria o Tigo Money) y activamos su suscripción apenas confirmemos el pago."}}]}</script></head>
+<body><svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true"><symbol id="ph-regular-moon" viewBox="0 0 256 256"><path d="M233.54,142.23a8,8,0,0,0-8-2,88.08,88.08,0,0,1-109.8-109.8,8,8,0,0,0-10-10,104.84,104.84,0,0,0-52.91,37A104,104,0,0,0,136,224a103.09,103.09,0,0,0,62.52-20.88,104.84,104.84,0,0,0,37-52.91A8,8,0,0,0,233.54,142.23ZM188.9,190.34A88,88,0,0,1,65.66,67.11a89,89,0,0,1,31.4-26A106,106,0,0,0,96,56,104.11,104.11,0,0,0,200,160a106,106,0,0,0,14.92-1.06A89,89,0,0,1,188.9,190.34Z"></path></symbol><symbol id="ph-regular-sun" viewBox="0 0 256 256"><path d="M120,40V16a8,8,0,0,1,16,0V40a8,8,0,0,1-16,0Zm72,88a64,64,0,1,1-64-64A64.07,64.07,0,0,1,192,128Zm-16,0a48,48,0,1,0-48,48A48.05,48.05,0,0,0,176,128ZM58.34,69.66A8,8,0,0,0,69.66,58.34l-16-16A8,8,0,0,0,42.34,53.66Zm0,116.68-16,16a8,8,0,0,0,11.32,11.32l16-16a8,8,0,0,0-11.32-11.32ZM192,72a8,8,0,0,0,5.66-2.34l16-16a8,8,0,0,0-11.32-11.32l-16,16A8,8,0,0,0,192,72Zm5.66,114.34a8,8,0,0,0-11.32,11.32l16,16a8,8,0,0,0,11.32-11.32ZM48,128a8,8,0,0,0-8-8H16a8,8,0,0,0,0,16H40A8,8,0,0,0,48,128Zm80,80a8,8,0,0,0-8,8v24a8,8,0,0,0,16,0V216A8,8,0,0,0,128,208Zm112-88H216a8,8,0,0,0,0,16h24a8,8,0,0,0,0-16Z"></path></symbol><symbol id="ph-fill-currency-circle-dollar" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm12,152h-4v8a8,8,0,0,1-16,0v-8H104a8,8,0,0,1,0-16h36a12,12,0,0,0,0-24H116a28,28,0,0,1,0-56h4V72a8,8,0,0,1,16,0v8h16a8,8,0,0,1,0,16H116a12,12,0,0,0,0,24h24a28,28,0,0,1,0,56Z"></path></symbol><symbol id="ph-fill-check-circle" viewBox="0 0 256 256"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z"></path></symbol><symbol id="ph-bold-arrow-right" viewBox="0 0 256 256"><path d="M224.49,136.49l-72,72a12,12,0,0,1-17-17L187,140H40a12,12,0,0,1,0-24H187L135.51,64.48a12,12,0,0,1,17-17l72,72A12,12,0,0,1,224.49,136.49Z"></path></symbol><symbol id="ph-bold-credit-card" viewBox="0 0 256 256"><path d="M224,44H32A20,20,0,0,0,12,64V192a20,20,0,0,0,20,20H224a20,20,0,0,0,20-20V64A20,20,0,0,0,224,44Zm-4,24V88H36V68ZM36,188V112H220v76Zm172-24a12,12,0,0,1-12,12H164a12,12,0,0,1,0-24h32A12,12,0,0,1,208,164Zm-68,0a12,12,0,0,1-12,12H116a12,12,0,0,1,0-24h12A12,12,0,0,1,140,164Z"></path></symbol><symbol id="ph-bold-coins" viewBox="0 0 256 256"><path d="M188,86.11V84c0-14.62-10.83-27.55-30.51-36.4C140.87,40.12,119,36,96,36S51.13,40.12,34.51,47.6C14.83,56.45,4,69.38,4,84v40c0,14.62,10.83,27.55,30.51,36.4A131.67,131.67,0,0,0,68,169.88V172c0,14.62,10.83,27.55,30.51,36.4C115.13,215.88,137,220,160,220s44.87-4.12,61.49-11.6C241.17,199.55,252,186.62,252,172V132C252,109.86,226.71,92.08,188,86.11ZM228,132c0,7.75-21.77,22.48-61.81,23.88C180.33,147.4,188,136.3,188,124V110.44C213.88,115.15,228,125.48,228,132ZM107.37,147.63c-3.63.24-7.42.37-11.37.37-5.08,0-9.89-.22-14.43-.61a10.94,10.94,0,0,0-1.14-.09c-1.51-.14-3-.3-4.43-.48V130.93A187,187,0,0,0,96,132a187,187,0,0,0,20-1.07v15.89c-2.49.3-5.07.56-7.75.75C108,147.58,107.66,147.6,107.37,147.63ZM164,117.14V124c0,4.78-8.28,12.21-24,17.54v-15a115.32,115.32,0,0,0,17.49-6.13Q160.93,118.86,164,117.14ZM96,60c44,0,68,15.85,68,24s-24,24-68,24S28,92.15,28,84,52,60,96,60ZM28,124v-6.86q3.08,1.71,6.51,3.26A115.32,115.32,0,0,0,52,126.53v15C36.28,136.21,28,128.78,28,124Zm64,48v0c1.33,0,2.66,0,4,0q5.44,0,10.77-.32,4.45,1.57,9.23,2.86v15C100.28,184.21,92,176.78,92,172Zm48,22.82V178.94A186.45,186.45,0,0,0,160,180a187,187,0,0,0,20-1.07v15.89a170.08,170.08,0,0,1-40,0Zm64-5.28v-15a115.32,115.32,0,0,0,17.49-6.13q3.44-1.54,6.51-3.26V172C228,176.78,219.72,184.21,204,189.54Z"></path></symbol><symbol id="ph-bold-device-mobile" viewBox="0 0 256 256"><path d="M176,12H80A28,28,0,0,0,52,40V216a28,28,0,0,0,28,28h96a28,28,0,0,0,28-28V40A28,28,0,0,0,176,12ZM76,76H180V180H76Zm4-40h96a4,4,0,0,1,4,4V52H76V40A4,4,0,0,1,80,36Zm96,184H80a4,4,0,0,1-4-4V204H180v12A4,4,0,0,1,176,220Z"></path></symbol><symbol id="ph-regular-wallet" viewBox="0 0 256 256"><path d="M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm0,128H56a8,8,0,0,1-8-8V78.63A23.84,23.84,0,0,0,56,80H216Zm-48-60a12,12,0,1,1,12,12A12,12,0,0,1,168,132Z"></path></symbol><symbol id="ph-bold-arrow-down-left" viewBox="0 0 256 256"><path d="M200.49,72.48,93,180h75a12,12,0,0,1,0,24H64a12,12,0,0,1-12-12V88a12,12,0,0,1,24,0v75L183.51,55.51a12,12,0,0,1,17,17Z"></path></symbol><symbol id="ph-bold-arrow-up-right" viewBox="0 0 256 256"><path d="M204,64V168a12,12,0,0,1-24,0V93L72.49,200.49a12,12,0,0,1-17-17L163,76H88a12,12,0,0,1,0-24H192A12,12,0,0,1,204,64Z"></path></symbol><symbol id="ph-bold-shopping-cart" viewBox="0 0 256 256"><path d="M233.21,56.31A12,12,0,0,0,224,52H66L60.53,21.85A12,12,0,0,0,48.73,12H24a12,12,0,0,0,0,24H38.71L63.62,173a28,28,0,0,0,4.07,10.21A32,32,0,1,0,123,196h34a32,32,0,1,0,31-24H91.17a4,4,0,0,1-3.93-3.28L84.92,156H196.1a28,28,0,0,0,27.55-23l12.16-66.86A12,12,0,0,0,233.21,56.31ZM100,204a8,8,0,1,1-8-8A8,8,0,0,1,100,204Zm88,8a8,8,0,1,1,8-8A8,8,0,0,1,188,212Zm12-83.28A4,4,0,0,1,196.1,132H80.56L70.38,76H209.62Z"></path></symbol><symbol id="ph-fill-warning" viewBox="0 0 256 256"><path d="M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM120,104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm8,88a12,12,0,1,1,12-12A12,12,0,0,1,128,192Z"></path></symbol><symbol id="ph-bold-question" viewBox="0 0 256 256"><path d="M144,180a16,16,0,1,1-16-16A16,16,0,0,1,144,180Zm92-52A108,108,0,1,1,128,20,108.12,108.12,0,0,1,236,128Zm-24,0a84,84,0,1,0-84,84A84.09,84.09,0,0,0,212,128ZM128,64c-24.26,0-44,17.94-44,40v4a12,12,0,0,0,24,0v-4c0-8.82,9-16,20-16s20,7.18,20,16-9,16-20,16a12,12,0,0,0-12,12v8a12,12,0,0,0,23.73,2.56C158.31,137.88,172,122.37,172,104,172,81.94,152.26,64,128,64Z"></path></symbol><symbol id="ph-bold-calendar-x" viewBox="0 0 256 256"><path d="M160.49,136.49,145,152l15.52,15.51a12,12,0,0,1-17,17L128,169l-15.51,15.52a12,12,0,0,1-17-17L111,152,95.51,136.49a12,12,0,1,1,17-17L128,135l15.51-15.52a12,12,0,1,1,17,17ZM228,48V208a20,20,0,0,1-20,20H48a20,20,0,0,1-20-20V48A20,20,0,0,1,48,28H68V24a12,12,0,0,1,24,0v4h72V24a12,12,0,0,1,24,0v4h20A20,20,0,0,1,228,48ZM52,52V76H204V52H188a12,12,0,0,1-24,0H92a12,12,0,0,1-24,0ZM204,204V100H52V204Z"></path></symbol><symbol id="ph-bold-table" viewBox="0 0 256 256"><path d="M224,44H32A12,12,0,0,0,20,56V192a20,20,0,0,0,20,20H216a20,20,0,0,0,20-20V56A12,12,0,0,0,224,44ZM44,116H76v24H44Zm56,0H212v24H100ZM212,68V92H44V68ZM44,164H76v24H44Zm56,24V164H212v24Z"></path></symbol><symbol id="ph-regular-users-three" viewBox="0 0 256 256"><path d="M244.8,150.4a8,8,0,0,1-11.2-1.6A51.6,51.6,0,0,0,192,128a8,8,0,0,1-7.37-4.89,8,8,0,0,1,0-6.22A8,8,0,0,1,192,112a24,24,0,1,0-23.24-30,8,8,0,1,1-15.5-4A40,40,0,1,1,219,117.51a67.94,67.94,0,0,1,27.43,21.68A8,8,0,0,1,244.8,150.4ZM190.92,212a8,8,0,1,1-13.84,8,57,57,0,0,0-98.16,0,8,8,0,1,1-13.84-8,72.06,72.06,0,0,1,33.74-29.92,48,48,0,1,1,58.36,0A72.06,72.06,0,0,1,190.92,212ZM128,176a32,32,0,1,0-32-32A32,32,0,0,0,128,176ZM72,120a8,8,0,0,0-8-8A24,24,0,1,1,87.24,82a8,8,0,1,0,15.5-4A40,40,0,1,0,37,117.51,67.94,67.94,0,0,0,9.6,139.19a8,8,0,1,0,12.8,9.61A51.6,51.6,0,0,1,64,128,8,8,0,0,0,72,120Z"></path></symbol><symbol id="ph-bold-house-line" viewBox="0 0 256 256"><path d="M240,204H228V144a12,12,0,0,0,12.49-19.78L142.14,25.85a20,20,0,0,0-28.28,0L15.51,124.2A12,12,0,0,0,28,144v60H16a12,12,0,0,0,0,24H240a12,12,0,0,0,0-24ZM52,121.65l76-76,76,76V204H164V152a12,12,0,0,0-12-12H104a12,12,0,0,0-12,12v52H52ZM140,204H116V164h24Z"></path></symbol><symbol id="ph-bold-briefcase" viewBox="0 0 256 256"><path d="M100,100a12,12,0,0,1,12-12h32a12,12,0,0,1,0,24H112A12,12,0,0,1,100,100ZM236,68V196a20,20,0,0,1-20,20H40a20,20,0,0,1-20-20V68A20,20,0,0,1,40,48H76V40a28,28,0,0,1,28-28h48a28,28,0,0,1,28,28v8h36A20,20,0,0,1,236,68ZM100,48h56V40a4,4,0,0,0-4-4H104a4,4,0,0,0-4,4ZM44,72v35.23A180.06,180.06,0,0,0,128,128a180,180,0,0,0,84-20.78V72ZM212,192V133.94A204.27,204.27,0,0,1,128,152a204.21,204.21,0,0,1-84-18.06V192Z"></path></symbol><symbol id="ph-bold-storefront" viewBox="0 0 256 256"><path d="M236,96a12,12,0,0,0-.44-3.3L221.2,42.51A20.08,20.08,0,0,0,202,28H54A20.08,20.08,0,0,0,34.8,42.51L20.46,92.7A12,12,0,0,0,20,96h0v16a43.94,43.94,0,0,0,16,33.92V216a12,12,0,0,0,12,12H208a12,12,0,0,0,12-12V145.92A43.94,43.94,0,0,0,236,112V96ZM57.05,52H199l9.14,32H47.91Zm91,56v4a20,20,0,0,1-40,0v-4ZM53,128.71A20,20,0,0,1,44,112v-4H84v4a20,20,0,0,1-20,20,19.76,19.76,0,0,1-9.07-2.2A11.54,11.54,0,0,0,53,128.71ZM196,204H60V155.81c1.32.12,2.65.19,4,.19a43.86,43.86,0,0,0,32-13.85,43.89,43.89,0,0,0,64,0A43.86,43.86,0,0,0,192,156c1.35,0,2.68-.07,4-.19Zm16-92a20,20,0,0,1-9,16.71,11.66,11.66,0,0,0-1.88,1.09A20,20,0,0,1,172,112v-4h40Z"></path></symbol><symbol id="ph-bold-globe-hemisphere-west" viewBox="0 0 256 256"><path d="M128,20A108,108,0,1,0,236,128,108.12,108.12,0,0,0,128,20Zm84,108a83.64,83.64,0,0,1-4.47,27L167,130a19.65,19.65,0,0,0-7.8-2.78l-22.82-3.08A20.14,20.14,0,0,0,117.72,132h-4.07l-2.71-5.6a19.88,19.88,0,0,0-13.8-10.84L94.46,115l4-7h14.39a20,20,0,0,0,9.66-2.49l12.25-6.76a20.57,20.57,0,0,0,3.74-2.68l26.92-24.33A20,20,0,0,0,172,56.49,84,84,0,0,1,212,128ZM140.76,45l6.2,11.1L122.75,78l-10.93,6H96.14A20.05,20.05,0,0,0,78.78,94.06l-4.49,7.85L67.68,84.28l9.91-23.42A83.91,83.91,0,0,1,140.76,45ZM44,128a83.52,83.52,0,0,1,4.4-26.77l7.74,20.65a19.89,19.89,0,0,0,14.52,12.53l19.53,4.2,3,6.1a20.11,20.11,0,0,0,13.55,10.77l-5,11.12a20,20,0,0,0,3.58,21.71l.21.22,18.16,18.7-.89,4.59A84.09,84.09,0,0,1,44,128Zm103.65,81.66a20.11,20.11,0,0,0-5-17.3l-.21-.22-17.72-18.25,11.37-25.52,19,2.56,41.43,25.48A84.2,84.2,0,0,1,147.65,209.66Z"></path></symbol><symbol id="ph-bold-sparkle" viewBox="0 0 256 256"><path d="M199,125.31l-49.88-18.39L130.69,57a19.92,19.92,0,0,0-37.38,0L74.92,106.92,25,125.31a19.92,19.92,0,0,0,0,37.38l49.88,18.39L93.31,231a19.92,19.92,0,0,0,37.38,0l18.39-49.88L199,162.69a19.92,19.92,0,0,0,0-37.38Zm-63.38,35.16a12,12,0,0,0-7.11,7.11L112,212.28l-16.47-44.7a12,12,0,0,0-7.11-7.11L43.72,144l44.7-16.47a12,12,0,0,0,7.11-7.11L112,75.72l16.47,44.7a12,12,0,0,0,7.11,7.11L180.28,144ZM140,40a12,12,0,0,1,12-12h12V16a12,12,0,0,1,24,0V28h12a12,12,0,0,1,0,24H188V64a12,12,0,0,1-24,0V52H152A12,12,0,0,1,140,40ZM252,88a12,12,0,0,1-12,12h-4v4a12,12,0,0,1-24,0v-4h-4a12,12,0,0,1,0-24h4V72a12,12,0,0,1,24,0v4h4A12,12,0,0,1,252,88Z"></path></symbol><symbol id="ph-regular-path" viewBox="0 0 256 256"><path d="M200,168a32.06,32.06,0,0,0-31,24H72a32,32,0,0,1,0-64h96a40,40,0,0,0,0-80H72a8,8,0,0,0,0,16h96a24,24,0,0,1,0,48H72a48,48,0,0,0,0,96h97a32,32,0,1,0,31-40Zm0,48a16,16,0,1,1,16-16A16,16,0,0,1,200,216Z"></path></symbol><symbol id="ph-regular-squares-four" viewBox="0 0 256 256"><path d="M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z"></path></symbol><symbol id="ph-bold-bank" viewBox="0 0 256 256"><path d="M24,108H44v48H32a12,12,0,0,0,0,24H224a12,12,0,0,0,0-24H212V108h20a12,12,0,0,0,6.29-22.22l-104-64a12,12,0,0,0-12.58,0l-104,64A12,12,0,0,0,24,108Zm44,0H92v48H68Zm72,0v48H116V108Zm48,48H164V108h24ZM128,46.09,189.6,84H66.4ZM252,208a12,12,0,0,1-12,12H16a12,12,0,0,1,0-24H240A12,12,0,0,1,252,208Z"></path></symbol><symbol id="ph-bold-tag" viewBox="0 0 256 256"><path d="M246.15,133.18,146.83,33.86A19.85,19.85,0,0,0,132.69,28H40A12,12,0,0,0,28,40v92.69a19.85,19.85,0,0,0,5.86,14.14l99.32,99.32a20,20,0,0,0,28.28,0l84.69-84.69A20,20,0,0,0,246.15,133.18Zm-98.83,93.17L52,131V52h79l95.32,95.32ZM104,88A16,16,0,1,1,88,72,16,16,0,0,1,104,88Z"></path></symbol><symbol id="ph-bold-calendar-check" viewBox="0 0 256 256"><path d="M208,28H188V24a12,12,0,0,0-24,0v4H92V24a12,12,0,0,0-24,0v4H48A20,20,0,0,0,28,48V208a20,20,0,0,0,20,20H208a20,20,0,0,0,20-20V48A20,20,0,0,0,208,28ZM68,52a12,12,0,0,0,24,0h72a12,12,0,0,0,24,0h16V76H52V52ZM52,204V100H204V204Zm120.49-84.49a12,12,0,0,1,0,17l-48,48a12,12,0,0,1-17,0l-24-24a12,12,0,0,1,17-17L116,159l39.51-39.52A12,12,0,0,1,172.49,119.51Z"></path></symbol><symbol id="ph-bold-download-simple" viewBox="0 0 256 256"><path d="M228,144v64a12,12,0,0,1-12,12H40a12,12,0,0,1-12-12V144a12,12,0,0,1,24,0v52H204V144a12,12,0,0,1,24,0Zm-108.49,8.49a12,12,0,0,0,17,0l40-40a12,12,0,0,0-17-17L140,115V32a12,12,0,0,0-24,0v83L96.49,95.51a12,12,0,0,0-17,17Z"></path></symbol><symbol id="ph-bold-bell-ringing" viewBox="0 0 256 256"><path d="M225.81,74.65A11.86,11.86,0,0,1,220.3,76a12,12,0,0,1-10.67-6.47,90.1,90.1,0,0,0-32-35.38,12,12,0,1,1,12.8-20.29,115.25,115.25,0,0,1,40.54,44.62A12,12,0,0,1,225.81,74.65ZM46.37,69.53a90.1,90.1,0,0,1,32-35.38A12,12,0,1,0,65.6,13.86,115.25,115.25,0,0,0,25.06,58.48a12,12,0,0,0,5.13,16.17A11.86,11.86,0,0,0,35.7,76,12,12,0,0,0,46.37,69.53Zm173.51,98.35A20,20,0,0,1,204,200H171.81a44,44,0,0,1-87.62,0H52a20,20,0,0,1-15.91-32.12c7.17-9.33,15.73-26.62,15.88-55.94A76,76,0,0,1,204,112C204.15,141.26,212.71,158.55,219.88,167.88ZM147.6,200H108.4a20,20,0,0,0,39.2,0Zm48.74-24c-8.16-13-16.19-33.57-16.34-63.94A52,52,0,1,0,76,112c-.15,30.42-8.18,51-16.34,64Z"></path></symbol><symbol id="ph-bold-chats-circle" viewBox="0 0 256 256"><path d="M236.34,187.09A84,84,0,0,0,172.29,68.9,84,84,0,0,0,19.66,139.09l-6.84,23.26a20,20,0,0,0,24.83,24.83l23.26-6.84a83.94,83.94,0,0,0,22.76,6.74,84.06,84.06,0,0,0,111.42,41.26l23.26,6.84a20,20,0,0,0,24.83-24.83ZM62,155.5a11.88,11.88,0,0,0-3.39.49l-20.72,6.09L44,141.35a12,12,0,0,0-.93-9A60,60,0,1,1,67.7,156.92,12,12,0,0,0,62,155.5Zm150.89,24.8a12,12,0,0,0-.93,9l6.09,20.73L197.36,204a12,12,0,0,0-9.06.93A60,60,0,0,1,111,186.63a83.93,83.93,0,0,0,68.55-91.37,60,60,0,0,1,33.38,85Z"></path></symbol><symbol id="ph-bold-translate" viewBox="0 0 256 256"><path d="M250.73,210.63l-56-112a12,12,0,0,0-21.46,0l-20.52,41A84.2,84.2,0,0,1,114,126.22,107.48,107.48,0,0,0,139.33,68H160a12,12,0,0,0,0-24H108V32a12,12,0,0,0-24,0V44H32a12,12,0,0,0,0,24h83.13A83.69,83.69,0,0,1,96,110.35,84,84,0,0,1,83.6,91a12,12,0,1,0-21.81,10A107.55,107.55,0,0,0,78,126.24,83.54,83.54,0,0,1,32,140a12,12,0,0,0,0,24,107.47,107.47,0,0,0,64-21.07,108.4,108.4,0,0,0,45.39,19.44l-24.13,48.26a12,12,0,1,0,21.46,10.73L151.41,196h65.17l12.68,25.36a12,12,0,1,0,21.47-10.73ZM163.41,172,184,130.83,204.58,172Z"></path></symbol><symbol id="ph-fill-brain" viewBox="0 0 256 256"><path d="M212,76V72a44,44,0,0,0-74.86-31.31,3.93,3.93,0,0,0-1.14,2.8v88.72a4,4,0,0,0,6.2,3.33A47.67,47.67,0,0,1,167.68,128a8.18,8.18,0,0,1,8.31,7.58,8,8,0,0,1-8,8.42,32,32,0,0,0-32,32v33.88a4,4,0,0,0,1.49,3.12,47.92,47.92,0,0,0,74.21-17.16,4,4,0,0,0-4.49-5.56A68.06,68.06,0,0,1,192,192h-7.73a8.18,8.18,0,0,1-8.25-7.47,8,8,0,0,1,8-8.53h8a51.6,51.6,0,0,0,24-5.88v0A52,52,0,0,0,212,76Zm-12,36h-4a36,36,0,0,1-36-36V72a8,8,0,0,1,16,0v4a20,20,0,0,0,20,20h4a8,8,0,0,1,0,16ZM88,28A44.05,44.05,0,0,0,44,72v4a52,52,0,0,0-4,94.12h0A51.6,51.6,0,0,0,64,176h7.73A8.18,8.18,0,0,1,80,183.47,8,8,0,0,1,72,192H64a67.48,67.48,0,0,1-15.21-1.73,4,4,0,0,0-4.5,5.55A47.93,47.93,0,0,0,118.51,213a4,4,0,0,0,1.49-3.12V176a32,32,0,0,0-32-32,8,8,0,0,1-8-8.42A8.18,8.18,0,0,1,88.32,128a47.67,47.67,0,0,1,25.48,7.54,4,4,0,0,0,6.2-3.33V43.49a4,4,0,0,0-1.14-2.81A43.85,43.85,0,0,0,88,28Zm8,48a36,36,0,0,1-36,36H56a8,8,0,0,1,0-16h4A20,20,0,0,0,80,76V72a8,8,0,0,1,16,0Z"></path></symbol><symbol id="ph-bold-check-circle" viewBox="0 0 256 256"><path d="M176.49,95.51a12,12,0,0,1,0,17l-56,56a12,12,0,0,1-17,0l-24-24a12,12,0,1,1,17-17L112,143l47.51-47.52A12,12,0,0,1,176.49,95.51ZM236,128A108,108,0,1,1,128,20,108.12,108.12,0,0,1,236,128Zm-24,0a84,84,0,1,0-84,84A84.09,84.09,0,0,0,212,128Z"></path></symbol><symbol id="ph-fill-sparkle" viewBox="0 0 256 256"><path d="M208,144a15.78,15.78,0,0,1-10.42,14.94L146,178l-19,51.62a15.92,15.92,0,0,1-29.88,0L78,178l-51.62-19a15.92,15.92,0,0,1,0-29.88L78,110l19-51.62a15.92,15.92,0,0,1,29.88,0L146,110l51.62,19A15.78,15.78,0,0,1,208,144ZM152,48h16V64a8,8,0,0,0,16,0V48h16a8,8,0,0,0,0-16H184V16a8,8,0,0,0-16,0V32H152a8,8,0,0,0,0,16Zm88,32h-8V72a8,8,0,0,0-16,0v8h-8a8,8,0,0,0,0,16h8v8a8,8,0,0,0,16,0V96h8a8,8,0,0,0,0-16Z"></path></symbol><symbol id="ph-regular-crown-simple" viewBox="0 0 256 256"><path d="M230.9,73.6A15.85,15.85,0,0,0,212,77.39l-33.67,36.29-35.8-80.29a1,1,0,0,1,0-.1,16,16,0,0,0-29.06,0,1,1,0,0,1,0,.1l-35.8,80.29L44,77.39A16,16,0,0,0,16.25,90.81c0,.11,0,.21.07.32L39,195a16,16,0,0,0,15.72,13H201.29A16,16,0,0,0,217,195L239.68,91.13c0-.11,0-.21.07-.32A15.85,15.85,0,0,0,230.9,73.6ZM201.35,191.68l-.06.32H54.71l-.06-.32L32,88l.14.16,42,45.24a8,8,0,0,0,13.18-2.18L128,40l40.69,91.25a8,8,0,0,0,13.18,2.18l42-45.24L224,88Z"></path></symbol><symbol id="ph-bold-check" viewBox="0 0 256 256"><path d="M232.49,80.49l-128,128a12,12,0,0,1-17,0l-56-56a12,12,0,1,1,17-17L96,183,215.51,63.51a12,12,0,0,1,17,17Z"></path></symbol><symbol id="ph-bold-x" viewBox="0 0 256 256"><path d="M208.49,191.51a12,12,0,0,1-17,17L128,145,64.49,208.49a12,12,0,0,1-17-17L111,128,47.51,64.49a12,12,0,0,1,17-17L128,111l63.51-63.52a12,12,0,0,1,17,17L145,128Z"></path></symbol><symbol id="ph-bold-star" viewBox="0 0 256 256"><path d="M243,96a20.33,20.33,0,0,0-17.74-14l-56.59-4.57L146.83,24.62a20.36,20.36,0,0,0-37.66,0L87.35,77.44,30.76,82A20.45,20.45,0,0,0,19.1,117.88l43.18,37.24-13.2,55.7A20.37,20.37,0,0,0,79.57,233L128,203.19,176.43,233a20.39,20.39,0,0,0,30.49-22.15l-13.2-55.7,43.18-37.24A20.43,20.43,0,0,0,243,96ZM172.53,141.7a12,12,0,0,0-3.84,11.86L181.58,208l-47.29-29.08a12,12,0,0,0-12.58,0L74.42,208l12.89-54.4a12,12,0,0,0-3.84-11.86L41.2,105.24l55.4-4.47a12,12,0,0,0,10.13-7.38L128,41.89l21.27,51.5a12,12,0,0,0,10.13,7.38l55.4,4.47Z"></path></symbol><symbol id="ph-bold-crown-simple" viewBox="0 0 256 256"><path d="M232.63,70a19.82,19.82,0,0,0-23.55,4.71l-29.52,31.82L146.22,31.76l-.06-.14a20,20,0,0,0-36.32,0l-.06.14L76.44,106.52,46.92,74.7a20,20,0,0,0-34.6,16.81c0,.16.06.31.09.47L35.07,195.76A20,20,0,0,0,54.71,212H201.29a20,20,0,0,0,19.64-16.24L243.59,92c0-.16.07-.31.09-.47A19.82,19.82,0,0,0,232.63,70ZM198.06,188H57.94L39.06,101.51,71.2,136.16A12,12,0,0,0,91,132.89l37-83.07,37,83.07a12,12,0,0,0,19.76,3.27l32.14-34.65Z"></path></symbol><symbol id="ph-fill-gift" viewBox="0 0 256 256"><path d="M216,72H180.92c.39-.33.79-.65,1.17-1A29.53,29.53,0,0,0,192,49.57,32.62,32.62,0,0,0,158.44,16,29.53,29.53,0,0,0,137,25.91a54.94,54.94,0,0,0-9,14.48,54.94,54.94,0,0,0-9-14.48A29.53,29.53,0,0,0,97.56,16,32.62,32.62,0,0,0,64,49.57,29.53,29.53,0,0,0,73.91,71c.38.33.78.65,1.17,1H40A16,16,0,0,0,24,88v32a16,16,0,0,0,16,16v64a16,16,0,0,0,16,16h60a4,4,0,0,0,4-4V120H40V88h80v32h16V88h80v32H136v92a4,4,0,0,0,4,4h60a16,16,0,0,0,16-16V136a16,16,0,0,0,16-16V88A16,16,0,0,0,216,72ZM84.51,59a13.69,13.69,0,0,1-4.5-10A16.62,16.62,0,0,1,96.59,32h.49a13.69,13.69,0,0,1,10,4.5c8.39,9.48,11.35,25.2,12.39,34.92C109.71,70.39,94,67.43,84.51,59Zm87,0c-9.49,8.4-25.24,11.36-35,12.4C137.7,60.89,141,45.5,149,36.51a13.69,13.69,0,0,1,10-4.5h.49A16.62,16.62,0,0,1,176,49.08,13.69,13.69,0,0,1,171.49,59Z"></path></symbol><symbol id="ph-regular-question" viewBox="0 0 256 256"><path d="M140,180a12,12,0,1,1-12-12A12,12,0,0,1,140,180ZM128,72c-22.06,0-40,16.15-40,36v4a8,8,0,0,0,16,0v-4c0-11,10.77-20,24-20s24,9,24,20-10.77,20-24,20a8,8,0,0,0-8,8v8a8,8,0,0,0,16,0v-.72c18.24-3.35,32-17.9,32-35.28C168,88.15,150.06,72,128,72Zm104,56A104,104,0,1,1,128,24,104.11,104.11,0,0,1,232,128Zm-16,0a88,88,0,1,0-88,88A88.1,88.1,0,0,0,216,128Z"></path></symbol><symbol id="ph-bold-caret-down" viewBox="0 0 256 256"><path d="M216.49,104.49l-80,80a12,12,0,0,1-17,0l-80-80a12,12,0,0,1,17-17L128,159l71.51-71.52a12,12,0,0,1,17,17Z"></path></symbol></svg>
+
+    <!-- Header -->
+    <header class="navbar">
+        <div class="container navbar__inner">
+            <a href="/es/" class="navbar__brand">
+                <span class="navbar__logo"><i class="ph-fill ph-currency-circle-dollar" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-fill-currency-circle-dollar"></use></svg></i></span>
+                <span>MyFinance</span>
+            </a>
+
+            <nav class="navbar__links" aria-label="Principal">
+                <a href="#casos" class="navbar__link" data-i18n="nav_casos">Casos de uso</a>
+                <a href="#recursos" class="navbar__link" data-i18n="nav_recursos">Recursos</a>
+                <a href="#ia" class="navbar__link" data-i18n="nav_ia">Asistente IA</a>
+                <a href="#planos" class="navbar__link" data-i18n="nav_planos">Planes</a>
+                <a href="#faq" class="navbar__link" data-i18n="nav_faq">Preguntas Frecuentes</a>
+            </nav>
+
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <!-- Seletor de Idioma PT / ES -->
+                <select id="lang-toggle" class="lang-select" aria-label="Idioma">
+                    <option value="pt-BR" data-href="/">🇧🇷 PT</option>
+                    <option value="es-PY" data-href="/es/">🇵🇾 ES</option>
+                    <option value="en-US" data-href="/en/">🇺🇸 EN</option>
+                </select>
+
+                <!-- Botao Tema Claro/Escuro -->
+                <button type="button" id="tema-toggle" class="btn btn-outline btn-sm" aria-label="Alternar tema" style="background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #ffffff;">
+                    <i class="ph ph-moon" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-regular-moon"></use></svg></i>
+                </button>
+                <a href="https://myfinanceacess.systempy.com/login?lang=es" class="btn btn-outline btn-sm" style="background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #ffffff;" data-i18n="nav_entrar">Iniciar Sesión</a>
+                <a href="https://myfinanceacess.systempy.com/cadastro?lang=es" class="btn btn-accent btn-sm" data-i18n="nav_cadastro">Prueba Gratis</a>
+            </div>
+        </div>
+    </header>
+
+    <main id="conteudo">
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                
+                <!-- Left: Headline -->
+                <div>
+                    <span class="badge badge-accent">
+                        <i class="ph-fill ph-check-circle" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-fill-check-circle"></use></svg></i> <span data-i18n="hero_badge">3 días de prueba gratis en el plan que elija, sin tarjeta</span>
+                    </span>
+
+                    <h1 data-i18n="hero_titulo">Deje de preguntarse <em>a dónde se fue su dinero.</em></h1>
+
+                    <p data-i18n="hero_sub">MyFinance reúne sus cuentas, cuotas y gastos en un solo lugar, y la Inteligencia Artificial registra todo por usted: por texto, foto del recibo o voz. En minutos ve el mes completo con claridad.</p>
+
+                    <div class="hero-actions">
+                        <a href="https://myfinanceacess.systempy.com/cadastro?lang=es" class="btn btn-accent btn-lg">
+                            <span data-i18n="hero_cta">Comenzar Prueba Gratis (3 Días)</span>
+                            <i class="ph-bold ph-arrow-right" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-arrow-right"></use></svg></i>
+                        </a>
+                        <a href="#planos" class="btn btn-outline btn-lg">
+                            <span data-i18n="hero_ver_planos">Ver Planes</span>
+                        </a>
+                    </div>
+
+                    <div class="hero-chips">
+                        <span><i class="ph-bold ph-credit-card" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-credit-card"></use></svg></i> <span data-i18n="hero_chip1">Sin tarjeta de crédito</span></span>
+                        <span><i class="ph-bold ph-coins" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-coins"></use></svg></i> <span data-i18n="hero_chip2">Guaraníes, reales, dólares, euros o pesos</span></span>
+                        <span><i class="ph-bold ph-device-mobile" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-device-mobile"></use></svg></i> <span data-i18n="hero_chip3">En el navegador y en el celular (app instalable)</span></span>
+                    </div>
+                </div>
+
+                <!-- Right: Realistic MyFinance UI Mockup -->
+                <div>
+                    <div class="mockup-card">
+                        <div class="mockup-header">
+                            <span class="mockup-tag"><i class="ph ph-wallet" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-regular-wallet"></use></svg></i> <span data-i18n="mock_saldo_disp">Saldo Disponible</span></span>
+                            <span style="font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase;" data-i18n="mock_mes">Ejemplo</span>
+                        </div>
+
+                        <div style="font-size: 13px; color: var(--muted);" data-i18n="mock_total_cons">Total Consolidado</div>
+                        <div class="saldo-display">Gs. 14.850.000</div>
+
+                        <div class="resumo-duplo">
+                            <div class="resumo-box">
+                                <small><i class="ph-bold ph-arrow-down-left" style="color: var(--accent);" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-arrow-down-left"></use></svg></i> <span data-i18n="mock_receitas">Ingresos</span></small>
+                                <strong class="val-receita">+ Gs. 18.200.000</strong>
+                            </div>
+                            <div class="resumo-box">
+                                <small><i class="ph-bold ph-arrow-up-right" style="color: var(--red);" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-arrow-up-right"></use></svg></i> <span data-i18n="mock_despesas">Gastos</span></small>
+                                <strong class="val-despesa">- Gs. 3.350.000</strong>
+                            </div>
+                        </div>
+
+                        <!-- Mini Entries -->
+                        <div style="margin-top: 18px;">
+                            <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; color: var(--muted); margin-bottom: 8px;" data-i18n="mock_lanc_recentes">Movimientos Recientes</div>
+
+                            <div class="transacao-item">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="transacao-icone" style="background: var(--accent-bg); color: var(--accent);">
+                                        <i class="ph-bold ph-arrow-down-left" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-arrow-down-left"></use></svg></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600;" data-i18n="mock_salario">Sueldo Mensual</div>
+                                        <div style="font-size: 11.5px; color: var(--muted);" data-i18n="mock_conta_corrente">Cuenta Corriente Principal</div>
+                                    </div>
+                                </div>
+                                <strong class="val-receita">+ Gs. 12.000.000</strong>
+                            </div>
+
+                            <div class="transacao-item">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="transacao-icone" style="background: var(--red-bg); color: var(--red);">
+                                        <i class="ph-bold ph-shopping-cart" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-shopping-cart"></use></svg></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 600;"><span data-i18n="mock_super">Supermercado</span> <span class="badge badge-ouro" style="font-size: 10px; padding: 1px 6px;">IA</span></div>
+                                        <div style="font-size: 11.5px; color: var(--muted);" data-i18n="mock_foto_recibo">Registrado por Foto de Recibo</div>
+                                    </div>
+                                </div>
+                                <strong class="val-despesa">- Gs. 650.000</strong>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Dores -->
+    <section id="dores" class="section" style="background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-ouro"><i class="ph-fill ph-warning" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-fill-warning"></use></svg></i> <span data-i18n="dores_badge">¿Se reconoce?</span></span>
+                <h2 data-i18n="dores_titulo">Sin control, el dinero se escapa sin que lo note</h2>
+                <p data-i18n="dores_sub">No es falta de ingresos. Es falta de visión. Estos tres problemas cuestan caro todos los meses:</p>
+            </div>
+            <div class="dores-grid">
+                <div class="dor-card">
+                    <i class="ph-bold ph-question" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-question"></use></svg></i>
+                    <h3 data-i18n="dor1_tit">"¿A dónde se fue mi sueldo?"</h3>
+                    <p data-i18n="dor1_desc">Los pequeños gastos del día a día suman mucho, y sin registro lo descubre cuando el saldo ya se acabó.</p>
+                </div>
+                <div class="dor-card">
+                    <i class="ph-bold ph-calendar-x" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-calendar-x"></use></svg></i>
+                    <h3 data-i18n="dor2_tit">Cuotas y cuentas que se vuelven sorpresa</h3>
+                    <p data-i18n="dor2_desc">Las compras en cuotas y las cuentas fijas se acumulan. Olvidar un vencimiento significa multa, intereses y estrés.</p>
+                </div>
+                <div class="dor-card">
+                    <i class="ph-bold ph-table" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-table"></use></svg></i>
+                    <h3 data-i18n="dor3_tit">Una planilla que nadie mantiene</h3>
+                    <p data-i18n="dor3_desc">Empieza con entusiasmo, se vuelve obligación y se abandona en semanas. Al final, vuelve a decidir a ciegas.</p>
+                </div>
+            </div>
+            <p class="dores-fecho" data-i18n="dores_fecho">MyFinance resuelve los tres: usted registra en segundos y el sistema <em>hace las cuentas, muestra lo pendiente y avisa lo que vence</em> para que decida con seguridad.</p>
+        </div>
+    </section>
+
+    <!-- Casos de uso -->
+    <section id="casos" class="section">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-accent"><i class="ph ph-users-three" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-regular-users-three"></use></svg></i> <span data-i18n="casos_badge">Casos de uso</span></span>
+                <h2 data-i18n="casos_titulo">Hecho para su rutina, sea cual sea</h2>
+                <p data-i18n="casos_sub">Vea cómo personas como usted usan MyFinance para tener el control que faltaba.</p>
+            </div>
+            <div class="casos-grid">
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-house-line" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-house-line"></use></svg></i></span>
+                        <span class="caso-quem" data-i18n="c1_quem">Familias</span>
+                    </div>
+                    <h3 data-i18n="c1_tit">Cerrar el mes en positivo, sin sustos</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situación</b> <span data-i18n="c1_sit">Entra el sueldo y, hacia el día 20, el dinero se acaba sin que nadie sepa en qué.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Con MyFinance</b> <span data-i18n="c1_sol">Define un límite por categoría (supermercado, escuela, ocio) y sigue cuánto ya gastó y cuánto aún puede gastar en cada una.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal">Plan ideal: <b>Premium</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plan →</a></div>
+                </article>
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-briefcase" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-briefcase"></use></svg></i></span>
+                        <span class="caso-quem" data-i18n="c2_quem">Autónomos y freelancers</span>
+                    </div>
+                    <h3 data-i18n="c2_tit">Separar lo personal del negocio</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situación</b> <span data-i18n="c2_sit">Todo cae en la misma cuenta y, a fin de año, no sabe si realmente ganó.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Con MyFinance</b> <span data-i18n="c2_sol">Cuentas ilimitadas, transferencias entre ellas con contrapartida automática, flujo de caja y demostrativo anual para ver el resultado real y exportarlo a su contador.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal_pro">Plan ideal: <b>Pro</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plan →</a></div>
+                </article>
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-storefront" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-storefront"></use></svg></i></span>
+                        <span class="caso-quem" data-i18n="c3_quem">Pequeños comerciantes</span>
+                    </div>
+                    <h3 data-i18n="c3_tit">Anotar en el mostrador, incluso sin señal</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situación</b> <span data-i18n="c3_sit">Entra y sale dinero todo el día, y lo que no se anota en el momento se pierde.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Con MyFinance</b> <span data-i18n="c3_sol">Instale la app en el celular y registre al instante, incluso sin internet: todo se sincroniza cuando vuelve la señal. Con internet, fotografíe el recibo y la IA hace el registro.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal">Plan ideal: <b>Premium</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plan →</a></div>
+                </article>
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-credit-card" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-credit-card"></use></svg></i></span>
+                        <span class="caso-quem" data-i18n="c4_quem">Quien compra en cuotas</span>
+                    </div>
+                    <h3 data-i18n="c4_tit">Cuotas que nunca más son una sorpresa</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situación</b> <span data-i18n="c4_sit">Tres compras en 10 cuotas y pierde la cuenta de lo que todavía va a pagar en los próximos meses.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Con MyFinance</b> <span data-i18n="c4_sol">Cargue la compra una vez y el sistema crea todas las cuotas. La lista de pendientes muestra lo que vence y usted navega por los meses para ver el peso de cada uno.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal_basico">Ya desde el <b>Básico</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plan →</a></div>
+                </article>
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-globe-hemisphere-west" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-globe-hemisphere-west"></use></svg></i></span>
+                        <span class="caso-quem" data-i18n="c5_quem">Vida entre dos países</span>
+                    </div>
+                    <h3 data-i18n="c5_tit">En su moneda y en su idioma</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situación</b> <span data-i18n="c5_sit">Vive, trabaja o viaja entre países, y el sistema que usa no habla su idioma ni su moneda.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Con MyFinance</b> <span data-i18n="c5_sol">Elija la moneda (guaraní, real, dólar, euro o peso argentino) y el idioma (portugués, español o inglés) y use todo a su manera, en la computadora y en el celular.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal_basico">Ya desde el <b>Básico</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plan →</a></div>
+                </article>
+
+                <article class="caso-card">
+                    <div class="caso-topo">
+                        <span class="caso-icone"><i class="ph-bold ph-sparkle" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-sparkle"></use></svg></i></span>
+                        <span class="caso-quem" data-i18n="c6_quem">Quien no tiene tiempo</span>
+                    </div>
+                    <h3 data-i18n="c6_tit">Registrar un gasto en 5 segundos</h3>
+                    <p class="caso-bloco"><b data-i18n="lbl_situacao">Situación</b> <span data-i18n="c6_sit">Sabe que debería anotar todo, pero con la prisa nadie abre una planilla.</span></p>
+                    <p class="caso-bloco caso-bloco--solucao"><b data-i18n="lbl_solucao">Con MyFinance</b> <span data-i18n="c6_sol">Escriba "gasté 45 mil en el almuerzo", envíe la foto del ticket o un audio. La IA elige monto, fecha y categoría, y usted tiene 10 segundos para deshacer.</span></p>
+                    <div class="caso-plano"><span data-i18n="lbl_plano_ideal">Plan ideal: <b>Premium</b></span> <a href="#planos" data-i18n="lbl_ver_plano">Ver plan →</a></div>
+                </article>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Como funciona -->
+    <section id="como" class="section" style="background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-blue"><i class="ph ph-path" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-regular-path"></use></svg></i> <span data-i18n="como_badge">Cómo funciona</span></span>
+                <h2 data-i18n="como_titulo">Del registro al control en pocos minutos</h2>
+                <p data-i18n="como_sub">Sin instalación complicada, sin configuración lenta.</p>
+            </div>
+            <div class="passos-grid">
+                <div class="passo">
+                    <h3 data-i18n="passo1_tit">Cree su cuenta</h3>
+                    <p data-i18n="passo1_desc">Elija el plan que quiere probar y úselo 3 días, gratis y sin tarjeta. Durante la prueba puede cambiar de plan.</p>
+                </div>
+                <div class="passo">
+                    <h3 data-i18n="passo2_tit">Registre de la forma más fácil</h3>
+                    <p data-i18n="passo2_desc">Escriba, fotografíe el recibo o hable con la IA. Las cuotas y cuentas fijas se crean de una sola vez.</p>
+                </div>
+                <div class="passo">
+                    <h3 data-i18n="passo3_tit">Vea la verdad de los números</h3>
+                    <p data-i18n="passo3_desc">Panel del mes, gráficos, pendientes y demostrativo anual siempre actualizados, para decidir con claridad.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="recursos" class="section">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-blue"><i class="ph ph-squares-four" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-regular-squares-four"></use></svg></i> <span data-i18n="feat_badge">Funciones del Sistema</span></span>
+                <h2 data-i18n="feat_titulo">Todo lo que necesita en un solo lugar</h2>
+                <p data-i18n="feat_sub">Diseñado pensando en simplicidad, seguridad y control contable profesional.</p>
+            </div>
+
+            <div class="features-grid">
+                
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--blue-bg); color: var(--blue);">
+                        <i class="ph-bold ph-bank" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-bank"></use></svg></i>
+                    </div>
+                    <h3 data-i18n="f1_tit">Cuentas Bancarias y Transferencias</h3>
+                    <p data-i18n="f1_desc">Cuentas de 2 a ilimitadas, según el plan, transferencias entre bancos con contrapartida automática (incluso programadas) y ajuste de saldo con extracto detallado.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--accent-bg); color: var(--accent);">
+                        <i class="ph-bold ph-tag" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-tag"></use></svg></i>
+                    </div>
+                    <h3 data-i18n="f2_tit">Categorías con Colores y Jerarquía</h3>
+                    <p data-i18n="f2_desc">Organice ingresos y gastos en 2 niveles (categorías y subcategorías), con colores personalizados y límite de gasto por categoría.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--ouro-bg); color: var(--ouro);">
+                        <i class="ph-bold ph-calendar-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-calendar-check"></use></svg></i>
+                    </div>
+                    <h3 data-i18n="f3_tit">Movimientos en Cuotas y Fijos</h3>
+                    <p data-i18n="f3_desc">Controle compras en cuotas o gastos recurrentes con generación automática de cuotas independientes y fáciles de editar.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--accent-bg); color: var(--accent);">
+                        <i class="ph-bold ph-table" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-table"></use></svg></i>
+                    </div>
+                    <h3 data-i18n="f4_tit">Demostrativo Anual</h3>
+                    <p data-i18n="f4_desc">Resultado mensual y anual en formato de planilla, con la columna de categorías fija mientras se desplaza por los meses. Del Premium en adelante, con demostrativo financiero y presupuesto por categoría.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--blue-bg); color: var(--blue);">
+                        <i class="ph-bold ph-device-mobile" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-device-mobile"></use></svg></i>
+                    </div>
+                    <h3 data-i18n="f5_tit">App Móvil con Modo sin Conexión</h3>
+                    <p data-i18n="f5_desc">Instale como aplicación (PWA) en iPhone o Android. En los planes Premium y Pro, registre gastos incluso sin internet: el sistema sincroniza cuando se reconecte.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--ouro-bg); color: var(--ouro);">
+                        <i class="ph-bold ph-download-simple" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-download-simple"></use></svg></i>
+                    </div>
+                    <h3 data-i18n="f6_tit">Exportación y Copia de Seguridad (Pro)</h3>
+                    <p data-i18n="f6_desc">En el plan Pro, exporte informes en CSV y PDF y haga una copia de seguridad completa de sus datos en JSON, con restauración cuando la necesite.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--blue-bg); color: var(--blue);">
+                        <i class="ph-bold ph-bell-ringing" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-bell-ringing"></use></svg></i>
+                    </div>
+                    <h3 data-i18n="f7_tit">Recordatorios de Vencimiento</h3>
+                    <p data-i18n="f7_desc">Reciba una notificación con los gastos que vencen, incluso con la app cerrada, en el horario que usted elija.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--accent-bg); color: var(--accent);">
+                        <i class="ph-bold ph-chats-circle" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-chats-circle"></use></svg></i>
+                    </div>
+                    <h3 data-i18n="f8_tit">Comunidad y Novedades</h3>
+                    <p data-i18n="f8_desc">Sugiera mejoras, vote por las ideas de otros usuarios y siga las novedades del sistema.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: var(--ouro-bg); color: var(--ouro);">
+                        <i class="ph-bold ph-translate" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-translate"></use></svg></i>
+                    </div>
+                    <h3 data-i18n="f9_tit">Su Idioma y Su Moneda</h3>
+                    <p data-i18n="f9_desc">Portugués, español e inglés; guaraníes, reales, dólares, euros o pesos argentinos; tema claro y oscuro.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- IA Assistant Section -->
+    <section id="ia" class="section">
+        <div class="container">
+            <div class="card" style="background: linear-gradient(135deg, var(--card) 0%, var(--bg) 100%); border: 1px solid var(--border); padding: 40px;">
+                <div class="ia-grid" style="display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center;">
+                    <div>
+                        <span class="badge badge-ouro"><i class="ph-fill ph-brain" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-fill-brain"></use></svg></i> <span data-i18n="ia_badge">Inteligencia Artificial</span></span>
+                        <h2 style="font-size: 32px; font-weight: 800; margin: 14px 0;" data-i18n="ia_titulo">Asistente Financiero con IA Integrada</h2>
+                        <p style="color: var(--muted); font-size: 15.5px; line-height: 1.6; margin-bottom: 20px;" data-i18n="ia_sub">Basta de escribir todo a mano. Nuestra IA comprende su rutina y hace el trabajo pesado por usted con total seguridad:</p>
+                        <ul style="list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 14px;">
+                            <li style="display: flex; align-items: center; gap: 10px;">
+                                <i class="ph-bold ph-check-circle" style="color: var(--accent); font-size: 18px;" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check-circle"></use></svg></i>
+                                <span data-i18n="ia_item1"><b>Registro directo por texto:</b> Simplemente escriba <i>"Gasté 45.000 en almuerzo"</i>.</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 10px;">
+                                <i class="ph-bold ph-check-circle" style="color: var(--accent); font-size: 18px;" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check-circle"></use></svg></i>
+                                <span data-i18n="ia_item2"><b>Registro por foto y audio:</b> Envíe fotos de comprobantes fiscales o notas de voz.</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 10px;">
+                                <i class="ph-bold ph-check-circle" style="color: var(--accent); font-size: 18px;" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check-circle"></use></svg></i>
+                                <span data-i18n="ia_item3"><b>IA avanzada (Pro):</b> marca como pagado lo que estaba previsto, edita movimientos, crea categorías y hace transferencias.</span>
+                            </li>
+                            <li style="display: flex; align-items: center; gap: 10px;">
+                                <i class="ph-bold ph-check-circle" style="color: var(--accent); font-size: 18px;" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check-circle"></use></svg></i>
+                                <span data-i18n="ia_item4"><b>Botón de deshacer en 10 s:</b> Control total y seguridad en cada acción generada por la IA.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div style="background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-shadow: var(--shadow);">
+                        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border);">
+                            <span style="background: var(--ouro-bg); color: var(--ouro); width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px;"><i class="ph-fill ph-sparkle" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-fill-sparkle"></use></svg></i></span>
+                            <div>
+                                <strong style="font-size: 14px; display: block;" data-i18n="ia_chat_tit">Chat IA MyFinance</strong>
+                                <span style="font-size: 11px; color: var(--accent);">● Online</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                            <div style="background: var(--bg); padding: 10px 14px; border-radius: 12px; align-self: flex-end; max-width: 85%;" data-i18n="ia_chat_user">📸 [Foto de Factura de Combustible Gs. 180.000]</div>
+                            <div style="background: var(--accent-bg); color: var(--accent); padding: 10px 14px; border-radius: 12px; align-self: flex-start; max-width: 90%; border: 1px solid rgba(22, 163, 74, 0.25);" data-i18n="ia_chat_bot">✨ Identifiqué: <b>Estación de servicio - Gs. 180.000</b> en la categoría <b>Transporte / Combustible</b>. ¡Movimiento registrado! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Deshacer (10 s)]</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section (Exata Estrutura de Colunas e Categorias do Sistema) -->
+    <section id="planos" class="section" style="background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+        <div class="container">
+            
+            <div class="planos-topo">
+                <span class="badge badge-accent"><i class="ph ph-crown-simple" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-regular-crown-simple"></use></svg></i> <span data-i18n="planos_badge">Nuestros Planes</span></span>
+                <h2 style="font-size: 34px; font-weight: 800; margin: 10px 0;" data-i18n="planos_titulo">Elija el plan ideal para usted</h2>
+                <p style="color: var(--muted); font-size: 15px;" data-i18n="planos_sub">Pruebe 3 días gratis en cualquier plan. Después, pague por transferencia o Tigo Money y activamos su suscripción.</p>
+
+                <!-- Ciclo Switcher (Mensal / Anual) -->
+                <div class="planos-ciclo" role="group">
+                    <button type="button" class="is-ativo" data-ciclo="mensal" data-i18n="ciclo_mensal">Mensual</button>
+                    <button type="button" data-ciclo="anual"><span data-i18n="ciclo_anual">Anual</span> <small data-i18n="dois_meses_gratis">2 meses gratis</small></button>
+                </div>
+            </div>
+
+            <!-- Grid de Colunas de Planos -->
+            <div class="planos-grid">
+
+                <!-- 1. Plano Básico -->
+                <article class="plano-card">
+                    <div>
+                        <h3 data-i18n="p_basico_nome">Plan Básico</h3>
+                        <div class="plano-sub" data-i18n="p_basico_sub">Registre y haga seguimiento: panel, gráficos, pendientes y demostrativo anual.</div>
+                        
+                        <div class="plano-preco">
+                            Gs. <span class="preco-val" data-mensal="29.990" data-anual="24.992">29.990</span><small>/<span data-i18n="mes">mes</span></small>
+                        </div>
+                        <div class="plano-cobranca" data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 299.900 por ano · economize Gs. 59.980" data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 299.900 por año · ahorre Gs. 59.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 299.900 per year · save Gs. 59.980">cobrado todos los meses</div>
+
+                        <a href="https://myfinanceacess.systempy.com/cadastro?plano=basico&amp;lang=es" class="btn btn-outline" style="width: 100%;" data-i18n="btn_quero_plano">Quiero este plan</a>
+
+                        <!-- Finanças -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_financas">Finanzas</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_painel">Panel mensual, categorías y subcategorías</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_contas_basico">Cuentas bancarias: <b>Hasta 2 cuentas</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_lancamentos">Movimientos fijos, repetidos y transferencias</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_relatorios">Informes con gráficos y pendientes</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_anual">Demostrativo anual</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-x"></use></svg></i> <span data-i18n="r_estado">Estado financiero y presupuesto por categoría</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-x"></use></svg></i> <span data-i18n="r_avancado">Flujo de caja, vista por cuenta y comparación con el año pasado</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-x"></use></svg></i> <span data-i18n="r_exportar">Exportar (CSV y PDF) y copia de seguridad</span></li>
+                        </ul>
+
+                        <!-- Inteligência Artificial -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_ia">Inteligencia Artificial</span>
+                            <span style="font-size: 11px; font-weight: 500; text-transform: none;" data-i18n="nao_incluida">No incluida</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-off"><i class="ph-bold ph-x" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-x"></use></svg></i> <span data-i18n="r_chat_ia">Chat IA para consultas</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-x"></use></svg></i> <span data-i18n="r_ia_texto">Registro por texto directo (con 10 s para revertir)</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-x"></use></svg></i> <span data-i18n="r_ia_midia">Registro por foto y voz</span></li>
+                        </ul>
+
+                        <!-- Aplicativo -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_app">Aplicación</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_app_web">Sistema web (navegador)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_app_mobile">App instalable (Android e iPhone)</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-x"></use></svg></i> <span data-i18n="r_app_offline">Registro sin conexión con sincronización</span></li>
+                        </ul>
+
+                        <!-- Suporte e Extras -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_extras">Soporte y Extras</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_comunidade">Comunidad y sugerencias</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_suporte">Soporte por correo electrónico</span></li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 2. Plano Premium (Melhor Custo-Benefício) -->
+                <article class="plano-card plano-card--destaque">
+                    <span class="plano-faixa plano-faixa--accent"><i class="ph-bold ph-star" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-star"></use></svg></i> <span data-i18n="faixa_vendido">La mejor relación calidad-precio</span></span>
+                    <div>
+                        <h3 data-i18n="p_premium_nome">Plan Premium</h3>
+                        <div class="plano-sub" data-i18n="p_premium_sub">Analice y planifique: estado financiero, presupuesto, IA y registro sin conexión.</div>
+                        
+                        <div class="plano-preco">
+                            Gs. <span class="preco-val" data-mensal="49.990" data-anual="41.658">49.990</span><small>/<span data-i18n="mes">mes</span></small>
+                        </div>
+                        <div class="plano-cobranca" data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 499.900 por ano · economize Gs. 99.980" data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 499.900 por año · ahorre Gs. 99.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 499.900 per year · save Gs. 99.980">cobrado todos los meses</div>
+
+                        <a href="https://myfinanceacess.systempy.com/cadastro?plano=premium&amp;lang=es" class="btn btn-accent" style="width: 100%;" data-i18n="btn_quero_plano">Quiero este plan</a>
+
+                        <!-- Finanças -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_financas">Finanzas</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_painel">Panel mensual, categorías y subcategorías</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_contas_prem">Cuentas bancarias: <b>Hasta 4 cuentas</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_lancamentos">Movimientos fijos, repetidos y transferencias</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_relatorios">Informes con gráficos y pendientes</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_anual">Demostrativo anual</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span><b data-i18n="r_estado_dest">Estado financiero y presupuesto por categoría</b></span></li>
+                            <li class="is-off"><i class="ph-bold ph-x" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-x"></use></svg></i> <span data-i18n="r_avancado">Flujo de caja, vista por cuenta y comparación con el año pasado</span></li>
+                            <li class="is-off"><i class="ph-bold ph-x" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-x"></use></svg></i> <span data-i18n="r_exportar">Exportar (CSV y PDF) y copia de seguridad</span></li>
+                        </ul>
+
+                        <!-- Inteligência Artificial -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_ia">Inteligencia Artificial</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_chat_ia">Chat IA para consultas</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_ia_texto">Registro por texto directo (con 10 s para revertir)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_limite_prem">Chat IA: <b>300 mensajes/mes</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_midia_prem">Registro por foto (recibos) y audio: <b>10 registros/mes</b></span></li>
+                        </ul>
+
+                        <!-- Aplicativo -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_app">Aplicación</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_app_web">Sistema web (navegador)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_app_mobile">App instalable (Android e iPhone)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span><b data-i18n="r_app_offline_dest">Registro sin conexión con sincronización</b></span></li>
+                        </ul>
+
+                        <!-- Suporte e Extras -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_extras">Soporte y Extras</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_comunidade">Comunidad y sugerencias</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_suporte">Soporte por correo electrónico</span></li>
+                        </ul>
+                    </div>
+                </article>
+
+                <!-- 3. Plano Pro (Mais Completo) -->
+                <article class="plano-card plano-card--pro">
+                    <span class="plano-faixa plano-faixa--ouro"><i class="ph-bold ph-crown-simple" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-crown-simple"></use></svg></i> <span data-i18n="faixa_completo">Más completo</span></span>
+                    <div>
+                        <h3 data-i18n="p_pro_nome">Plan Pro</h3>
+                        <div class="plano-sub" data-i18n="p_pro_sub">Todo: flujo de caja, exportación, 3 veces más registros por foto y audio y cuentas ilimitadas.</div>
+                        
+                        <div class="plano-preco">
+                            Gs. <span class="preco-val" data-mensal="84.990" data-anual="70.825">84.990</span><small>/<span data-i18n="mes">mes</span></small>
+                        </div>
+                        <div class="plano-cobranca" data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 849.900 por ano · economize Gs. 169.980" data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 849.900 por año · ahorre Gs. 169.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 849.900 per year · save Gs. 169.980">cobrado todos los meses</div>
+
+                        <a href="https://myfinanceacess.systempy.com/cadastro?plano=pro&amp;lang=es" class="btn btn-pro" style="width: 100%;" data-i18n="btn_quero_plano">Quiero este plan</a>
+
+                        <!-- Finanças -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_financas">Finanzas</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_painel">Panel mensual, categorías y subcategorías</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span><b data-i18n="r_contas_ilim">Cuentas bancarias: Ilimitadas</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_lancamentos">Movimientos fijos, repetidos y transferencias</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_relatorios">Informes con gráficos y pendientes</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_anual">Demostrativo anual</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_estado">Estado financiero y presupuesto por categoría</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span><b data-i18n="r_avancado_dest">Flujo de caja, vista por cuenta y comparación con el año pasado</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span><b data-i18n="r_exportar_dest">Exportar (CSV y PDF) y copia de seguridad</b></span></li>
+                        </ul>
+
+                        <!-- Inteligência Artificial -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_ia">Inteligencia Artificial</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_chat_ia">Chat IA para consultas</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_midia_pro">Registro por foto (recibos) y audio: <b>30 registros/mes</b> (3 veces más)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span><b data-i18n="r_ia_nivel2">IA avanzada: interactúa con movimientos previstos</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_limite_pro">Chat IA: <b>600 mensajes/mes</b></span></li>
+                        </ul>
+
+                        <!-- Aplicativo -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_app">Aplicación</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_app_web">Sistema web (navegador)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span data-i18n="r_app_mobile">App instalable (Android e iPhone)</span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span><b data-i18n="r_app_offline_dest">Registro sin conexión con sincronización</b></span></li>
+                        </ul>
+
+                        <!-- Suporte e Extras -->
+                        <div class="plano-grupo-header">
+                            <span data-i18n="grp_extras">Soporte y Extras</span>
+                        </div>
+                        <ul class="plano-recursos">
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span><b data-i18n="r_suporte_prio">Soporte prioritario</b></span></li>
+                            <li class="is-on"><i class="ph-bold ph-check" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-check"></use></svg></i> <span><b data-i18n="r_novidades">Acceso anticipado a novedades</b></span></li>
+                        </ul>
+                    </div>
+                </article>
+
+            </div>
+
+            <!-- Trial Banner -->
+            <div class="trial-banner">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <div style="width: 44px; height: 44px; border-radius: 12px; background: var(--accent-bg); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 24px;">
+                        <i class="ph-fill ph-gift" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-fill-gift"></use></svg></i>
+                    </div>
+                    <div>
+                        <strong style="font-size: 16px; display: block;" data-i18n="trial_banner_tit">¿Desea probar antes de elegir?</strong>
+                        <span style="font-size: 13.5px; color: var(--muted);" data-i18n="trial_banner_sub">Elija un plan y úselo <b>gratis por 3 días</b>, sin ingresar tarjeta. Durante la prueba puede cambiar de plan.</span>
+                    </div>
+                </div>
+                <a href="https://myfinanceacess.systempy.com/cadastro?lang=es" class="btn btn-accent" data-i18n="trial_banner_btn">Crear Cuenta Gratuita</a>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="section">
+        <div class="container">
+            <div class="section-header">
+                <span class="badge badge-accent"><i class="ph ph-question" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-regular-question"></use></svg></i> <span data-i18n="faq_badge">Preguntas Frecuentes</span></span>
+                <h2 data-i18n="faq_titulo">Preguntas Frecuentes</h2>
+            </div>
+
+            <div class="faq-list">
+                <div class="faq-item">
+                    <button class="faq-question" type="button" aria-expanded="false">
+                        <span data-i18n="faq_q1">¿Cómo funciona la prueba gratis de 3 días?</span>
+                        <i class="ph-bold ph-caret-down" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-caret-down"></use></svg></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a1">Al crear su cuenta usted elige el plan que quiere probar (Básico, Premium o Pro) y lo usa gratis por 3 días, sin tarjeta de crédito. Durante la prueba puede cambiar de plan, sin reiniciar el plazo. La prueba vale una vez por cuenta: después, para continuar hay que contratar un plan, y sus datos quedan guardados.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button" aria-expanded="false">
+                        <span data-i18n="faq_q2">¿Cómo funciona la Inteligencia Artificial en el sistema?</span>
+                        <i class="ph-bold ph-caret-down" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-caret-down"></use></svg></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a2">Puede chatear con la IA para registrar gastos por texto ("Gasté 50 mil en súper"), enviar foto del ticket o nota de voz. La IA reconoce el monto, fecha y categoría y lo registra al instante con 10 segundos para deshacer.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button" aria-expanded="false">
+                        <span data-i18n="faq_q3">¿Cómo funciona el modo sin conexión?</span>
+                        <i class="ph-bold ph-caret-down" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-caret-down"></use></svg></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a3">En los planes Premium y Pro, al instalar MyFinance como app en el celular (iOS/Android), usted registra movimientos incluso sin señal de internet. Cuando el teléfono se reconecte, todo se sincroniza automáticamente.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button" aria-expanded="false">
+                        <span data-i18n="faq_q4">¿Qué monedas son compatibles?</span>
+                        <i class="ph-bold ph-caret-down" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-caret-down"></use></svg></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a4">MyFinance trabaja con Guaraníes (Gs. PYG), Real (R$ BRL), Dólar ($ USD), Peso argentino (ARS) y Euro (€ EUR). Usted elige la moneda en Configuración, y el sistema está disponible en portugués, español e inglés.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button" aria-expanded="false">
+                        <span data-i18n="faq_q5">¿Mis datos están seguros?</span>
+                        <i class="ph-bold ph-caret-down" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-caret-down"></use></svg></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a5">Sí. Cada cuenta solo ve sus propios datos, las contraseñas se guardan con hash, la conexión usa HTTPS y las acciones están protegidas contra CSRF. En el plan Pro además exporta una copia de seguridad en JSON cuando quiera, y puede eliminar su cuenta y sus datos en cualquier momento.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button" aria-expanded="false">
+                        <span data-i18n="faq_q6">¿Qué plan debo elegir?</span>
+                        <i class="ph-bold ph-caret-down" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-caret-down"></use></svg></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a6">El <b>Básico</b> sirve para registrar y seguir el mes (hasta 2 cuentas). El <b>Premium</b> agrega presupuesto por categoría, IA y registro sin conexión, y tiene la mejor relación costo-beneficio. El <b>Pro</b> incluye cuentas ilimitadas, flujo de caja, exportación y más registros por foto y audio. Como la prueba de 3 días vale para cualquier plan y se puede cambiar durante ella, la mejor forma de decidir es probar.</div>
+                </div>
+
+                <div class="faq-item">
+                    <button class="faq-question" type="button" aria-expanded="false">
+                        <span data-i18n="faq_q7">¿Cómo contrato y pago un plan?</span>
+                        <i class="ph-bold ph-caret-down" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-caret-down"></use></svg></i>
+                    </button>
+                    <div class="faq-answer" data-i18n="faq_a7">Elija el plan en la pantalla de suscripción y haga la solicitud. Nos ponemos en contacto con los datos de pago (transferencia bancaria o Tigo Money) y activamos su suscripción apenas confirmemos el pago.</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA final -->
+    <section class="section" style="padding-top: 0;">
+        <div class="container">
+            <div class="cta-final">
+                <h2 data-i18n="cta_titulo">Cada mes sin control es dinero que se escapa</h2>
+                <p data-i18n="cta_sub">Empiece hoy. En pocos minutos sabe exactamente a dónde va cada guaraní y pasa a decidir con seguridad.</p>
+                <a href="https://myfinanceacess.systempy.com/cadastro?lang=es" class="btn btn-lg btn-cta">
+                    <span data-i18n="cta_btn">Empezar mi prueba gratis de 3 días</span>
+                    <i class="ph-bold ph-arrow-right" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-bold-arrow-right"></use></svg></i>
+                </a>
+                <small data-i18n="cta_nota">Sin tarjeta de crédito. Usted elige el plan y puede cambiar durante la prueba.</small>
+            </div>
+        </div>
+    </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-inner">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <span class="navbar__logo" style="width: 28px; height: 28px; font-size: 16px;"><i class="ph-fill ph-currency-circle-dollar" aria-hidden="true"><svg aria-hidden="true" focusable="false"><use href="#ph-fill-currency-circle-dollar"></use></svg></i></span>
+                <span style="font-weight: 700; color: #ffffff;">MyFinance</span>
+                <span style="font-size: 12px; color: var(--nav-text-muted);">© 2026 <span data-i18n="direitos">Todos los derechos reservados.</span></span>
+            </div>
+
+            <div class="footer-links">
+                <a href="https://myfinanceacess.systempy.com/termos?lang=es" data-i18n="termos">Términos de Uso</a>
+                <a href="https://myfinanceacess.systempy.com/privacidade?lang=es" data-i18n="privacidade">Privacidad</a>
+                <a href="https://myfinanceacess.systempy.com/login?lang=es" data-i18n="nav_entrar">Iniciar Sesión</a>
+                <a href="https://myfinanceacess.systempy.com/cadastro?lang=es" data-i18n="nav_cadastro">Prueba Gratis</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Multilingual JS Engine -->
+    <script>
+        const TRANSLATIONS = {};
+
+        // Idioma Engine
+        const langSelect = document.getElementById('lang-toggle');
+        // Sem escolha anterior, abre no idioma do navegador (es -> espanhol, en -> ingles, o resto -> portugues).
+        function idiomaDoNavegador() {
+            const prefs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+            for (const l of prefs) {
+                const c = String(l).toLowerCase();
+                if (c.startsWith('es')) return 'es-PY';
+                if (c.startsWith('pt')) return 'pt-BR';
+                if (c.startsWith('en')) return 'en-US';
+            }
+            return 'pt-BR';
+        }
+        const chaveIdioma = (l) => (String(l).toLowerCase().startsWith('es') ? 'es' : (String(l).toLowerCase().startsWith('en') ? 'en' : 'pt'));
+        const PRERENDER = document.documentElement.hasAttribute('data-prerender');
+        let idiomaSalvo = null;
+        try { idiomaSalvo = localStorage.getItem('gf_idioma'); } catch (e) {}
+
+        if (PRERENDER) {
+            // Pagina estatica: o HTML ja vem traduzido (bom para buscadores). O seletor leva para a URL do idioma.
+            const paginaLang = document.documentElement.lang;
+            const valorPagina = { pt: 'pt-BR', es: 'es-PY', en: 'en-US' }[chaveIdioma(paginaLang)];
+            langSelect.value = valorPagina;
+            langSelect.addEventListener('change', (e) => {
+                try { localStorage.setItem('gf_idioma', e.target.value); } catch (err) {}
+                location.href = e.target.selectedOptions[0].getAttribute('data-href');
+            });
+            // Somente a pagina raiz (x-default) escolhe sozinha o idioma; buscadores nunca sao redirecionados.
+            const robo = /bot|crawl|spider|slurp|bing|duckduck|facebookexternalhit|whatsapp|telegram|linkedin|twitter/i.test(navigator.userAgent);
+            if (document.documentElement.hasAttribute('data-raiz') && !robo) {
+                const alvo = TRANSLATIONS[idiomaSalvo] || idiomaSalvo === 'pt-BR' || idiomaSalvo === 'es-PY' || idiomaSalvo === 'en-US' ? idiomaSalvo : idiomaDoNavegador();
+                const opt = Array.prototype.find.call(langSelect.options, (o) => o.value === alvo);
+                if (opt && opt.value !== valorPagina && opt.getAttribute('data-href')) location.replace(opt.getAttribute('data-href'));
+            }
+            atualizarCobrancas(paginaLang);
+        } else {
+            if (!TRANSLATIONS[idiomaSalvo]) idiomaSalvo = idiomaDoNavegador();
+            langSelect.value = idiomaSalvo;
+            aplicarIdioma(idiomaSalvo);
+
+            langSelect.addEventListener('change', (e) => {
+                const lang = e.target.value;
+                try { localStorage.setItem('gf_idioma', lang); } catch (err) {}
+                aplicarIdioma(lang);
+            });
+        }
+
+        function aplicarIdioma(lang) {
+            const dict = TRANSLATIONS[lang] || TRANSLATIONS['pt-BR'];
+            document.documentElement.lang = lang;
+            
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) {
+                    el.innerHTML = dict[key];
+                }
+            });
+
+            // Atualiza cobranca
+            atualizarCobrancas(lang);
+        }
+
+        function atualizarCobrancas(lang) {
+            const cicloBtn = document.querySelector('.planos-ciclo button.is-ativo');
+            const ciclo = cicloBtn ? cicloBtn.getAttribute('data-ciclo') : 'mensal';
+            const langKey = chaveIdioma(lang);
+
+            document.querySelectorAll('.plano-cobranca').forEach(el => {
+                const texto = el.getAttribute('data-cobranca-' + ciclo + '-' + langKey);
+                if (texto) el.textContent = texto;
+            });
+        }
+
+        // Tema Toggle (Claro / Escuro)
+        const temaBtn = document.getElementById('tema-toggle');
+        const html = document.documentElement;
+        
+        const temaSalvo = html.getAttribute('data-tema') || 'claro';
+        atualizarIconeTema(temaSalvo);
+
+        temaBtn.addEventListener('click', () => {
+            const temaAtual = html.getAttribute('data-tema');
+            const novoTema = temaAtual === 'claro' ? 'escuro' : 'claro';
+            html.setAttribute('data-tema', novoTema);
+            try { localStorage.setItem('gf_tema', novoTema); } catch (err) {}
+            atualizarIconeTema(novoTema);
+        });
+
+        function atualizarIconeTema(tema) {
+            temaBtn.innerHTML = tema === 'claro' ? '<i class="ph ph-moon"><svg aria-hidden="true" focusable="false"><use href="#ph-regular-moon"/></svg></i>' : '<i class="ph ph-sun"><svg aria-hidden="true" focusable="false"><use href="#ph-regular-sun"/></svg></i>';
+        }
+
+        // Alternância Ciclo de Preços (Mensal / Anual)
+        document.querySelectorAll('.planos-ciclo button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const ciclo = btn.getAttribute('data-ciclo');
+                document.querySelectorAll('.planos-ciclo button').forEach(b => b.classList.toggle('is-ativo', b === btn));
+                
+                // Preços
+                document.querySelectorAll('.preco-val').forEach(el => {
+                    el.textContent = el.getAttribute('data-' + ciclo);
+                });
+
+                // Cobranças no idioma atual
+                const curLang = langSelect.value || 'pt-BR';
+                atualizarCobrancas(curLang);
+            });
+        });
+
+        // FAQ Accordion
+        document.querySelectorAll('.faq-question').forEach(q => {
+            q.addEventListener('click', () => {
+                const item = q.parentElement;
+                q.setAttribute('aria-expanded', item.classList.toggle('is-open') ? 'true' : 'false');
+            });
+        });
+    </script>
+
+</body></html>
