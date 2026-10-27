@@ -173,7 +173,35 @@ async function enviarAvisos(cfg, agoraMs) {
             console.error('Falha no aviso de compras do usuario', cfg.user_id, err.message);
         }
     }
+    // Cartao de credito: faturas em aberto que vencem hoje ou amanha, se o usuario quiser o aviso.
+    if (cfg.aviso_cartoes) {
+        try {
+            const Cartao = require('../models/Cartao');
+            const payload = montarAvisoCartoes(await Cartao.vencimentos(cfg.user_id, [hoje, somarDias(hoje, 1)]), hoje, cfg);
+            if (payload) {
+                gerados++;
+                await enviarParaUsuario(cfg.user_id, payload);
+            }
+        } catch (err) {
+            console.error('Falha no aviso de cartoes do usuario', cfg.user_id, err.message);
+        }
+    }
     return gerados;
+}
+
+// Faturas que vencem hoje ou amanha: nome do cartao e valor de cada uma (ate 3) e o total por moeda.
+function montarAvisoCartoes(faturas, dataYMD, { idioma, moeda: cod }) {
+    if (!faturas.length) return null;
+    const tr = (k, p) => t(k, p, idioma);
+    const hojeN = faturas.filter((f) => f.vencimento === dataYMD).length;
+    const titulo = hojeN === faturas.length ? tr('lembrete.cartoes_titulo_hoje', { n: faturas.length })
+        : hojeN === 0 ? tr('lembrete.cartoes_titulo_amanha', { n: faturas.length }) : tr('lembrete.cartoes_titulo_varias', { n: faturas.length });
+    const linhas = faturas.slice(0, MAX_ITENS_NA_NOTIFICACAO).map((f) => {
+        const quando = f.vencimento === dataYMD ? tr('lembrete.cartoes_hoje') : tr('lembrete.cartoes_amanha');
+        return `${f.nome} (${quando}): ${moeda(f.total, f.moeda || cod)}`;
+    });
+    if (faturas.length > MAX_ITENS_NA_NOTIFICACAO) linhas.push(tr('lembrete.compras_mais', { n: faturas.length - MAX_ITENS_NA_NOTIFICACAO }));
+    return { title: titulo, body: linhas.join('\n'), url: `/cartoes/${faturas[0].cartao_id}?mes=${faturas[0].mes}`, tag: `cartoes-${dataYMD}` };
 }
 
 // "N itens provavelmente acabando": nomes dos tres primeiros; a lista completa e a tela de Compras.
@@ -231,5 +259,5 @@ async function processarDevidos() {
 
 module.exports = {
     FUSO_PADRAO, fusoValido, horaValida, partesNoFuso, proximoEnvio, dataLocalYMD, somarDias,
-    montarNotificacao, montarAvisoClientes, montarAvisoCompras, totalTexto, enviarParaUsuario, processarDevidos
+    montarNotificacao, montarAvisoClientes, montarAvisoCompras, montarAvisoCartoes, totalTexto, enviarParaUsuario, processarDevidos
 };

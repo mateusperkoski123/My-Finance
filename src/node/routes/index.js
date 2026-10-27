@@ -17,6 +17,7 @@ const dashboardController = require('../controllers/dashboardController');
 const contasController = require('../controllers/contasController');
 const relatoriosController = require('../controllers/relatoriosController');
 const categoriasController = require('../controllers/categoriasController');
+const limitesController = require('../controllers/limitesController');
 const configuracoesController = require('../controllers/configuracoesController');
 const assinaturaController = require('../controllers/assinaturaController');
 const legalController = require('../controllers/legalController');
@@ -99,7 +100,9 @@ router.post('/verificar-email/reenviar', requireAuth, contaController.reenviarVe
 
 // Assinatura
 router.get('/assinatura', requireAuth, assinaturaController.index);
+router.get('/assinatura/recibo/:id', requireAuth, assinaturaController.recibo);
 router.post('/assinatura/solicitar', requireAuth, assinaturaController.solicitar);
+router.post('/assinatura/indicacao', requireAuth, assinaturaController.criarCodigoIndicacao);
 router.get('/assinatura/pagopar/retorno/:hash', requireAuth, assinaturaController.retornoPagopar);
 // Aviso do Pagopar (sem sessao; autenticado pelo token do corpo).
 router.post('/pagopar/resposta', cronLimiter, assinaturaController.webhookPagopar);
@@ -210,6 +213,19 @@ router.post('/clientes/:id(\\d+)/estado', requireAuth, exigirClientes, clientesC
 router.post('/clientes/:id(\\d+)/excluir', requireAuth, exigirClientes, clientesController.excluirCliente);
 router.post('/clientes/:id(\\d+)/contratos', requireAuth, exigirClientes, clientesController.criarContrato);
 
+// Modulo Cartao de credito: compras ficam na fatura e so viram lancamento quando a fatura e paga.
+const cartoesController = require('../controllers/cartoesController');
+router.get('/cartoes', requireAuth, cartoesController.index);
+router.post('/cartoes/criar', requireAuth, cartoesController.criar);
+router.get('/cartoes/:id(\\d+)', requireAuth, cartoesController.fatura);
+router.post('/cartoes/:id(\\d+)/atualizar', requireAuth, cartoesController.atualizar);
+router.post('/cartoes/:id(\\d+)/arquivar', requireAuth, cartoesController.arquivar);
+router.post('/cartoes/:id(\\d+)/compras', requireAuth, cartoesController.adicionarCompra);
+router.post('/cartoes/:id(\\d+)/compras/:compraId(\\d+)/editar', requireAuth, cartoesController.editarCompra);
+router.post('/cartoes/:id(\\d+)/compras/:compraId(\\d+)/excluir', requireAuth, cartoesController.excluirCompra);
+router.post('/cartoes/:id(\\d+)/pagar', requireAuth, cartoesController.pagar);
+router.post('/cartoes/:id(\\d+)/desfazer', requireAuth, cartoesController.desfazerPagamento);
+
 // Modulo Compras (lista de compras que vira lancamento): liberado por usuario pelo admin.
 const comprasController = require('../controllers/comprasController');
 const { exigirCompras } = require('../middleware/comprasMiddleware');
@@ -244,6 +260,10 @@ router.post('/categorias/rapida', requireAuth, categoriasController.criarRapida)
 router.post('/categorias/:id/atualizar', requireAuth, categoriasController.atualizar);
 router.post('/categorias/:id/arquivar', requireAuth, categoriasController.arquivar);
 router.post('/categorias/:id/restaurar', requireAuth, categoriasController.restaurar);
+// Limites de gastos por mes (Premium em diante; a tela de GET apresenta o recurso quando o plano nao inclui).
+router.get('/limites', requireAuth, limitesController.index);
+router.post('/limites/categoria', requireAuth, exigirRecurso('rec_estado'), limitesController.definirCategoria);
+router.post('/limites/geral', requireAuth, exigirRecurso('rec_estado'), limitesController.definirGeral);
 
 // Relatorios routes
 // A aba "Demonstrativo Anual" depende de planos.rec_relatorio_anual (hoje todos os planos incluem). O Demonstrativo

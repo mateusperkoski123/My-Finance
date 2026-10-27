@@ -1,0 +1,252 @@
+<%
+    const _cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+    const _nomeMes = (m, curto) => _cap(new Date(Date.UTC(m.ano, m.numero - 1, 1)).toLocaleDateString(lang, curto ? { month: 'long', timeZone: 'UTC' } : { month: 'long', year: 'numeric', timeZone: 'UTC' }));
+    const _m = (v) => moeda(v, base);
+    const _cor = (pct) => pct === null ? 'var(--border)' : (pct > 100 ? 'var(--red, #ef4444)' : (pct >= 80 ? 'var(--pendente, #f59e0b)' : 'var(--green)'));
+%>
+<div class="page-header">
+    <div>
+        <h1><%= t('limites.titulo') %></h1>
+        <p class="muted"><%= t('limites.subtitulo') %></p>
+    </div>
+</div>
+
+<% if (bloqueado) { %>
+    <%- include('../partials/recurso_bloqueado', { recurso: 'limites', plano: 'premium', icone: 'ph-gauge' }) %>
+<% } else { %>
+
+<style>
+    .lim-tempo { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .lim-mes { display: flex; flex-direction: column; gap: 6px; padding: 14px 12px; text-align: center; text-decoration: none; color: inherit; border: 1px dashed var(--border); border-radius: 14px; background: var(--card); }
+    .lim-mes--atual, .lim-mes--sel { border-style: solid; }
+    .lim-mes--sel { background: var(--bg); box-shadow: 0 0 0 2px var(--green) inset; }
+    .lim-mes__nome { font-weight: 600; }
+    .lim-mes__tag { font-size: 11px; }
+    .lim-mes__valor { font-size: 18px; font-weight: 700; }
+    .lim-trilho { height: 6px; border-radius: 3px; background: var(--border); overflow: hidden; }
+    .lim-trilho > span { display: block; height: 100%; border-radius: 3px; }
+    .lim-resumo { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 14px 0; }
+    .lim-resumo > div { padding: 12px 14px; border-right: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
+    .lim-resumo > div:last-child { border-right: 0; }
+    .lim-resumo strong { font-size: 17px; }
+    .lim-barra { position: relative; margin: 26px 0 6px; }
+    .lim-barra .lim-trilho { height: 10px; border-radius: 5px; }
+    .lim-hoje { position: absolute; top: -24px; transform: translateX(-50%); font-size: 11px; padding: 1px 8px; border-radius: 10px; background: var(--card); border: 1px solid var(--border); white-space: nowrap; }
+    .lim-hoje::after { content: ''; position: absolute; left: 50%; top: 100%; width: 1px; height: 28px; background: var(--muted, #94a3b8); }
+    .lim-tabela { width: 100%; border-collapse: collapse; }
+    .lim-tabela th { text-align: right; font-weight: 500; font-size: 12px; padding: 8px 10px; color: var(--muted, #64748b); border-bottom: 1px solid var(--border); }
+    .lim-tabela th:first-child { text-align: left; }
+    .lim-tabela td { padding: 11px 10px; border-bottom: 1px solid var(--border); text-align: right; vertical-align: middle; }
+    .lim-tabela td:first-child { text-align: left; }
+    .lim-nome { display: flex; align-items: center; gap: 8px; min-width: 0; }
+    .lim-nome a { color: inherit; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
+    .lim-sub td:first-child { padding-left: 38px; }
+    .lim-sub .lim-nome a { font-weight: 500; font-size: 14px; }
+    .lim-toggle { width: 22px; height: 22px; flex-shrink: 0; }
+    .lim-toggle[aria-expanded="true"] i { transform: rotate(90deg); }
+    .lim-tabela [hidden], .lim-barra[hidden] { display: none !important; }
+    .lim-pend { display: block; font-size: 11px; }
+    @media (max-width: 760px) {
+        .lim-tempo { grid-template-columns: repeat(5, 150px); overflow-x: auto; padding-bottom: 6px; }
+        .lim-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .lim-resumo > div { border-bottom: 1px solid var(--border); }
+        .lim-tabela thead { display: none; }
+        .lim-tabela, .lim-tabela tbody { display: block; }
+        .lim-tabela tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px 8px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .lim-tabela td { display: block; padding: 0; border: 0; text-align: left; }
+        .lim-tabela td:first-child, .lim-tabela td:last-child { grid-column: 1 / -1; }
+        .lim-tabela td:last-child { margin-top: 4px; }
+        .lim-tabela td:last-child .btn { width: 100%; justify-content: center; }
+        .lim-tabela td[data-label]::before { content: attr(data-label); display: block; font-size: 11px; color: var(--muted, #64748b); }
+        .lim-sub td:first-child { padding-left: 24px; }
+    }
+</style>
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px;">
+    <div style="display: inline-flex; align-items: center; gap: 4px;">
+        <a class="btn btn-outline btn-sm" href="/limites?mes=<%= mes.anterior %>" aria-label="<%= t('limites.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
+        <strong><%= _nomeMes(mes) %></strong>
+        <a class="btn btn-outline btn-sm" href="/limites?mes=<%= mes.proximo %>" aria-label="<%= t('limites.mes_seguinte') %>"><i class="ph ph-caret-right"></i></a>
+    </div>
+    <% if (mes.chave !== mes.atual) { %><a class="btn btn-outline btn-sm" href="/limites"><%= t('limites.este_mes') %></a><% } %>
+    <span class="muted" style="font-size: 12px;"><%= t('limites.moeda_nota', { moeda: base }) %></span>
+</div>
+
+<%# ---- Linha do tempo: 5 meses, gasto x limite do mes ---- %>
+<div class="lim-tempo">
+    <% linhaDoTempo.forEach(function (m) { %>
+    <a class="lim-mes <%= m.atual ? 'lim-mes--atual' : '' %> <%= m.selecionado ? 'lim-mes--sel' : '' %>" href="/limites?mes=<%= m.chave %>">
+        <span class="lim-mes__nome"><%= _nomeMes(m, true) %></span>
+        <span class="lim-mes__tag muted"><%= m.atual ? t('limites.mes_atual_tag') : ' ' %></span>
+        <span class="muted" style="font-size: 12px;"><%= m.futuro && !m.gasto ? t('limites.gastos_planejados') : t('limites.total_gasto') %></span>
+        <span class="lim-mes__valor" style="color: <%= m.estourou ? 'var(--red, #ef4444)' : 'inherit' %>;"><%= _m(m.gasto) %></span>
+        <span class="lim-trilho" aria-hidden="true"><span style="width: <%= m.pct === null ? 0 : m.pct %>%; background: <%= _cor(m.limite ? Math.round(m.gasto / m.limite * 100) : null) %>;"></span></span>
+        <span class="muted" style="font-size: 12px;"><%= m.limite ? t('limites.limite_valor', { valor: _m(m.limite) }) : t('limites.limite_nd') %></span>
+    </a>
+    <% }) %>
+</div>
+
+<%# ---- Resumo do mes escolhido ---- %>
+<div class="card" style="padding: 18px 20px;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: 12px;">
+        <div>
+            <div class="muted" style="font-size: 13px;">
+                <%= resumo.restante !== null && resumo.restante < 0 ? t('limites.passou_em') : t('limites.pode_gastar') %>
+            </div>
+            <div style="font-size: 28px; font-weight: 700; color: <%= resumo.restante !== null && resumo.restante < 0 ? 'var(--red, #ef4444)' : 'inherit' %>;">
+                <%= resumo.restante === null ? '—' : _m(Math.abs(resumo.restante)) %>
+            </div>
+            <% if (resumo.referencia !== null) { %>
+                <div class="muted" style="font-size: 12px;"><%= t('limites.do_limite', { valor: _m(resumo.referencia) }) %></div>
+                <% if (!resumo.limiteGeral) { %><div class="muted" style="font-size: 12px;"><%= t('limites.base_categorias') %></div><% } %>
+            <% } else { %>
+                <div class="muted" style="font-size: 12px;"><%= t('limites.limite_nd') %></div>
+            <% } %>
+        </div>
+        <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-lim-geral"><i class="ph ph-pencil-simple"></i> <%= resumo.limiteGeral ? t('limites.ajustar_geral') : t('limites.definir_geral') %></button>
+    </div>
+
+    <div class="lim-resumo">
+        <div><span class="muted" style="font-size: 12px;"><%= t('limites.receita_mes') %></span><strong style="color: var(--green);"><%= _m(resumo.receita) %></strong></div>
+        <div><span class="muted" style="font-size: 12px;"><%= t('limites.limite_mes') %></span><strong><%= resumo.limiteGeral ? _m(resumo.limiteGeral) : '—' %></strong></div>
+        <div><span class="muted" style="font-size: 12px;"><%= t('limites.gastos_mes') %></span><strong><%= _m(resumo.gasto) %></strong></div>
+        <div><span class="muted" style="font-size: 12px;"><%= t('limites.restante') %></span><strong><%= resumo.restante === null ? '—' : _m(resumo.restante) %></strong></div>
+        <div>
+            <span class="muted" style="font-size: 12px;"><%= t('limites.economia') %></span>
+            <% if (resumo.economia !== null) { %><strong><%= _m(resumo.economia) %></strong><% } else { %><strong class="muted" style="font-size: 13px; font-weight: 500;"><%= resumo.receita > 0 ? t('limites.sem_plano') : t('limites.sem_receita') %></strong><% } %>
+        </div>
+    </div>
+
+    <div class="lim-barra" <% if (resumo.pct === null) { %>hidden<% } %>>
+        <% if (resumo.marcadorHoje !== null) { %><span class="lim-hoje" style="left: <%= resumo.marcadorHoje %>%;"><%= t('limites.hoje') %></span><% } %>
+        <div class="lim-trilho" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="<%= Math.min(100, resumo.pct || 0) %>"><span style="width: <%= Math.min(100, resumo.pct || 0) %>%; background: <%= _cor(resumo.pct) %>;"></span></div>
+    </div>
+    <% if (resumo.pct !== null) { %>
+    <div style="display: flex; justify-content: space-between; font-size: 13px;">
+        <span class="muted"><%= t('limites.limite_usado') %></span><strong><%= resumo.pct %>%</strong>
+    </div>
+    <% } %>
+</div>
+
+<%# ---- Planejamento por categoria ---- %>
+<div class="card" style="padding: 18px 20px; margin-top: 14px;">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: flex-end; margin-bottom: 12px;">
+        <div>
+            <h2 style="font-size: 17px; margin: 0;"><%= t('limites.por_categoria') %></h2>
+            <p class="muted" style="margin: 2px 0 0; font-size: 13px;"><%= t('limites.por_categoria_sub') %></p>
+        </div>
+        <div style="text-align: right;">
+            <div class="muted" style="font-size: 12px;"><%= t('limites.total_categorias') %></div>
+            <strong style="font-size: 18px;"><%= _m(resumo.planejadoCats) %></strong>
+        </div>
+    </div>
+
+    <% if (!categorias.length) { %>
+        <p class="muted" style="margin: 0;"><%= t('limites.sem_categorias') %></p>
+    <% } else { %>
+    <label class="muted" for="lim-busca" style="display: block; font-size: 12px; margin-bottom: 4px;"><%= t('limites.buscar') %></label>
+    <input class="input" id="lim-busca" type="search" placeholder="<%= t('limites.buscar_ph') %>" style="max-width: 360px; margin-bottom: 8px;" autocomplete="off">
+
+    <div class="tabela-wrapper" style="overflow-x: auto;">
+    <table class="lim-tabela">
+        <thead>
+            <tr>
+                <th><%= t('limites.col_categoria') %></th>
+                <th><%= t('limites.col_planejado') %></th>
+                <th><%= t('limites.col_realizado') %></th>
+                <th><%= t('limites.col_restante') %></th>
+                <th></th>
+            </tr>
+        </thead>
+        <%
+            // Uma linha de categoria ou de subcategoria (c = dados; sub = true para subcategoria; temSubs = tem subcategorias).
+            const _linha = (c, sub, temSubs) => { %>
+            <tr class="<%= sub ? 'lim-sub' : 'lim-cat' %>" <% if (sub) { %>hidden<% } %>>
+                <td>
+                    <div class="lim-nome">
+                        <% if (temSubs) { %><button type="button" class="icon-btn lim-toggle" aria-expanded="false" title="<%= t('limites.subcategorias') %>" aria-label="<%= t('limites.subcategorias') %>"><i class="ph ph-caret-right"></i></button><% } %>
+                        <span style="width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: <%= c.cor %>;"></span>
+                        <a href="/categorias/<%= c.id %>?mes=<%= mes.chave %>" title="<%= t('limites.ver_categoria') %>"><%= c.nome %></a>
+                    </div>
+                    <% if (c.planejado) { %>
+                    <div class="lim-trilho" style="margin-top: 6px; max-width: 220px;" aria-hidden="true"><span style="width: <%= Math.min(100, c.pct) %>%; background: <%= _cor(c.pct) %>;"></span></div>
+                    <% } %>
+                </td>
+                <td data-label="<%= t('limites.col_planejado') %>"><% if (c.planejado) { %><strong><%= _m(c.planejado) %></strong><% } else { %><span class="muted"><%= t('limites.sem_limite') %></span><% } %></td>
+                <td data-label="<%= t('limites.col_realizado') %>">
+                    <%= _m(c.gasto) %>
+                    <% if (c.pendente > 0) { %><span class="lim-pend muted"><%= t('limites.pendente_nota', { valor: _m(c.pendente) }) %></span><% } %>
+                </td>
+                <td data-label="<%= t('limites.col_restante') %>" style="color: <%= c.restante !== null && c.restante < 0 ? 'var(--red, #ef4444)' : 'inherit' %>;"><%= c.restante === null ? '—' : _m(c.restante) %></td>
+                <td>
+                    <button type="button" class="btn btn-sm <%= c.planejado ? 'btn-outline' : '' %>" data-modal-open="modal-lim-<%= c.id %>" style="white-space: nowrap;"><i class="ph ph-<%= c.planejado ? 'pencil-simple' : 'plus' %>"></i> <%= c.planejado ? t('limites.ajustar') : t('limites.definir') %></button>
+                </td>
+            </tr>
+        <% }; %>
+        <% categorias.forEach(function (c) { %>
+        <tbody class="lim-grupo" data-busca="<%= (c.nome + ' ' + c.subs.map(function (s) { return s.nome; }).join(' ')).toLowerCase() %>">
+            <% _linha(c, false, c.subs.length > 0); %>
+            <% c.subs.forEach(function (s) { _linha(s, true, false); }); %>
+        </tbody>
+        <% }) %>
+    </table>
+    </div>
+    <p class="muted" id="lim-sem-resultado" hidden style="margin: 12px 0 0;"><%= t('limites.sem_resultado') %></p>
+    <% } %>
+</div>
+
+<%# ---- Modais: um por categoria/subcategoria e um para o limite geral ---- %>
+<%
+    const _modal = (id, titulo, valor, action, campoCategoria) => { %>
+<div class="modal-backdrop" id="<%= id %>">
+    <div class="modal card" style="max-width: 440px; border-radius: 12px;">
+        <div class="modal__header">
+            <h3 style="margin: 0; font-size: 18px; font-weight: 600;"><%= titulo %></h3>
+            <button type="button" class="modal__close" data-modal-close>&times;</button>
+        </div>
+        <form method="post" action="<%= action %>" class="form" style="display: flex; flex-direction: column; gap: 14px; margin-top: 16px;">
+            <%- csrfCampo %>
+            <input type="hidden" name="mes" value="<%= mes.chave %>">
+            <% if (campoCategoria) { %><input type="hidden" name="categoria_id" value="<%= campoCategoria %>"><% } %>
+            <div class="form-group">
+                <label style="display: block; font-weight: 500; margin-bottom: 6px;"><%= t('limites.valor_label') %></label>
+                <input class="input" type="text" name="valor" data-money data-moeda-cod="<%= base %>" value="<%= valor ? valor : '' %>">
+                <small class="muted"><%= t('limites.modal_dica', { mes: _nomeMes(mes) }) %></small>
+            </div>
+            <div class="modal__actions" style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
+                <button type="submit" class="btn" style="background-color: var(--green); border-color: var(--green); color: var(--on-accent); font-weight: 600;"><%= t('limites.salvar') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+<% }; %>
+<% _modal('modal-lim-geral', t('limites.modal_geral'), resumo.limiteGeral, '/limites/geral', null); %>
+<% categorias.forEach(function (c) { _modal('modal-lim-' + c.id, t('limites.modal_titulo', { nome: c.nome }), c.planejado, '/limites/categoria', c.id); c.subs.forEach(function (s) { _modal('modal-lim-' + s.id, t('limites.modal_titulo', { nome: c.nome + ' / ' + s.nome }), s.planejado, '/limites/categoria', s.id); }); }) %>
+
+<script>
+(function () {
+    // Mostrar/esconder as subcategorias de uma categoria.
+    document.querySelectorAll('.lim-toggle').forEach(function (b) {
+        b.addEventListener('click', function () {
+            var aberto = b.getAttribute('aria-expanded') === 'true';
+            b.setAttribute('aria-expanded', aberto ? 'false' : 'true');
+            b.closest('tbody').querySelectorAll('.lim-sub').forEach(function (r) { r.hidden = aberto; });
+        });
+    });
+    // Busca por categoria ou subcategoria.
+    var campo = document.getElementById('lim-busca');
+    if (campo) campo.addEventListener('input', function () {
+        var termo = campo.value.trim().toLowerCase(), achou = 0;
+        document.querySelectorAll('.lim-grupo').forEach(function (g) {
+            var ok = !termo || g.getAttribute('data-busca').indexOf(termo) !== -1;
+            g.hidden = !ok;
+            if (ok) achou++;
+        });
+        var aviso = document.getElementById('lim-sem-resultado');
+        if (aviso) aviso.hidden = achou > 0;
+    });
+})();
+</script>
+
+<% } %>

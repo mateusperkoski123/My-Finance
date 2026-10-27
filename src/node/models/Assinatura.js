@@ -4,7 +4,7 @@ const Estatisticas = require('./Estatisticas');
 
 const SELECT_BASE = `
     SELECT a.*, p.codigo AS plano_codigo, p.nome AS plano_nome, p.preco_mensal, p.preco_anual,
-           p.moeda AS plano_moeda, p.max_contas, p.rec_relatorio_anual, p.rec_exportar, p.rec_backup,
+           p.moeda AS plano_moeda, p.max_contas, p.max_cartoes, p.rec_relatorio_anual, p.rec_exportar, p.rec_backup,
            p.rec_ia, p.rec_ia_midia, p.rec_ia_nivel2, p.rec_offline, p.ia_limite_mes,
            p.rec_estado, p.rec_estado_avancado, p.ia_midia_limite_mes,
            TIMESTAMPDIFF(HOUR, NOW(), a.trial_fim) AS horas_trial,
@@ -41,7 +41,7 @@ function calcularEstado(a) {
         // Teste do plano escolhido em andamento: da para trocar o plano em teste sem reiniciar o prazo.
         teste_plano: status === 'trial' && a.plano_codigo !== 'prueba',
         plano: {
-            codigo: a.plano_codigo, nome: a.plano_nome, max_contas: a.max_contas,
+            codigo: a.plano_codigo, nome: a.plano_nome, max_contas: a.max_contas, max_cartoes: a.max_cartoes,
             rec_relatorio_anual: !!a.rec_relatorio_anual, rec_exportar: !!a.rec_exportar, rec_backup: !!a.rec_backup,
             rec_ia: !!a.rec_ia, rec_ia_midia: !!a.rec_ia_midia, rec_ia_nivel2: !!a.rec_ia_nivel2, rec_offline: !!a.rec_offline,
             rec_estado: !!a.rec_estado, rec_estado_avancado: !!a.rec_estado_avancado,
@@ -221,6 +221,14 @@ class Assinatura {
             `SELECT pg.*, p.codigo AS plano_codigo FROM pagamentos pg LEFT JOIN planos p ON p.id = pg.plano_id
              WHERE pg.user_id = ? ORDER BY pg.created_at DESC LIMIT 50`, [userId]);
         return rows;
+    }
+
+    // Um pagamento da propria pessoa (recibo); outro usuario nunca enxerga o de terceiros.
+    static async pagamentoDoUsuario(userId, id) {
+        const [rows] = await db.query(
+            `SELECT pg.*, p.codigo AS plano_codigo FROM pagamentos pg LEFT JOIN planos p ON p.id = pg.plano_id
+             WHERE pg.id = ? AND pg.user_id = ?`, [id, userId]);
+        return rows[0] || null;
     }
 
     // ---- Admin ----

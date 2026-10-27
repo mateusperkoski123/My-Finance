@@ -7,6 +7,7 @@ const { sendPlanRequestNotice } = require('../core/mailer');
 const { TRIAL_DIAS, PLANOS_VENDA, NOME_APP } = require('../core/negocio');
 const { caminhoLocal } = require('../middleware/authMiddleware');
 const pagopar = require('../core/pagopar');
+const Indicacao = require('../models/Indicacao');
 
 // Caminho local para voltar depois de trocar o plano em teste (nunca um endereco externo).
 const voltarLocal = (v) => (caminhoLocal(v) && !String(v).startsWith('/teste') ? v : '/assinatura');
@@ -22,7 +23,22 @@ async function concluirPedido(pedido) {
         await pagopar.Pedido.desmarcarPago(pedido.id);
         throw err;
     }
+    // O plano ja esta ativo: um problema com o credito/codigo de indicacao nao pode desfazer isso.
+    try {
+        await Indicacao.confirmarPagamento(pedido);
+    } catch (err) {
+        console.error('Falha ao registrar a indicacao do pedido ' + pedido.id + ':', err.message);
+    }
     return true;
+}
+
+// Dados do bloco "Indique e ganhe" da tela de assinatura.
+async function indicacaoDaTela(req) {
+    return {
+        pode: Indicacao.podeTerCodigo(req.assinatura, req.ehAdmin),
+        percentual: Indicacao.DESCONTO_PERCENTUAL,
+        ...(await Indicacao.resumo(req.user.id))
+    };
 }
 
 const assinaturaController = {
@@ -80,8 +96,23 @@ const assinaturaController = {
             fmt,
             recursosDoPlano,
             paises: telefone.PAISES,
+            indicacao: await indicacaoDaTela(req),
             pagoOnline: pagopar.disponivel(),
             idiomaTel: telefone.idiomaCurto(req.lang || req.session.idioma)
+        });
+    },
+
+    // Recibo imprimivel de um pagamento (o navegador salva em PDF).
+    recibo: async (req, res) => {
+        const id = parseInt(req.params.id, 10);
+        const pagamento = id > 0 ? await Assinatura.pagamentoDoUsuario(req.user.id, id) : null;
+        if (!pagamento) return res.status(404).render('404', { title: req.t('erro404.titulo') });
+        res.render('assinatura/recibo', {
+            layout: false,
+            title: req.t('assinatura.recibo_titulo'),
+            pagamento,
+            fmt,
+            app: NOME_APP
         });
     },
 
@@ -98,10 +129,21 @@ const assinaturaController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.plano_invalido') };
             return res.redirect('/assinatura');
         }
+        // Codigo de indicacao (so vale no pagamento online): se estiver errado, avisa antes de levar a pessoa para pagar.
+        let indicacao = null;
+        const codigoTexto = String(req.body.codigo_indicacao || '').trim();
+        if (codigoTexto && pagopar.disponivel()) {
+            const av = await Indicacao.avaliar(req.user.id, codigoTexto, solicitado, ciclo);
+            if (av.erro) {
+                req.session.flash = { tipo: 'erro', mensagem: req.t('flash.indicacao_' + av.erro) };
+                return res.redirect('/assinatura');
+            }
+            indicacao = av;
+        }
         await User.salvarTelefone(req.user.id, tel.codigo, tel.numero);
         // Com o Pagopar configurado, a pessoa vai direto pagar; sem ele (ou se falhar) segue o pedido manual abaixo.
         if (pagopar.disponivel()) {
-            const url = await assinaturaController.iniciarPagopar(req, solicitado, ciclo, tel);
+            const url = await assinaturaController.iniciarPagopar(req, solicitado, ciclo, tel, indicacao);
             if (url) return res.redirect(url);
         }
         // Aviso ao admin; falha de e-mail nao pode quebrar o pedido.
@@ -118,11 +160,17 @@ const assinaturaController = {
     },
 
     // Cria o pedido no Pagopar e devolve o endereco de pagamento (ou null se nao foi possivel).
-    iniciarPagopar: async (req, plano, ciclo, tel) => {
-        const valor = Number(ciclo === 'anual' ? plano.preco_anual : plano.preco_mensal);
+    // indicacao = { codigoId, desconto } quando a pessoa usou um codigo valido. O credito de quem indicou abate sozinho.
+    iniciarPagopar: async (req, plano, ciclo, tel, indicacao = null) => {
+        const cheio = Number(ciclo === 'anual' ? plano.preco_anual : plano.preco_mensal);
         const documento = String(req.body.documento || '').replace(/[^0-9A-Za-z-]/g, '').slice(0, 20);
-        if (!documento || !valor) return null;
-        const pedidoId = await pagopar.Pedido.criar(req.user.id, plano.codigo, ciclo, valor);
+        if (!documento || !cheio) return null;
+        const desconto = indicacao ? indicacao.desconto : 0;
+        const credito = await Indicacao.creditoParaUsar(req.user.id, cheio - desconto);
+        const valor = cheio - desconto - credito;
+        const pedidoId = await pagopar.Pedido.criar(req.user.id, plano.codigo, ciclo, valor, {
+            valorOriginal: cheio, codigoId: indicacao ? indicacao.codigoId : null, desconto, creditoUsado: credito
+        });
         try {
             const descricao = `${NOME_APP} - ${plano.nome} (${ciclo})`;
             const r = await pagopar.criarPedido({
@@ -135,6 +183,19 @@ const assinaturaController = {
             await pagopar.Pedido.falhou(pedidoId);
             return null;
         }
+    },
+
+    // Cria o codigo de indicacao da conta (um por usuario; so Premium/Pro).
+    criarCodigoIndicacao: async (req, res) => {
+        if (!Indicacao.podeTerCodigo(req.assinatura, req.ehAdmin)) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.indicacao_sem_plano') };
+            return res.redirect('/assinatura');
+        }
+        const r = await Indicacao.criar(req.user.id, req.body.codigo);
+        req.session.flash = r.erro
+            ? { tipo: 'erro', mensagem: req.t('flash.indicacao_cod_' + r.erro) }
+            : { tipo: 'sucesso', mensagem: req.t('flash.indicacao_criada', { codigo: r.codigo }) };
+        res.redirect('/assinatura');
     },
 
     // Pagopar devolve a pessoa para ca (URL de redirecionamento do comercio). Confirma o pagamento direto no Pagopar.

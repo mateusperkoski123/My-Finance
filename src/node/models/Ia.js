@@ -131,7 +131,8 @@ class Ia {
             moeda: p.moeda || null,
             categoria: p.categoria_nome,
             data: p.data_competencia,
-            pago: p.status === 'pago'
+            pago: p.status === 'pago',
+            fatura: p.fatura_mes || null
         };
     }
 

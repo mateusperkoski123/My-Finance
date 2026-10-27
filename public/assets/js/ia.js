@@ -360,7 +360,7 @@
       '<div class="ia-cartao__desc">' + esc(c.descricao) + '</div>' +
       '<dl class="ia-cartao__det"><div><dt>' + esc(T.conta) + '</dt><dd>' + esc(c.conta) + '</dd></div>' +
       '<div><dt>' + esc(T.categoria) + '</dt><dd>' + esc(c.categoria) + '</dd></div>' +
-      '<div><dt>' + esc(T.data) + '</dt><dd>' + esc(dataBr(c.data)) + ' · ' + esc(c.pago ? T.pago : T.pendente) + '</dd></div></dl>' + rodape + '</div>';
+      '<div><dt>' + esc(T.data) + '</dt><dd>' + esc(dataBr(c.data)) + ' · ' + esc(c.fatura ? T.naFatura : (c.pago ? T.pago : T.pendente)) + '</dd></div></dl>' + rodape + '</div>';
   }
 
   function rolarFim() { elMsgs.scrollTop = elMsgs.scrollHeight; }

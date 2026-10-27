@@ -9,6 +9,7 @@ const GRUPOS = [
     ['financas', [
         { k: 'painel', on: () => true },
         { k: 'contas', on: () => true, val: (p) => (p.max_contas === null || p.max_contas === undefined ? { key: 'pr.val.ilimitadas' } : { key: 'pr.val.ate_contas', n: p.max_contas }) },
+        { k: 'cartoes', on: () => true, val: (p) => (p.max_cartoes === null || p.max_cartoes === undefined ? { key: 'pr.val.ilimitadas' } : { key: 'pr.val.ate_cartoes', n: p.max_cartoes }) },
         { k: 'lancamentos', on: () => true }
     ]],
     // As visualizacoes sobem de nivel: cada plano mostra tudo do anterior e acrescenta as suas.
@@ -37,6 +38,7 @@ const GRUPOS = [
     ['extras', [
         { k: 'comunidade', on: () => true },
         { k: 'suporte', on: () => true },
+        { k: 'indicacao', on: (p) => ['premium', 'pro'].includes(p.codigo) },
         // Beneficios do Pro que nao dependem de uma trava no sistema.
         { k: 'suporte_prio', on: (p) => ehPlano(p, 'pro') },
         { k: 'novidades', on: (p) => ehPlano(p, 'pro') }

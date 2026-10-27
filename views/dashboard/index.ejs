@@ -44,14 +44,18 @@ const nomesMeses = {
             <a class="btn btn-outline btn-sm" href="<%= _anoInteiro ? _linkAno(_anoInteiro + 1) : (_livre ? _deslocar(1) : '/?mes=' + periodo.mes_proximo + '&ano=' + periodo.ano_proximo) %>" style="border-radius: 8px;" aria-label="<%= t('painel.periodo_proximo') %>"><i class="ph ph-caret-right"></i></a>
         </div>
 
-        <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-            <a href="/?data_inicio=<%= dataHoje %>&data_fim=<%= dataHoje %>" class="btn <%= eHoje ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('painel.hoje') %></a>
-            <a href="/?mes=<%= hojeLocal().getMonth() + 1 %>&ano=<%= hojeLocal().getFullYear() %>" class="btn <%= eMes ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
-            <a href="/?data_inicio=<%= dataAnoInicio %>&data_fim=<%= dataAnoFim %>" class="btn <%= eAno ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('painel.este_ano') %></a>
-            <%# Periodo livre e filtro so existem quando ha contas (os formularios ficam mais abaixo, junto com a lista). %>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+            <div class="seg">
+                <a href="/?data_inicio=<%= dataHoje %>&data_fim=<%= dataHoje %>" class="<%= eHoje ? 'is-on' : '' %>"><%= t('painel.hoje') %></a>
+                <a href="/?mes=<%= hojeLocal().getMonth() + 1 %>&ano=<%= hojeLocal().getFullYear() %>" class="<%= eMes ? 'is-on' : '' %>"><%= t('filtro.mes_atual') %></a>
+                <a href="/?data_inicio=<%= dataAnoInicio %>&data_fim=<%= dataAnoFim %>" class="<%= eAno ? 'is-on' : '' %>"><%= t('painel.este_ano') %></a>
+                <%# Periodo livre e filtro so existem quando ha contas (os formularios ficam mais abaixo, junto com a lista). %>
+                <% if (contas && contas.length > 0) { %>
+                <button type="button" class="<%= _livre && !eHoje && !e7Dias && !eAno ? 'is-on' : '' %>" data-modal-open="modal-periodo"><i class="ph ph-calendar-dots"></i> <%= t('painel.personalizado') %></button>
+                <% } %>
+            </div>
             <% if (contas && contas.length > 0) { %>
-            <button type="button" class="btn <%= _livre && !eHoje && !e7Dias ? 'btn-primary' : 'btn-outline' %> btn-sm" data-modal-open="modal-periodo" style="border-radius: 20px;"><i class="ph ph-calendar-dots"></i> <%= t('painel.personalizado') %></button>
-            <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-filtro-avancado" style="border-radius: 20px;"><i class="ph ph-sliders-horizontal"></i> <%= t('filtro.filtrar') %></button>
+            <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-filtro-avancado" style="border-radius: 20px; min-height: 42px;"><i class="ph ph-sliders-horizontal"></i> <%= t('filtro.filtrar') %></button>
             <% } %>
         </div>
     </div>

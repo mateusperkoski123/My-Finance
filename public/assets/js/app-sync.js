@@ -126,6 +126,9 @@
             await window.AppDb.salvarItens('contas', d.contas || []);
             await window.AppDb.salvarItens('categorias', d.categorias || []);
             await window.AppDb.salvarItens('lancamentos', d.lancamentos || []);
+            await window.AppDb.salvarItens('cartoes', d.cartoes || []);
+            await window.AppDb.salvarItens('cartao_compras', d.cartao_compras || []);
+            await window.AppDb.salvarItens('cartao_faturas', d.cartao_faturas || []);
             if (d.exclusoes && d.exclusoes.length) await window.AppDb.removerExcluidos(d.exclusoes);
             // O cursor so avanca depois de gravar tudo localmente.
             await window.AppDb.salvarMeta('sync_cursor', d.cursor);

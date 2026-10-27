@@ -1,0 +1,75 @@
+<%
+const SIMBOLOS = { PYG: 'Gs.', USD: 'US$', BRL: 'R$' };
+const ciclos = { mensal: t('assinatura.ciclo_mensal'), anual: t('assinatura.ciclo_anual') };
+const data = pagamento.pago_em || pagamento.created_at;
+const numero = String(new Date(data).getFullYear()) + '-' + String(pagamento.id).padStart(6, '0');
+const plano = pagamento.plano_codigo ? t('plano.' + pagamento.plano_codigo + '.nome') : '-';
+const status = { pago: 'assinatura.pg_pago', pendente: 'assinatura.pg_pendente', estornado: 'assinatura.pg_estornado' }[pagamento.status] || 'assinatura.pg_pago';
+%><!doctype html>
+<html lang="<%= lang %>">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><%= t('assinatura.recibo_n', { n: numero }) %></title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color: #1b1f27; background: #eef0f4; margin: 0; padding: 24px; font-size: 14px; }
+  .folha { background: #fff; max-width: 680px; margin: 0 auto; padding: 36px 40px; box-shadow: 0 6px 24px rgba(0,0,0,.12); border-radius: 6px; }
+  .acoes { max-width: 680px; margin: 0 auto 14px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .acoes a, .acoes button { font: inherit; padding: 8px 14px; border-radius: 8px; border: 1px solid #c8ccd4; background: #fff; cursor: pointer; font-weight: 600; color: inherit; text-decoration: none; }
+  .acoes button { background: #1b1f27; color: #fff; border-color: #1b1f27; }
+  .topo { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; border-bottom: 2px solid #1b1f27; padding-bottom: 14px; }
+  h1 { font-size: 22px; margin: 0; }
+  .sub { color: #5a6270; margin: 4px 0 0; }
+  .selo { border: 1.5px solid #0f7b4f; color: #0f7b4f; border-radius: 999px; padding: 3px 12px; font-weight: 700; font-size: 12.5px; white-space: nowrap; }
+  dl { display: grid; grid-template-columns: 170px 1fr; gap: 10px 16px; margin: 22px 0; }
+  dt { color: #5a6270; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; padding-top: 2px; }
+  dd { margin: 0; font-weight: 600; word-break: break-word; }
+  .total { display: flex; justify-content: space-between; align-items: baseline; border-top: 2px solid #1b1f27; padding-top: 12px; font-size: 18px; font-weight: 800; }
+  .nota { color: #5a6270; font-size: 12px; margin-top: 26px; }
+  @media (max-width: 520px) { body { padding: 12px; } .folha { padding: 22px 18px; } dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 10px; } }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .acoes { display: none; }
+    .folha { box-shadow: none; padding: 0; max-width: none; }
+    @page { margin: 16mm; }
+  }
+</style>
+</head>
+<body>
+<div class="acoes">
+    <a href="/assinatura"><%= t('assinatura.recibo_voltar') %></a>
+    <button type="button" onclick="window.print()"><%= t('assinatura.recibo_imprimir') %></button>
+</div>
+<main class="folha">
+    <div class="topo">
+        <div>
+            <h1><%= t('assinatura.recibo_titulo') %></h1>
+            <p class="sub"><%= app %> · <%= t('assinatura.recibo_n', { n: numero }) %></p>
+        </div>
+        <span class="selo"><%= t(status) %></span>
+    </div>
+    <dl>
+        <dt><%= t('assinatura.recibo_cliente') %></dt>
+        <dd><%= usuarioLogado.nome %><br><span style="font-weight: 400; color: #5a6270;"><%= usuarioLogado.email %></span></dd>
+        <dt><%= t('assinatura.recibo_descricao') %></dt>
+        <dd><%= t('assinatura.recibo_descricao_texto', { plano: plano, ciclo: ciclos[pagamento.ciclo] || '-' }) %></dd>
+        <dt><%= t('assinatura.pago_em') %></dt>
+        <dd><%= formatDateTime(data) %></dd>
+        <dt><%= t('assinatura.metodo') %></dt>
+        <dd><%= pagamento.metodo %></dd>
+        <% if (pagamento.referencia) { %>
+        <dt><%= t('assinatura.recibo_ref') %></dt>
+        <dd><%= pagamento.referencia %></dd>
+        <% } %>
+    </dl>
+    <div class="total">
+        <span><%= t('assinatura.valor_pago') %></span>
+        <span><%= SIMBOLOS[pagamento.moeda] || pagamento.moeda %> <%= fmt(pagamento.valor) %></span>
+    </div>
+    <p class="nota"><%= t('assinatura.recibo_obrigado', { app: app }) %> <%= t('assinatura.recibo_aviso') %></p>
+</main>
+
+<script>if (new URLSearchParams(location.search).get('imprimir')) window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 300); });</script>
+</body>
+</html>

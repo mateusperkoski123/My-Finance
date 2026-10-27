@@ -1,0 +1,48 @@
+<%# Parametros: idModal, acao, titulo, contas, cartao (opcional: preenche o formulario), voltar (opcional) %>
+<% const _k = typeof cartao !== 'undefined' && cartao ? cartao : {}; %>
+<div class="modal-backdrop" id="<%= idModal %>" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= titulo %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="<%= acao %>" class="form">
+            <%- csrfCampo %>
+            <% if (typeof voltar !== 'undefined' && voltar) { %><input type="hidden" name="voltar" value="<%= voltar %>"><% } %>
+            <div class="form-group">
+                <label for="<%= idModal %>-nome"><%= t('cartoes.campo_nome') %> *</label>
+                <input class="input" type="text" id="<%= idModal %>-nome" name="nome" maxlength="80" required value="<%= _k.nome || '' %>" placeholder="<%= t('cartoes.campo_nome_exemplo') %>">
+            </div>
+            <div class="form-group">
+                <label for="<%= idModal %>-bandeira"><%= t('cartoes.campo_bandeira') %></label>
+                <input class="input" type="text" id="<%= idModal %>-bandeira" name="bandeira" maxlength="30" value="<%= _k.bandeira || '' %>" placeholder="<%= t('cartoes.campo_bandeira_exemplo') %>">
+            </div>
+            <div class="form-group">
+                <label for="<%= idModal %>-conta"><%= t('cartoes.campo_conta') %> *</label>
+                <select class="input" id="<%= idModal %>-conta" name="conta_id" required>
+                    <% contas.forEach(function (c) { %><option value="<%= c.id %>" <%= Number(_k.conta_id) === c.id ? 'selected' : '' %>><%= c.nome %> (<%= c.moeda %>)</option><% }) %>
+                </select>
+                <small class="muted"><%= t('cartoes.ajuda_conta') %></small>
+            </div>
+            <div class="form-group">
+                <label for="<%= idModal %>-limite"><%= t('cartoes.campo_limite') %></label>
+                <input class="input" type="text" id="<%= idModal %>-limite" name="limite_total" inputmode="decimal" maxlength="20" autocomplete="off" value="<%= _k.limite_total ? Number(_k.limite_total).toFixed(2) : '' %>">
+            </div>
+            <div class="compras-fila">
+                <div class="form-group">
+                    <label for="<%= idModal %>-fecha"><%= t('cartoes.campo_fechamento') %> *</label>
+                    <input class="input" type="number" id="<%= idModal %>-fecha" name="dia_fechamento" min="1" max="31" required value="<%= _k.dia_fechamento || 1 %>">
+                </div>
+                <div class="form-group">
+                    <label for="<%= idModal %>-vence"><%= t('cartoes.campo_vencimento') %> *</label>
+                    <input class="input" type="number" id="<%= idModal %>-vence" name="dia_vencimento" min="1" max="31" required value="<%= _k.dia_vencimento || 10 %>">
+                </div>
+            </div>
+            <small class="muted"><%= t('cartoes.ajuda_dias') %></small>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('clientes.salvar') %></button>
+            </div>
+        </form>
+    </div>
+</div>

@@ -4,12 +4,18 @@ const st = ass ? ass.status_efetivo : null;
 const ciclos = { mensal: t('assinatura.ciclo_mensal'), anual: t('assinatura.ciclo_anual') };
 const nomePlano = (c) => t('plano.' + c + '.nome');
 %>
+<%
+const moedaPg = (m) => ({ PYG: 'Gs.', USD: 'US$', BRL: 'R$' }[m] || m);
+const abaInicial = (st === 'ativa' || (pagamentos && pagamentos.length > 0)) ? 'assinatura' : 'planos';
+%>
 <%# Sem teste em andamento e sem plano contratado (acessoBloqueado), esta e a unica tela do sistema: sem o menu de Configuracoes. %>
 <% if (!acessoBloqueado) { %>
-<div class="page-header">
+<div class="page-header settings-titulo-mobile">
     <h1><i class="ph ph-gear"></i> <%= t('config.titulo') %></h1>
 </div>
+<div class="settings-layout">
 <%- include('../configuracoes/_menu', { menuAtivo: 'assinatura' }) %>
+<div class="settings-content">
 <% } %>
 <% if (st === 'teste_encerrado' && !ehAdmin) { %>
 <section class="card teste-fim" role="status">
@@ -24,7 +30,12 @@ const nomePlano = (c) => t('plano.' + c + '.nome');
     <h2 style="margin: 0;"><i class="ph ph-crown-simple"></i> <%= t('assinatura.titulo') %></h2>
     <p class="muted"><%= t('assinatura.subtitulo') %></p>
 </div>
+<div class="assin-abas" role="tablist">
+    <button type="button" role="tab" data-tab="assinatura" class="<%= abaInicial === 'assinatura' ? 'is-ativo' : '' %>"><%= t('assinatura.tab_assinatura') %></button>
+    <button type="button" role="tab" data-tab="planos" class="<%= abaInicial === 'planos' ? 'is-ativo' : '' %>"><%= t('assinatura.tab_planos') %></button>
+</div>
 
+<div data-painel="assinatura" <%= abaInicial === 'assinatura' ? '' : 'hidden' %>>
 <% if (ass) { %>
 <section class="card assinatura-atual">
     <div style="display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start;">
@@ -67,9 +78,92 @@ const nomePlano = (c) => t('plano.' + c + '.nome');
             <p class="muted" style="font-size: 13px; margin: 8px 0 0;"><%= t('assinatura.prueba_sub', { dias: negocio.TRIAL_DIAS }) %></p>
         </div>
     <% } %>
+    <% if (st === 'ativa') { const ultimo = (pagamentos || []).find(pg => pg.status === 'pago'); %>
+    <dl class="assin-dados">
+        <div><dt><%= t('assinatura.plano') %></dt><dd><%= nomePlano(ass.plano_codigo) %></dd></div>
+        <% if (ultimo) { %><div><dt><%= t('assinatura.valor_plano') %></dt><dd><%= moedaPg(ultimo.moeda) %> <%= fmt(ultimo.valor) %></dd></div><% } %>
+        <div><dt><%= t('assinatura.recorrencia') %></dt><dd><%= ciclos[ass.ciclo] || '-' %></dd></div>
+        <div><dt><%= t('assinatura.assinatura_inicio') %></dt><dd><%= formatDate(ass.periodo_inicio, 'DD/MM/YYYY') %></dd></div>
+        <div><dt><%= t('assinatura.fim_ciclo') %></dt><dd><%= formatDate(ass.periodo_fim, 'DD/MM/YYYY') %></dd></div>
+        <div><dt><%= t('assinatura.status_titulo') %></dt><dd><%= t('assinatura.status.' + st) %></dd></div>
+    </dl>
+    <% } %>
 </section>
 <% } %>
 
+<section class="card" style="margin-top: 20px;" id="recibos">
+    <div class="recibos__topo">
+        <div>
+            <h2 style="margin: 0;"><i class="ph ph-receipt" aria-hidden="true"></i> <%= t('assinatura.recibos_titulo') %></h2>
+            <p class="muted" style="margin: 4px 0 0;"><%= t('assinatura.recibos_sub') %></p>
+        </div>
+        <% if (pagamentos && pagamentos.length > 0) { %><span class="badge badge-neutro"><%= t('assinatura.recibos_qtd', { n: pagamentos.length }) %></span><% } %>
+    </div>
+    <% if (!pagamentos || pagamentos.length === 0) { %>
+        <p class="muted" style="margin: 14px 0 0;"><%= t('assinatura.recibos_vazio') %></p>
+    <% } else { %>
+    <div class="recibos">
+        <% pagamentos.forEach(pg => {
+            const quando = pg.pago_em || pg.created_at;
+            const numero = new Date(quando).getFullYear() + '-' + String(pg.id).padStart(6, '0');
+            const stPg = { pago: 'assinatura.pg_pago', pendente: 'assinatura.pg_pendente', estornado: 'assinatura.pg_estornado' }[pg.status] || 'assinatura.pg_pago';
+        %>
+        <article class="recibo">
+            <div class="recibo__linha">
+                <div>
+                    <div class="recibo__num"><i class="ph ph-receipt" aria-hidden="true"></i> <%= t('assinatura.recibo_n', { n: numero }) %></div>
+                    <div class="muted recibo__sub"><%= pg.plano_codigo ? nomePlano(pg.plano_codigo) : '-' %> · <%= ciclos[pg.ciclo] || '-' %></div>
+                </div>
+                <span class="badge <%= pg.status === 'pago' ? 'badge-sucesso' : 'badge-pendente' %>"><%= t(stPg) %></span>
+            </div>
+            <div class="recibo__dados">
+                <div><span><%= t('assinatura.pago_em') %></span><b><%= formatDate(quando, 'DD/MM/YYYY') %></b></div>
+                <div><span><%= t('assinatura.valor_pago') %></span><b><%= moedaPg(pg.moeda) %> <%= fmt(pg.valor) %></b></div>
+                <div><span><%= t('assinatura.metodo') %></span><b><%= pg.metodo %></b></div>
+            </div>
+            <div class="recibo__acoes">
+                <a class="btn btn-outline" href="/assinatura/recibo/<%= pg.id %>" target="_blank" rel="noopener"><i class="ph ph-eye" aria-hidden="true"></i> <%= t('assinatura.recibo_ver') %></a>
+                <a class="btn btn-outline" href="/assinatura/recibo/<%= pg.id %>?imprimir=1" target="_blank" rel="noopener"><i class="ph ph-download-simple" aria-hidden="true"></i> <%= t('assinatura.recibo_pdf') %></a>
+            </div>
+        </article>
+        <% }) %>
+    </div>
+    <% } %>
+</section>
+
+<%
+const ind = indicacao || {};
+%>
+<% if (!acessoBloqueado) { %>
+<section class="card" style="margin-top: 20px;" id="indicacao">
+    <h2><i class="ph ph-gift" aria-hidden="true"></i> <%= t('indicacao.titulo') %></h2>
+    <% if (!ind.pode) { %>
+        <p class="muted"><%= t('indicacao.bloqueado') %></p>
+    <% } else { %>
+        <p class="muted"><%= t('indicacao.texto', { pct: ind.percentual }) %></p>
+        <% if (ind.codigo) { %>
+            <div style="display: flex; gap: 28px; flex-wrap: wrap; margin-top: 8px;">
+                <div><span class="muted" style="font-size: 13px;"><%= t('indicacao.seu_codigo') %></span><div style="font-size: 24px; font-weight: 700; letter-spacing: .06em;"><%= ind.codigo %></div></div>
+                <div><span class="muted" style="font-size: 13px;"><%= t('indicacao.usos') %></span><div style="font-size: 24px; font-weight: 700;"><%= ind.usos %></div></div>
+                <div><span class="muted" style="font-size: 13px;"><%= t('indicacao.credito') %></span><div style="font-size: 24px; font-weight: 700;">Gs. <%= fmt(ind.saldo) %></div><small class="muted"><%= t('indicacao.credito_dica') %></small></div>
+            </div>
+        <% } else { %>
+            <form method="post" action="/assinatura/indicacao" class="lanc-form" style="max-width: 420px;">
+                <%- csrfCampo %>
+                <label class="lanc-campo">
+                    <span><%= t('indicacao.criar_label') %></span>
+                    <input class="input" type="text" name="codigo" required minlength="4" maxlength="20" pattern="[A-Za-z0-9]{4,20}" autocomplete="off" style="text-transform: uppercase;" placeholder="MEUCODIGO">
+                    <small class="muted"><%= t('indicacao.criar_dica') %></small>
+                </label>
+                <button type="submit" class="btn btn-primary"><%= t('indicacao.criar_botao') %></button>
+            </form>
+        <% } %>
+    <% } %>
+</section>
+<% } %>
+</div>
+
+<div data-painel="planos" <%= abaInicial === 'planos' ? '' : 'hidden' %>>
 <%
 const comprar = planos.filter(p => p.codigo !== 'prueba');
 const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (comprar[0] ? comprar[0].codigo : '');
@@ -180,6 +274,13 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
 })();
 </script>
 
+<p class="muted" style="font-size: 13px; margin-top: 4px;"><i class="ph ph-info"></i> <%= negocio.EMAIL_SUPORTE ? t('assinatura.como_pagar') : t('assinatura.como_pagar').replace(/\s*[^.]*:\s*$/, '') %><% if (negocio.EMAIL_SUPORTE) { %> <b><%= negocio.EMAIL_SUPORTE %></b><% } %></p>
+<% if (acessoBloqueado) { %>
+    <%# Unico caminho para a tela da conta enquanto o resto do sistema esta fechado (a pessoa pode excluir a conta e os dados). %>
+    <p class="muted" style="font-size: 13px;"><a href="/configuracoes/conta"><i class="ph ph-identification-card"></i> <%= t('config.menu.conta') %>: <%= t('conta.excluir_titulo') %></a></p>
+<% } %>
+</div>
+
 <div class="modal-backdrop modal-backdrop--lanc" id="modal-pedido-plano" data-modal>
     <div class="modal card modal--lanc">
         <div class="modal__header">
@@ -215,6 +316,11 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
                 <input class="input" type="text" name="documento" inputmode="numeric" autocomplete="off" required maxlength="20" placeholder="1234567">
                 <small class="muted"><%= t('assinatura.documento_dica') %></small>
             </label>
+            <label class="lanc-campo">
+                <span><%= t('assinatura.codigo_indicacao') %></span>
+                <input class="input" type="text" name="codigo_indicacao" autocomplete="off" maxlength="20" style="text-transform: uppercase;">
+                <small class="muted"><%= t('assinatura.codigo_indicacao_dica', { pct: (indicacao || {}).percentual || 20 }) %></small>
+            </label>
             <% } %>
             <div class="modal-rodape">
                 <button type="button" class="btn btn-outline" data-modal-close><%= t('assinatura.cancelar') %></button>
@@ -224,32 +330,20 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
     </div>
 </div>
 
-<p class="muted" style="font-size: 13px; margin-top: 4px;"><i class="ph ph-info"></i> <%= negocio.EMAIL_SUPORTE ? t('assinatura.como_pagar') : t('assinatura.como_pagar').replace(/\s*[^.]*:\s*$/, '') %><% if (negocio.EMAIL_SUPORTE) { %> <b><%= negocio.EMAIL_SUPORTE %></b><% } %></p>
-<% if (acessoBloqueado) { %>
-    <%# Unico caminho para a tela da conta enquanto o resto do sistema esta fechado (a pessoa pode excluir a conta e os dados). %>
-    <p class="muted" style="font-size: 13px;"><a href="/configuracoes/conta"><i class="ph ph-identification-card"></i> <%= t('config.menu.conta') %>: <%= t('conta.excluir_titulo') %></a></p>
-<% } %>
-
-<% if (pagamentos && pagamentos.length > 0) { %>
-<section class="card" style="margin-top: 20px;">
-    <h2><%= t('assinatura.historico') %></h2>
-    <div class="tabela-container">
-        <table class="tabela">
-            <thead><tr>
-                <th><%= t('comum.data') %></th><th><%= t('assinatura.plano') %></th><th><%= t('assinatura.ciclo') %></th><th><%= t('comum.valor') %></th><th><%= t('assinatura.metodo') %></th>
-            </tr></thead>
-            <tbody>
-                <% pagamentos.forEach(pg => { %>
-                    <tr>
-                        <td><%= formatDate(pg.pago_em || pg.created_at, 'DD/MM/YYYY') %></td>
-                        <td><%= pg.plano_codigo ? nomePlano(pg.plano_codigo) : '-' %></td>
-                        <td><%= ciclos[pg.ciclo] || '-' %></td>
-                        <td>Gs. <%= fmt(pg.valor) %></td>
-                        <td><%= pg.metodo %></td>
-                    </tr>
-                <% }) %>
-            </tbody>
-        </table>
-    </div>
-</section>
+<script>
+(function () {
+    var abas = document.querySelectorAll('.assin-abas [data-tab]');
+    function abrir(nome) {
+        abas.forEach(function (b) { b.classList.toggle('is-ativo', b.getAttribute('data-tab') === nome); });
+        document.querySelectorAll('[data-painel]').forEach(function (p) { p.hidden = p.getAttribute('data-painel') !== nome; });
+    }
+    abas.forEach(function (b) { b.addEventListener('click', function () { abrir(b.getAttribute('data-tab')); }); });
+    // Vindo de "Adquirir por ..." (?comprar=plano): o pedido abre sobre a aba dos planos.
+    if (new URLSearchParams(location.search).get('comprar')) abrir('planos');
+    if (location.hash === '#indicacao' || location.hash === '#recibos') abrir('assinatura');
+})();
+</script>
+<% if (!acessoBloqueado) { %>
+</div>
+</div>
 <% } %>

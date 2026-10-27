@@ -105,7 +105,7 @@ const _presets = [['hoje', t('filtro.hoje')], ['7dias', t('filtro.7dias')], ['me
                 <% } else { %>
                     <% lancamentos.forEach(l => { %>
                         <tr class="lanc-linha lanc-linha--<%= (l.tipo === 'despesa' || (l.tipo !== 'receita' && parseFloat(l.valor) < 0)) ? 'despesa' : 'receita' %>">
-                            <td><%= formatDate(l.data_competencia, 'DD/MM/YYYY') %></td>
+                            <td<% if (l.data_movimento && String(l.data_movimento).slice(0, 10) !== String(l.data_competencia).slice(0, 10) && l.data_competencia) { %> title="<%= t('contas.extrato.venc_original', { data: formatDate(l.data_competencia, 'DD/MM/YYYY') }) %>"<% } %>><%= formatDate(l.data_movimento || l.data_competencia, 'DD/MM/YYYY') %></td>
                             <td>
                                 <strong title="<%= descricaoLancamento(l) %>"><%= (l.tipo === 'ajuste' || l.tipo === 'transferencia') ? descricaoLancamento(l) : truncarTexto(l.descricao, 45) %></strong>
                                 <% if (l.categoria_nome) { %>

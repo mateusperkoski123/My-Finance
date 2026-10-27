@@ -9,6 +9,7 @@ const Lancamento = require('../models/Lancamento');
 const { normalizarPeriodicidade, calcularCambio } = require('../core/helpers');
 const Categoria = require('../models/Categoria');
 const Dispositivo = require('../models/Dispositivo');
+const Cartao = require('../models/Cartao');
 const SyncExclusao = require('../models/SyncExclusao');
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -223,6 +224,28 @@ const OPERACOES = {
         return { id_servidor: perna ? perna.id : null, updated_at: perna ? await tsLinha('lancamentos', perna.id) : null };
     },
 
+    // Compra no cartao de credito feita sem internet: entra na fatura aberta (nao mexe no saldo ate a fatura ser paga).
+    'cartao_compras.create': async (userId, dados) => {
+        const clientId = uuidOuNulo(dados.client_id);
+        if (clientId) {
+            const ja = await achar('cartao_compras', userId, { client_id: clientId }, 'id');
+            if (ja) return { id_servidor: ja.id, updated_at: await tsLinha('cartao_compras', ja.id) };
+        }
+        const ref = referencia(dados.cartao_id);
+        if (!ref) throw new ErroOp('cartao_invalido');
+        const linha = await achar('cartoes', userId, ref, 'id');
+        const cartao = linha ? await Cartao.buscar(linha.id, userId) : null;
+        if (!cartao || cartao.status !== 'ativo') throw new ErroOp('cartao_invalido');
+        const categoriaId = await categoriaDoUsuario(userId, dados.categoria_id);
+        const r = await Cartao.criarCompra(userId, cartao, {
+            descricao: texto(dados.descricao, 190, { obrigatorio: true, campo: 'descricao' }),
+            valor: valorPositivo(dados.valor),
+            data: dataYMD(dados.data_compra, { obrigatoria: true }),
+            categoria_id: categoriaId, client_id: clientId
+        });
+        return { id_servidor: r.id, updated_at: await tsLinha('cartao_compras', r.id) };
+    },
+
     'categorias.create': async (userId, dados) => {
         const clientId = uuidOuNulo(dados.client_id);
         if (clientId) {
@@ -354,6 +377,10 @@ class ApiAppController {
                  DATE_FORMAT(data_competencia, '%Y-%m-%d') AS data_competencia, DATE_FORMAT(data_pagamento, '%Y-%m-%d') AS data_pagamento`,
                 'l', janela && !(cur && cur.l && cur.l.fim) ? ' AND data_competencia BETWEEN ? AND ?' : '', janela && !(cur && cur.l && cur.l.fim) ? janela : []);
 
+            const cartoes = await pagina('cartoes', 'id, client_id, conta_id, nome, bandeira, limite_total, dia_fechamento, dia_vencimento, status', 'r');
+            const compras = await pagina('cartao_compras', "id, client_id, cartao_id, categoria_id, descricao, valor, fatura_mes, lancamento_id, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra", 'o');
+            const faturas = await pagina('cartao_faturas', "id, client_id, cartao_id, mes, total, DATE_FORMAT(pago_em, '%Y-%m-%d') AS pago_em", 'f');
+
             let ultimaExclusao;
             let exclusoes = [];
             if (completo) {
@@ -365,11 +392,11 @@ class ApiAppController {
                 if (exclusoes.length) ultimaExclusao = exclusoes[exclusoes.length - 1].id;
             }
 
-            const mais = contas.cheia || categorias.cheia || lanc.cheia || exclusoes.length === lote;
+            const mais = contas.cheia || categorias.cheia || lanc.cheia || cartoes.cheia || compras.cheia || faturas.cheia || exclusoes.length === lote;
             // A janela da primeira carga vale ate acabarem os lancamentos; depois disso o pull incremental traz tudo o que mudar.
             const lancEncerrado = Boolean(janela) && !lanc.cheia;
             const novoCursor = {
-                c: contas.proximo, k: categorias.proximo,
+                c: contas.proximo, k: categorias.proximo, r: cartoes.proximo, o: compras.proximo, f: faturas.proximo,
                 l: lancEncerrado ? { ...lanc.proximo, fim: 1 } : lanc.proximo,
                 x: ultimaExclusao,
                 w: janela && !lancEncerrado ? janela : null
@@ -395,6 +422,9 @@ class ApiAppController {
                 contas: contas.rows,
                 categorias: categorias.rows,
                 lancamentos: lanc.rows,
+                cartoes: cartoes.rows,
+                cartao_compras: compras.rows,
+                cartao_faturas: faturas.rows,
                 exclusoes: exclusoes.map((e) => ({ tabela: e.tabela, id: e.registro_id, client_id: e.client_id }))
             });
         } catch (err) {

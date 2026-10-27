@@ -1,0 +1,49 @@
+<%# Parametros: idModal, acao, titulo, categorias, hoje, moedaCod, compra (opcional: preenche o formulario), mes (opcional) %>
+<% const _c = typeof compra !== 'undefined' && compra ? compra : {}; %>
+<div class="modal-backdrop" id="<%= idModal %>" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= titulo %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="<%= acao %>" class="form">
+            <%- csrfCampo %>
+            <% if (typeof mes !== 'undefined' && mes) { %><input type="hidden" name="mes" value="<%= mes %>"><% } %>
+            <div class="form-group">
+                <label for="<%= idModal %>-desc"><%= t('cartoes.compra_descricao') %> *</label>
+                <input class="input" type="text" id="<%= idModal %>-desc" name="descricao" maxlength="190" required value="<%= _c.descricao || '' %>">
+            </div>
+            <div class="compras-fila">
+                <div class="form-group">
+                    <label for="<%= idModal %>-valor"><%= t('cartoes.compra_valor') %> (<%= moedaCod %>) *</label>
+                    <input class="input" type="text" id="<%= idModal %>-valor" name="valor" inputmode="decimal" maxlength="20" required autocomplete="off" value="<%= _c.valor ? Number(_c.valor).toFixed(2) : '' %>">
+                </div>
+                <div class="form-group">
+                    <label for="<%= idModal %>-data"><%= t('cartoes.compra_data') %></label>
+                    <input class="input" type="date" id="<%= idModal %>-data" name="data" value="<%= _c.data_compra ? formatDate(_c.data_compra) : hoje %>">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="<%= idModal %>-categoria"><%= t('cartoes.compra_categoria') %></label>
+                <select class="input" id="<%= idModal %>-categoria" name="categoria_id">
+                    <option value=""><%= t('cartoes.sem_categoria') %></option>
+                    <% categorias.forEach(function (c) { %>
+                        <% if (c.subcategorias.length) { %>
+                        <optgroup label="<%= c.nome %>">
+                            <option value="<%= c.id %>" <%= Number(_c.categoria_id) === c.id ? 'selected' : '' %>><%= c.nome %></option>
+                            <% c.subcategorias.forEach(function (s) { %><option value="<%= s.id %>" <%= Number(_c.categoria_id) === s.id ? 'selected' : '' %>><%= c.nome %> › <%= s.nome %></option><% }) %>
+                        </optgroup>
+                        <% } else { %>
+                        <option value="<%= c.id %>" <%= Number(_c.categoria_id) === c.id ? 'selected' : '' %>><%= c.nome %></option>
+                        <% } %>
+                    <% }) %>
+                </select>
+                <small class="muted"><%= t('cartoes.compra_vai_para') %></small>
+            </div>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('clientes.salvar') %></button>
+            </div>
+        </form>
+    </div>
+</div>

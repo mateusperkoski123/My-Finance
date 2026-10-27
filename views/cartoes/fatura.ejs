@@ -1,0 +1,147 @@
+<%
+    const _rotulo = function (mes) { const p = mes.split('-'); var r = new Date(Number(p[0]), Number(p[1]) - 1, 1).toLocaleDateString(lang, { month: 'long', year: 'numeric' }); return r.charAt(0).toUpperCase() + r.slice(1); };
+    const _paga = !!fatura.paga;
+    const _limite = Number(cartao.limite_total);
+    const _disponivel = Math.max(_limite - usado, 0);
+    const _m = cartao.conta_moeda;
+%>
+<div class="page-header page-header--acoes">
+    <div>
+        <p class="muted" style="margin: 0 0 4px;"><a href="/cartoes"><i class="ph ph-arrow-left"></i> <%= t('cartoes.voltar') %></a></p>
+        <h1><i class="ph ph-credit-card"></i> <%= cartao.nome %></h1>
+        <p class="muted">
+            <%= cartao.bandeira ? cartao.bandeira + ' · ' : '' %><%= cartao.conta_nome %> ·
+            <%= t('cartoes.fecha_dia', { dia: cartao.dia_fechamento }) %> · <%= t('cartoes.vence_dia', { dia: cartao.dia_vencimento }) %>
+            <% if (_limite > 0) { %> · <%= t('cartoes.limite_disponivel') %>: <b class="num"><%= moeda(_disponivel, _m) %></b><% } %>
+        </p>
+    </div>
+    <div class="page-header__botoes">
+        <button type="button" class="btn btn-outline" data-modal-open="modal-editar-cartao"><i class="ph ph-pencil-simple"></i> <%= t('cartoes.editar_botao') %></button>
+        <% if (!_paga) { %><button type="button" class="btn btn-primary" data-modal-open="modal-nova-compra"><i class="ph ph-plus-circle"></i> <%= t('cartoes.nova_compra') %></button><% } %>
+    </div>
+</div>
+
+<div class="cartao-meses">
+    <a class="btn btn-outline btn-sm" href="/cartoes/<%= cartao.id %>?mes=<%= mesAnterior %>" title="<%= t('cartoes.mes_anterior') %>" aria-label="<%= t('cartoes.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
+    <strong><%= t('cartoes.fatura_de', { mes: _rotulo(fatura.mes) }) %></strong>
+    <a class="btn btn-outline btn-sm" href="/cartoes/<%= cartao.id %>?mes=<%= mesSeguinte %>" title="<%= t('cartoes.mes_seguinte') %>" aria-label="<%= t('cartoes.mes_seguinte') %>"><i class="ph ph-caret-right"></i></a>
+</div>
+
+<div class="card cartao-resumo">
+    <div>
+        <div class="muted" style="font-size: 13px;"><%= t('cartoes.total_fatura') %></div>
+        <div class="cartao-card__valor num"><%= moeda(fatura.total, _m) %></div>
+        <div class="muted" style="font-size: 13px;"><%= t('cartoes.fecha_em', { data: formatDate(fatura.fechamento, 'DD/MM/YYYY') }) %> · <%= t('cartoes.vence_em', { data: formatDate(fatura.vencimento, 'DD/MM/YYYY') }) %></div>
+    </div>
+    <div class="cartao-resumo__lado">
+        <% if (_paga) { %>
+            <span class="badge badge-sucesso"><i class="ph ph-check-circle"></i> <%= t('cartoes.situacao_paga', { data: formatDate(fatura.paga.pago_em, 'DD/MM/YYYY') }) %></span>
+            <form method="post" action="/cartoes/<%= cartao.id %>/desfazer" data-confirm="<%= t('cartoes.confirmar_pagamento_desfazer') %>">
+                <%- csrfCampo %><input type="hidden" name="mes" value="<%= fatura.mes %>">
+                <button type="submit" class="btn btn-outline btn-sm"><i class="ph ph-arrow-counter-clockwise"></i> <%= t('cartoes.desfazer_pagamento') %></button>
+            </form>
+        <% } else { %>
+            <span class="badge badge-alerta"><%= t('cartoes.situacao_aberta') %></span>
+            <% if (fatura.compras.length) { %><button type="button" class="btn btn-primary" data-modal-open="modal-pagar"><i class="ph ph-check-circle"></i> <%= t('cartoes.pagar_fatura') %></button><% } %>
+        <% } %>
+    </div>
+</div>
+<% if (_paga) { %><p class="muted" style="font-size: 13px;"><%= t('cartoes.fatura_paga_aviso') %></p><% } %>
+
+<div class="card cartao-compras">
+<% if (!fatura.compras.length) { %>
+    <p class="muted" style="padding: 16px; margin: 0;"><%= t('cartoes.sem_compras') %></p>
+<% } else { fatura.compras.forEach(function (c) { %>
+    <div class="cartao-compra">
+        <div class="cartao-compra__info">
+            <strong><%= c.descricao %></strong>
+            <span class="muted"><%= formatDate(c.data_compra, 'DD/MM/YYYY') %> · <%= c.categoria_nome || t('cartoes.sem_categoria') %></span>
+        </div>
+        <b class="num"><%= moeda(c.valor, _m) %></b>
+        <% if (!_paga) { %>
+        <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-compra-<%= c.id %>" title="<%= t('cartoes.editar_compra') %>" aria-label="<%= t('cartoes.editar_compra') %>"><i class="ph ph-pencil-simple"></i></button>
+        <form method="post" action="/cartoes/<%= cartao.id %>/compras/<%= c.id %>/excluir" data-confirm="<%= t('cartoes.confirmar_excluir_compra') %>">
+            <%- csrfCampo %><input type="hidden" name="mes" value="<%= fatura.mes %>">
+            <button type="submit" class="btn btn-outline btn-sm" title="<%= t('cartoes.excluir_compra') %>" aria-label="<%= t('cartoes.excluir_compra') %>"><i class="ph ph-trash"></i></button>
+        </form>
+        <% } %>
+    </div>
+<% }); } %>
+</div>
+
+<% if (!_paga) { fatura.compras.forEach(function (c) { %>
+<%- include('_modal_compra', { idModal: 'modal-compra-' + c.id, acao: '/cartoes/' + cartao.id + '/compras/' + c.id + '/editar', titulo: t('cartoes.editar_compra'), categorias: categorias, hoje: hoje, moedaCod: _m, compra: c, mes: fatura.mes }) %>
+<% }); } %>
+
+<div class="modal-backdrop" id="modal-nova-compra" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('cartoes.nova_compra') %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="/cartoes/<%= cartao.id %>/compras" class="form" data-gf-moeda="<%= _m %>">
+            <%- csrfCampo %>
+            <div class="form-group">
+                <label for="compra-desc"><%= t('cartoes.compra_descricao') %> *</label>
+                <input class="input" type="text" id="compra-desc" name="descricao" maxlength="190" required>
+            </div>
+            <div class="compras-fila">
+                <div class="form-group">
+                    <label for="compra-valor"><%= t('cartoes.compra_valor') %> (<%= _m %>) *</label>
+                    <input class="input" type="text" id="compra-valor" name="valor" inputmode="decimal" maxlength="20" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label for="compra-data"><%= t('cartoes.compra_data') %></label>
+                    <input class="input" type="date" id="compra-data" name="data" value="<%= hoje %>">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="compra-categoria"><%= t('cartoes.compra_categoria') %></label>
+                <select class="input" id="compra-categoria" name="categoria_id">
+                    <option value=""><%= t('cartoes.sem_categoria') %></option>
+                    <% categorias.forEach(function (c) { %>
+                        <% if (c.subcategorias.length) { %>
+                        <optgroup label="<%= c.nome %>">
+                            <option value="<%= c.id %>"><%= c.nome %></option>
+                            <% c.subcategorias.forEach(function (s) { %><option value="<%= s.id %>"><%= c.nome %> › <%= s.nome %></option><% }) %>
+                        </optgroup>
+                        <% } else { %>
+                        <option value="<%= c.id %>"><%= c.nome %></option>
+                        <% } %>
+                    <% }) %>
+                </select>
+                <small class="muted"><%= t('cartoes.compra_vai_para') %></small>
+            </div>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('clientes.salvar') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<% if (!_paga && fatura.compras.length) { %>
+<div class="modal-backdrop" id="modal-pagar" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('cartoes.pagar_titulo') %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="/cartoes/<%= cartao.id %>/pagar" class="form">
+            <%- csrfCampo %><input type="hidden" name="mes" value="<%= fatura.mes %>">
+            <p style="margin: 0 0 8px;"><b class="num"><%= moeda(fatura.total, _m) %></b></p>
+            <p class="muted" style="margin: 0 0 12px;"><%= t('cartoes.pagar_ajuda', { conta: cartao.conta_nome }) %></p>
+            <div class="form-group">
+                <label for="pagar-data"><%= t('cartoes.data_pagamento') %></label>
+                <input class="input" type="date" id="pagar-data" name="data" value="<%= hoje %>">
+            </div>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-check-circle"></i> <%= t('cartoes.confirmar_pagar') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+<% } %>
+
+<%- include('_modal_cartao', { idModal: 'modal-editar-cartao', acao: '/cartoes/' + cartao.id + '/atualizar', titulo: t('cartoes.editar'), contas: contas, cartao: cartao, voltar: 'fatura' }) %>

@@ -34,6 +34,15 @@ async function executarOp(userId, op) {
             return { t: 'excluir', ids };
         }
 
+        // Compra no cartao de credito: entra na fatura aberta e NAO mexe no saldo (so quando a fatura for paga).
+        case 'compra_cartao': {
+            const Cartao = require('../models/Cartao');
+            const cartao = await Cartao.buscar(op.cartao_id, userId);
+            if (!cartao || cartao.status !== 'ativo') throw new Error('Cartão inválido.');
+            const r = await Cartao.criarCompra(userId, cartao, { descricao: op.descricao, valor: op.valor, data: op.data_competencia, categoria_id: op.categoria_id });
+            return { t: 'compra_cartao_excluir', id: r.id, cartao_id: cartao.id };
+        }
+
         case 'status': {
             const anteriores = [];
             for (const item of op.itens) {
@@ -113,6 +122,12 @@ async function executarOp(userId, op) {
 // Desfaz uma operacao a partir do "desfazer" que executarOp devolveu.
 async function desfazerOp(userId, d) {
     switch (d && d.t) {
+        case 'compra_cartao_excluir': {
+            const Cartao = require('../models/Cartao');
+            if (!(await Cartao.excluirCompra(d.id, d.cartao_id, userId))) throw new Error('A fatura desta compra já foi paga: desfaça o pagamento na tela do cartão.');
+            return;
+        }
+
         case 'excluir':
             await excluirIds(userId, (d.ids || []).map(Number).filter(Number.isInteger));
             return;

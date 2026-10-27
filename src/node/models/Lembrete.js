@@ -9,13 +9,13 @@ class Lembrete {
         return rows[0] || null;
     }
 
-    static async salvarConfig(userId, { ativo, hora, avisoDia, avisoAntes, avisoClientes = false, avisoCompras = false, fuso, proximoEnvio }) {
+    static async salvarConfig(userId, { ativo, hora, avisoDia, avisoAntes, avisoClientes = false, avisoCompras = false, avisoCartoes = false, fuso, proximoEnvio }) {
         await db.query(
-            `INSERT INTO lembretes_config (user_id, ativo, hora, aviso_dia, aviso_antes, aviso_clientes, aviso_compras, fuso, proximo_envio)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            `INSERT INTO lembretes_config (user_id, ativo, hora, aviso_dia, aviso_antes, aviso_clientes, aviso_compras, aviso_cartoes, fuso, proximo_envio)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE ativo = VALUES(ativo), hora = VALUES(hora), aviso_dia = VALUES(aviso_dia),
-                aviso_antes = VALUES(aviso_antes), aviso_clientes = VALUES(aviso_clientes), aviso_compras = VALUES(aviso_compras), fuso = VALUES(fuso), proximo_envio = VALUES(proximo_envio)`,
-            [userId, ativo ? 1 : 0, hora, avisoDia ? 1 : 0, avisoAntes ? 1 : 0, avisoClientes ? 1 : 0, avisoCompras ? 1 : 0, fuso, ativo ? proximoEnvio : null]
+                aviso_antes = VALUES(aviso_antes), aviso_clientes = VALUES(aviso_clientes), aviso_compras = VALUES(aviso_compras), aviso_cartoes = VALUES(aviso_cartoes), fuso = VALUES(fuso), proximo_envio = VALUES(proximo_envio)`,
+            [userId, ativo ? 1 : 0, hora, avisoDia ? 1 : 0, avisoAntes ? 1 : 0, avisoClientes ? 1 : 0, avisoCompras ? 1 : 0, avisoCartoes ? 1 : 0, fuso, ativo ? proximoEnvio : null]
         );
     }
 

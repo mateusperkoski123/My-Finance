@@ -1,7 +1,7 @@
 // Wrapper leve de IndexedDB para armanazenamento offline seguro do MyFinance
 (function(exports) {
     const DB_NAME = 'MyFinanceDB';
-    const DB_VERSION = 2;
+    const DB_VERSION = 3;
     let dbInstance = null;
 
     function gerarUUID() {
@@ -41,6 +41,12 @@
                     store.createIndex('idx_conta', 'conta_id', { unique: false });
                     store.createIndex('idx_data', 'data_competencia', { unique: false });
                 }
+                ['cartoes', 'cartao_compras', 'cartao_faturas'].forEach((nome) => {
+                    if (!db.objectStoreNames.contains(nome)) {
+                        const store = db.createObjectStore(nome, { keyPath: 'client_or_id' });
+                        store.createIndex('idx_id', 'id', { unique: false });
+                    }
+                });
                 if (!db.objectStoreNames.contains('meta')) {
                     db.createObjectStore('meta', { keyPath: 'chave' });
                 }
@@ -357,9 +363,10 @@
     // Apaga copias locais de registros excluidos no servidor: [{ tabela, id, client_id }]
     function removerExcluidos(exclusoes) {
         return abrir().then((db) => new Promise((resolve, reject) => {
-            const tx = db.transaction(['contas', 'categorias', 'lancamentos'], 'readwrite');
+            const tabelas = ['contas', 'categorias', 'lancamentos', 'cartoes', 'cartao_compras', 'cartao_faturas'];
+            const tx = db.transaction(tabelas, 'readwrite');
             (exclusoes || []).forEach((e) => {
-                if (!['contas', 'categorias', 'lancamentos'].includes(e.tabela)) return;
+                if (!tabelas.includes(e.tabela)) return;
                 const store = tx.objectStore(e.tabela);
                 if (e.client_id) store.delete(e.client_id);
                 store.delete(`id_${e.id}`);
@@ -401,7 +408,7 @@
     function limparTudo() {
         return abrir().then((db) => {
             return new Promise((resolve, reject) => {
-                const stores = ['contas', 'categorias', 'lancamentos', 'meta', 'fila', 'outbox'];
+                const stores = ['contas', 'categorias', 'lancamentos', 'cartoes', 'cartao_compras', 'cartao_faturas', 'meta', 'fila', 'outbox'];
                 const tx = db.transaction(stores, 'readwrite');
                 stores.forEach((s) => {
                     if (db.objectStoreNames.contains(s)) {

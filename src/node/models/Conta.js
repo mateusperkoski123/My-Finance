@@ -142,6 +142,11 @@ class Conta {
         try {
             await conn.beginTransaction();
             const SyncExclusao = require('./SyncExclusao');
+            // Cartoes da conta (e as compras/faturas deles) saem junto: o app precisa saber.
+            const doCartao = '(SELECT id FROM cartoes WHERE conta_id = ? AND user_id = ?)';
+            await SyncExclusao.registrar('cartao_faturas', `cartao_id IN ${doCartao}`, [id, userId], conn);
+            await SyncExclusao.registrar('cartao_compras', `cartao_id IN ${doCartao}`, [id, userId], conn);
+            await SyncExclusao.registrar('cartoes', 'conta_id = ? AND user_id = ?', [id, userId], conn);
             await SyncExclusao.registrar('lancamentos', 'conta_id = ? AND user_id = ?', [id, userId], conn);
             await SyncExclusao.registrar('contas', 'id = ? AND user_id = ?', [id, userId], conn);
             await conn.query('DELETE FROM lancamentos WHERE conta_id = ? AND user_id = ?', [id, userId]);
@@ -180,10 +185,13 @@ class Conta {
 
     // Extrato da conta com filtros opcionais: periodo, tipo, status, busca e ordenacao.
     static async extrato(id, userId, f = {}) {
+        // Data do movimento no extrato: o dia do pagamento quando ja foi pago (e o que entra no banco), senao o vencimento.
+        // Sem isso, uma parcela antiga paga hoje some do mes atual e fica escondida no mes do vencimento.
+        const DATA_MOV = "COALESCE(CASE WHEN l.status = 'pago' THEN l.data_pagamento END, l.data_competencia)";
         let where = 'WHERE l.conta_id = ? AND l.user_id = ?';
         const params = [id, userId];
         if (f.inicio && f.fim) {
-            where += ' AND l.data_competencia BETWEEN ? AND ?';
+            where += ` AND ${DATA_MOV} BETWEEN ? AND ?`;
             params.push(f.inicio, f.fim);
         }
         if (['receita', 'despesa', 'transferencia'].includes(f.tipo)) {
@@ -203,7 +211,7 @@ class Conta {
         if (f.ordenar === 'vencimento') orderBy = 'l.data_competencia ASC, l.id ASC';
         else if (f.ordenar === 'valor') orderBy = 'ABS(l.valor) DESC, l.id DESC';
         const [rows] = await db.query(
-            `SELECT l.*, c.nome as categoria_nome, cb.moeda AS conta_moeda,
+            `SELECT l.*, c.nome as categoria_nome, cb.moeda AS conta_moeda, ${DATA_MOV} AS data_movimento,
                     (SELECT p.valor FROM lancamentos p WHERE p.id = l.transferencia_par_id) AS par_valor,
                     (SELECT cp.moeda FROM lancamentos p JOIN contas cp ON cp.id = p.conta_id WHERE p.id = l.transferencia_par_id) AS par_moeda
              FROM lancamentos l

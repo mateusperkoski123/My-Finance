@@ -1,4 +1,4 @@
-<div class="page-header">
+<div class="page-header settings-titulo-mobile">
     <h1><i class="ph ph-gear"></i> <%= t('config.titulo') %></h1>
 </div>
 
@@ -59,6 +59,11 @@
                         <input type="checkbox" name="aviso_antes" value="1" <%= config.aviso_antes ? 'checked' : '' %>>
                         <%= t('lembrete.um_dia_antes') %>
                     </label>
+                    <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 6px;">
+                        <input type="checkbox" name="aviso_cartoes" value="1" <%= config.aviso_cartoes ? 'checked' : '' %>>
+                        <%= t('lembrete.cartoes_opcao') %>
+                    </label>
+                    <p class="muted" style="font-size: 13px; margin: 4px 0 0 26px;"><%= t('lembrete.cartoes_ajuda') %></p>
                     <% if (clientesVisivel) { %>
                     <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-top: 6px;">
                         <input type="checkbox" name="aviso_clientes" value="1" <%= config.aviso_clientes ? 'checked' : '' %>>

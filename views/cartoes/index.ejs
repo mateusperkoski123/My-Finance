@@ -1,0 +1,80 @@
+<div class="page-header page-header--acoes">
+    <div>
+        <h1><i class="ph ph-credit-card"></i> <%= t('cartoes.titulo') %></h1>
+        <p class="muted"><%= t('cartoes.subtitulo') %></p>
+    </div>
+    <div class="page-header__botoes">
+        <% if (contas.length && !limite) { %><button type="button" class="btn btn-primary" data-modal-open="modal-novo-cartao"><i class="ph ph-plus-circle"></i> <%= t('cartoes.adicionar') %></button><% } %>
+    </div>
+</div>
+
+<div class="tabs" style="margin-bottom: 16px;">
+    <a href="/cartoes" class="tabs__item <%= !arquivados ? 'is-active' : '' %>"><i class="ph ph-credit-card"></i> <%= t('cartoes.meus') %></a>
+    <a href="/cartoes?aba=arquivados" class="tabs__item <%= arquivados ? 'is-active' : '' %>"><i class="ph ph-archive"></i> <%= t('cartoes.arquivados') %></a>
+</div>
+
+<% if (limite && !arquivados) { %>
+    <div class="card" style="padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+        <span class="muted"><i class="ph ph-info"></i> <%= t('cartoes.limite_plano', { n: limite }) %></span>
+        <a class="btn btn-outline btn-sm" href="/assinatura"><i class="ph ph-crown-simple"></i> <%= t('cartoes.ver_planos') %></a>
+    </div>
+<% } %>
+
+<% if (!contas.length) { %>
+    <div class="card" style="padding: 24px;"><p class="muted" style="margin: 0;"><%= t('cartoes.sem_contas') %></p></div>
+<% } else if (!cartoes.length) { %>
+    <div class="card" style="padding: 24px;">
+        <% if (arquivados) { %>
+            <p class="muted" style="margin: 0;"><%= t('cartoes.sem_arquivados') %></p>
+        <% } else { %>
+            <h3 style="margin: 0 0 6px;"><%= t('cartoes.vazio_titulo') %></h3>
+            <p class="muted" style="margin: 0 0 16px; max-width: 60ch;"><%= t('cartoes.vazio_texto') %></p>
+            <button type="button" class="btn btn-primary" data-modal-open="modal-novo-cartao"><i class="ph ph-plus-circle"></i> <%= t('cartoes.adicionar') %></button>
+        <% } %>
+    </div>
+<% } else { %>
+    <div class="cartao-grid">
+    <% cartoes.forEach(function (k) {
+        const limite = Number(k.limite_total), usado = Number(k.usado);
+        const pct = limite > 0 ? Math.min(Math.round(usado / limite * 100), 100) : 0;
+        const disponivel = Math.max(limite - usado, 0);
+    %>
+        <div class="card cartao-card">
+            <div class="cartao-card__topo">
+                <span class="cartao-card__icone"><i class="ph ph-credit-card"></i></span>
+                <div>
+                    <strong><%= k.nome %></strong>
+                    <div class="muted" style="font-size: 13px;"><%= k.bandeira || k.conta_nome %></div>
+                </div>
+            </div>
+            <div>
+                <div class="muted" style="font-size: 13px;"><%= t('cartoes.limite_usado') %></div>
+                <div class="cartao-card__valor num"><%= moeda(usado, k.conta_moeda) %></div>
+            </div>
+            <% if (limite > 0) { %>
+            <div>
+                <div class="cartao-barra" role="progressbar" aria-valuenow="<%= pct %>" aria-valuemin="0" aria-valuemax="100"><i class="<%= pct >= 90 ? 'is-alto' : '' %>" style="width: <%= pct %>%;"></i></div>
+                <div class="muted cartao-card__pct"><%= t('cartoes.pct_usado', { pct: pct }) %></div>
+            </div>
+            <div class="cartao-card__limites">
+                <div><span class="muted"><%= t('cartoes.limite_disponivel') %></span><b class="num"><%= moeda(disponivel, k.conta_moeda) %></b></div>
+                <div><span class="muted"><%= t('cartoes.limite_total') %></span><b class="num"><%= moeda(limite, k.conta_moeda) %></b></div>
+            </div>
+            <% } %>
+            <div class="cartao-card__dias muted"><span><%= t('cartoes.fecha_dia', { dia: k.dia_fechamento }) %></span><span><%= t('cartoes.vence_dia', { dia: k.dia_vencimento }) %></span></div>
+            <a class="btn btn-outline cartao-card__ver" href="/cartoes/<%= k.id %>"><span><%= t('cartoes.ver_fatura') %></span> <i class="ph ph-arrow-right"></i></a>
+            <div class="cartao-card__acoes">
+                <% if (!arquivados) { %><button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-cartao-<%= k.id %>"><i class="ph ph-pencil-simple"></i> <%= t('cartoes.editar_botao') %></button><% } %>
+                <form method="post" action="/cartoes/<%= k.id %>/arquivar" <% if (!arquivados) { %>data-confirm="<%= t('cartoes.confirmar_arquivar') %>"<% } %>>
+                    <%- csrfCampo %>
+                    <% if (arquivados) { %><input type="hidden" name="acao" value="restaurar"><% } %>
+                    <button type="submit" class="btn btn-outline btn-sm"><i class="ph ph-archive"></i> <%= arquivados ? t('cartoes.restaurar') : t('cartoes.arquivar') %></button>
+                </form>
+            </div>
+        </div>
+        <% if (!arquivados) { %><%- include('_modal_cartao', { idModal: 'modal-cartao-' + k.id, acao: '/cartoes/' + k.id + '/atualizar', titulo: t('cartoes.editar'), contas: contas, cartao: k }) %><% } %>
+    <% }) %>
+    </div>
+<% } %>
+
+<% if (contas.length && !limite) { %><%- include('_modal_cartao', { idModal: 'modal-novo-cartao', acao: '/cartoes/criar', titulo: t('cartoes.adicionar'), contas: contas }) %><% } %>

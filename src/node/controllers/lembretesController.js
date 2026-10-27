@@ -35,7 +35,7 @@ const lembretesController = {
             totalAparelhos: aparelhos.length,
             clientesVisivel: Boolean(req.ehAdmin || req.user.clientes_habilitado),
             comprasVisivel: Boolean(req.ehAdmin || req.user.compras_habilitado),
-            config: config || { ativo: 0, hora: '08:00', aviso_dia: 1, aviso_antes: 0, aviso_clientes: 0, aviso_compras: 0, fuso: lembretes.FUSO_PADRAO }
+            config: config || { ativo: 0, hora: '08:00', aviso_dia: 1, aviso_antes: 0, aviso_clientes: 0, aviso_compras: 0, aviso_cartoes: 0, fuso: lembretes.FUSO_PADRAO }
         });
     },
 
@@ -48,6 +48,7 @@ const lembretesController = {
         const avisoClientes = req.body.aviso_clientes === '1' && Boolean(req.ehAdmin || req.user.clientes_habilitado);
         // So vale para quem tem o modulo Compras liberado.
         const avisoCompras = req.body.aviso_compras === '1' && Boolean(req.ehAdmin || req.user.compras_habilitado);
+        const avisoCartoes = req.body.aviso_cartoes === '1';
         const fuso = lembretes.fusoValido(req.body.fuso) ? req.body.fuso : lembretes.FUSO_PADRAO;
         const voltar = (mensagem) => {
             req.session.flash = mensagem;
@@ -55,10 +56,10 @@ const lembretesController = {
         };
 
         if (!lembretes.horaValida(hora)) return voltar({ tipo: 'erro', mensagem: req.t('lembrete.horario_invalido') });
-        if (ativo && !avisoDia && !avisoAntes && !avisoClientes && !avisoCompras) return voltar({ tipo: 'erro', mensagem: req.t('lembrete.escolha_quando') });
+        if (ativo && !avisoDia && !avisoAntes && !avisoClientes && !avisoCompras && !avisoCartoes) return voltar({ tipo: 'erro', mensagem: req.t('lembrete.escolha_quando') });
 
         await Lembrete.salvarConfig(req.user.id, {
-            ativo, hora, avisoDia, avisoAntes, avisoClientes, avisoCompras, fuso,
+            ativo, hora, avisoDia, avisoAntes, avisoClientes, avisoCompras, avisoCartoes, fuso,
             proximoEnvio: lembretes.proximoEnvio(hora, fuso)
         });
         voltar({ tipo: 'sucesso', mensagem: req.t('lembrete.salvo') });

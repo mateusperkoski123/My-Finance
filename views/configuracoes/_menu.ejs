@@ -1,41 +1,39 @@
 <%# Sem teste em andamento e sem plano contratado (acessoBloqueado) so ficam abertas a Assinatura, a Conta e a saida. %>
-<% const _mnItem = 'flex: 1 1 120px; text-align: center; justify-content: center; padding: 10px 12px;'; %>
-<nav class="card settings-menu" style="margin-bottom: 16px; padding: 12px;">
-    <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: center;">
+<nav class="card settings-menu">
+    <h2 class="settings-menu__titulo"><%= t('config.titulo') %></h2>
+    <div class="settings-menu__lista">
         <% if (!acessoBloqueado) { %>
-        <a href="/configuracoes" class="settings-menu__item <%= menuAtivo === 'preferencia' ? 'is-active' : '' %>" style="<%= _mnItem %>">
+        <a href="/configuracoes" class="settings-menu__item <%= menuAtivo === 'preferencia' ? 'is-active' : '' %>">
             <i class="ph ph-gear"></i> <%= t('config.menu.preferencia') %>
         </a>
-        <a href="/configuracoes/perfil" class="settings-menu__item <%= menuAtivo === 'perfil' ? 'is-active' : '' %>" style="<%= _mnItem %>">
+        <a href="/configuracoes/perfil" class="settings-menu__item <%= menuAtivo === 'perfil' ? 'is-active' : '' %>">
             <i class="ph ph-user"></i> <%= t('config.menu.perfil') %>
         </a>
-        <a href="/configuracoes/dados" class="settings-menu__item <%= menuAtivo === 'dados' ? 'is-active' : '' %>" style="<%= _mnItem %>">
+        <a href="/configuracoes/dados" class="settings-menu__item <%= menuAtivo === 'dados' ? 'is-active' : '' %>">
             <i class="ph ph-floppy-disk"></i> <%= t('config.menu.dados') %>
             <% if (!pode('rec_backup')) { %><%- include('../partials/selo_plano', { plano: 'pro' }) %><% } %>
         </a>
         <% } %>
-        <a href="/assinatura" class="settings-menu__item <%= menuAtivo === 'assinatura' ? 'is-active' : '' %>" style="<%= _mnItem %>">
+        <a href="/assinatura" class="settings-menu__item <%= menuAtivo === 'assinatura' ? 'is-active' : '' %>">
             <i class="ph ph-crown-simple"></i> <%= t('config.menu.assinatura') %>
         </a>
         <% if (!acessoBloqueado) { %>
-        <a href="/configuracoes/lembretes" class="settings-menu__item <%= menuAtivo === 'lembretes' ? 'is-active' : '' %>" style="<%= _mnItem %>">
+        <a href="/configuracoes/lembretes" class="settings-menu__item <%= menuAtivo === 'lembretes' ? 'is-active' : '' %>">
             <i class="ph ph-bell-ringing"></i> <%= t('config.menu.lembretes') %>
         </a>
-        <a href="/guia" class="settings-menu__item" style="<%= _mnItem %>">
+        <a href="/guia" class="settings-menu__item">
             <i class="ph ph-book-open"></i> <%= t('guia.titulo') %>
         </a>
-        <a href="/configuracoes/dispositivos" class="settings-menu__item <%= menuAtivo === 'dispositivos' ? 'is-active' : '' %>" style="<%= _mnItem %>">
+        <a href="/configuracoes/dispositivos" class="settings-menu__item <%= menuAtivo === 'dispositivos' ? 'is-active' : '' %>">
             <i class="ph ph-device-mobile"></i> <%= t('config.menu.dispositivos') %>
         </a>
         <% } %>
-        <a href="/configuracoes/conta" class="settings-menu__item <%= menuAtivo === 'conta' ? 'is-active' : '' %>" style="<%= _mnItem %>">
+        <a href="/configuracoes/conta" class="settings-menu__item <%= menuAtivo === 'conta' ? 'is-active' : '' %>">
             <i class="ph ph-identification-card"></i> <%= t('config.menu.conta') %>
         </a>
-        <form method="post" action="/logout" style="flex: 1 1 120px; margin: 0;">
-            <%- csrfCampo %>
-            <button type="submit" class="settings-menu__item" style="width: 100%; text-align: center; justify-content: center; padding: 10px 12px; background: none; border: 1px solid var(--red-bg); color: var(--red); cursor: pointer; font-size: 13.5px; font-weight: 600; border-radius: 8px; display: flex; align-items: center; gap: 6px;">
-                <i class="ph ph-sign-out"></i> <%= t('nav.sair') %>
-            </button>
-        </form>
     </div>
+    <form method="post" action="/logout" class="settings-menu__sair">
+        <%- csrfCampo %>
+        <button type="submit"><i class="ph ph-sign-out"></i> <%= t('nav.sair') %></button>
+    </form>
 </nav>

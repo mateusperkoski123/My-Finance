@@ -138,6 +138,43 @@ const SECOES = [
         ]
     },
     {
+        id: 'cartoes', icone: 'ph-credit-card', link: { href: '/cartoes', rot: s('Abrir Cartões', 'Abrir Tarjetas', 'Open Cards') },
+        titulo: s('10. Cartão de crédito e fatura', '10. Tarjeta de crédito y factura', '10. Credit card and statement'),
+        intro: s('A Marina usa um cartão de crédito. Comprar no cartão não tira dinheiro da conta na hora: o gasto vai para a **fatura** e o saldo só cai quando ela paga.',
+            'Marina usa una tarjeta de crédito. Comprar con la tarjeta no saca dinero de la cuenta en el momento: el gasto va a la **factura** y el saldo solo baja cuando ella la paga.',
+            'Marina uses a credit card. Buying on the card does not take money from the account right away: the spending goes on the **statement** and the balance only drops when she pays it.'),
+        passos: [
+            s('Abra **Cartões** (no celular, **Mais › Cartões**) e toque em **Adicionar cartão**. Nome **Visa Itaú**, conta **Banco Itaú** (é dela que sai o pagamento da fatura e vem a moeda do cartão), limite **Gs. 2.000.000**, fecha dia **10** e vence dia **20**.',
+                'Abrí **Tarjetas** (en el celular, **Más › Tarjetas**) y tocá **Agregar tarjeta**. Nombre **Visa Itaú**, cuenta **Banco Itaú** (de ella sale el pago de la factura y viene la moneda de la tarjeta), límite **Gs. 2.000.000**, cierra el día **10** y vence el día **20**.',
+                'Open **Cards** (on your phone, **More › Cards**) and tap **Add card**. Name **Visa Itaú**, account **Banco Itaú** (the statement payment comes out of it and it sets the card currency), limit **Gs. 2,000,000**, closes on day **10** and due on day **20**.'),
+            s('Toque em **Ver detalhes da fatura** e em **Nova compra**: descrição **Mercado**, valor **150.000**, categoria **Supermercado** e a data. Compras feitas até o dia do fechamento entram na fatura daquele mês; depois dele, na do mês seguinte.',
+                'Tocá **Ver detalles de la factura** y **Nueva compra**: descripción **Supermercado**, valor **150.000**, categoría **Supermercado** y la fecha. Las compras hasta el día de cierre entran en la factura de ese mes; después, en la del mes siguiente.',
+                'Tap **View statement details** and **New purchase**: description **Groceries**, amount **150,000**, category **Supermarket** and the date. Purchases up to the closing day go on that month\'s statement; after it, on the next one.'),
+            s('Use as setas ao lado do mês para ver faturas anteriores e futuras. O **limite usado** soma as compras de todas as faturas ainda não pagas. Dá para **editar** ou **excluir** uma compra enquanto a fatura estiver em aberto.',
+                'Usá las flechas junto al mes para ver facturas anteriores y futuras. El **límite usado** suma las compras de todas las facturas aún no pagadas. Podés **editar** o **eliminar** una compra mientras la factura esté abierta.',
+                'Use the arrows next to the month to see past and future statements. The **used limit** adds up the purchases of every unpaid statement. You can **edit** or **delete** a purchase while the statement is open.'),
+            s('No vencimento, toque em **Pagar fatura**, confira a data e confirme. Só então o total sai da conta e cada compra vira uma despesa paga na categoria dela, nos relatórios.',
+                'En el vencimiento, tocá **Pagar factura**, revisá la fecha y confirmá. Solo entonces el total sale de la cuenta y cada compra se vuelve un gasto pagado en su categoría, en los informes.',
+                'On the due date, tap **Pay statement**, check the date and confirm. Only then does the total leave the account and each purchase becomes a paid expense in its category, in the reports.'),
+            s('Pagou errado? **Desfazer pagamento** apaga esses lançamentos, o saldo volta e a fatura fica em aberto de novo.',
+                '¿Pagaste mal? **Deshacer pago** borra esos movimientos, el saldo vuelve y la factura queda abierta otra vez.',
+                'Paid by mistake? **Undo payment** deletes those entries, the balance comes back and the statement is open again.'),
+            s('Para não esquecer o vencimento, abra **Configurações › Lembretes** e ligue **Avisar quando a fatura do cartão estiver para vencer**: o aviso chega no dia e 1 dia antes, só para faturas ainda não pagas.',
+                'Para no olvidar el vencimiento, abrí **Configuración › Recordatorios** y activá **Avisar cuando la factura de la tarjeta esté por vencer**: el aviso llega el día y 1 día antes, solo de facturas aún no pagadas.',
+                'So you do not forget the due date, open **Settings › Reminders** and turn on **Notify me when a card statement is about to be due**: the notice arrives on the day and 1 day before, only for statements not paid yet.'),
+            s('**Cartões por plano:** Básico 1, Premium 3 e Pro 6 cartões ativos. Arquivar um cartão libera a vaga.',
+                '**Tarjetas por plan:** Básico 1, Premium 3 y Pro 6 tarjetas activas. Archivar una tarjeta libera el lugar.',
+                '**Cards per plan:** Basic 1, Premium 3 and Pro 6 active cards. Archiving a card frees the slot.')
+        ],
+        exemplo: [
+            { tipo: 'des', rot: s('Mercado · na fatura (saldo não muda)', 'Supermercado · en la factura (el saldo no cambia)', 'Groceries · on the statement (balance unchanged)'), val: '- Gs. 150.000' },
+            { tipo: 'des', rot: s('Fatura paga · sai da conta', 'Factura pagada · sale de la cuenta', 'Statement paid · leaves the account'), val: '- Gs. 350.000' }
+        ],
+        dica: s('Compras de uma fatura já paga não podem ser alteradas: desfaça o pagamento antes. Uma compra nova cuja fatura já foi paga vai para a próxima fatura em aberto.',
+            'Las compras de una factura ya pagada no se pueden cambiar: deshacé el pago antes. Una compra nueva cuya factura ya fue pagada va a la próxima factura abierta.',
+            'Purchases on an already paid statement cannot be changed: undo the payment first. A new purchase whose statement was already paid goes on the next open statement.')
+    },
+    {
         id: 'ia-registrar', icone: 'ph-sparkle', link: { href: '/ia', rot: s('Abrir Chat IA', 'Abrir Chat IA', 'Open AI Chat') }, plano: 'premium',
         titulo: s('10. Chat IA: registrar escrevendo, falando ou fotografando', '10. Chat IA: registrar escribiendo, hablando o fotografiando', '10. AI Chat: record by typing, talking or taking a photo'),
         intro: s('A Marina está na rua e não quer abrir formulário. Ela usa o Chat IA para lançar na hora.', 'Marina está en la calle y no quiere abrir un formulario. Usa el Chat IA para cargar en el momento.', 'Marina is out and about and does not want to open a form. She uses AI Chat to record right away.'),
@@ -146,6 +183,7 @@ const SECOES = [
             s('**Texto:** escreva *Gastei 45.000 no almoço*. A IA escolhe categoria e conta e **registra na hora**.', '**Texto:** escribí *Gasté 45.000 en el almuerzo*. La IA elige categoría y cuenta y **registra al instante**.', '**Text:** type *I spent 45,000 on lunch*. The AI picks the category and account and **records it right away**.'),
             s('**Foto:** toque no ícone de **imagem** (ou da câmera, no celular) e envie a foto do comprovante. A IA lê o estabelecimento, o total e a data. Dá para mandar até 3 fotos.', '**Foto:** tocá el ícono de **imagen** (o de la cámara, en el celular) y enviá la foto del comprobante. La IA lee el comercio, el total y la fecha. Se pueden mandar hasta 3 fotos.', '**Photo:** tap the **image** icon (or the camera, on your phone) and send a photo of the receipt. The AI reads the shop, the total and the date. You can send up to 3 photos.'),
             s('**Áudio:** toque no **microfone**, fale *Paguei a conta de luz, 180 mil* e toque de novo para parar (até 60 segundos).', '**Audio:** tocá el **micrófono**, decí *Pagué la cuenta de luz, 180 mil* y tocá de nuevo para parar (hasta 60 segundos).', '**Voice:** tap the **microphone**, say *I paid the electricity bill, 180 thousand* and tap again to stop (up to 60 seconds).'),
+            s('**No cartão de crédito:** escreva *Gastei 80.000 no mercado no cartão Visa*. A compra vai para a fatura certa e o saldo só muda quando você pagar a fatura (o pagamento é feito na tela **Cartões**).', '**En la tarjeta de crédito:** escribí *Gasté 80.000 en el supermercado con la tarjeta Visa*. La compra va a la factura correcta y el saldo solo cambia cuando pagues la factura (el pago se hace en la pantalla **Tarjetas**).', '**On the credit card:** type *I spent 80,000 on groceries with my Visa card*. The purchase goes on the right statement and the balance only changes when you pay the statement (payment is done on the **Cards** screen).'),
             s('Cada registro aparece num cartão com o botão **Reverter** por **10 segundos**. Se a IA entendeu errado, toque nele e explique de novo.', 'Cada registro aparece en una tarjeta con el botón **Revertir** por **10 segundos**. Si la IA entendió mal, tocalo y explicá de nuevo.', 'Each entry appears in a card with an **Undo** button for **10 seconds**. If the AI got it wrong, tap it and explain again.'),
             s('Foto e áudio têm cota mensal de registros: **10 no Premium e 30 no Pro**. O contador aparece embaixo do chat; registrar por texto não conta.', 'Foto y audio tienen cuota mensual de registros: **10 en el Premium y 30 en el Pro**. El contador aparece debajo del chat; registrar por texto no cuenta.', 'Photo and voice have a monthly quota of entries: **10 on Premium and 30 on Pro**. The counter shows under the chat; recording by text does not count.')
         ],

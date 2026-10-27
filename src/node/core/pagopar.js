@@ -74,8 +74,12 @@ async function consultarPago(hash) {
 }
 
 const Pedido = {
-    async criar(userId, planoCodigo, ciclo, valor) {
-        const [r] = await db.query('INSERT INTO pagopar_pedidos (user_id, plano_codigo, ciclo, valor) VALUES (?, ?, ?, ?)', [userId, planoCodigo, ciclo, valor]);
+    // valor = o que sera cobrado; valorOriginal = preco cheio do plano (antes do desconto do codigo e do credito).
+    async criar(userId, planoCodigo, ciclo, valor, { valorOriginal = valor, codigoId = null, desconto = 0, creditoUsado = 0 } = {}) {
+        const [r] = await db.query(
+            'INSERT INTO pagopar_pedidos (user_id, plano_codigo, ciclo, valor, valor_original, codigo_id, desconto, credito_usado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [userId, planoCodigo, ciclo, valor, valorOriginal, codigoId, desconto, creditoUsado]
+        );
         return r.insertId;
     },
     async definirHash(id, hash) { await db.query('UPDATE pagopar_pedidos SET hash_pedido = ? WHERE id = ?', [hash, id]); },

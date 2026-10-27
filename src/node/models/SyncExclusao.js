@@ -5,7 +5,7 @@ const db = require('../config/db');
 class SyncExclusao {
     // Copia (tabela, id, client_id) das linhas que serao apagadas. `onde` e um trecho SQL fixo do chamador.
     static async registrar(tabela, onde, params, conn = db) {
-        if (!['lancamentos', 'contas', 'categorias'].includes(tabela)) throw new Error('tabela_invalida');
+        if (!['lancamentos', 'contas', 'categorias', 'cartoes', 'cartao_compras', 'cartao_faturas'].includes(tabela)) throw new Error('tabela_invalida');
         await conn.query(
             `INSERT INTO sync_exclusoes (user_id, tabela, registro_id, client_id, excluido_em)
              SELECT user_id, '${tabela}', id, client_id, NOW(3) FROM ${tabela} WHERE ${onde}`,

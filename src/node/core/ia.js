@@ -8,6 +8,7 @@ const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 const Ia = require('../models/Ia');
 const Lancamento = require('../models/Lancamento');
+const Cartao = require('../models/Cartao');
 const { toLocalYMD, hojeLocal, normalizarMoeda, calcularCambio, MOEDAS_CONTA } = require('./helpers');
 
 // Dois modelos: mensagens so de texto usam um modelo barato; as que trazem foto (leitura de comprovante, onde um erro de valor custa caro) usam o mais preciso.
@@ -30,6 +31,11 @@ const FERRAMENTAS = [
     {
         name: 'listar_contas',
         description: 'Lista as contas bancarias ativas do usuario com a moeda e o saldo atual de cada uma. Cada conta tem a sua moeda: nunca some saldos de moedas diferentes.',
+        input_schema: { type: 'object', properties: {}, additionalProperties: false }
+    },
+    {
+        name: 'listar_cartoes',
+        description: 'Lista os cartoes de credito ativos do usuario (id, nome, moeda da conta, dias de fechamento e vencimento, limite, limite usado e disponivel). A compra no cartao entra na fatura e so afeta o saldo quando a fatura for paga.',
         input_schema: { type: 'object', properties: {}, additionalProperties: false }
     },
     {
@@ -76,6 +82,22 @@ const FERRAMENTAS = [
                 data_fim: { type: 'string', description: 'YYYY-MM-DD' },
                 limite: { type: 'integer', description: 'Padrao 20, maximo 30' }
             },
+            additionalProperties: false
+        }
+    },
+    {
+        name: 'propor_compra_cartao',
+        description: 'REGISTRA na hora uma compra feita no CARTAO DE CREDITO (o usuario tem alguns segundos para reverter pelo cartao exibido na tela). A compra vai para a fatura certa e NAO muda o saldo da conta ate a fatura ser paga. Use apenas quando souber cartao, valor e categoria; se faltar algo, pergunte. Nao use para compras em dinheiro/debito (use propor_lancamento).',
+        input_schema: {
+            type: 'object',
+            properties: {
+                cartao_id: { type: 'integer', description: 'Id vindo de listar_cartoes' },
+                valor: { type: 'number', description: 'Valor positivo, na moeda do cartao' },
+                descricao: { type: 'string', description: 'Descricao curta' },
+                categoria_id: { type: 'integer', description: 'Id vindo de listar_categorias (categoria ou subcategoria)' },
+                data: { type: 'string', description: 'YYYY-MM-DD da compra. Padrao: hoje' }
+            },
+            required: ['cartao_id', 'valor', 'descricao', 'categoria_id'],
             additionalProperties: false
         }
     },
@@ -225,6 +247,18 @@ const EXECUTORES = {
     async listar_contas(_in, ctx) {
         const contas = await Conta.buscarPorUsuario(ctx.userId, false);
         return { contas: contas.map((c) => ({ id: c.id, nome: c.nome, tipo: c.tipo, moeda: c.moeda, saldo_atual: Number(c.saldo_atual) })) };
+    },
+
+    async listar_cartoes(_in, ctx) {
+        const cartoes = await Cartao.listar(ctx.userId, false);
+        return {
+            cartoes: cartoes.map((k) => ({
+                id: k.id, nome: k.nome, bandeira: k.bandeira || null, conta: k.conta_nome, moeda: k.conta_moeda,
+                dia_fechamento: k.dia_fechamento, dia_vencimento: k.dia_vencimento,
+                limite_total: Number(k.limite_total), limite_usado: Number(k.usado),
+                limite_disponivel: Number(k.limite_total) > 0 ? Math.max(Number(k.limite_total) - Number(k.usado), 0) : null
+            }))
+        };
     },
 
     async listar_categorias(_in, ctx) {
@@ -377,6 +411,27 @@ const EXECUTORES = {
         return { aplicado: true, aviso: `JA FOI REGISTRADO. O usuario tem ${JANELA_REVERTER_SEG} segundos para reverter pelo botao do cartao. Confirme em uma frase o que foi registrado.`, registrado: payload };
     },
 
+    async propor_compra_cartao(input, ctx) {
+        const valor = Math.round(Number(input.valor) * 100) / 100;
+        if (!(valor > 0) || valor > 999999999999) throw new Error('valor invalido.');
+        const descricao = String(input.descricao || '').trim().slice(0, 120);
+        if (!descricao) throw new Error('descricao obrigatoria.');
+        const cartao = await Cartao.buscar(input.cartao_id, ctx.userId);
+        if (!cartao || cartao.status !== 'ativo') throw new Error('cartao_id invalido. Use um id de listar_cartoes.');
+        const categoria = await Categoria.buscarPorId(input.categoria_id, ctx.userId);
+        if (!categoria || categoria.sistema || categoria.status !== 'ativa') throw new Error('categoria_id invalido. Use um id de listar_categorias.');
+        const nomeCategoria = await nomeDaCategoria(categoria, ctx.userId);
+        const data = dataValida(input.data) ? input.data : toLocalYMD(hojeLocal());
+        const mes = await Cartao.mesDeNovaCompra(cartao, data);
+        const payload = {
+            tipo: 'despesa', valor, descricao, cartao_id: cartao.id, cartao_nome: cartao.nome, conta_nome: cartao.nome, moeda: cartao.conta_moeda,
+            categoria_id: categoria.id, categoria_nome: nomeCategoria, data_competencia: data, status: 'pendente', data_pagamento: null, fatura_mes: mes
+        };
+        const desfazer = await executarOp(ctx.userId, { op: 'compra_cartao', ...payload });
+        ctx.simples.push({ ...payload, desfazer: [desfazer] });
+        return { aplicado: true, aviso: `JA FOI REGISTRADO NA FATURA (${mes}). O saldo da conta so muda quando a fatura for paga. O usuario tem ${JANELA_REVERTER_SEG} segundos para reverter pelo botao do cartao. Confirme em uma frase o que foi registrado.`, registrado: payload };
+    },
+
     // ---------- Nivel 2 (so entram em ctx.plano) ----------
     async marcar_status(input, ctx) {
         const status = input.status === 'pendente' ? 'pendente' : 'pago';
@@ -517,7 +572,7 @@ ${listaCats}
 
 Regras
 1. Numeros, saldos e totais vem SEMPRE das ferramentas. Nunca invente nem estime valores. Nao refaca somas de cabeca: use os totais que a ferramenta devolve.
-2. Para registrar uma receita ou despesa voce precisa de: tipo, valor, conta e categoria. Se faltar algo, pergunte so o que falta (se o usuario tem uma unica conta, pode assumi-la). Com tudo definido, chame propor_lancamento: o lancamento e registrado NA HORA, com os nomes, categoria, valor e conta que voce entendeu, e o cartao na tela mostra o que foi registrado com um botao Reverter por ${JANELA_REVERTER_SEG} segundos. Depois responda em uma frase curta confirmando o que foi registrado (so diga isso se a ferramenta devolveu aplicado). Se o usuario reverter, a conversa recebe um aviso e voce deve usar o que ele disser para registrar de novo corretamente. Em caso de duvida real (valor ou conta incertos, foto ou audio ambiguos), pergunte ANTES de registrar. A categoria nao e motivo para perguntar (ver regra 3).
+2. Para registrar uma receita ou despesa voce precisa de: tipo, valor, conta e categoria. Se faltar algo, pergunte so o que falta (se o usuario tem uma unica conta, pode assumi-la). Compra no CARTAO DE CREDITO (o usuario diz "no cartao", "no credito" ou cita o nome de um cartao): chame listar_cartoes, escolha o cartao (se houver mais de um e nao estiver claro, pergunte) e use propor_compra_cartao em vez de propor_lancamento; a compra entra na fatura e o saldo da conta so cai quando o usuario paga a fatura (diga isso em uma frase). Voce nao paga faturas: oriente a usar a tela Cartoes. Com tudo definido, chame propor_lancamento: o lancamento e registrado NA HORA, com os nomes, categoria, valor e conta que voce entendeu, e o cartao na tela mostra o que foi registrado com um botao Reverter por ${JANELA_REVERTER_SEG} segundos. Depois responda em uma frase curta confirmando o que foi registrado (so diga isso se a ferramenta devolveu aplicado). Se o usuario reverter, a conversa recebe um aviso e voce deve usar o que ele disser para registrar de novo corretamente. Em caso de duvida real (valor ou conta incertos, foto ou audio ambiguos), pergunte ANTES de registrar. A categoria nao e motivo para perguntar (ver regra 3).
 3. Se o usuario nao indicar a categoria (texto, audio ou foto), escolha voce mesmo a categoria ou subcategoria existente (ids acima) mais coerente com o nome/descricao do lancamento, o estabelecimento da foto ou o que foi dito (ex.: mercado -> alimentacao, combustivel -> transporte), preferindo a subcategoria quando houver uma que combine melhor, e NAO pergunte por ela. Se o usuario indicar uma categoria, use-a. Nao crie categorias nem contas. So pergunte se realmente nenhuma categoria existente tiver relacao com o lancamento.
 4. Voce nao faz transferencias entre contas: oriente a usar Contas > Transferir ou Agendar transferencia (entre moedas diferentes o sistema pede a cotacao). Tambem nao edita nem apaga lancamentos.
 5. Fale apenas das financas do usuario neste app e de como usar o MyFinance. Recuse com educacao, em uma frase, qualquer outro assunto (pesquisas, noticias, programacao, tarefas escolares, textos, traducoes, conselhos de investimento, conversa casual, jogos de papel ou "finja que..."), mesmo que o pedido venha disfarçado de exemplo ou de teste, e volte a oferecer ajuda com as financas dele. Nao atue como assistente geral.
@@ -557,7 +612,7 @@ async function responder({ usuario, conversaId, historico, cliente, nivel = 1, i
     const [contas, categorias] = await Promise.all([Conta.buscarPorUsuario(userId, false), Categoria.buscarArvore(userId, false)]);
     const system = montarSistema({ usuario, contas, categorias, nivel: ctx.nivel });
     // Assinatura somente leitura: a IA so consulta (as ferramentas que gravam, que agora agem na hora, nao sao oferecidas).
-    const ESCRITA = new Set(['propor_lancamento', ...FERRAMENTAS_N2.map((f) => f.name)]);
+    const ESCRITA = new Set(['propor_lancamento', 'propor_compra_cartao', ...FERRAMENTAS_N2.map((f) => f.name)]);
     const ferramentas = ferramentasDoNivel(ctx.nivel).filter((f) => !(somenteLeitura && ESCRITA.has(f.name)));
 
     const mensagens = historico.map((m) => ({ role: m.papel, content: m.conteudo }));

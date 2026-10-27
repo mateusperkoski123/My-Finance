@@ -33,6 +33,7 @@
         if (acao === '/contas/transferir') return 'transferir';
         if (acao === '/contas/agendar-transferencia') return 'agendar';
         if (acao === '/categorias/criar') return 'categoria';
+        if (/^\/cartoes\/\d+\/compras$/.test(acao)) return 'compra_cartao'; // compra no cartao de credito (entra na fatura)
         if (/^\/fila\/[^/]+\/editar$/.test(acao)) return 'editar_fila'; // editar um lancamento que ainda esta na fila
         return null;
     }
@@ -96,6 +97,16 @@
             const obs = String(fd.get('observacoes') || '').trim();
             if (obs) dados.observacoes = obs;
             return { acao: 'create', dados, resumo: { titulo: descricao, valor: dados.tipo === 'despesa' ? -valor : valor, moeda: moedaConta, tipo: dados.tipo, serie: serie.e_fixo ? 'fixo' : (serie.repetir ? serie.quantidade_repeticoes : null) } };
+        }
+        if (tipo === 'compra_cartao') {
+            const cartaoId = Number((form.getAttribute('action').match(/\/cartoes\/(\d+)\//) || [])[1]);
+            const valor = R.parseMoeda(fd.get('valor'));
+            const descricao = String(fd.get('descricao') || '').trim();
+            if (!cartaoId || !descricao || !(valor > 0)) return { erro: 'invalido' };
+            const dados = { cartao_id: cartaoId, descricao, valor, data_compra: dataDe(form, 'data') };
+            const categoria = fd.get('categoria_id');
+            if (categoria) dados.categoria_id = Number(categoria);
+            return { tabela: 'cartao_compras', acao: 'create', dados, resumo: { titulo: descricao, valor: -valor, moeda: form.dataset.gfMoeda || undefined, tipo: 'compra_cartao' } };
         }
         if (tipo === 'pagar') {
             const id = Number((form.getAttribute('action').match(/\/lancamentos\/(\d+)\//) || [])[1]);

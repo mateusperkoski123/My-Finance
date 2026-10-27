@@ -5,6 +5,7 @@ module.exports = {
     'extrato.est_todos': ['Todos os status', 'Todos los estados', 'All statuses'],
     'extrato.est_pagos': ['Pagos / recebidos', 'Pagados / cobrados', 'Paid / received'],
     'extrato.est_pendentes': ['Pendentes', 'Pendientes', 'Pending'],
+    'contas.extrato.venc_original': ['Vencimento original: {data}', 'Vencimiento original: {data}', 'Original due date: {data}'],
     'extrato.ord_recentes': ['Mais recentes primeiro', 'Más recientes primero', 'Newest first'],
     'extrato.ord_antigos': ['Vencimento (mais antigos)', 'Vencimiento (más antiguos)', 'Due date (oldest)'],
     'extrato.ord_valor': ['Maior valor', 'Mayor monto', 'Highest amount'],
