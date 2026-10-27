@@ -43,6 +43,8 @@ module.exports = {
     'cartoes.fecha_em': ['Fecha em {data}', 'Cierra el {data}', 'Closes {data}'],
     'cartoes.vence_em': ['Vence em {data}', 'Vence el {data}', 'Due {data}'],
     'cartoes.situacao_aberta': ['Em aberto', 'Abierta', 'Open'],
+    'cartoes.situacao_fechada': ['Fechada, aguardando pagamento', 'Cerrada, esperando el pago', 'Closed, awaiting payment'],
+    'cartoes.situacao_vencida': ['Vencida', 'Vencida', 'Overdue'],
     'cartoes.situacao_paga': ['Paga em {data}', 'Pagada el {data}', 'Paid on {data}'],
     'cartoes.total_fatura': ['Total da fatura', 'Total de la factura', 'Statement total'],
     'cartoes.nova_compra': ['Nova compra', 'Nueva compra', 'New purchase'],

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="<%= lang %>" data-tema="<%= theme %>">
+<html lang="<%= lang %>" data-tema="<%= theme %>" data-cor="<%= typeof corTema !== 'undefined' ? corTema : 'verde' %>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#0b0d12">
+    <meta name="theme-color" content="<%= typeof corTopo !== 'undefined' ? corTopo : '#15803d' %>">
     <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials">
     <link rel="icon" type="image/png" href="/assets/icons/icon-192.png">
     <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
@@ -49,13 +49,27 @@
         erro_acao: <%- JSON.stringify(t('js.erro_acao')) %>,
         valor_invalido: <%- JSON.stringify(t('flash.lanc_valor_invalido')) %>
     };
+    // Moeda do usuario: definida no <head> porque os graficos das paginas sao desenhados antes do fim do <body>
+    // (definida no fim, os totais dos graficos saiam sempre em "Gs." mesmo para quem usa R$, US$ ou EUR).
+    window.gfMoeda = {
+        codigo: '<%= currency %>',
+        decimais: <%= currency === 'PYG' ? 0 : 2 %>,
+        temCentavos: <%= currency !== 'PYG' %>,
+        simbolo: '<%= currency === "PYG" ? "Gs." : (currency === "BRL" ? "R$" : (currency === "USD" ? "$" : (currency === "EUR" ? "€" : "$"))) %>',
+        milhar: '<%= currency === "USD" ? "," : "." %>',
+        decimal: '<%= currency === "USD" ? "." : "," %>',
+        separadorMilhar: '<%= currency === "USD" ? "," : "." %>',
+        separadorDecimal: '<%= currency === "USD" ? "." : "," %>'
+    };
     </script>
     <%# Icones (Phosphor): so os tres pesos usados no sistema, em versao fixa e direto como folha de estilo
         (o carregador por script trazia seis pesos e so aplicava os icones depois de a pagina aparecer). %>
     <%# Conexao com o CDN dos icones aberta antes de pedir os arquivos (os 3 estilos bloqueiam a primeira exibicao da pagina). %>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <% ['regular', 'bold', 'fill'].forEach(function (peso) { %><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.2/src/<%= peso %>/style.css" crossorigin="anonymous">
-    <% }) %><link rel="stylesheet" href="/assets/css/app.css?v=<%= assetVersion %>">
+    <% }) %><%# Fonte Inter pelo mesmo CDN dos icones (o service worker guarda para uso sem internet; sem ela, cai na fonte do sistema). %>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@5.1.0/index.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="/assets/css/app.css?v=<%= assetVersion %>">
 </head>
 <body>
 <header class="navbar">
@@ -70,9 +84,9 @@
         <% const _mostrarIa = Boolean(usuarioLogado && (_adm || !_planoTemIa || usuarioLogado.ia_habilitada)); %>
         <% const _seloIa = !_adm && !_planoTemIa; %>
         <div style="display: flex; align-items: center; gap: 10px;">
-            <a href="/" class="navbar__brand" style="display: flex; align-items: center; gap: 6px;">
-                <i class="ph-fill ph-hands-clapping" style="font-size: 22px;"></i>
-                <span style="font-size: 12px; text-transform: uppercase; font-weight: 800; letter-spacing: 0.05em;">MyFinance</span>
+            <a href="/" class="navbar__brand">
+                <span class="navbar__logo" aria-hidden="true"><i class="ph-fill ph-currency-circle-dollar"></i></span>
+                <span class="navbar__nome">MyFinance</span>
             </a>
             <div id="pwa-status-badge" class="pwa-status-badge" role="status" aria-live="polite">
                 <span class="pwa-status-dot"></span>
@@ -249,17 +263,6 @@ document.addEventListener('keydown', function (e) {
 <% } %>
 
 <script>
-window.gfMoeda = {
-    codigo: '<%= currency %>',
-    decimais: <%= currency === 'PYG' ? 0 : 2 %>,
-    temCentavos: <%= currency !== 'PYG' %>,
-    simbolo: '<%= currency === "PYG" ? "Gs." : (currency === "BRL" ? "R$" : (currency === "USD" ? "$" : (currency === "EUR" ? "€" : "$"))) %>',
-    milhar: '<%= currency === "USD" ? "," : "." %>',
-    decimal: '<%= currency === "USD" ? "." : "," %>',
-    separadorMilhar: '<%= currency === "USD" ? "," : "." %>',
-    separadorDecimal: '<%= currency === "USD" ? "." : "," %>'
-};
-
 // Barra inferior (celular): "+" e "Mais" abrem uma folha; tocar fora ou em Esc fecha.
 function fecharFolhas() {
     ['folha-novo', 'folha-mais', 'folha-fundo'].forEach((id) => { const el = document.getElementById(id); if (el) el.hidden = true; });

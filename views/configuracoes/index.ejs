@@ -50,6 +50,28 @@
                 </div>
             </div>
 
+            <%# Cor do tema: muda so as cores da marca (topo, botoes, destaques). Ao tocar a pagina ja mostra como fica; vale depois de salvar. %>
+            <div class="form-group">
+                <label id="cor-tema-rotulo"><%= t('config.cor_tema') %></label>
+                <p class="form-help" style="margin: 0 0 10px;"><%= t('config.cor_tema_ajuda') %></p>
+                <div class="cor-tema-opcoes" role="radiogroup" aria-labelledby="cor-tema-rotulo">
+                    <% Object.entries(config.cores).forEach(([codigo, cor]) => { %>
+                        <label class="cor-tema-opcao">
+                            <span class="cor-tema-opcao__amostra" aria-hidden="true"><span style="background: <%= cor.amostra[0] %>;"></span><span style="background: <%= cor.amostra[1] %>;"></span></span>
+                            <span class="cor-tema-opcao__rodape">
+                                <span><%= t('cor_tema.' + codigo) %></span>
+                                <input type="radio" name="cor_tema" value="<%= codigo %>" <%= corTema === codigo ? 'checked' : '' %>>
+                            </span>
+                        </label>
+                    <% }) %>
+                </div>
+            </div>
+            <script>
+            document.querySelectorAll('input[name="cor_tema"]').forEach(function (r) {
+                r.addEventListener('change', function () { document.documentElement.setAttribute('data-cor', r.value); });
+            });
+            </script>
+
             <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('config.salvar') %></button>
         </form>
     </section>

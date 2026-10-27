@@ -3,6 +3,13 @@ module.exports = {
     NOME_APP: process.env.APP_NAME || 'MyFinance',
     // Teste gratis: a pessoa escolhe o plano e usa esse plano por TRIAL_DIAS dias (uma vez so).
     TRIAL_DIAS: 3,
+    // Cores do tema (Configuracoes > Preferencia); verde e o padrao. topo = cor da barra do navegador no celular
+    // em cada tema, amostra = as duas cores mostradas no seletor.
+    CORES_TEMA: {
+        verde: { topo: { claro: '#15803d', escuro: '#0f2a1c' }, amostra: ['#15803d', '#ecfdf3'] },
+        azul: { topo: { claro: '#1d4ed8', escuro: '#0f1d3a' }, amostra: ['#1d4ed8', '#eff6ff'] },
+        preto: { topo: { claro: '#0b0d12', escuro: '#000000' }, amostra: ['#0b0d12', '#f1f2f4'] }
+    },
     // Limite mensal de mensagens do Chat IA quando o plano nao define um (planos.ia_limite_mes).
     IA_LIMITE_PADRAO: parseInt(process.env.IA_LIMITE_MENSAGENS_MES || '300', 10),
     // Mudar este valor obriga todos os usuarios a aceitar os termos novamente.

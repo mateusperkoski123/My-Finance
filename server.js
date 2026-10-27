@@ -176,7 +176,7 @@ app.get('/manifest.webmanifest', (req, res) => {
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#0b0d12',
-        theme_color: '#0b0d12',
+        theme_color: '#15803d',
         lang: req.lang,
         categories: ['finance'],
         icons: [

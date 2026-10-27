@@ -3,36 +3,150 @@
    Tema controlado via [data-tema="claro"|"escuro"] no <html>.
    ========================================================================== */
 
-/* Cores de texto do tema claro ajustadas para contraste minimo de 4,5:1 (WCAG AA) sobre branco e sobre o fundo cinza */
+/* Cores de texto do tema claro ajustadas para contraste minimo de 4,5:1 (WCAG AA) sobre branco e sobre o fundo cinza.
+   Identidade verde (topo verde, botoes principais verdes, fundo levemente esverdeado e cartoes brancos). */
 :root[data-tema="claro"] {
-  --bg: #f5f6f8;
+  --bg: #f4f7f5;
   --card: #ffffff;
-  --text: #16181d;
-  --muted: #5b6370;
-  --border: #e5e7eb;
-  --nav-bg: #0b0d12;
-  --nav-text: #e8eaed;
-  --nav-text-muted: #9aa0aa;
-  --primary: #111827;
+  --text: #0f172a;
+  --muted: #566173;
+  --border: #e2e8e4;
+  --nav-bg: #15803d;
+  --nav-text: #ffffff;
+  --nav-text-muted: #f0fdf4;
+  --primary: #15803d;
+  --primary-hover: #166534;
   --primary-text: #ffffff;
   --green: #15803d;
-  --green-bg: #e7f7ee;
+  --green-bg: #dcfce7;
   --red: #c81e1e;
   --red-bg: #fdecec;
   --on-accent: #ffffff;
   --blue: #2563eb;
+  --blue-bg: #eff6ff;
   --pendente: #b45309;
+  --amber: #c2410c;
+  --amber-bg: #fff7ed;
   --warn: #92400e;
   --warn-bg: #fef3c7;
   --purple: #5b21b6;
   --purple-bg: #ede9fe;
+  /* Marca: --brand so em superficies grandes e icones (branco sobre ele nao passa em texto pequeno); texto usa --green. */
+  --brand: #16a34a;
+  --brand-dark: #166534;
+  --brand-soft: #ecfdf3;
+  --brand-line: #bbf7d0;
+  --brand-text: #15803d;
+  --on-brand: #052e16;
+  --brand-shadow: rgba(21, 128, 61, .25);
+  --focus-ring: rgba(22, 163, 74, .28);
+  --input-border: #d3dcd6;
   color-scheme: light;
-  /* Sombra em 2 camadas (contato + ambiente) - da mais "elevacao"/profundidade
-     aos .card do que uma sombra unica e apertada, sem ficar pesada. */
-  --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 8px 20px rgba(16, 24, 40, .07);
+  /* Sombra em 2 camadas (contato + ambiente), bem suave: os cartoes se destacam pela borda e pelo branco sobre o fundo. */
+  --shadow: 0 1px 2px rgba(16, 24, 40, .04), 0 4px 14px rgba(16, 24, 40, .05);
+  --shadow-hover: 0 2px 4px rgba(16, 24, 40, .05), 0 10px 24px rgba(16, 24, 40, .08);
 }
 
 :root[data-tema="escuro"] {
+  --bg: #0b1210;
+  --card: #121b17;
+  --text: #e6efe9;
+  --muted: #9db0a5;
+  --border: #24332c;
+  --nav-bg: #0f2a1c;
+  --nav-text: #ecfdf3;
+  --nav-text-muted: #a7c4b3;
+  --primary: #22c55e;
+  --primary-hover: #4ade80;
+  --primary-text: #052e16;
+  --green: #4ade80;
+  --green-bg: #10291c;
+  --red: #f87171;
+  --red-bg: #3a1618;
+  --on-accent: #052e16;
+  --blue: #60a5fa;
+  --blue-bg: #13233d;
+  --pendente: #fbbf24;
+  --amber: #fb923c;
+  --amber-bg: #36210c;
+  --warn: #fbbf24;
+  --warn-bg: #3b2a08;
+  --purple: #c4b5fd;
+  --purple-bg: #2e1f5e;
+  --brand: #22c55e;
+  --brand-dark: #16a34a;
+  --brand-soft: #10291c;
+  --brand-line: #1f5134;
+  --brand-text: #4ade80;
+  --on-brand: #052e16;
+  --brand-shadow: rgba(0, 0, 0, .45);
+  --focus-ring: rgba(74, 222, 128, .3);
+  --input-border: #33463c;
+  color-scheme: dark;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 8px 22px rgba(0, 0, 0, .35);
+  --shadow-hover: 0 2px 4px rgba(0, 0, 0, .4), 0 12px 28px rgba(0, 0, 0, .45);
+}
+
+/* Cor do tema (Configuracoes > Preferencia): data-cor no <html> troca so as cores da marca (topo, botoes, destaques e
+   fundo). Verde e o padrao definido acima; receitas/despesas continuam verde/vermelho em qualquer cor. */
+:root[data-tema="claro"][data-cor="azul"] {
+  --bg: #f4f6fb;
+  --border: #e1e6f0;
+  --muted: #55607a;
+  --nav-bg: #1d4ed8;
+  --nav-text-muted: #eff6ff;
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --brand: #2563eb;
+  --brand-dark: #1e3a8a;
+  --brand-soft: #eff6ff;
+  --brand-line: #bfdbfe;
+  --brand-text: #1d4ed8;
+  --on-brand: #0b1a33;
+  --brand-shadow: rgba(29, 78, 216, .25);
+  --focus-ring: rgba(37, 99, 235, .28);
+  --input-border: #d2d9e6;
+}
+:root[data-tema="escuro"][data-cor="azul"] {
+  --bg: #0b0f17;
+  --card: #121826;
+  --text: #e6ebf5;
+  --muted: #9aa8bf;
+  --border: #233047;
+  --nav-bg: #0f1d3a;
+  --nav-text: #eff6ff;
+  --nav-text-muted: #a9bde0;
+  --primary: #60a5fa;
+  --primary-hover: #93c5fd;
+  --primary-text: #0b1a33;
+  --brand: #3b82f6;
+  --brand-dark: #2563eb;
+  --brand-soft: #13233d;
+  --brand-line: #1e3a6b;
+  --brand-text: #93c5fd;
+  --on-brand: #0b1a33;
+  --focus-ring: rgba(96, 165, 250, .3);
+  --input-border: #2f3d57;
+}
+:root[data-tema="claro"][data-cor="preto"] {
+  --bg: #f5f6f8;
+  --border: #e5e7eb;
+  --muted: #5b6370;
+  --nav-bg: #0b0d12;
+  --nav-text-muted: #e8eaed;
+  --primary: #111827;
+  --primary-hover: #000000;
+  --brand: #111827;
+  --brand-dark: #000000;
+  --brand-soft: #f1f2f4;
+  --brand-line: #d9dce1;
+  --brand-text: #111827;
+  --on-brand: #ffffff;
+  --brand-shadow: rgba(17, 24, 39, .25);
+  --focus-ring: rgba(17, 24, 39, .22);
+  --input-border: #d6d9de;
+}
+:root[data-tema="escuro"][data-cor="preto"] {
   --bg: #0e1015;
   --card: #171a21;
   --text: #e7e9ee;
@@ -40,22 +154,18 @@
   --border: #2a2e37;
   --nav-bg: #000000;
   --nav-text: #e7e9ee;
-  --nav-text-muted: #8b909b;
+  --nav-text-muted: #9aa0aa;
   --primary: #e7e9ee;
+  --primary-hover: #ffffff;
   --primary-text: #14161b;
-  --green: #34d399;
-  --green-bg: #113127;
-  --red: #f87171;
-  --red-bg: #3a1618;
-  --on-accent: #052e1f;
-  --blue: #60a5fa;
-  --pendente: #fbbf24;
-  --warn: #fbbf24;
-  --warn-bg: #3b2a08;
-  --purple: #c4b5fd;
-  --purple-bg: #2e1f5e;
-  color-scheme: dark;
-  --shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 24px rgba(0, 0, 0, .4);
+  --brand: #e7e9ee;
+  --brand-dark: #000000;
+  --brand-soft: #22262f;
+  --brand-line: #343944;
+  --brand-text: #e7e9ee;
+  --on-brand: #14161b;
+  --focus-ring: rgba(231, 233, 238, .25);
+  --input-border: #353a45;
 }
 
 :root { --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; }
@@ -67,8 +177,9 @@ html, body {
   padding: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Inter Variable", Inter, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   font-size: 15px;
+  -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   width: 100%;
 }
@@ -1135,18 +1246,20 @@ img, svg, canvas { max-width: 100%; height: auto; }
   .tabela-lanc td[colspan], .tabela-extrato td[colspan], .tabela-pend td[colspan] { grid-column: 1 / -1; text-align: center; }
   .tabela-container { overflow-x: visible; }
 
-  /* Painel: [descricao | valor] / [categoria conta] / [data status | acoes] */
+  /* Painel: [descricao | valor] / [categoria conta] / [data status | acoes], com a caixinha da selecao em lote
+     (1a coluna da tabela) numa coluna propria a esquerda */
   .tabela-lanc tr:not(:has(td[colspan])) {
-    grid-template-columns: 1fr auto;
-    grid-template-areas: "desc valor" "cat cat" "conta conta" "data acoes" "status acoes";
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "sel desc valor" "sel cat cat" "sel conta conta" "sel data acoes" "sel status acoes";
   }
-  .tabela-lanc td:nth-child(1) { grid-area: desc; font-size: 14.5px; overflow-wrap: anywhere; }
-  .tabela-lanc td:nth-child(2) { grid-area: cat; }
-  .tabela-lanc td:nth-child(3) { grid-area: conta; color: var(--muted); font-size: 13px; }
-  .tabela-lanc td:nth-child(4) { grid-area: data; color: var(--muted); font-size: 13px; }
-  .tabela-lanc td:nth-child(5) { grid-area: valor; text-align: right; font-size: 15px; }
-  .tabela-lanc td:nth-child(6) { grid-area: status; }
-  .tabela-lanc td:nth-child(7) { grid-area: acoes; justify-self: end; }
+  .tabela-lanc td.lote-col { grid-area: sel; align-self: start; width: auto; padding-top: 2px; }
+  .tabela-lanc td:nth-child(2) { grid-area: desc; font-size: 14.5px; overflow-wrap: anywhere; }
+  .tabela-lanc td:nth-child(3) { grid-area: cat; }
+  .tabela-lanc td:nth-child(4) { grid-area: conta; color: var(--muted); font-size: 13px; }
+  .tabela-lanc td:nth-child(5) { grid-area: data; color: var(--muted); font-size: 13px; }
+  .tabela-lanc td:nth-child(6) { grid-area: valor; text-align: right; font-size: 15px; }
+  .tabela-lanc td:nth-child(7) { grid-area: status; }
+  .tabela-lanc td:nth-child(8) { grid-area: acoes; justify-self: end; }
 
   /* Extrato: [descricao | valor] / [data tipo] / [status | acoes] */
   .tabela-extrato tr:not(:has(td[colspan])) {
@@ -2126,10 +2239,11 @@ tr.gf-prov-row td { border-bottom: 1px dashed var(--border); }
 @media (min-width: 769px) {
   .tabela-lanc, .tabela-extrato { white-space: normal; table-layout: auto; }
   .tabela-lanc th, .tabela-lanc td, .tabela-extrato th, .tabela-extrato td { padding: 10px 8px; vertical-align: middle; }
-  .tabela-lanc td:nth-child(1), .tabela-extrato td:nth-child(2) { min-width: 130px; overflow-wrap: anywhere; }
-  .tabela-lanc td:nth-child(2) span, .tabela-lanc td:nth-child(2) div { white-space: normal !important; }
-  .tabela-lanc td:nth-child(3) { overflow-wrap: anywhere; }
-  .tabela-lanc td:nth-child(4), .tabela-lanc td:nth-child(5), .tabela-lanc td:nth-child(6),
+  /* .tabela-lanc: a 1a coluna e a caixinha da selecao em lote; descricao, categoria e conta vem depois dela */
+  .tabela-lanc td:nth-child(2), .tabela-extrato td:nth-child(2) { min-width: 130px; overflow-wrap: anywhere; }
+  .tabela-lanc td:nth-child(3) span, .tabela-lanc td:nth-child(3) div { white-space: normal !important; }
+  .tabela-lanc td:nth-child(4) { overflow-wrap: anywhere; }
+  .tabela-lanc td:nth-child(5), .tabela-lanc td:nth-child(6), .tabela-lanc td:nth-child(7),
   .tabela-extrato td:nth-child(1), .tabela-extrato td:nth-child(4), .tabela-extrato td:nth-child(5) { white-space: nowrap; }
   .tabela-lanc th:last-child, .tabela-lanc td.td-acoes, .tabela-extrato th:last-child, .tabela-extrato td:last-child { width: 1%; white-space: nowrap; }
 }
@@ -2443,15 +2557,17 @@ a.link-categoria:hover { text-decoration: underline; }
   .tabela-lanc tr.lanc-linha--despesa, .tabela-extrato tr.lanc-linha--despesa { border-left-color: var(--red); }
 
   /* Cartao do lancamento em 3 linhas: [descricao | valor] / [categoria | conta] / [data situacao | acoes] */
+  /* Cartao: [caixinha descricao | valor] / [categoria | conta] / [data situacao | acoes]. A caixinha da selecao em lote fica so
+     ao lado da descricao (coluna fixa de 22px); as linhas de baixo usam a largura toda, para a etiqueta caber antes do Pagar. */
   .tabela-lanc tr:not(:has(td[colspan])) {
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    grid-template-areas: "desc desc valor" "cat cat conta" "data status acoes";
+    grid-template-columns: 22px auto minmax(0, 1fr) auto;
+    grid-template-areas: "sel desc desc valor" "cat cat cat conta" "data data status acoes";
     gap: 6px 10px;
   }
-  .tabela-lanc td:nth-child(1) { overflow-wrap: break-word; }
-  .tabela-lanc td:nth-child(3) { grid-area: conta; align-self: start; text-align: right; max-width: 40vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .tabela-lanc td:nth-child(4) { grid-area: data; white-space: nowrap; }
-  .tabela-lanc td:nth-child(6) { grid-area: status; justify-self: start; }
+  .tabela-lanc td:nth-child(2) { overflow-wrap: break-word; }
+  .tabela-lanc td:nth-child(4) { grid-area: conta; align-self: start; text-align: right; max-width: 40vw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .tabela-lanc td:nth-child(5) { grid-area: data; white-space: nowrap; }
+  .tabela-lanc td:nth-child(7) { grid-area: status; justify-self: start; }
   .tabela-extrato td:nth-child(2) { overflow-wrap: break-word; }
 
   /* A terceira linha (data, situacao, Pagar e menu) precisa caber tambem dentro de um grupo, onde ha menos largura:
@@ -2459,7 +2575,7 @@ a.link-categoria:hover { text-decoration: underline; }
   .lista-grupo__corpo { padding: 8px 4px; }
   .lista-grupo .tabela-lanc tr { padding: 12px 10px; }
   .tabela-lanc tr:not(:has(td[colspan])) { column-gap: 8px; }
-  .tabela-lanc td:nth-child(6) .badge { padding: 3px 8px; white-space: nowrap; }
+  .tabela-lanc td:nth-child(7) .badge { padding: 3px 8px; white-space: nowrap; }
   .tabela-lanc .btn-pagar { padding: 6px 10px; }
   .tabela-lanc .acoes-linha { gap: 4px; }
 }
@@ -2677,23 +2793,10 @@ a.link-categoria:hover { text-decoration: underline; }
 }
 
 /* ==========================================================================
-   Navegacao e painel: barra inferior (celular), painel em duas colunas, blocos recolhiveis,
+   Navegacao e painel: barra inferior (celular), blocos recolhiveis,
    faixa unica do topo, abas de Informes numa linha e menu das contas
+   (os cartoes de resumo do painel ficam em "Identidade visual verde", no fim do arquivo)
    ========================================================================== */
-
-/* Painel: no computador, saldo + resumo + botoes a esquerda e as pendencias a direita */
-.painel-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0 16px; align-items: start; }
-.painel-grid__esq, .painel-grid__dir { min-width: 0; }
-@media (min-width: 900px) {
-  .painel-grid:not(.painel-grid--uma) { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); }
-  .painel-grid:not(.painel-grid--uma) .pendencias { margin-top: 0; }
-}
-.painel-tres { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 14px; }
-.painel-tres > div { border: 1px solid var(--border); border-radius: 14px; background: var(--card); padding: 10px 12px; min-width: 0; }
-.painel-tres small { display: block; font-size: 12.5px; color: var(--muted); font-weight: 600; }
-.painel-tres b { display: block; font-size: 15px; overflow-wrap: anywhere; }
-.painel-tres .verde { color: var(--green); } .painel-tres .vermelho { color: var(--red); }
-@media (max-width: 400px) { .painel-tres b { font-size: 13px; } .painel-tres > div { padding: 8px; } }
 
 /* Blocos recolhiveis (comparativo e grafico do painel) */
 .recolhivel > summary { list-style: none; cursor: pointer; }
@@ -3100,4 +3203,151 @@ a.navbar__avatar { text-decoration: none; }
   .seg { flex-wrap: nowrap; max-width: 100%; width: 100%; overflow-x: auto; scrollbar-width: none; }
   .seg::-webkit-scrollbar { display: none; }
   .seg > a, .seg > button { flex: 1 0 auto; justify-content: center; padding: 6px 12px; white-space: nowrap; width: auto; }
+}
+
+/* ==========================================================================
+   Identidade visual verde (inspirada em paineis financeiros como o GranaZen)
+   Topo verde, botoes principais verdes, cartoes brancos com borda suave, abas e seletores em pilula,
+   icones dos titulos em quadradinhos verdes e cartoes de resumo no Painel. Fica no fim do arquivo de proposito:
+   ajusta a aparencia dos componentes definidos acima sem mexer na estrutura (tamanhos de toque, grades do celular).
+   ========================================================================== */
+
+/* ---- Topo ---- */
+.navbar { background: linear-gradient(100deg, var(--brand-dark) 0%, var(--nav-bg) 100%); box-shadow: 0 1px 0 rgba(0, 0, 0, .06), 0 6px 18px var(--brand-shadow); }
+:root[data-tema="escuro"] .navbar { background: var(--nav-bg); box-shadow: 0 1px 0 var(--border); }
+.navbar__brand { flex-direction: row; align-items: center; gap: 10px; color: #fff; }
+.navbar__logo { width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--brand); display: inline-flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0, 0, 0, .14); }
+:root[data-tema="escuro"] .navbar__logo { background: var(--brand); color: var(--on-brand); }
+.navbar__nome { font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+.navbar__link { border-radius: 12px; border-bottom-color: transparent !important; transition: background-color .15s ease, color .15s ease; }
+.navbar__link:hover, .navbar__mais[open] > summary { background: rgba(255, 255, 255, .1); }
+.navbar__link.is-active { background: rgba(255, 255, 255, .18); color: #fff; }
+.navbar__link:focus-visible { outline-color: #fff; }
+.navbar .pwa-status-badge { background: rgba(255, 255, 255, .14); border-color: rgba(255, 255, 255, .3); color: #fff; }
+.navbar .pwa-status-dot { background: #86efac; box-shadow: 0 0 0 3px rgba(134, 239, 172, .25); }
+.navbar .pwa-status-badge.is-offline { background: #fff; border-color: #fff; color: #b91c1c; }
+.navbar .pwa-status-badge.is-offline .pwa-status-dot { background: #dc2626; box-shadow: none; }
+.navbar .pwa-fila-btn { background: #fff; color: var(--brand-text); border-color: #fff; }
+.navbar__novo { background: #fff !important; border-radius: 999px; box-shadow: 0 1px 2px rgba(0, 0, 0, .1); transition: transform .15s ease, box-shadow .15s ease; }
+.navbar__novo--receita { color: var(--green); }
+.navbar__novo--despesa { color: var(--red); }
+.navbar__novo:hover { opacity: 1; transform: translateY(-1px); box-shadow: 0 6px 14px rgba(0, 0, 0, .16); }
+:root[data-tema="escuro"] .navbar__novo { background: rgba(255, 255, 255, .07) !important; border: 1px solid rgba(255, 255, 255, .14); }
+.navbar__avatar { background: #fff; color: var(--brand-text); box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
+:root[data-tema="escuro"] .navbar__avatar { background: var(--brand); color: var(--on-brand); }
+.navbar__user-nome { color: #fff; }
+.navbar__mais-item.is-active { background: var(--brand-soft); color: var(--brand-text); }
+@media (max-width: 768px) {
+  .navbar__brand .navbar__logo { display: inline-flex; width: 32px; height: 32px; font-size: 24px; }
+  .navbar__brand .navbar__nome { display: inline; font-size: 15px; }
+}
+@media (max-width: 359px) { .navbar__brand .navbar__nome { display: none; } }
+/* Tablet e notebook pequeno: o nome da marca sai para os atalhos caberem numa linha */
+@media (min-width: 769px) and (max-width: 1100px) { .navbar__nome { display: none; } }
+
+/* ---- Titulos de pagina: icone num quadradinho verde ---- */
+.page-header h1 { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: -.02em; }
+.page-header h1 > .ph:first-child { width: 42px; height: 42px; margin: 0; border-radius: 12px; background: var(--brand-soft); color: var(--brand-text); border: 1px solid var(--brand-line);
+  display: inline-flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; vertical-align: middle; }
+@media (max-width: 768px) { .page-header h1 > .ph:first-child { width: 36px; height: 36px; font-size: 19px; border-radius: 10px; } }
+
+/* ---- Botoes, campos, abas e seletores ---- */
+/* Campos e botoes nao herdam a fonte da pagina por padrao do navegador (selects ficavam na fonte do sistema) */
+button, input, select, textarea { font-family: inherit; }
+.settings-menu__item { gap: 8px; }
+@media (max-width: 820px) { .settings-menu__lista .settings-menu__item { text-align: left; } }
+.btn { border-radius: 10px; transition: background-color .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease; }
+.btn-primary { background: var(--primary); color: var(--primary-text); box-shadow: 0 1px 2px rgba(16, 24, 40, .1); }
+.btn-primary:hover { background: var(--primary-hover); opacity: 1; }
+.btn-outline { background: var(--card); }
+.btn-outline:hover { background: var(--brand-soft); border-color: var(--brand-line); }
+.input, select.input, textarea.input { border-color: var(--input-border); transition: border-color .15s ease, box-shadow .15s ease; }
+.input:focus, select.input:focus, textarea.input:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px var(--focus-ring); }
+.btn:focus-visible, .tabs__item:focus-visible, .icon-btn:focus-visible, summary:focus-visible, .btn-pagar:focus-visible { outline-color: var(--brand); }
+.tabs__item:hover { color: var(--text); }
+.tabs__item.is-active { background: var(--brand-soft); color: var(--brand-text); border-color: var(--brand-line); }
+.seg { background: var(--card); box-shadow: 0 1px 2px rgba(16, 24, 40, .04); }
+.seg > .is-on { box-shadow: 0 2px 6px var(--brand-shadow); }
+.alert-sucesso { border: 1px solid var(--brand-line); }
+.boas-vindas { border-top: 4px solid var(--brand); }
+.recolhivel__titulo .grafico-card__marca { margin-right: 8px; vertical-align: -2px; }
+/* Seletor de periodo do Painel em celular estreito: 2 x 2 (em uma linha so, "Personalizado" ficava cortado na borda) */
+@media (max-width: 430px) {
+  .myfinance-top-controls .seg { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-radius: 16px; overflow: visible; }
+  .myfinance-top-controls .seg > a, .myfinance-top-controls .seg > button { justify-content: center; }
+  /* Sem contas ainda nao ha "Personalizado": os 3 botoes ficam numa linha, sem um buraco na grade */
+  .myfinance-top-controls .seg:not(:has(> :nth-child(4))) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.boas-vindas__acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+@media (max-width: 430px) { .boas-vindas__acoes .btn { flex: 1 1 100%; } }
+
+/* ---- Configuracoes > Preferencia: seletor da cor do tema ---- */
+.cor-tema-opcoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 560px; }
+.cor-tema-opcao { display: flex; flex-direction: column; margin: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card); cursor: pointer;
+  transition: border-color .15s ease, box-shadow .15s ease; }
+.cor-tema-opcao:hover { border-color: var(--brand-line); }
+.cor-tema-opcao:has(input:checked) { border-color: var(--brand); box-shadow: 0 0 0 3px var(--focus-ring); }
+.cor-tema-opcao:has(input:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
+.cor-tema-opcao__amostra { display: grid; grid-template-columns: 2fr 1fr; height: 40px; border-bottom: 1px solid var(--border); }
+.cor-tema-opcao__rodape { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px; min-width: 0; font-size: 13.5px; font-weight: 600; }
+.cor-tema-opcao__rodape > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cor-tema-opcao input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: var(--brand-text); cursor: pointer; }
+
+/* ---- Painel: cartoes de resumo (saldo, receitas, despesas, saldo previsto) ---- */
+.painel-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+.pkpi { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 16px; min-width: 0; transition: box-shadow .2s ease; }
+.pkpi:hover { box-shadow: var(--shadow-hover); }
+.pkpi--saldo { --kpi-cor: var(--blue); --kpi-bg: var(--blue-bg); }
+.pkpi--receitas { --kpi-cor: var(--green); --kpi-bg: var(--green-bg); }
+.pkpi--despesas { --kpi-cor: var(--red); --kpi-bg: var(--red-bg); }
+.pkpi--previsto { --kpi-cor: var(--purple); --kpi-bg: var(--purple-bg); }
+.pkpi__topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
+.pkpi__rotulo { display: inline-flex; align-items: center; gap: 8px; min-width: 0; font-size: 13.5px; font-weight: 700; color: var(--kpi-cor); }
+.pkpi__icone { width: 30px; height: 30px; border-radius: 9px; background: var(--kpi-bg); color: var(--kpi-cor); display: inline-flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+.pkpi__novo { width: 32px; height: 32px; flex-shrink: 0; border-radius: 9px; border: 1px solid var(--border); background: var(--card); color: var(--kpi-cor); display: inline-flex; align-items: center; justify-content: center; font-size: 15px; cursor: pointer; transition: background-color .15s ease; }
+.pkpi__novo:hover { background: var(--kpi-bg); border-color: transparent; }
+.pkpi .btn-olho { flex-shrink: 0; }
+.pkpi__valor { font-size: 24px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pkpi__sub { font-size: 12.5px; color: var(--muted); }
+.pkpi__chips { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: auto; padding-top: 10px; }
+.pkpi__chips--um { grid-template-columns: minmax(0, 1fr); }
+.pkpi__chip { min-width: 0; padding: 8px 10px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); }
+.pkpi__chip small { display: flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pkpi__chip b { display: block; margin-top: 2px; font-size: 13.5px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pkpi__chip--verde { background: var(--green-bg); border-color: transparent; }
+.pkpi__chip--verde small, .pkpi__chip--verde b { color: var(--green); }
+.pkpi__chip--vermelho { background: var(--red-bg); border-color: transparent; }
+.pkpi__chip--vermelho small, .pkpi__chip--vermelho b { color: var(--red); }
+.pkpi__chip--ambar { background: var(--amber-bg); border-color: transparent; }
+.pkpi__chip--ambar small, .pkpi__chip--ambar b { color: var(--amber); }
+@media (max-width: 1180px) { .painel-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* 4 cartoes lado a lado: caixinhas um pouco mais compactas para "Gs. 29.651.360" caber numa linha */
+@media (min-width: 1181px) { .pkpi__chip { padding: 8px 9px; } .pkpi__chip b { font-size: 12.5px; } }
+@media (max-width: 768px) {
+  .painel-kpis { gap: 10px; margin-bottom: 12px; }
+  .pkpi { padding: 14px; gap: 4px; }
+  .pkpi--saldo, .pkpi--previsto { grid-column: 1 / -1; }
+  .pkpi--saldo .pkpi__valor { font-size: 28px; }
+  .pkpi--receitas .pkpi__valor, .pkpi--despesas .pkpi__valor { font-size: 18px; }
+  /* O periodo ja aparece no seletor do topo; nas colunas estreitas fica so o que importa */
+  .pkpi--receitas .pkpi__sub, .pkpi--despesas .pkpi__sub { display: none; }
+  .pkpi--receitas .pkpi__chips, .pkpi--despesas .pkpi__chips { grid-template-columns: minmax(0, 1fr); gap: 6px; padding-top: 6px; }
+  .pkpi__chip { padding: 7px 9px; }
+}
+@media (max-width: 380px) {
+  .pkpi--receitas .pkpi__valor, .pkpi--despesas .pkpi__valor { font-size: 16px; }
+  .pkpi__rotulo { font-size: 13px; gap: 6px; }
+  .pkpi__icone { width: 26px; height: 26px; font-size: 16px; }
+}
+
+/* ---- Barra inferior e folhas do celular ---- */
+@media (max-width: 768px) {
+  .barra-inf { box-shadow: 0 -4px 18px rgba(16, 24, 40, .06); }
+  .barra-inf .is-active { color: var(--brand-text); }
+  .barra-inf .is-active::before { width: 32px; background: var(--brand); }
+  .barra-inf__novo { width: 52px; height: 52px; margin-top: -20px; border: 4px solid var(--card); background: linear-gradient(135deg, var(--brand) 0%, var(--nav-bg) 100%); color: #fff;
+    box-shadow: 0 8px 18px var(--brand-shadow); }
+  :root[data-tema="escuro"] .barra-inf__novo { background: var(--brand); color: var(--on-brand); box-shadow: 0 8px 18px rgba(0, 0, 0, .45); }
+  .folha__item.is-active { background: var(--brand-soft); color: var(--brand-text); }
+  .folha__item.is-active i { color: var(--brand-text); }
 }

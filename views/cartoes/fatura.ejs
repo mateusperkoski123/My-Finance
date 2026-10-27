@@ -41,7 +41,14 @@
                 <button type="submit" class="btn btn-outline btn-sm"><i class="ph ph-arrow-counter-clockwise"></i> <%= t('cartoes.desfazer_pagamento') %></button>
             </form>
         <% } else { %>
+            <%# Situacao pela data de hoje: depois do vencimento com compras = vencida; depois do fechamento = fechada (falta pagar). %>
+            <% if (fatura.compras.length && hoje > fatura.vencimento) { %>
+            <span class="badge badge-erro"><i class="ph ph-warning-circle"></i> <%= t('cartoes.situacao_vencida') %></span>
+            <% } else if (hoje > fatura.fechamento) { %>
+            <span class="badge badge-alerta"><%= t('cartoes.situacao_fechada') %></span>
+            <% } else { %>
             <span class="badge badge-alerta"><%= t('cartoes.situacao_aberta') %></span>
+            <% } %>
             <% if (fatura.compras.length) { %><button type="button" class="btn btn-primary" data-modal-open="modal-pagar"><i class="ph ph-check-circle"></i> <%= t('cartoes.pagar_fatura') %></button><% } %>
         <% } %>
     </div>

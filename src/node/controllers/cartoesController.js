@@ -72,11 +72,16 @@ const cartoesController = {
         res.redirect(restaurar ? '/cartoes?aba=arquivados' : '/cartoes');
     },
 
-    // Fatura de um mes (por padrao a que esta aberta agora) com as compras e o pagamento.
+    // Fatura de um mes com as compras e o pagamento. Sem mes escolhido: a fatura fechada mais antiga ainda sem pagamento
+    // (abrir na fatura aberta, vazia, escondia uma fatura vencida) ou, nao havendo, a que esta aberta agora.
     fatura: async (req, res) => {
         const cartao = await cartaoDoUsuario(req, res);
         if (!cartao) return;
-        const mes = fatura.mesValido(req.query.mes) ? req.query.mes : await Cartao.mesDeNovaCompra(cartao, hoje());
+        let mes = fatura.mesValido(req.query.mes) ? req.query.mes : null;
+        if (!mes) {
+            const aberto = await Cartao.mesDeNovaCompra(cartao, hoje());
+            mes = (await Cartao.mesFechadoSemPagamento(cartao.id, aberto)) || aberto;
+        }
         const [f, categorias, contas] = await Promise.all([
             Cartao.fatura(cartao, req.user.id, mes), Compra.categoriasDespesa(req.user.id), Conta.buscarPorUsuario(req.user.id, false)
         ]);

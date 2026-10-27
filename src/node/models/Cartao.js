@@ -88,6 +88,17 @@ class Cartao {
         return { mes, compras, total, paga, ...fatura.datasDaFatura(mes, cartao.dia_fechamento, cartao.dia_vencimento) };
     }
 
+    // Fatura mais antiga anterior a `mesAberto` que tem compras e ainda nao foi paga (ja fechou: e a que pede pagamento).
+    static async mesFechadoSemPagamento(cartaoId, mesAberto) {
+        const [[r]] = await db.query(
+            `SELECT MIN(cc.fatura_mes) AS mes FROM cartao_compras cc
+             LEFT JOIN cartao_faturas fa ON fa.cartao_id = cc.cartao_id AND fa.mes = cc.fatura_mes
+             WHERE cc.cartao_id = ? AND cc.fatura_mes < ? AND fa.id IS NULL`,
+            [cartaoId, mesAberto]
+        );
+        return r && r.mes ? r.mes : null;
+    }
+
     // Mes da fatura aberta para uma compra feita em `data`: se esse mes ja foi pago, a compra segue para o proximo.
     static async mesDeNovaCompra(cartao, data) {
         let mes = fatura.mesDaCompra(data, cartao.dia_fechamento);

@@ -30,10 +30,10 @@ class User {
         return { id: result.insertId, tokenVerificacao };
     }
 
-    static async updatePreferencias(id, { idioma, moeda, tema }) {
+    static async updatePreferencias(id, { idioma, moeda, tema, cor_tema }) {
         await db.query(
-            'UPDATE users SET idioma = ?, moeda = ?, tema = ?, updated_at = NOW() WHERE id = ?',
-            [idioma, moeda, tema, id]
+            'UPDATE users SET idioma = ?, moeda = ?, tema = ?, cor_tema = ?, updated_at = NOW() WHERE id = ?',
+            [idioma, moeda, tema, cor_tema, id]
         );
     }
 

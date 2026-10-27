@@ -6,6 +6,7 @@ const Lancamento = require('../models/Lancamento');
 const db = require('../config/db');
 const { IDIOMAS } = require('../core/idiomas');
 const { t: traduzir } = require('../core/i18n');
+const { CORES_TEMA } = require('../core/negocio');
 
 // Opcoes oferecidas em Configuracoes > Preferencia (e as unicas aceitas ao salvar).
 const MOEDAS = {
@@ -23,7 +24,7 @@ const configuracoesController = {
         res.render('configuracoes/index', {
             title: req.t('config.titulo'),
             menuAtivo: 'preferencia',
-            config: { idiomas: IDIOMAS, moedas: MOEDAS, temas: TEMAS }
+            config: { idiomas: IDIOMAS, moedas: MOEDAS, temas: TEMAS, cores: CORES_TEMA }
         });
     },
 
@@ -33,7 +34,8 @@ const configuracoesController = {
         const idioma = IDIOMAS[req.body.idioma] ? req.body.idioma : (req.user.idioma || 'pt-BR');
         const moeda = MOEDAS[req.body.moeda] ? req.body.moeda : (req.user.moeda || 'PYG');
         const tema = TEMAS[req.body.tema] ? req.body.tema : (req.user.tema || 'claro');
-        await User.updatePreferencias(userId, { idioma, moeda, tema });
+        const cor_tema = CORES_TEMA[req.body.cor_tema] ? req.body.cor_tema : (CORES_TEMA[req.user.cor_tema] ? req.user.cor_tema : 'verde');
+        await User.updatePreferencias(userId, { idioma, moeda, tema, cor_tema });
         req.session.idioma = idioma;
         // A confirmacao ja sai no idioma que acabou de ser escolhido.
         req.session.flash = { tipo: 'sucesso', mensagem: traduzir('flash.preferencias_salvas', {}, idioma) };
@@ -137,7 +139,8 @@ const configuracoesController = {
                 email: user.email,
                 idioma: user.idioma,
                 moeda: user.moeda,
-                tema: user.tema
+                tema: user.tema,
+                cor_tema: user.cor_tema
             },
             contas,
             categorias,

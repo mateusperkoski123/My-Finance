@@ -70,47 +70,72 @@ const nomesMeses = {
             <li><b>2</b><span><%- t('painel.bv_passo2') %></span></li>
             <li><b>3</b><span><%- t('painel.bv_passo3') %></span></li>
         </ol>
-        <a href="/contas" class="btn btn-primary"><%= t('painel.ir_para_contas') %></a>
-        <a href="/guia" class="btn btn-outline" style="margin-left: 8px;"><i class="ph ph-book-open"></i> <%= t('guia.ver') %></a>
+        <div class="boas-vindas__acoes">
+            <a href="/contas" class="btn btn-primary"><%= t('painel.ir_para_contas') %></a>
+            <a href="/guia" class="btn btn-outline"><i class="ph ph-book-open"></i> <%= t('guia.ver') %></a>
+        </div>
     </div>
 <% } else { %>
 
 <% const _temPend = Boolean(pendenciasUrgentes && pendenciasUrgentes.totalGeral > 0); %>
-<%# Duas colunas no computador: saldo, resumo do mes e botoes a esquerda; o que vence agora a direita (sem rolar para achar). %>
-<div class="painel-grid<%= _temPend ? '' : ' painel-grid--uma' %>">
-<div class="painel-grid__esq">
-<!-- Card Principal: Saldo Disponível -->
-<div class="card resumo-card" style="border-radius: 20px; padding: 22px 24px; margin-bottom: 16px; background: var(--card); border: 1px solid var(--border); box-shadow: var(--shadow);">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-        <span class="muted" style="font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;">
-            <%= t('painel.saldo_disponivel') %>
+<%# Resumo do periodo em 4 cartoes: o saldo de hoje, as receitas, as despesas e como o periodo deve terminar. Receitas e despesas
+    separam o que ja aconteceu (recebido/pago) do que falta (a receber/a pagar). %>
+<%
+const _entrou = Number(resumo.receitas_recebidas) || 0, _saiu = Number(resumo.despesas_pagas) || 0, _sobrou = _entrou - _saiu;
+const _aReceber = Number(resumo.receitas_a_receber) || 0, _aPagar = Number(resumo.despesas_nao_pagas) || 0;
+const _recTotal = _entrou + _aReceber, _despTotal = _saiu + _aPagar, _resultado = _recTotal - _despTotal;
+const _rotPeriodo = formatDate(periodo.inicio, 'DD/MM/YYYY') + ' - ' + formatDate(periodo.fim, 'DD/MM/YYYY');
+const _comSinal = (v) => (v < 0 ? '-' : '') + moeda(Math.abs(v));
+const _cor = (v) => v >= 0 ? 'var(--green)' : 'var(--red)';
+%>
+<section class="painel-kpis" aria-label="<%= t('painel.kpi.aria') %>">
+    <article class="card pkpi pkpi--saldo">
+        <div class="pkpi__topo">
+            <span class="pkpi__rotulo"><span class="pkpi__icone"><i class="ph ph-wallet"></i></span><%= t('painel.saldo_disponivel') %></span>
             <button type="button" id="btn-ocultar-saldo" class="btn-olho" aria-label="<%= t('painel.ocultar_saldo') %>" title="<%= t('painel.ocultar_saldo') %>" aria-pressed="false"><i class="ph ph-eye"></i></button>
-        </span>
-        <span style="font-size: 12px; background: var(--bg); padding: 4px 10px; border-radius: 12px; font-weight: 600; color: var(--muted); border: 1px solid var(--border);"><%= t('contas.total_consolidado') %></span>
-    </div>
-    <div data-saldo-oculta style="font-size: 32px; font-weight: 800; color: <%= resumo.saldo_disponivel >= 0 ? 'var(--green)' : 'var(--red)' %>;">
-        <%= moeda(resumo.saldo_disponivel) %>
-    </div>
-    <% if (Math.abs(resumo.saldo_previsto - resumo.saldo_disponivel) > 0.5) { %>
-    <div style="display: flex; justify-content: space-between; font-size: 13px; margin-top: 14px; border-top: 1px solid var(--border); padding-top: 10px;">
-        <span class="muted"><%= t('painel.saldo_previsto_apos') %></span>
-        <strong data-saldo-oculta style="color: var(--text); font-weight: 700;"><%= moeda(resumo.saldo_previsto) %></strong>
-    </div>
-    <% } %>
-</div>
-<%# Resumo do mes: so o que ja foi recebido e pago no periodo (o que falta aparece em "Saldo previsto"). %>
-<% const _entrou = Number(resumo.receitas_recebidas) || 0, _saiu = Number(resumo.despesas_pagas) || 0, _sobrou = _entrou - _saiu; %>
-<div class="painel-tres" title="<%= t('painel.resumo_dica') %>">
-    <div><small><%= t('painel.entrou') %></small><b class="verde" data-saldo-oculta><%= moeda(_entrou) %></b></div>
-    <div><small><%= t('painel.saiu') %></small><b class="vermelho" data-saldo-oculta><%= moeda(_saiu) %></b></div>
-    <div><small><%= t('painel.sobrou') %></small><b style="color: <%= _sobrou >= 0 ? 'var(--green)' : 'var(--red)' %>;" data-saldo-oculta><%= (_sobrou < 0 ? '-' : '') + moeda(Math.abs(_sobrou)) %></b></div>
-</div>
-<%# Botoes de acao logo abaixo do saldo: no computador ficam a vista sem rolar a pagina (no celular o botao flutuante "+" faz esse papel). %>
-<div class="myfinance-action-buttons">
-    <button type="button" class="btn btn-acao btn-acao--receita" data-modal-open="modal-novo-receita"><i class="ph ph-plus-circle"></i> <%= t('painel.nova_receita') %></button>
-    <button type="button" class="btn btn-acao btn-acao--despesa" data-modal-open="modal-novo-despesa"><i class="ph ph-minus-circle"></i> <%= t('painel.nova_despesa') %></button>
-</div>
-</div>
+        </div>
+        <div class="pkpi__valor" data-saldo-oculta style="color: <%= _cor(resumo.saldo_disponivel) %>;"><%= _comSinal(resumo.saldo_disponivel) %></div>
+        <div class="pkpi__sub"><%= t('painel.kpi.todas_contas') %></div>
+        <div class="pkpi__chips">
+            <div class="pkpi__chip"><small><%= t('painel.saldo_anterior') %></small><b data-saldo-oculta><%= _comSinal(resumo.saldo_anterior) %></b></div>
+            <div class="pkpi__chip pkpi__chip--<%= _sobrou >= 0 ? 'verde' : 'vermelho' %>" title="<%= t('painel.resumo_dica') %>"><small><%= t('painel.sobrou') %></small><b data-saldo-oculta><%= _comSinal(_sobrou) %></b></div>
+        </div>
+    </article>
+    <article class="card pkpi pkpi--receitas">
+        <div class="pkpi__topo">
+            <span class="pkpi__rotulo"><span class="pkpi__icone"><i class="ph ph-arrow-circle-up"></i></span><%= t('painel.receitas') %></span>
+            <button type="button" class="pkpi__novo" data-modal-open="modal-novo-receita" aria-label="<%= t('painel.nova_receita') %>" title="<%= t('painel.nova_receita') %>"><i class="ph-bold ph-plus"></i></button>
+        </div>
+        <div class="pkpi__valor" data-saldo-oculta style="color: var(--green);"><%= moeda(_recTotal) %></div>
+        <div class="pkpi__sub"><%= _rotPeriodo %></div>
+        <div class="pkpi__chips">
+            <div class="pkpi__chip pkpi__chip--verde"><small><i class="ph ph-check-circle" aria-hidden="true"></i> <%= t('painel.recebido') %></small><b data-saldo-oculta><%= moeda(_entrou) %></b></div>
+            <div class="pkpi__chip pkpi__chip--ambar"><small><i class="ph ph-clock" aria-hidden="true"></i> <%= t('painel.a_receber') %></small><b data-saldo-oculta><%= moeda(_aReceber) %></b></div>
+        </div>
+    </article>
+    <article class="card pkpi pkpi--despesas">
+        <div class="pkpi__topo">
+            <span class="pkpi__rotulo"><span class="pkpi__icone"><i class="ph ph-arrow-circle-down"></i></span><%= t('painel.despesas') %></span>
+            <button type="button" class="pkpi__novo" data-modal-open="modal-novo-despesa" aria-label="<%= t('painel.nova_despesa') %>" title="<%= t('painel.nova_despesa') %>"><i class="ph-bold ph-plus"></i></button>
+        </div>
+        <div class="pkpi__valor" data-saldo-oculta style="color: var(--red);"><%= moeda(_despTotal) %></div>
+        <div class="pkpi__sub"><%= _rotPeriodo %></div>
+        <div class="pkpi__chips">
+            <div class="pkpi__chip pkpi__chip--verde"><small><i class="ph ph-check-circle" aria-hidden="true"></i> <%= t('painel.pago') %></small><b data-saldo-oculta><%= moeda(_saiu) %></b></div>
+            <div class="pkpi__chip pkpi__chip--vermelho"><small><i class="ph ph-clock" aria-hidden="true"></i> <%= t('painel.pend_pagar') %></small><b data-saldo-oculta><%= moeda(_aPagar) %></b></div>
+        </div>
+    </article>
+    <article class="card pkpi pkpi--previsto">
+        <div class="pkpi__topo">
+            <span class="pkpi__rotulo"><span class="pkpi__icone"><i class="ph ph-chart-line-up"></i></span><%= t('painel.saldo_previsto') %></span>
+        </div>
+        <div class="pkpi__valor" data-saldo-oculta style="color: <%= _cor(resumo.saldo_previsto) %>;"><%= _comSinal(resumo.saldo_previsto) %></div>
+        <div class="pkpi__sub"><%= t('painel.kpi.apos_pendencias') %></div>
+        <div class="pkpi__chips pkpi__chips--um">
+            <div class="pkpi__chip pkpi__chip--<%= _resultado >= 0 ? 'verde' : 'vermelho' %>" title="<%= t('painel.kpi.resultado_dica') %>"><small><%= t('painel.kpi.resultado') %></small><b data-saldo-oculta><%= _comSinal(_resultado) %></b></div>
+        </div>
+    </article>
+</section>
 <script>
 // Ocultar/mostrar os valores. Alem do carregamento, roda quando a pagina troca o conteudo sem recarregar
 // (depois de pagar ou salvar um lancamento): os valores precisam continuar ocultos.
@@ -139,7 +164,6 @@ const nomesMeses = {
 </script>
 
 <% if (_temPend) { %>
-<div class="painel-grid__dir">
 <!-- Pendencias vencidas ou que vencem hoje -->
 <section class="card pendencias" id="pendencias" aria-label="<%= t('painel.pendencias') %>">
     <div class="pendencias__topo">
@@ -182,9 +206,7 @@ const nomesMeses = {
         <% }) %>
     </div>
 </section>
-</div>
 <% } %>
-</div>
 
 <div class="painel-resumo">
 <!-- Comparativo: periodo anterior x atual (fixos/variaveis) -->

@@ -465,6 +465,18 @@ module.exports = {
     'modal.fixa_dica': ['Repete todo mês: já cria os próximos 24 meses como pendentes.', 'Se repite cada mes: ya crea los próximos 24 meses como pendientes.', 'Repeats every month: creates the next 24 months as pending.'],
     'modal.repetir_dica': ['Parcelas ou cobranças periódicas: cria uma a cada mês, 3 meses, 6 meses ou ano, na quantidade que você escolher.', 'Cuotas o cobros periódicos: crea una cada mes, 3 meses, 6 meses o año, en la cantidad que elijas.', 'Installments or periodic charges: creates one every month, 3 months, 6 months or year, as many as you choose.'],
     'painel.ocultar_saldo': ['Ocultar ou mostrar os valores', 'Ocultar o mostrar los montos', 'Hide or show the amounts'],
+    // Configuracoes > Preferencia: cor do tema
+    'config.cor_tema': ['Cor do tema', 'Color del tema', 'Theme color'],
+    'config.cor_tema_ajuda': ['Muda o topo, os botões e os destaques. Receitas continuam verdes e despesas vermelhas. O padrão é o verde.', 'Cambia la barra superior, los botones y los destaques. Los ingresos siguen en verde y los gastos en rojo. El predeterminado es el verde.', 'Changes the top bar, buttons and highlights. Income stays green and expenses stay red. Green is the default.'],
+    'cor_tema.verde': ['Verde', 'Verde', 'Green'],
+    'cor_tema.azul': ['Azul', 'Azul', 'Blue'],
+    'cor_tema.preto': ['Preto', 'Negro', 'Black'],
+    // Painel: cartoes de resumo do periodo (saldo, receitas, despesas, saldo previsto)
+    'painel.kpi.aria': ['Resumo do período', 'Resumen del período', 'Period summary'],
+    'painel.kpi.todas_contas': ['Somando todas as contas ativas', 'Sumando todas las cuentas activas', 'All active accounts combined'],
+    'painel.kpi.apos_pendencias': ['Depois de receber e pagar o que falta', 'Después de cobrar y pagar lo pendiente', 'After collecting and paying what is pending'],
+    'painel.kpi.resultado': ['Resultado do período', 'Resultado del período', 'Period result'],
+    'painel.kpi.resultado_dica': ['Receitas menos despesas do período, contando as pagas e as pendentes', 'Ingresos menos gastos del período, contando los pagados y los pendientes', 'Income minus expenses in the period, counting paid and pending items'],
     'categorias.editar_sub_titulo': ['Editar subcategoria', 'Editar subcategoría', 'Edit subcategory'],
 };
 

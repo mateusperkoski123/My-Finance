@@ -701,10 +701,14 @@ document.addEventListener('DOMContentLoaded', function () {
   function fecharMenus(exceto) {
     document.querySelectorAll('details.menu-acoes[open]').forEach(function (d) { if (d !== exceto) d.removeAttribute('open'); });
   }
+  // Rolagem da pagina quando o menu abriu: so uma rolagem de verdade o fecha (no celular, o fim da rolagem por inercia
+  // ou a barra de endereco encolhendo chegam logo depois do toque e fechavam o menu na hora).
+  var menuAbertoEmY = 0;
   document.addEventListener('toggle', function (e) {
     var d = e.target;
     if (!(d instanceof HTMLElement) || !d.matches('details.menu-acoes') || !d.open) return;
     fecharMenus(d);
+    menuAbertoEmY = window.scrollY;
     var lista = d.querySelector('.menu-acoes__lista'), r = d.getBoundingClientRect();
     lista.style.visibility = 'hidden';
     requestAnimationFrame(function () {
@@ -719,7 +723,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!dentro) fecharMenus(null);
     else if (e.target.closest('.menu-acoes__lista button')) dentro.removeAttribute('open');
   });
-  window.addEventListener('scroll', function () { fecharMenus(null); }, { passive: true });
+  window.addEventListener('scroll', function () { if (Math.abs(window.scrollY - menuAbertoEmY) > 30) fecharMenus(null); }, { passive: true });
 })();
 
 // Atalhos do app instalado (?action=despesa|receita): abre o formulario correspondente no painel.

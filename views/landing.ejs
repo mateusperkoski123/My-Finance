@@ -11,27 +11,29 @@
     <meta name="description" content="Organize contas, parcelas e gastos num só lugar. A IA registra por texto, foto ou voz. Teste grátis por 3 dias, sem cartão. Para Gs., R$, US$ e €.">
     <link rel="canonical" href="https://myfinance.systempy.com/">
     <meta name="robots" content="index, follow, max-image-preview:large">
-    <meta name="theme-color" content="#4338ca">
+    <meta name="theme-color" content="#15803d">
     <link rel="icon" type="image/png" href="/assets/icons/icon-192.png">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/inter@5.1.0/index.css" crossorigin="anonymous">
     
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     
     <style>
         :root[data-tema="claro"] {
-            --bg: #f5f6f8;
+            --bg: #f4f7f5;
             --card: #ffffff;
-            --text: #16181d;
-            --muted: #5b6370;
-            --border: #e5e7eb;
-            --nav-bg: #0b0d12;
-            --nav-text: #e8eaed;
-            --nav-text-muted: #9aa0aa;
-            --primary: #111827;
+            --text: #0f172a;
+            --muted: #566173;
+            --border: #e2e8e4;
+            --nav-bg: #15803d;
+            --nav-text: #ffffff;
+            --nav-text-muted: #f0fdf4;
+            --primary: #0f172a;
             --primary-text: #ffffff;
-            --accent: #4338ca;
-            --accent-solid: #4338ca;
-            --accent-bg: #eef2ff;
+            --accent: #15803d;
+            --accent-solid: #15803d;
+            --accent-bg: #ecfdf3;
             --red: #c81e1e;
             --red-bg: #fdecec;
             --blue: #2563eb;
@@ -44,19 +46,19 @@
         }
 
         :root[data-tema="escuro"] {
-            --bg: #0e1015;
-            --card: #171a21;
-            --text: #e7e9ee;
-            --muted: #9aa0aa;
-            --border: #2a2e37;
-            --nav-bg: #000000;
+            --bg: #0b1210;
+            --card: #121b17;
+            --text: #e6efe9;
+            --muted: #9db0a5;
+            --border: #24332c;
+            --nav-bg: #0f2a1c;
             --nav-text: #e7e9ee;
             --nav-text-muted: #8b909b;
             --primary: #e7e9ee;
             --primary-text: #14161b;
-            --accent: #a5b4fc;
-            --accent-solid: #6366f1;
-            --accent-bg: #1f2147;
+            --accent: #4ade80;
+            --accent-solid: #15803d;
+            --accent-bg: #10291c;
             --red: #f87171;
             --red-bg: #3a1618;
             --blue: #60a5fa;
@@ -74,8 +76,9 @@
         body {
             background: var(--bg);
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: "Inter Variable", Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             font-size: 14.5px;
+            -webkit-font-smoothing: antialiased;
             line-height: 1.5;
             overflow-x: hidden;
             transition: background 0.2s ease, color 0.2s ease;
@@ -119,9 +122,10 @@
             width: 34px;
             height: 34px;
             border-radius: 10px;
-            background: var(--accent-solid);
-            color: #ffffff;
-            font-size: 20px;
+            background: #ffffff;
+            color: #16a34a;
+            font-size: 24px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.14);
         }
         .navbar__links {
             display: flex;
@@ -135,6 +139,10 @@
             transition: color 0.15s;
         }
         .navbar__link:hover { color: #ffffff; }
+        /* Topo verde: o botao de teste gratis fica branco com texto verde (verde sobre verde sumia) */
+        .navbar .btn { white-space: nowrap; }
+        .navbar .btn-accent { background: #ffffff; color: #15803d; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12); }
+        .navbar .btn-accent:hover { box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18); }
 
         /* Idioma Switcher */
         .lang-select {
@@ -149,7 +157,7 @@
             outline: none;
         }
         .lang-select option {
-            background: #111827;
+            background: #14532d;
             color: #ffffff;
         }
 
@@ -191,7 +199,7 @@
         .btn-accent:hover {
             opacity: 0.92;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 4px 12px rgba(21, 128, 61, 0.3);
         }
         .btn-pro {
             background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
@@ -223,7 +231,7 @@
             font-size: 12px;
             font-weight: 600;
         }
-        .badge-accent { background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(99, 102, 241, 0.25); }
+        .badge-accent { background: var(--accent-bg); color: var(--accent); border: 1px solid rgba(22, 163, 74, 0.25); }
         .badge-blue { background: var(--blue-bg); color: var(--blue); border: 1px solid rgba(37, 99, 235, 0.2); }
         .badge-ouro { background: var(--ouro-bg); color: var(--ouro); border: 1px solid rgba(217, 119, 6, 0.2); }
 
@@ -457,7 +465,7 @@
         }
         .plano-card--destaque {
             border: 2px solid var(--accent);
-            box-shadow: 0 8px 26px rgba(79, 70, 229, 0.18);
+            box-shadow: 0 8px 26px rgba(21, 128, 61, 0.18);
         }
         .plano-card--pro {
             border: 2px solid var(--ouro);
@@ -674,14 +682,14 @@
             background: var(--accent-solid); color: #ffffff;
             display: flex; align-items: center; justify-content: center;
             font-weight: 800; font-size: 16px;
-            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+            box-shadow: 0 4px 12px rgba(21, 128, 61, 0.3);
         }
         .passo h3 { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
         .passo p { font-size: 14px; color: var(--muted); line-height: 1.55; }
 
         /* CTA final */
         .cta-final {
-            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 55%, #4338ca 100%);
+            background: linear-gradient(135deg, #14532d 0%, #166534 55%, #15803d 100%);
             color: #ffffff;
             border-radius: 24px;
             padding: 52px 32px;
@@ -690,7 +698,7 @@
         }
         .cta-final h2 { font-size: 34px; font-weight: 800; letter-spacing: -0.01em; max-width: 700px; margin: 0 auto 12px; line-height: 1.2; }
         .cta-final p { font-size: 16.5px; color: rgba(255,255,255,0.8); max-width: 620px; margin: 0 auto 26px; }
-        .cta-final .btn-cta { background: #ffffff; color: #312e81; font-weight: 800; }
+        .cta-final .btn-cta { background: #ffffff; color: #166534; font-weight: 800; }
         .cta-final .btn-cta:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,0.25); }
         .cta-final small { display: block; margin-top: 14px; font-size: 13px; color: rgba(255,255,255,0.7); }
 
@@ -710,7 +718,8 @@
         @media (max-width: 600px) {
             .navbar__brand > span:not(.navbar__logo) { display: none; }
             .navbar__inner > div:last-child { gap: 6px !important; }
-            .navbar__inner a[href$="/cadastro"] { display: none; }
+            /* *= e nao $=: a versao gerada (scripts/landing) acrescenta ?lang= ao endereco */
+            .navbar__inner a[href*="/cadastro"] { display: none; }
             .ia-grid { grid-template-columns: 1fr !important; gap: 24px !important; }
             .ia-grid > * { min-width: 0; }
             #ia .card { padding: 22px 16px !important; }
@@ -724,7 +733,7 @@
     <header class="navbar">
         <div class="container navbar__inner">
             <a href="/" class="navbar__brand">
-                <span class="navbar__logo"><i class="ph-fill ph-hands-clapping"></i></span>
+                <span class="navbar__logo"><i class="ph-fill ph-currency-circle-dollar"></i></span>
                 <span>MyFinance</span>
             </a>
 
@@ -1121,7 +1130,7 @@
                             <div style="background: var(--bg); padding: 10px 14px; border-radius: 12px; align-self: flex-end; max-width: 85%;" data-i18n="ia_chat_user">
                                 📸 [Foto de Nota Fiscal de Combustível Gs. 180.000]
                             </div>
-                            <div style="background: var(--accent-bg); color: var(--accent); padding: 10px 14px; border-radius: 12px; align-self: flex-start; max-width: 90%; border: 1px solid rgba(99, 102, 241, 0.25);" data-i18n="ia_chat_bot">
+                            <div style="background: var(--accent-bg); color: var(--accent); padding: 10px 14px; border-radius: 12px; align-self: flex-start; max-width: 90%; border: 1px solid rgba(22, 163, 74, 0.25);" data-i18n="ia_chat_bot">
                                 ✨ Identifiquei: <b>Posto de combustível - Gs. 180.000</b> na categoria <b>Transporte / Combustível</b>. Lançamento registrado com sucesso! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Desfazer (10s)]</span>
                             </div>
                         </div>
@@ -1458,7 +1467,7 @@
     <footer class="footer">
         <div class="container footer-inner">
             <div style="display: flex; align-items: center; gap: 10px;">
-                <span class="navbar__logo" style="width: 28px; height: 28px; font-size: 16px;"><i class="ph-fill ph-hands-clapping"></i></span>
+                <span class="navbar__logo" style="width: 28px; height: 28px; font-size: 16px;"><i class="ph-fill ph-currency-circle-dollar"></i></span>
                 <span style="font-weight: 700; color: #ffffff;">MyFinance</span>
                 <span style="font-size: 12px; color: var(--nav-text-muted);">© <%= new Date().getFullYear() %> <span data-i18n="direitos">Todos os direitos reservados.</span></span>
             </div>
