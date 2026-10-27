@@ -247,9 +247,52 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
             modal.querySelector('[data-pedido-ciclo]').textContent = secao.querySelector('[data-ciclo="' + ciclo + '"]').firstChild.textContent.trim();
             modal.querySelector('[data-pedido-preco]').textContent = btn.getAttribute('data-resumo-' + ciclo);
             modal.classList.add('is-open');
+            limparDesconto();
             var campo = modal.querySelector('[name="telefone_numero"]');
             if (campo) setTimeout(function () { campo.focus(); }, 50);
+            // Codigo ja digitado (outro plano ou outro ciclo): confere de novo para o resumo bater com este plano.
+            var cod = document.getElementById('pedido-codigo');
+            if (cod && cod.value.trim()) aplicarCodigo();
         });
+    });
+
+    // Codigo de desconto: confere no servidor e mostra o desconto e o total antes de pagar.
+    // (A janela do pedido vem depois deste script: os campos sao buscados na hora do uso.)
+    function limparDesconto() { var c = document.getElementById('pedido-desconto'); if (c) { c.hidden = true; c.textContent = ''; } }
+    function aplicarCodigo() {
+        var campoCodigo = document.getElementById('pedido-codigo');
+        var botaoAplicar = document.getElementById('pedido-aplicar');
+        var caixaDesconto = document.getElementById('pedido-desconto');
+        if (!campoCodigo || !campoCodigo.value.trim()) { limparDesconto(); return; }
+        var form = campoCodigo.form;
+        var rotulo = botaoAplicar.textContent;
+        botaoAplicar.disabled = true;
+        botaoAplicar.textContent = botaoAplicar.getAttribute('data-conferindo');
+        var dados = new URLSearchParams({ _csrf: form.querySelector('[name="_csrf"]').value, codigo: campoCodigo.value, plano: form.querySelector('[name="plano"]').value, ciclo: form.querySelector('[name="ciclo"]').value });
+        fetch('/assinatura/indicacao/conferir', { method: 'POST', body: dados, credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+            .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+            .then(function (j) {
+                caixaDesconto.className = 'pedido-desconto ' + (j.ok ? 'pedido-desconto--ok' : 'pedido-desconto--erro');
+                caixaDesconto.textContent = '';
+                (j.ok ? j.linhas.concat([j.total]) : [j.mensagem]).forEach(function (texto, i, todas) {
+                    var linha = document.createElement(j.ok && i === todas.length - 1 ? 'strong' : 'div');
+                    linha.textContent = texto;
+                    caixaDesconto.appendChild(linha);
+                });
+                caixaDesconto.hidden = false;
+                caixaDesconto.scrollIntoView({ block: 'nearest' });
+            })
+            .catch(function () { caixaDesconto.className = 'pedido-desconto pedido-desconto--erro'; caixaDesconto.textContent = (window.GF_T || {}).erro_acao || ''; caixaDesconto.hidden = false; })
+            .then(function () { botaoAplicar.disabled = false; botaoAplicar.textContent = rotulo; });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+        var campoCodigo = document.getElementById('pedido-codigo');
+        var botaoAplicar = document.getElementById('pedido-aplicar');
+        if (!campoCodigo || !botaoAplicar) return;
+        botaoAplicar.addEventListener('click', aplicarCodigo);
+        // Enter no campo confere o codigo em vez de enviar o pedido; mudar o codigo apaga o resumo antigo.
+        campoCodigo.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); aplicarCodigo(); } });
+        campoCodigo.addEventListener('input', limparDesconto);
     });
     // Vindo da tela de teste ("Adquirir por ..."): abre direto o pedido do plano escolhido.
     var comprar = new URLSearchParams(location.search).get('comprar');
@@ -299,6 +342,19 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
                 <div class="pedido-resumo__preco" data-pedido-preco></div>
                 <div class="muted" style="font-size: 13px;"><i class="ph ph-info"></i> <%= t('assinatura.sem_iva_aviso') %></div>
             </div>
+            <% if (pagoOnline) { %>
+            <%# Codigo de desconto logo abaixo do preco (no fim da janela ficava fora da tela no celular). "Aplicar" confere no
+                servidor, sem criar pedido, e mostra desconto, credito e total antes de pagar. %>
+            <div class="lanc-campo">
+                <label for="pedido-codigo"><span><%= t('assinatura.codigo_indicacao') %></span></label>
+                <div class="pedido-codigo">
+                    <input class="input" type="text" id="pedido-codigo" name="codigo_indicacao" autocomplete="off" maxlength="20" style="text-transform: uppercase;">
+                    <button type="button" class="btn btn-outline" id="pedido-aplicar" data-conferindo="<%= t('assinatura.conferindo_codigo') %>"><%= t('assinatura.aplicar_codigo') %></button>
+                </div>
+                <small class="muted"><%= t('assinatura.codigo_indicacao_dica', { pct: (indicacao || {}).percentual || 20 }) %></small>
+                <div class="pedido-desconto" id="pedido-desconto" role="status" aria-live="polite" hidden></div>
+            </div>
+            <% } %>
             <label class="lanc-campo">
                 <span><%= t('assinatura.telefone') %></span>
                 <div class="pedido-tel">
@@ -315,11 +371,6 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
                 <span><%= t('assinatura.documento') %></span>
                 <input class="input" type="text" name="documento" inputmode="numeric" autocomplete="off" required maxlength="20" placeholder="1234567">
                 <small class="muted"><%= t('assinatura.documento_dica') %></small>
-            </label>
-            <label class="lanc-campo">
-                <span><%= t('assinatura.codigo_indicacao') %></span>
-                <input class="input" type="text" name="codigo_indicacao" autocomplete="off" maxlength="20" style="text-transform: uppercase;">
-                <small class="muted"><%= t('assinatura.codigo_indicacao_dica', { pct: (indicacao || {}).percentual || 20 }) %></small>
             </label>
             <% } %>
             <div class="modal-rodape">

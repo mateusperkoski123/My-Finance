@@ -102,6 +102,7 @@ router.post('/verificar-email/reenviar', requireAuth, contaController.reenviarVe
 router.get('/assinatura', requireAuth, assinaturaController.index);
 router.get('/assinatura/recibo/:id', requireAuth, assinaturaController.recibo);
 router.post('/assinatura/solicitar', requireAuth, assinaturaController.solicitar);
+router.post('/assinatura/indicacao/conferir', requireAuth, assinaturaController.conferirIndicacao);
 router.post('/assinatura/indicacao', requireAuth, assinaturaController.criarCodigoIndicacao);
 router.get('/assinatura/pagopar/retorno/:hash', requireAuth, assinaturaController.retornoPagopar);
 // Aviso do Pagopar (sem sessao; autenticado pelo token do corpo).

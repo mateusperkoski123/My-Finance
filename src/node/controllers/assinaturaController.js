@@ -159,6 +159,22 @@ const assinaturaController = {
         res.redirect('/assinatura');
     },
 
+    // "Aplicar" do codigo de desconto (indicacao) na janela de compra: confere o codigo sem criar pedido e devolve as linhas
+    // do resumo (desconto, credito de indicacao e total), com a mesma regra que o pagamento usa.
+    conferirIndicacao: async (req, res) => {
+        const ciclo = req.body.ciclo === 'anual' ? 'anual' : 'mensal';
+        const plano = (await Assinatura.listarPlanos()).find((p) => p.codigo === String(req.body.plano || '') && PLANOS_VENDA.includes(p.codigo));
+        if (!plano) return res.json({ ok: false, mensagem: req.t('flash.plano_invalido') });
+        if (!String(req.body.codigo || '').trim()) return res.json({ ok: false, mensagem: req.t('flash.indicacao_invalido') });
+        const av = await Indicacao.avaliar(req.user.id, req.body.codigo, plano, ciclo);
+        if (av.erro) return res.json({ ok: false, mensagem: req.t('flash.indicacao_' + av.erro) });
+        const cheio = Number(ciclo === 'anual' ? plano.preco_anual : plano.preco_mensal);
+        const credito = await Indicacao.creditoParaUsar(req.user.id, cheio - av.desconto);
+        const linhas = [req.t('assinatura.desconto_linha', { pct: Indicacao.DESCONTO_PERCENTUAL, valor: fmt(av.desconto) })];
+        if (credito > 0) linhas.push(req.t('assinatura.credito_linha', { valor: fmt(credito) }));
+        res.json({ ok: true, linhas, total: req.t('assinatura.total_linha', { valor: fmt(cheio - av.desconto - credito) }) });
+    },
+
     // Cria o pedido no Pagopar e devolve o endereco de pagamento (ou null se nao foi possivel).
     // indicacao = { codigoId, desconto } quando a pessoa usou um codigo valido. O credito de quem indicou abate sozinho.
     iniciarPagopar: async (req, plano, ciclo, tel, indicacao = null) => {

@@ -3293,6 +3293,15 @@ button, input, select, textarea { font-family: inherit; }
 .cor-tema-opcao__rodape > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cor-tema-opcao input { width: 18px; height: 18px; margin: 0; flex-shrink: 0; accent-color: var(--brand-text); cursor: pointer; }
 
+/* ---- Compra de plano: codigo de desconto com "Aplicar" e o resumo (desconto, credito, total) ---- */
+.pedido-codigo { display: flex; gap: 8px; }
+.pedido-codigo .input { flex: 1 1 auto; min-width: 0; }
+.pedido-codigo .btn { flex-shrink: 0; }
+.pedido-desconto { margin-top: 8px; padding: 10px 12px; border-radius: 10px; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+.pedido-desconto--ok { background: var(--green-bg); color: var(--green); border: 1px solid var(--brand-line); }
+.pedido-desconto--ok strong { font-size: 15px; margin-top: 2px; }
+.pedido-desconto--erro { background: var(--red-bg); color: var(--red); }
+
 /* ---- Painel: cartoes de resumo (saldo, receitas, despesas, saldo previsto) ---- */
 .painel-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
 .pkpi { display: flex; flex-direction: column; gap: 6px; padding: 18px; border-radius: 16px; min-width: 0; transition: box-shadow .2s ease; }
