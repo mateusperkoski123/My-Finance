@@ -4,6 +4,9 @@ const { normalizarIdioma } = require('../core/idiomas');
 const User = require('../models/User');
 const { iniciarSessao } = require('../middleware/authMiddleware');
 const { PLANOS_VENDA } = require('../core/negocio');
+const Indicacao = require('../models/Indicacao');
+const Assinatura = require('../models/Assinatura');
+const { fmt } = require('../core/legal');
 
 // Campo de formulario como texto (um campo repetido ou em formato de objeto vira vazio em vez de quebrar a rota).
 const texto = (v) => (typeof v === 'string' ? v : '');
@@ -49,7 +52,32 @@ const authController = {
         const plano = texto(req.query.plano);
         if (PLANOS_VENDA.includes(plano)) req.session.plano_teste = plano;
         const planoTeste = PLANOS_VENDA.includes(req.session.plano_teste) ? req.session.plano_teste : null;
-        res.render('auth/cadastro', { title: req.t('auth.titulo_cadastro'), planoTeste });
+        // Link de indicacao (?codigo=XYZ) ou codigo ja conferido nesta visita: o campo de desconto vem preenchido.
+        const codigoLink = Indicacao.normalizar(texto(req.query.codigo)).slice(0, 20);
+        if (codigoLink) req.session.codigo_desconto = codigoLink;
+        res.render('auth/cadastro', {
+            title: req.t('auth.titulo_cadastro'), planoTeste,
+            codigoDesconto: req.session.codigo_desconto || '', pctDesconto: Indicacao.DESCONTO_PERCENTUAL
+        });
+    },
+
+    // "Aplicar" do codigo de desconto no cadastro: confere o codigo (sem conta ainda) e mostra o desconto da primeira
+    // mensalidade, com o preco do plano escolhido na landing quando houver. O codigo conferido fica na sessao.
+    conferirCodigo: async (req, res) => {
+        const v = await Indicacao.validarCodigo(texto(req.body.codigo));
+        if (v.erro) {
+            delete req.session.codigo_desconto;
+            return res.json({ ok: false, mensagem: req.t('flash.indicacao_invalido') });
+        }
+        req.session.codigo_desconto = v.c.codigo;
+        const linhas = [req.t('auth.codigo_valido', { pct: Indicacao.DESCONTO_PERCENTUAL })];
+        const plano = PLANOS_VENDA.includes(req.session.plano_teste)
+            ? (await Assinatura.listarPlanos()).find((p) => p.codigo === req.session.plano_teste) : null;
+        if (plano) {
+            const cheio = Number(plano.preco_mensal);
+            linhas.push(req.t('auth.codigo_preco', { plano: req.t('plano.' + plano.codigo + '.nome'), de: fmt(cheio), por: fmt(cheio - Indicacao.descontoMensal(plano)) }));
+        }
+        res.json({ ok: true, linhas });
     },
 
     registerSubmit: async (req, res) => {
@@ -87,6 +115,9 @@ const authController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.email_em_uso') };
             return res.redirect('/cadastro');
         }
+        // Codigo de desconto: um codigo invalido nao impede a conta (so nao fica guardado, e o aviso diz isso).
+        const codigoDigitado = Indicacao.normalizar(texto(req.body.codigo_desconto)).slice(0, 20);
+        const codigoOk = codigoDigitado ? await Indicacao.validarCodigo(codigoDigitado) : null;
 
         const hash = bcrypt.hashSync(s, 10);
         let userId;
@@ -114,10 +145,15 @@ const authController = {
         require('../core/mailer').sendVerificationEmail(email, link, idioma)
             .catch((err) => console.error('Falha ao enviar e-mail de verificacao (cadastro):', err.code || '', err.message));
         await User.registrarLogin(userId.id, { email, ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
+        if (codigoOk && !codigoOk.erro) await User.salvarCodigoDesconto(userId.id, codigoOk.c.codigo);
+        delete req.session.codigo_desconto;
 
         req.session.idioma = idioma;
         await iniciarSessao(req, userId.id);
-        req.session.flash = { tipo: 'sucesso', mensagem: require('../core/i18n').t('flash.cadastro_sucesso', {}, idioma) };
+        const { t: traduzir } = require('../core/i18n');
+        req.session.flash = codigoOk && codigoOk.erro
+            ? { tipo: 'sucesso', mensagem: traduzir('flash.cadastro_codigo_invalido', { codigo: codigoDigitado }, idioma) }
+            : { tipo: 'sucesso', mensagem: traduzir('flash.cadastro_sucesso', {}, idioma) };
         res.redirect('/');
     },
 
@@ -302,6 +338,13 @@ const authController = {
                 return res.redirect('/login');
             }
             await User.registrarLogin(user.id, { email: user.email, ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
+            // Codigo de desconto conferido na tela de cadastro antes de escolher "Entrar com o Google".
+            const codigoSessao = req.session.codigo_desconto;
+            if (codigoSessao) {
+                const v = await Indicacao.validarCodigo(codigoSessao);
+                if (!v.erro) await User.salvarCodigoDesconto(user.id, v.c.codigo, true);
+                delete req.session.codigo_desconto;
+            }
             const destino = await iniciarSessao(req, user.id);
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.google_bemvindo', { nome: user.nome }) };
             res.redirect(destino);

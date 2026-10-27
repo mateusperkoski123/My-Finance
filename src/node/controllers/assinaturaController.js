@@ -26,6 +26,8 @@ async function concluirPedido(pedido) {
     // O plano ja esta ativo: um problema com o credito/codigo de indicacao nao pode desfazer isso.
     try {
         await Indicacao.confirmarPagamento(pedido);
+        // O codigo guardado no cadastro ja foi usado: nao volta preenchido na proxima compra.
+        if (pedido.codigo_id) await User.salvarCodigoDesconto(pedido.user_id, null);
     } catch (err) {
         console.error('Falha ao registrar a indicacao do pedido ' + pedido.id + ':', err.message);
     }
@@ -98,6 +100,8 @@ const assinaturaController = {
             paises: telefone.PAISES,
             indicacao: await indicacaoDaTela(req),
             pagoOnline: pagopar.disponivel(),
+            // Codigo de desconto digitado no cadastro: vem preenchido (e ja aplicado) na janela de compra ate a 1a compra paga.
+            codigoSalvo: pagamentos.some((p) => p.status === 'pago') ? '' : (req.user.codigo_desconto || ''),
             idiomaTel: telefone.idiomaCurto(req.lang || req.session.idioma)
         });
     },

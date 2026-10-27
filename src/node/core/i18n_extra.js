@@ -465,12 +465,19 @@ module.exports = {
     'modal.fixa_dica': ['Repete todo mês: já cria os próximos 24 meses como pendentes.', 'Se repite cada mes: ya crea los próximos 24 meses como pendientes.', 'Repeats every month: creates the next 24 months as pending.'],
     'modal.repetir_dica': ['Parcelas ou cobranças periódicas: cria uma a cada mês, 3 meses, 6 meses ou ano, na quantidade que você escolher.', 'Cuotas o cobros periódicos: crea una cada mes, 3 meses, 6 meses o año, en la cantidad que elijas.', 'Installments or periodic charges: creates one every month, 3 months, 6 months or year, as many as you choose.'],
     'painel.ocultar_saldo': ['Ocultar ou mostrar os valores', 'Ocultar o mostrar los montos', 'Hide or show the amounts'],
+    // Cadastro: codigo de desconto (indicacao), conferido na hora e guardado para a primeira compra
+    'auth.codigo_desconto': ['Código de desconto (opcional)', 'Código de descuento (opcional)', 'Discount code (optional)'],
+    'auth.codigo_desconto_dica': ['Recebeu um código de um cliente? Ele dá {pct}% de desconto na primeira mensalidade e fica guardado para quando você assinar.', '¿Recibió un código de un cliente? Da {pct}% de descuento en la primera mensualidad y queda guardado para cuando se suscriba.', 'Got a code from a customer? It gives {pct}% off your first monthly payment and is saved for when you subscribe.'],
+    'auth.codigo_valido': ['Código válido: {pct}% de desconto na primeira mensalidade do plano mensal.', 'Código válido: {pct}% de descuento en la primera mensualidad del plan mensual.', 'Valid code: {pct}% off the first payment of a monthly plan.'],
+    'auth.codigo_preco': ['{plano}: de Gs. {de} por Gs. {por} no primeiro mês', '{plano}: de Gs. {de} a Gs. {por} el primer mes', '{plano}: from Gs. {de} to Gs. {por} in the first month'],
+    'flash.cadastro_codigo_invalido': ['Conta criada! O código de desconto {codigo} não é válido; dá para digitar outro na hora de assinar.', '¡Cuenta creada! El código de descuento {codigo} no es válido; puede ingresar otro al suscribirse.', 'Account created! The discount code {codigo} is not valid; you can enter another one when you subscribe.'],
     // Configuracoes > Preferencia: cor do tema
     'config.cor_tema': ['Cor do tema', 'Color del tema', 'Theme color'],
     'config.cor_tema_ajuda': ['Muda o topo, os botões e os destaques. Receitas continuam verdes e despesas vermelhas. O padrão é o verde.', 'Cambia la barra superior, los botones y los destaques. Los ingresos siguen en verde y los gastos en rojo. El predeterminado es el verde.', 'Changes the top bar, buttons and highlights. Income stays green and expenses stay red. Green is the default.'],
     'cor_tema.verde': ['Verde', 'Verde', 'Green'],
     'cor_tema.azul': ['Azul', 'Azul', 'Blue'],
     'cor_tema.preto': ['Preto', 'Negro', 'Black'],
+    'cor_tema.roxo': ['Roxo', 'Violeta', 'Purple'],
     // Painel: cartoes de resumo do periodo (saldo, receitas, despesas, saldo previsto)
     'painel.kpi.aria': ['Resumo do período', 'Resumen del período', 'Period summary'],
     'painel.kpi.todas_contas': ['Somando todas as contas ativas', 'Sumando todas las cuentas activas', 'All active accounts combined'],

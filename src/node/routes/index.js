@@ -72,6 +72,8 @@ router.get('/login', guestOnly, authController.loginPage);
 router.post('/login', guestOnly, authController.loginSubmit);
 router.get('/cadastro', guestOnly, authController.registerPage);
 router.post('/cadastro', guestOnly, authController.registerSubmit);
+// Dentro de /cadastro de proposito: usa o mesmo limite de envios da tela (server.js, limiteEntrada).
+router.post('/cadastro/codigo', guestOnly, authController.conferirCodigo);
 // Seletor de idioma das telas publicas (login, cadastro, recuperar senha). Logado: o idioma muda em Configuracoes.
 router.get('/idioma/:codigo', (req, res) => {
     const codigo = require('../core/idiomas').normalizarIdioma(req.params.codigo);

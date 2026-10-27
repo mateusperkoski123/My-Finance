@@ -54,23 +54,37 @@ const Indicacao = {
         return { codigo: codigo ? codigo.codigo : null, usos: Number(r.usos), ganho: Number(r.ganho), saldo };
     },
 
-    // Confere se o codigo digitado vale para esta compra. Devolve { codigoId, desconto } ou { erro }.
-    // Erros: invalido | propria | so_mensal | ja_comprou.
-    async avaliar(userId, texto, plano, ciclo) {
+    // O codigo existe e o dono ainda pode indicar (conta ativa, Premium/Pro ou admin)? Nao depende de quem compra:
+    // serve tambem no cadastro, antes de a conta existir. Devolve { c } (linha do codigo) ou { erro: 'invalido' }.
+    async validarCodigo(texto) {
         const codigo = normalizar(texto);
+        if (!formatoValido(codigo)) return { erro: 'invalido' };
         const [rows] = await db.query('SELECT * FROM codigos_indicacao WHERE codigo = ? LIMIT 1', [codigo]);
         const c = rows[0];
         if (!c) return { erro: 'invalido' };
-        if (c.user_id === userId) return { erro: 'propria' };
         const [[dono]] = await db.query("SELECT role, status FROM users WHERE id = ?", [c.user_id]);
         if (!dono || dono.status !== 'ativo') return { erro: 'invalido' };
         if (!podeTerCodigo(await Assinatura.obter(c.user_id), dono.role === 'admin')) return { erro: 'invalido' };
+        return { c };
+    },
+
+    // Confere se o codigo digitado vale para esta compra. Devolve { codigoId, desconto } ou { erro }.
+    // Erros: invalido | propria | so_mensal | ja_comprou.
+    async avaliar(userId, texto, plano, ciclo) {
+        const v = await this.validarCodigo(texto);
+        if (v.erro) return v;
+        const c = v.c;
+        if (c.user_id === userId) return { erro: 'propria' };
         if (ciclo !== 'mensal') return { erro: 'so_mensal' };
         const [[pagou]] = await db.query("SELECT COUNT(*) AS n FROM pagamentos WHERE user_id = ? AND status = 'pago'", [userId]);
         const [[usou]] = await db.query('SELECT COUNT(*) AS n FROM indicacoes WHERE indicado_id = ?', [userId]);
         if (Number(pagou.n) > 0 || Number(usou.n) > 0) return { erro: 'ja_comprou' };
-        const desconto = Math.round(Number(plano.preco_mensal) * DESCONTO_PERCENTUAL / 100);
-        return { codigoId: c.id, desconto };
+        return { codigoId: c.id, desconto: this.descontoMensal(plano) };
+    },
+
+    // Desconto do codigo na primeira mensalidade de um plano (em guaranis, arredondado).
+    descontoMensal(plano) {
+        return Math.round(Number(plano.preco_mensal) * DESCONTO_PERCENTUAL / 100);
     },
 
     // Quanto do credito pode abater desta compra (a cobranca final nao cai abaixo de VALOR_MINIMO).

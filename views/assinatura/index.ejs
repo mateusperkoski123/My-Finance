@@ -348,7 +348,7 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
             <div class="lanc-campo">
                 <label for="pedido-codigo"><span><%= t('assinatura.codigo_indicacao') %></span></label>
                 <div class="pedido-codigo">
-                    <input class="input" type="text" id="pedido-codigo" name="codigo_indicacao" autocomplete="off" maxlength="20" style="text-transform: uppercase;">
+                    <input class="input" type="text" id="pedido-codigo" name="codigo_indicacao" autocomplete="off" maxlength="20" style="text-transform: uppercase;" value="<%= codigoSalvo %>">
                     <button type="button" class="btn btn-outline" id="pedido-aplicar" data-conferindo="<%= t('assinatura.conferindo_codigo') %>"><%= t('assinatura.aplicar_codigo') %></button>
                 </div>
                 <small class="muted"><%= t('assinatura.codigo_indicacao_dica', { pct: (indicacao || {}).percentual || 20 }) %></small>

@@ -8,8 +8,11 @@ module.exports = {
     CORES_TEMA: {
         verde: { topo: { claro: '#15803d', escuro: '#0f2a1c' }, amostra: ['#15803d', '#ecfdf3'] },
         azul: { topo: { claro: '#1d4ed8', escuro: '#0f1d3a' }, amostra: ['#1d4ed8', '#eff6ff'] },
-        preto: { topo: { claro: '#0b0d12', escuro: '#000000' }, amostra: ['#0b0d12', '#f1f2f4'] }
+        preto: { topo: { claro: '#0b0d12', escuro: '#000000' }, amostra: ['#0b0d12', '#f1f2f4'] },
+        // Roxo = paleta da landing; e tambem a das telas de entrada (quem ainda nao entrou na conta).
+        roxo: { topo: { claro: '#0b0d12', escuro: '#000000' }, amostra: ['#4338ca', '#eef2ff'] }
     },
+    COR_VISITANTE: 'roxo',
     // Limite mensal de mensagens do Chat IA quando o plano nao define um (planos.ia_limite_mes).
     IA_LIMITE_PADRAO: parseInt(process.env.IA_LIMITE_MENSAGENS_MES || '300', 10),
     // Mudar este valor obriga todos os usuarios a aceitar os termos novamente.

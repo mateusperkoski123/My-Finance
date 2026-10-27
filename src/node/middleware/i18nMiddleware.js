@@ -1,6 +1,6 @@
 const { t } = require('../core/i18n');
 const { IDIOMAS, detectarIdioma, normalizarIdioma } = require('../core/idiomas');
-const { CORES_TEMA } = require('../core/negocio');
+const { CORES_TEMA, COR_VISITANTE } = require('../core/negocio');
 
 function i18nMiddleware(req, res, next) {
     // Veio da landing (myfinance.systempy.com/es/ -> /cadastro?lang=es): o visitante segue no idioma que estava lendo.
@@ -12,8 +12,9 @@ function i18nMiddleware(req, res, next) {
     const lang = req.user ? req.user.idioma : (req.session?.idioma || detectarIdioma(req) || 'pt-BR');
     const currency = req.user ? req.user.moeda : 'PYG';
     const theme = req.user ? req.user.tema : 'claro';
-    // Cor do tema (verde, azul ou preto); visitante e valor desconhecido ficam no verde padrao.
-    const corTema = req.user && CORES_TEMA[req.user.cor_tema] ? req.user.cor_tema : 'verde';
+    // Cor do tema escolhida pela conta (valor desconhecido = verde, o padrao). Visitante (login, cadastro, recuperar senha)
+    // ve a paleta da landing, de onde ele chega.
+    const corTema = req.user ? (CORES_TEMA[req.user.cor_tema] ? req.user.cor_tema : 'verde') : COR_VISITANTE;
 
     req.lang = lang;
     req.t = (key, params) => t(key, params, lang);

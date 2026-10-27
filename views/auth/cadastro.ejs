@@ -41,6 +41,17 @@
             <input class="input" type="password" id="confirmar_senha" name="confirmar_senha" autocomplete="new-password" required minlength="6">
         </div>
 
+        <%# Codigo de desconto (indicacao): "Aplicar" confere na hora; ao criar a conta ele fica guardado e ja vem preenchido na compra. %>
+        <div class="form-group">
+            <label for="codigo_desconto"><%= t('auth.codigo_desconto') %></label>
+            <div class="pedido-codigo">
+                <input class="input" type="text" id="codigo_desconto" name="codigo_desconto" autocomplete="off" maxlength="20" style="text-transform: uppercase;" value="<%= typeof codigoDesconto !== 'undefined' ? codigoDesconto : '' %>">
+                <button type="button" class="btn btn-outline" id="codigo-aplicar" data-conferindo="<%= t('assinatura.conferindo_codigo') %>"><%= t('assinatura.aplicar_codigo') %></button>
+            </div>
+            <small class="form-help"><%= t('auth.codigo_desconto_dica', { pct: typeof pctDesconto !== 'undefined' ? pctDesconto : 20 }) %></small>
+            <div class="pedido-desconto" id="codigo-resultado" role="status" aria-live="polite" hidden></div>
+        </div>
+
         <label class="checkbox-linha" style="font-weight: 400; font-size: 13px; align-items: flex-start; gap: 8px;">
             <input type="checkbox" name="aceitar_termos" value="1" required style="margin-top: 3px;">
             <span><%- t('auth.aceito_termos', { termos: '<a href="/termos" target="_blank">' + t('legal.termos_titulo') + '</a>', privacidade: '<a href="/privacidade" target="_blank">' + t('legal.privacidade_titulo') + '</a>' }) %></span>
@@ -82,4 +93,41 @@ document.getElementById('form-cadastro')?.addEventListener('submit', function(e)
         alert(<%- JSON.stringify(t('flash.senhas_diferentes')) %>);
     }
 });
+
+// Codigo de desconto: confere no servidor e mostra o desconto (e o preco do plano escolhido na landing, se houver).
+(function () {
+    var campo = document.getElementById('codigo_desconto');
+    var botao = document.getElementById('codigo-aplicar');
+    var caixa = document.getElementById('codigo-resultado');
+    if (!campo || !botao || !caixa) return;
+    function limpar() { caixa.hidden = true; caixa.textContent = ''; }
+    function mostrar(ok, textos) {
+        caixa.className = 'pedido-desconto ' + (ok ? 'pedido-desconto--ok' : 'pedido-desconto--erro');
+        caixa.textContent = '';
+        textos.forEach(function (texto, i) {
+            var linha = document.createElement(ok && i === textos.length - 1 && textos.length > 1 ? 'strong' : 'div');
+            linha.textContent = texto;
+            caixa.appendChild(linha);
+        });
+        caixa.hidden = false;
+    }
+    function aplicar() {
+        if (!campo.value.trim()) { limpar(); return; }
+        var rotulo = botao.textContent;
+        botao.disabled = true;
+        botao.textContent = botao.getAttribute('data-conferindo');
+        var dados = new URLSearchParams({ _csrf: campo.form.querySelector('[name="_csrf"]').value, codigo: campo.value });
+        fetch('/cadastro/codigo', { method: 'POST', body: dados, credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+            .then(function (r) { if (!r.ok) throw new Error('http ' + r.status); return r.json(); })
+            .then(function (j) { mostrar(j.ok, j.ok ? j.linhas : [j.mensagem]); })
+            .catch(function () { mostrar(false, [(window.GF_T || {}).erro_acao || '']); })
+            .then(function () { botao.disabled = false; botao.textContent = rotulo; });
+    }
+    botao.addEventListener('click', aplicar);
+    // Enter no campo confere o codigo em vez de enviar o cadastro; mudar o codigo apaga o resultado antigo.
+    campo.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); aplicar(); } });
+    campo.addEventListener('input', limpar);
+    // Veio por link de indicacao (?codigo=) ou voltou para a tela: ja mostra o desconto.
+    if (campo.value.trim()) aplicar();
+})();
 </script>

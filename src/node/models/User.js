@@ -45,6 +45,14 @@ class User {
         );
     }
 
+    // Codigo de desconto guardado no cadastro (ja normalizado e conferido); null apaga. soSeVazio: nao troca um que ja existe.
+    static async salvarCodigoDesconto(id, codigo, soSeVazio = false) {
+        await db.query(
+            `UPDATE users SET codigo_desconto = ?, updated_at = NOW() WHERE id = ?${soSeVazio ? ' AND codigo_desconto IS NULL' : ''}`,
+            [codigo || null, id]
+        );
+    }
+
     // Telefone de contato (pedido de plano). codigo = "+595", numero = so digitos.
     static async salvarTelefone(id, codigo, numero) {
         await db.query('UPDATE users SET telefone_codigo = ?, telefone_numero = ?, updated_at = NOW() WHERE id = ?', [codigo, numero, id]);

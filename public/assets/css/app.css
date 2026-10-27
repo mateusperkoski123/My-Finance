@@ -167,6 +167,49 @@
   --focus-ring: rgba(231, 233, 238, .25);
   --input-border: #353a45;
 }
+/* Roxo = a paleta da landing (topo preto, botoes e destaques roxos). Tambem e a das telas de entrada (login e cadastro),
+   para quem vem da landing nao mudar de visual no meio do caminho. */
+:root[data-tema="claro"][data-cor="roxo"] {
+  --bg: #f5f6f8;
+  --text: #16181d;
+  --border: #e5e7eb;
+  --muted: #5b6370;
+  --nav-bg: #0b0d12;
+  --nav-text: #e8eaed;
+  --nav-text-muted: #9aa0aa;
+  --primary: #4338ca;
+  --primary-hover: #3730a3;
+  --brand: #4f46e5;
+  --brand-dark: #0b0d12;
+  --brand-soft: #eef2ff;
+  --brand-line: #c7d2fe;
+  --brand-text: #4338ca;
+  --on-brand: #ffffff;
+  --brand-shadow: rgba(67, 56, 202, .25);
+  --focus-ring: rgba(79, 70, 229, .28);
+  --input-border: #d6d9de;
+}
+:root[data-tema="escuro"][data-cor="roxo"] {
+  --bg: #0e1015;
+  --card: #171a21;
+  --text: #e7e9ee;
+  --muted: #9aa0aa;
+  --border: #2a2e37;
+  --nav-bg: #000000;
+  --nav-text: #e7e9ee;
+  --nav-text-muted: #8b909b;
+  --primary: #818cf8;
+  --primary-hover: #a5b4fc;
+  --primary-text: #0b0d12;
+  --brand: #6366f1;
+  --brand-dark: #000000;
+  --brand-soft: #1f2147;
+  --brand-line: #34386e;
+  --brand-text: #a5b4fc;
+  --on-brand: #ffffff;
+  --focus-ring: rgba(129, 140, 248, .3);
+  --input-border: #353a45;
+}
 
 :root { --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; }
 
@@ -3219,6 +3262,8 @@ a.navbar__avatar { text-decoration: none; }
 .navbar__logo { width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--brand); display: inline-flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0, 0, 0, .14); }
 :root[data-tema="escuro"] .navbar__logo { background: var(--brand); color: var(--on-brand); }
 .navbar__nome { font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+/* Roxo (igual a landing): o quadrado do logotipo e roxo com o simbolo branco, no topo e nas telas de entrada */
+[data-cor="roxo"] .navbar__logo, [data-cor="roxo"] .auth-marca__logo { background: var(--brand); color: #fff; }
 .navbar__link { border-radius: 12px; border-bottom-color: transparent !important; transition: background-color .15s ease, color .15s ease; }
 .navbar__link:hover, .navbar__mais[open] > summary { background: rgba(255, 255, 255, .1); }
 .navbar__link.is-active { background: rgba(255, 255, 255, .18); color: #fff; }
@@ -3282,7 +3327,7 @@ button, input, select, textarea { font-family: inherit; }
 @media (max-width: 430px) { .boas-vindas__acoes .btn { flex: 1 1 100%; } }
 
 /* ---- Configuracoes > Preferencia: seletor da cor do tema ---- */
-.cor-tema-opcoes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; max-width: 560px; }
+.cor-tema-opcoes { display: grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap: 10px; max-width: 620px; }
 .cor-tema-opcao { display: flex; flex-direction: column; margin: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card); cursor: pointer;
   transition: border-color .15s ease, box-shadow .15s ease; }
 .cor-tema-opcao:hover { border-color: var(--brand-line); }
