@@ -206,8 +206,9 @@ class Conta {
             where += ' AND (l.descricao LIKE ? OR c.nome LIKE ?)';
             params.push(`%${f.busca}%`, `%${f.busca}%`);
         }
-        // Padrao ("mais recentes primeiro"): o ultimo lancamento registrado vem no topo, nao o de maior data de vencimento.
-        let orderBy = 'l.created_at DESC, l.id DESC';
+        // Padrao ("mais recentes primeiro"): a ultima movimentacao vem no topo, nao o de maior data de vencimento.
+        // Vale o registro ou o pagamento, o que for mais novo: um lancamento antigo pago hoje sobe, e um pendente futuro nao.
+        let orderBy = "GREATEST(l.created_at, COALESCE(CASE WHEN l.status = 'pago' THEN l.data_pagamento END, l.created_at)) DESC, l.created_at DESC, l.id DESC";
         if (f.ordenar === 'vencimento') orderBy = 'l.data_competencia ASC, l.id ASC';
         else if (f.ordenar === 'valor') orderBy = 'ABS(l.valor) DESC, l.id DESC';
         const [rows] = await db.query(
