@@ -459,6 +459,38 @@
         <% if (_tem && !tipoFiltro && D.cats.length && orcamentoMult) { %>
             <p class="muted" style="font-size: 13px; margin: 12px 4px 0;"><i class="ph ph-info"></i> <%= t('est.limite_dica') %> · <a href="/categorias"><%= t('est.definir_limites') %></a></p>
         <% } %>
+        <% if (_tem && !tipoFiltro) {
+            // Fechamento: o veredito e receitas - despesas do periodo. Periodo que ainda nao terminou aparece como previsao.
+            const _encerrado = periodo.fim < formatDate(hojeLocal());
+            const _sit = Math.abs(X.total) < 0.005 ? 'zero' : (X.total > 0 ? 'pos' : 'neg');
+            const _temPend = R.pendente + D.pendente >= 0.005;
+            const _comSinal = (v) => (Math.abs(v) < 0.005 ? '' : (v > 0 ? '+' : '−')) + moeda(Math.abs(v));
+            const _fechPer = periodo.preset === 'mes' ? t('painel.mes.' + periodo.mes) + ' ' + periodo.ano
+                : (periodo.preset === 'anual' ? periodo.ano : formatDate(periodo.inicio, 'DD/MM/YYYY') + ' – ' + formatDate(periodo.fim, 'DD/MM/YYYY'));
+            const _fechIcone = { pos: 'ph-trend-up', neg: 'ph-trend-down', zero: 'ph-equals' }[_sit];
+        %>
+        <section class="card estado-fech estado-fech--<%= _sit %>">
+            <div class="estado-fech__topo">
+                <span class="estado-fech__icone"><i class="ph <%= _fechIcone %>"></i></span>
+                <div class="estado-fech__texto">
+                    <small><%= t('est.fech_titulo') %> · <%= _fechPer %></small>
+                    <strong><%= t((_encerrado ? 'est.fech_' : 'est.fech_prev_') + _sit) %></strong>
+                </div>
+                <div class="estado-fech__valor">
+                    <small><%= t('est.resultado') %></small>
+                    <strong><%= _comSinal(X.total) %></strong>
+                </div>
+            </div>
+            <div class="estado-fech__conta">
+                <div><span><%= t('comum.receitas') %></span><b style="color: var(--green);"><%= moeda(R.total) %></b></div>
+                <div><span><%= t('comum.despesas') %></span><b style="color: var(--red);"><%= moeda(D.total) %></b></div>
+                <div><span><%= t(_encerrado && !_temPend ? 'est.saldo_final_col' : 'est.saldo_projetado') %></span><b style="color: <%= resumo.saldo_previsto < 0 ? 'var(--red)' : 'var(--text)' %>;"><%= moeda(resumo.saldo_previsto) %></b></div>
+            </div>
+            <% if (_temPend) { %>
+            <p class="estado-fech__nota"><%= t('est.fech_pendente', { receber: moeda(R.pendente), pagar: moeda(D.pendente), realizado: _comSinal(X.realizado) }) %></p>
+            <% } %>
+        </section>
+        <% } %>
         <% } %>
 
         <% if (vista === 'comparativo') { %>
