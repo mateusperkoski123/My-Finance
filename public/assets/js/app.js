@@ -337,6 +337,35 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   });
 
+  // Despesa paga com cartao de credito: esconde o status pago/pendente (nao existe por compra, so por fatura) e
+  // troca o campo "Conta" pelo de "Cartao". Fixa e repetir continuam disponiveis (assinaturas e parcelas no cartao
+  // usam a mesma logica: uma compra por mes/periodo).
+  gfBinders.push(function (root) {
+    root.querySelectorAll('[data-gf-forma-pagamento]').forEach(function (grupo) {
+      if (grupo.getAttribute('data-gf-bound') === '1') return;
+      grupo.setAttribute('data-gf-bound', '1');
+      var form = grupo.closest('form');
+      if (!form) return;
+      var campoConta = form.querySelector('[data-gf-campo-conta]');
+      var campoCartao = form.querySelector('[data-gf-campo-cartao]');
+      var campoStatus = form.querySelector('[data-gf-status-box]');
+      var selectConta = campoConta ? campoConta.querySelector('select[name="conta_id"]') : null;
+      var selectCartao = campoCartao ? campoCartao.querySelector('select[name="cartao_id"]') : null;
+
+      var atualizar = function () {
+        var opcao = grupo.querySelector('input[name="forma_pagamento"]:checked');
+        var ehCartao = !!opcao && opcao.value === 'cartao';
+        if (campoConta) campoConta.hidden = ehCartao;
+        if (campoCartao) campoCartao.hidden = !ehCartao;
+        if (campoStatus) campoStatus.hidden = ehCartao;
+        if (selectConta) selectConta.required = !ehCartao;
+        if (selectCartao) selectCartao.required = ehCartao;
+      };
+      grupo.querySelectorAll('input[name="forma_pagamento"]').forEach(function (r) { r.addEventListener('change', atualizar); });
+      atualizar();
+    });
+  });
+
   // Demonstrativo Anual (Relatórios): expande/recolhe as linhas de
   // subcategoria de uma categoria ao clicar na linha de topo.
   document.addEventListener('click', function (evento) {

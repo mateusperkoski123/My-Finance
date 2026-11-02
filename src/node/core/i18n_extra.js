@@ -464,6 +464,13 @@ module.exports = {
     // Formulario de lancamento
     'modal.fixa_dica': ['Repete todo mês: já cria os próximos 24 meses como pendentes.', 'Se repite cada mes: ya crea los próximos 24 meses como pendientes.', 'Repeats every month: creates the next 24 months as pending.'],
     'modal.repetir_dica': ['Parcelas ou cobranças periódicas: cria uma a cada mês, 3 meses, 6 meses ou ano, na quantidade que você escolher.', 'Cuotas o cobros periódicos: crea una cada mes, 3 meses, 6 meses o año, en la cantidad que elijas.', 'Installments or periodic charges: creates one every month, 3 months, 6 months or year, as many as you choose.'],
+    // Despesa paga com cartao de credito, direto no modal de novo lancamento
+    'modal.forma_pagamento': ['Forma de pagamento', 'Forma de pago', 'Payment method'],
+    'modal.pagar_com_conta': ['Conta', 'Cuenta', 'Account'],
+    'modal.pagar_com_cartao': ['Cartão de crédito', 'Tarjeta de crédito', 'Credit card'],
+    'modal.escolha_cartao': ['Escolha o cartão usado nesta compra', 'Elegí la tarjeta usada en esta compra', 'Choose the card used for this purchase'],
+    'modal.cartao_aviso_saldo': ['Entra na fatura do cartão. O saldo da conta só muda quando você pagar a fatura.', 'Entra en la factura de la tarjeta. El saldo de la cuenta solo cambia cuando pagás la factura.', 'Goes on the card statement. The account balance only changes when you pay the statement.'],
+    'modal.cartao_invalido': ['Selecione um cartão de crédito válido.', 'Seleccioná una tarjeta de crédito válida.', 'Select a valid credit card.'],
     'painel.ocultar_saldo': ['Ocultar ou mostrar os valores', 'Ocultar o mostrar los montos', 'Hide or show the amounts'],
     // Cadastro: codigo de desconto (indicacao), conferido na hora e guardado para a primeira compra
     'auth.codigo_desconto': ['Código de desconto (opcional)', 'Código de descuento (opcional)', 'Discount code (optional)'],

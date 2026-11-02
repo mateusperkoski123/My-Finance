@@ -1,6 +1,7 @@
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 const Lancamento = require('../models/Lancamento');
+const Cartao = require('../models/Cartao');
 const db = require('../config/db');
 const { parseMoeda, toLocalYMD, hojeLocal, dataValida, mesAnoValidos, corValida, normalizarMoeda, calcularCambio } = require('../core/helpers');
 
@@ -318,6 +319,7 @@ const contasController = {
             };
             const itens = await Conta.extrato(id, userId, { inicio, fim, ...filtros });
             const contas = await Conta.buscarPorUsuario(userId, false);
+            const cartoes = await Cartao.listar(userId, false);
             const categoriasArvore = await Categoria.buscarArvore(userId, false);
             const somar = (fn) => itens.reduce((s, l) => s + (fn(parseFloat(l.valor) || 0) ? Math.abs(parseFloat(l.valor) || 0) : 0), 0);
             const totais = { entradas: somar((v) => v > 0), saidas: somar((v) => v < 0) };
@@ -328,6 +330,7 @@ const contasController = {
                 conta,
                 lancamentos: itens,
                 contas,
+                cartoes,
                 categoriasArvore,
                 periodo,
                 filtros,

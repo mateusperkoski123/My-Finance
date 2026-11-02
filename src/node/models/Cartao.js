@@ -1,13 +1,17 @@
 // Modulo Cartao de credito: cartoes, compras e faturas. A compra so vira lancamento (e mexe no saldo) quando a fatura e paga.
+const { randomUUID: uuidv4 } = require('crypto');
 const db = require('../config/db');
 const Lancamento = require('./Lancamento');
 const SyncExclusao = require('./SyncExclusao');
 const fatura = require('../core/cartao_fatura');
+const { addMonthsYMD, passoMeses } = require('../core/helpers');
 
 const limpar = (v, max) => String(v === null || v === undefined ? '' : v).trim().slice(0, max);
 const dinheiro = (v) => Math.round((Number(v) || 0) * 100) / 100;
 const dia = (v) => Math.min(Math.max(parseInt(v, 10) || 1, 1), 31);
 const erro = (codigo) => { const e = new Error(codigo); e.codigo = codigo; return e; };
+// Assinatura (compra fixa): cria as proximas 24 ocorrencias, uma por mes, igual ao fixo dos lancamentos.
+const MESES_FIXO = 24;
 
 class Cartao {
     // Cartoes com o limite usado (compras de faturas ainda nao pagas) e a conta a que pertencem.
@@ -107,15 +111,42 @@ class Cartao {
     }
 
     // ---------- Compras ----------
-    static async criarCompra(userId, cartao, { descricao, valor, data, categoria_id, client_id = null }) {
+    // Assinatura (e_fixo) ou parcelas de uma cobranca periodica (repetir): cria uma compra por mes/periodo, cada
+    // uma caindo na fatura certa pela sua propria data. Mesma logica de Lancamento.criar, sem o status pago/pendente
+    // (nao existe por compra: a fatura inteira e paga de uma vez).
+    static async criarCompra(userId, cartao, { descricao, valor, data, categoria_id, client_id = null, e_fixo = false, repetir = false, periodicidade = 'mensal', quantidade_repeticoes = 1 }) {
         if (categoria_id) await Lancamento.validarPropriedade(userId, null, categoria_id);
-        const mes = await this.mesDeNovaCompra(cartao, data);
-        const [res] = await db.query(
-            `INSERT INTO cartao_compras (user_id, cartao_id, categoria_id, descricao, valor, data_compra, fatura_mes, client_id)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [userId, cartao.id, categoria_id || null, limpar(descricao, 190), dinheiro(valor), data, mes, client_id]
-        );
-        return { id: res.insertId, mes };
+        const eFixo = !!e_fixo;
+        const eRepetir = !eFixo && !!repetir;
+        const qtdPedida = eRepetir ? Math.min(Math.max(parseInt(quantidade_repeticoes, 10) || 1, 1), 60) : 1;
+        const totalOcorrencias = eFixo ? MESES_FIXO : qtdPedida;
+        const passo = eRepetir ? passoMeses(periodicidade) : 1;
+        const serieId = totalOcorrencias > 1 ? uuidv4() : null;
+        const descLimpa = limpar(descricao, 190);
+        const valorLimpo = dinheiro(valor);
+
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            let primeiro = null;
+            for (let i = 0; i < totalOcorrencias; i++) {
+                const dataOcorrencia = addMonthsYMD(data, i * passo);
+                const mes = await this.mesDeNovaCompra(cartao, dataOcorrencia);
+                const [res] = await conn.query(
+                    `INSERT INTO cartao_compras (user_id, cartao_id, categoria_id, descricao, valor, data_compra, fatura_mes, serie_id, recorrente, client_id)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [userId, cartao.id, categoria_id || null, descLimpa, valorLimpo, dataOcorrencia, mes, serieId, eFixo ? 1 : 0, i === 0 ? client_id : null]
+                );
+                if (i === 0) primeiro = { id: res.insertId, mes };
+            }
+            await conn.commit();
+            return primeiro;
+        } catch (err) {
+            await conn.rollback();
+            throw err;
+        } finally {
+            conn.release();
+        }
     }
 
     // Edita uma compra de fatura em aberto; a fatura e recalculada pela nova data. Devolve o mes da fatura ou null.

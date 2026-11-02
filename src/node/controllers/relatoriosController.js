@@ -5,6 +5,7 @@ const { CONTA_ATIVA } = require('../models/Lancamento');
 const { filtroConta, moedaEmFoco, moedaBase } = require('../core/moedaFoco');
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
+const Cartao = require('../models/Cartao');
 
 
 const cleanVal = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '') ? String(v).trim() : null;
@@ -324,9 +325,10 @@ const relatoriosController = {
 
         // Contas e categorias dos formularios (novo / editar) nas abas que listam lancamentos.
         const comLista = aba === 'pendentes' || (aba === 'demonstrativo' && !estadoBloqueado);
-        let contas = [], categoriasArvore = [];
+        let contas = [], cartoes = [], categoriasArvore = [];
         if (comLista) {
             contas = await Conta.buscarPorUsuario(userId, false);
+            cartoes = await Cartao.listar(userId, false);
             await Categoria.garantirCategoriasBasicas(userId);
             categoriasArvore = await Categoria.buscarArvore(userId, false);
         }
@@ -445,6 +447,7 @@ const relatoriosController = {
             anoAnual,
             anoAtual: hojeObj.getFullYear(),
             contas,
+            cartoes,
             categoriasArvore,
             // lista compartilhada (partials/lista_lancamentos)
             filtros,

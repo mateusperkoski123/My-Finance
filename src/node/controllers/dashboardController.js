@@ -1,6 +1,7 @@
 const Conta = require('../models/Conta');
 const Categoria = require('../models/Categoria');
 const Lancamento = require('../models/Lancamento');
+const Cartao = require('../models/Cartao');
 const { parseMoeda, toLocalYMD, moeda, hojeLocal, dataValida, mesAnoValidos } = require('../core/helpers');
 
 const AGRUPAR_VALIDOS = ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'conta', 'status'];
@@ -82,8 +83,9 @@ const dashboardController = {
         // Saldo previsto (ate o fim do periodo) = disponivel + a receber - nao pago (calculado em resumoPeriodo)
         // Cartao "Vencidas ou de hoje": filtro opcional pelos botoes A receber / A pagar (?pend=receber|pagar).
         const filtroPend = ['receber', 'pagar'].includes(query.pend) ? query.pend : null;
-        const [contas, categoriasArvore, resumo, dadosLancamentos, pendenciasUrgentes, despesasPorCategoria] = await Promise.all([
+        const [contas, cartoes, categoriasArvore, resumo, dadosLancamentos, pendenciasUrgentes, despesasPorCategoria] = await Promise.all([
             Conta.buscarPorUsuario(userId, false),
+            Cartao.listar(userId, false),
             Categoria.garantirCategoriasBasicas(userId).then(() => Categoria.buscarArvore(userId, false)), // contas antigas sem categorias de despesa/receita
             Lancamento.resumoPeriodo(userId, periodo),
             Lancamento.buscarFiltrados(userId, periodo, filtros, ordenacao, pagina, porPagina, agrupamento),
@@ -114,6 +116,7 @@ const dashboardController = {
             ordenacao,
             agrupamento,
             contas,
+            cartoes,
             categoriasArvore,
             resumo,
             pendenciasUrgentes,
@@ -146,14 +149,44 @@ const dashboardController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_categoria_obrigatoria') };
             return res.redirect(voltarOuInicio(req));
         }
-        if (!b.conta_id) {
-            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lancamento_conta_invalida') };
-            return res.redirect(voltarOuInicio(req));
-        }
         // Data do lancamento: vencimento (pendente) ou dia do pagamento/recebimento (pago). Em branco = hoje.
         const dataLanc = b.data_competencia || toLocalYMD(hojeLocal());
         if (!dataValida(dataLanc)) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_data_invalida') };
+            return res.redirect(voltarOuInicio(req));
+        }
+
+        // Despesa paga com cartao de credito: vira uma (ou, fixa/repetida, varias) compra do cartao, fora do saldo e
+        // dos lancamentos ate a fatura ser paga. Nao ha status pago/pendente por compra (isso e por fatura), mas
+        // assinatura (fixa) e parcelas (repetir) funcionam igual aos lancamentos: uma ocorrencia por mes/periodo.
+        if (b.cartao_id && b.tipo !== 'receita') {
+            const cartao = await Cartao.buscar(parseInt(b.cartao_id, 10) || 0, userId);
+            if (!cartao || cartao.status !== 'ativo') {
+                req.session.flash = { tipo: 'erro', mensagem: req.t('modal.cartao_invalido') };
+                return res.redirect(voltarOuInicio(req));
+            }
+            try {
+                await Cartao.criarCompra(userId, cartao, {
+                    descricao: String(b.descricao).trim().slice(0, 190),
+                    valor: val,
+                    data: dataLanc,
+                    categoria_id: b.categoria_id || null,
+                    e_fixo: b.e_fixo === '1' || b.e_fixo === true,
+                    repetir: b.repetir === '1' || b.repetir === true,
+                    periodicidade: b.periodicidade,
+                    quantidade_repeticoes: b.quantidade_repeticoes || '1'
+                });
+            } catch (err) {
+                if (!err.codigo) throw err;
+                req.session.flash = { tipo: 'erro', mensagem: req.t('cartoes.erro_categoria') };
+                return res.redirect(voltarOuInicio(req));
+            }
+            req.session.flash = { tipo: 'sucesso', mensagem: req.t('cartoes.flash_compra') };
+            return res.redirect(voltarOuInicio(req));
+        }
+
+        if (!b.conta_id) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lancamento_conta_invalida') };
             return res.redirect(voltarOuInicio(req));
         }
 

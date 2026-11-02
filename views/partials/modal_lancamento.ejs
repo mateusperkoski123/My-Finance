@@ -57,7 +57,21 @@ const _salvar = _novo ? (_rec ? t('painel.salvar_receita') : t('painel.salvar_de
 
             <h4 class="lanc-form__secao"><%= t('modal.config_transacao') %></h4>
 
-            <div class="lanc-campo lanc-campo--linha">
+            <% const _comCartoes = _novo && !_rec && (cartoes || []).length; %>
+            <% if (_comCartoes) { %>
+            <div class="lanc-campo" data-gf-forma-pagamento-box>
+                <label class="lanc-campo__rotulo">
+                    <span class="lanc-campo__ico"><i class="ph ph-wallet"></i></span>
+                    <strong><%= t('modal.forma_pagamento') %></strong>
+                </label>
+                <div data-gf-forma-pagamento>
+                    <label class="lanc-serie__opcao"><input type="radio" name="forma_pagamento" value="conta" checked> <%= t('modal.pagar_com_conta') %></label>
+                    <label class="lanc-serie__opcao"><input type="radio" name="forma_pagamento" value="cartao"> <%= t('modal.pagar_com_cartao') %></label>
+                </div>
+            </div>
+            <% } %>
+
+            <div class="lanc-campo lanc-campo--linha" data-gf-status-box>
                 <div class="lanc-campo__rotulo">
                     <span class="lanc-campo__ico lanc-campo__ico--status" data-status-icon-box><i class="ph ph-clock" data-status-icon></i></span>
                     <div>
@@ -79,7 +93,7 @@ const _salvar = _novo ? (_rec ? t('painel.salvar_receita') : t('painel.salvar_de
                 <input class="input" type="date" id="<%= _p %>-data" name="data_competencia" value="<%= _novo ? dataHoje : '' %>" required>
             </div>
 
-            <div class="lanc-campo">
+            <div class="lanc-campo" data-gf-campo-conta>
                 <label class="lanc-campo__rotulo" for="<%= _p %>-conta">
                     <span class="lanc-campo__ico"><i class="ph ph-bank"></i></span>
                     <strong><%= t('modal.conta') %></strong>
@@ -91,7 +105,23 @@ const _salvar = _novo ? (_rec ? t('painel.salvar_receita') : t('painel.salvar_de
                 </select>
             </div>
 
-            <%# Fixa (todo mes) ou repetida (parcelas). Ao editar, so aparece para transacao avulsa: ela vira uma serie a partir desta. %>
+            <% if (_comCartoes) { %>
+            <div class="lanc-campo" data-gf-campo-cartao hidden>
+                <label class="lanc-campo__rotulo" for="<%= _p %>-cartao">
+                    <span class="lanc-campo__ico"><i class="ph ph-credit-card"></i></span>
+                    <strong><%= t('modal.pagar_com_cartao') %></strong>
+                </label>
+                <select class="input" id="<%= _p %>-cartao" name="cartao_id">
+                    <% cartoes.forEach(k => { %>
+                        <option value="<%= k.id %>" data-moeda="<%= k.conta_moeda %>"><%= k.nome %><%= k.bandeira ? ' · ' + k.bandeira : '' %></option>
+                    <% }) %>
+                </select>
+                <small class="muted"><%= t('modal.cartao_aviso_saldo') %></small>
+            </div>
+            <% } %>
+
+            <%# Fixa (todo mes) ou repetida (parcelas) - no cartao, cada ocorrencia e uma compra em um mes/periodo
+               diferente, caindo na fatura certa pela data. Ao editar, so aparece para transacao avulsa: ela vira uma serie a partir desta. %>
             <div class="lanc-grupo"<% if (!_novo) { %> data-ed-novo-serie<% } %>>
                 <div class="lanc-campo lanc-campo--linha">
                     <div class="lanc-campo__rotulo">
