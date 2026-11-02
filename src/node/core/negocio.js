@@ -3,6 +3,9 @@ module.exports = {
     NOME_APP: process.env.APP_NAME || 'MyFinance',
     // Teste gratis: a pessoa escolhe o plano e usa esse plano por TRIAL_DIAS dias (uma vez so).
     TRIAL_DIAS: 3,
+    // Promocao de Black Friday: quem comeca o teste neste periodo ganha mais dias (horario do Paraguai; o fim nao entra).
+    // A landing repete o periodo em PROMO_TESTE (views/landing.ejs).
+    TRIAL_PROMO: { dias: 10, inicio: '2026-11-20T00:00:00-03:00', fim: '2026-12-01T00:00:00-03:00' },
     // Cores do tema (Configuracoes > Preferencia); verde e o padrao. topo = cor da barra do navegador no celular
     // em cada tema, amostra = as duas cores mostradas no seletor.
     CORES_TEMA: {
@@ -28,4 +31,10 @@ module.exports = {
     // Unicas rotas abertas para quem ainda nao escolheu o plano do teste ou ja usou o teste e nao contratou:
     // escolher/contratar um plano, sair, ler os termos e excluir a propria conta.
     ROTAS_LIVRES_BLOQUEIO: ['/logout', '/api/app/logout', '/assinatura', '/teste', '/termos', '/privacidade', '/aceitar-termos', '/verificar-email', '/configuracoes/conta', '/perfil/foto', '/idioma', '/offline', '/landing']
+};
+
+// Dias de teste de quem comeca agora: os da promocao, se estiver no periodo.
+module.exports.trialDias = (agora = new Date()) => {
+    const { dias, inicio, fim } = module.exports.TRIAL_PROMO;
+    return agora >= new Date(inicio) && agora < new Date(fim) ? dias : module.exports.TRIAL_DIAS;
 };

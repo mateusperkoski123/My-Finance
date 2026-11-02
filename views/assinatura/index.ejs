@@ -75,7 +75,7 @@ const abaInicial = (st === 'ativa' || (pagamentos && pagamentos.length > 0)) ? '
     <% if (st === 'escolher') { %>
         <div style="margin-top: 14px;">
             <a href="/teste" class="btn btn-primary"><i class="ph ph-gift"></i> <%= t('assinatura.escolher_botao') %></a>
-            <p class="muted" style="font-size: 13px; margin: 8px 0 0;"><%= t('assinatura.prueba_sub', { dias: negocio.TRIAL_DIAS }) %></p>
+            <p class="muted" style="font-size: 13px; margin: 8px 0 0;"><%= t('assinatura.prueba_sub', { dias: negocio.trialDias() }) %></p>
         </div>
     <% } %>
     <% if (st === 'ativa') { const ultimo = (pagamentos || []).find(pg => pg.status === 'pago'); %>

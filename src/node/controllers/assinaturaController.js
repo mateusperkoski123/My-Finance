@@ -4,7 +4,7 @@ const telefone = require('../core/telefone');
 const { fmt } = require('../core/legal');
 const { recursosDoPlano } = require('../core/planos_recursos');
 const { sendPlanRequestNotice } = require('../core/mailer');
-const { TRIAL_DIAS, PLANOS_VENDA, NOME_APP } = require('../core/negocio');
+const { trialDias, PLANOS_VENDA, NOME_APP } = require('../core/negocio');
 const { caminhoLocal } = require('../middleware/authMiddleware');
 const pagopar = require('../core/pagopar');
 const Indicacao = require('../models/Indicacao');
@@ -44,14 +44,14 @@ async function indicacaoDaTela(req) {
 }
 
 const assinaturaController = {
-    // Teste gratis: a pessoa escolhe o plano que quer testar (uma vez so) e usa esse plano por TRIAL_DIAS dias.
+    // Teste gratis: a pessoa escolhe o plano que quer testar (uma vez so) e usa esse plano por trialDias() dias.
     escolherTeste: async (req, res) => {
         const ass = req.assinatura;
         if (!ass || ass.status_efetivo !== 'escolher') return res.redirect(req.ehAdmin ? '/' : '/assinatura');
         const planos = (await Assinatura.listarPlanos()).filter((p) => PLANOS_VENDA.includes(p.codigo));
         const sugerido = planos.some((p) => p.codigo === req.session.plano_teste) ? req.session.plano_teste : 'premium';
         res.render('assinatura/escolher', {
-            title: req.t('teste.titulo', { dias: TRIAL_DIAS }),
+            title: req.t('teste.titulo', { dias: trialDias() }),
             planos,
             sugerido,
             fmt,
@@ -68,7 +68,7 @@ const assinaturaController = {
             return res.redirect('/assinatura');
         }
         delete req.session.plano_teste;
-        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.teste_iniciado', { plano: req.t('plano.' + plano.codigo + '.nome'), dias: TRIAL_DIAS }) };
+        req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.teste_iniciado', { plano: req.t('plano.' + plano.codigo + '.nome'), dias: trialDias() }) };
         res.redirect('/');
     },
 

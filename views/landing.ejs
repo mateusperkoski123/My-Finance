@@ -532,6 +532,11 @@
         .plano-recursos li.is-off { color: var(--muted); opacity: 0.55; }
         .plano-recursos li.is-off i { color: var(--muted); }
 
+        /* Faixa da promocao do teste gratis */
+        .promo-teste { background: #0b0d12; color: #fff; text-align: center; font-size: 14px; padding: 9px 16px; }
+        .promo-teste b { color: #a5b4fc; }
+        .promo-teste[hidden] { display: none; }
+
         /* Trial Banner */
         .trial-banner {
             background: var(--card);
@@ -725,6 +730,9 @@
     </style>
 </head>
 <body>
+
+    <!-- Aparece so no periodo de PROMO_TESTE -->
+    <div class="promo-teste" id="promo-teste" hidden data-i18n="promo_teste"></div>
 
     <!-- Header -->
     <header class="navbar">
@@ -1167,7 +1175,7 @@
                         </div>
                         <div class="plano-cobranca" 
                              data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 299.900 por ano · economize Gs. 59.980"
-                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 299.900 por año · ahorre Gs. 59.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 299.900 per year · save Gs. 59.980">
+                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 299.900 por año · ahorrá Gs. 59.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 299.900 per year · save Gs. 59.980">
                             cobrado todo mês
                         </div>
 
@@ -1232,7 +1240,7 @@
                         </div>
                         <div class="plano-cobranca" 
                              data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 499.900 por ano · economize Gs. 99.980"
-                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 499.900 por año · ahorre Gs. 99.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 499.900 per year · save Gs. 99.980">
+                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 499.900 por año · ahorrá Gs. 99.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 499.900 per year · save Gs. 99.980">
                             cobrado todo mês
                         </div>
 
@@ -1297,7 +1305,7 @@
                         </div>
                         <div class="plano-cobranca" 
                              data-cobranca-mensal-pt="cobrado todo mês" data-cobranca-anual-pt="Gs. 849.900 por ano · economize Gs. 169.980"
-                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 849.900 por año · ahorre Gs. 169.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 849.900 per year · save Gs. 169.980">
+                             data-cobranca-mensal-es="cobrado todos los meses" data-cobranca-anual-es="Gs. 849.900 por año · ahorrá Gs. 169.980" data-cobranca-mensal-en="billed every month" data-cobranca-anual-en="Gs. 849.900 per year · save Gs. 169.980">
                             cobrado todo mês
                         </div>
 
@@ -1666,6 +1674,7 @@
                 cta_sub: 'Comece hoje. Em poucos minutos você sabe exatamente para onde vai cada guarani e passa a decidir com segurança.',
                 cta_btn: 'Começar meu teste grátis de 3 dias',
                 cta_nota: 'Sem cartão de crédito. Você escolhe o plano e pode trocar durante o teste.',
+                promo_teste: '<b>Black Friday:</b> comece seu teste até 30/11 e use grátis por <b>10 dias</b>, sem cartão.',
                 direitos: 'Todos os direitos reservados.',
                 termos: 'Termos de Uso',
                 privacidade: 'Privacidade'
@@ -1678,7 +1687,7 @@
                 nav_faq: 'Preguntas Frecuentes',
                 nav_entrar: 'Iniciar Sesión',
                 nav_cadastro: 'Prueba Gratis',
-                hero_badge: '3 días de prueba gratis en el plan que elija, sin tarjeta',
+                hero_badge: '3 días de prueba gratis en el plan que elijas, sin tarjeta',
                 hero_cta: 'Comenzar Prueba Gratis (3 Días)',
                 hero_ver_planos: 'Ver Planes',
                 mock_saldo_disp: 'Saldo Disponible',
@@ -1690,41 +1699,41 @@
                 mock_conta_corrente: 'Cuenta Corriente Principal',
                 mock_foto_recibo: 'Registrado por Foto de Recibo',
                 feat_badge: 'Funciones del Sistema',
-                feat_titulo: 'Todo lo que necesita en un solo lugar',
+                feat_titulo: 'Todo lo que necesitás en un solo lugar',
                 feat_sub: 'Diseñado pensando en simplicidad, seguridad y control contable profesional.',
                 f1_tit: 'Cuentas Bancarias y Transferencias',
                 f1_desc: 'Cuentas de 2 a ilimitadas, según el plan, transferencias entre bancos con contrapartida automática (incluso programadas) y ajuste de saldo con extracto detallado.',
                 f2_tit: 'Categorías con Colores y Jerarquía',
-                f2_desc: 'Organice ingresos y gastos en 2 niveles (categorías y subcategorías), con colores personalizados y límite de gasto por categoría.',
+                f2_desc: 'Organizá ingresos y gastos en 2 niveles (categorías y subcategorías), con colores personalizados y límite de gasto por categoría.',
                 f3_tit: 'Movimientos en Cuotas y Fijos',
-                f3_desc: 'Controle compras en cuotas o gastos recurrentes con generación automática de cuotas independientes y fáciles de editar.',
+                f3_desc: 'Controlá compras en cuotas o gastos recurrentes con generación automática de cuotas independientes y fáciles de editar.',
                 f4_tit: 'Demostrativo Anual',
-                f4_desc: 'Resultado mensual y anual en formato de planilla, con la columna de categorías fija mientras se desplaza por los meses. Del Premium en adelante, con demostrativo financiero y presupuesto por categoría.',
+                f4_desc: 'Resultado mensual y anual en formato de planilla, con la columna de categorías fija mientras te desplazás por los meses. Del Premium en adelante, con demostrativo financiero y presupuesto por categoría.',
                 f5_tit: 'App Móvil con Modo sin Conexión',
-                f5_desc: 'Instale como aplicación (PWA) en iPhone o Android. En los planes Premium y Pro, registre gastos incluso sin internet: el sistema sincroniza cuando se reconecte.',
+                f5_desc: 'Instalá como aplicación (PWA) en iPhone o Android. En los planes Premium y Pro, registrá gastos incluso sin internet: el sistema sincroniza cuando te reconectes.',
                 f6_tit: 'Exportación y Copia de Seguridad (Pro)',
-                f6_desc: 'En el plan Pro, exporte informes en CSV y PDF y haga una copia de seguridad completa de sus datos en JSON, con restauración cuando la necesite.',
+                f6_desc: 'En el plan Pro, exportá informes en CSV y PDF y hacé una copia de seguridad completa de tus datos en JSON, con restauración cuando la necesites.',
                 f7_tit: 'Recordatorios de Vencimiento',
-                f7_desc: 'Reciba una notificación con los gastos que vencen, incluso con la app cerrada, en el horario que usted elija.',
+                f7_desc: 'Recibí una notificación con los gastos que vencen, incluso con la app cerrada, en el horario que vos elijas.',
                 f8_tit: 'Comunidad y Novedades',
-                f8_desc: 'Sugiera mejoras, vote por las ideas de otros usuarios y siga las novedades del sistema.',
-                f9_tit: 'Su Idioma y Su Moneda',
+                f8_desc: 'Sugerí mejoras, votá por las ideas de otros usuarios y seguí las novedades del sistema.',
+                f9_tit: 'Tu Idioma y Tu Moneda',
                 f9_desc: 'Portugués, español e inglés; guaraníes, reales, dólares, euros o pesos argentinos; tema claro y oscuro.',
                 mock_mes: 'Ejemplo',
                 mock_super: 'Supermercado',
                 ia_badge: 'Inteligencia Artificial',
                 ia_titulo: 'Asistente Financiero con IA Integrada',
-                ia_sub: 'Basta de escribir todo a mano. Nuestra IA comprende su rutina y hace el trabajo pesado por usted con total seguridad:',
-                ia_item1: '<b>Registro directo por texto:</b> Simplemente escriba <i>"Gasté 45.000 en almuerzo"</i>.',
-                ia_item2: '<b>Registro por foto y audio:</b> Envíe fotos de comprobantes fiscales o notas de voz.',
+                ia_sub: 'Basta de escribir todo a mano. Nuestra IA comprende tu rutina y hace el trabajo pesado por vos con total seguridad:',
+                ia_item1: '<b>Registro directo por texto:</b> Simplemente escribí <i>"Gasté 45.000 en almuerzo"</i>.',
+                ia_item2: '<b>Registro por foto y audio:</b> Enviá fotos de comprobantes fiscales o notas de voz.',
                 ia_item3: '<b>IA avanzada (Pro):</b> marca como pagado lo que estaba previsto, edita movimientos, crea categorías y hace transferencias.',
                 ia_item4: '<b>Botón de deshacer en 10 s:</b> Control total y seguridad en cada acción generada por la IA.',
                 ia_chat_tit: 'Chat IA MyFinance',
                 ia_chat_user: '📸 [Foto de Factura de Combustible Gs. 180.000]',
                 ia_chat_bot: '✨ Identifiqué: <b>Estación de servicio - Gs. 180.000</b> en la categoría <b>Transporte / Combustible</b>. ¡Movimiento registrado! <span style="text-decoration: underline; cursor: pointer; font-size: 11px; margin-left: 6px;">[Deshacer (10 s)]</span>',
                 planos_badge: 'Nuestros Planes',
-                planos_titulo: 'Elija el plan ideal para usted',
-                planos_sub: 'Pruebe 3 días gratis en cualquier plan. Después, pague por transferencia o Tigo Money y activamos su suscripción.',
+                planos_titulo: 'Elegí el plan ideal para vos',
+                planos_sub: 'Probá 3 días gratis en cualquier plan. Después, pagá por transferencia o Tigo Money y activamos tu suscripción.',
                 ciclo_mensal: 'Mensual',
                 ciclo_anual: 'Anual',
                 dois_meses_gratis: '2 meses gratis',
@@ -1733,9 +1742,9 @@
                 faixa_vendido: 'La mejor relación calidad-precio',
                 faixa_completo: 'Más completo',
                 p_basico_nome: 'Plan Básico',
-                p_basico_sub: 'Registre y haga seguimiento: panel, gráficos, pendientes y demostrativo anual.',
+                p_basico_sub: 'Registrá y hacé seguimiento: panel, gráficos, pendientes y demostrativo anual.',
                 p_premium_nome: 'Plan Premium',
-                p_premium_sub: 'Analice y planifique: estado financiero, presupuesto, IA y registro sin conexión.',
+                p_premium_sub: 'Analizá y planificá: estado financiero, presupuesto, IA y registro sin conexión.',
                 p_pro_nome: 'Plan Pro',
                 p_pro_sub: 'Todo: flujo de caja, exportación, 3 veces más registros por foto y audio y cuentas ilimitadas.',
                 grp_financas: 'Finanzas',
@@ -1774,40 +1783,40 @@
                 r_suporte: 'Soporte por correo electrónico',
                 r_suporte_prio: 'Soporte prioritario',
                 r_novidades: 'Acceso anticipado a novedades',
-                trial_banner_tit: '¿Desea probar antes de elegir?',
-                trial_banner_sub: 'Elija un plan y úselo <b>gratis por 3 días</b>, sin ingresar tarjeta. Durante la prueba puede cambiar de plan.',
+                trial_banner_tit: '¿Querés probar antes de elegir?',
+                trial_banner_sub: 'Elegí un plan y usalo <b>gratis por 3 días</b>, sin ingresar tarjeta. Durante la prueba podés cambiar de plan.',
                 trial_banner_btn: 'Crear Cuenta Gratuita',
                 faq_badge: 'Preguntas Frecuentes',
                 faq_titulo: 'Preguntas Frecuentes',
                 faq_q1: '¿Cómo funciona la prueba gratis de 3 días?',
-                faq_a1: 'Al crear su cuenta usted elige el plan que quiere probar (Básico, Premium o Pro) y lo usa gratis por 3 días, sin tarjeta de crédito. Durante la prueba puede cambiar de plan, sin reiniciar el plazo. La prueba vale una vez por cuenta: después, para continuar hay que contratar un plan, y sus datos quedan guardados.',
+                faq_a1: 'Al crear tu cuenta elegís el plan que querés probar (Básico, Premium o Pro) y lo usás gratis por 3 días, sin tarjeta de crédito. Durante la prueba podés cambiar de plan, sin reiniciar el plazo. La prueba vale una vez por cuenta: después, para continuar hay que contratar un plan, y tus datos quedan guardados.',
                 faq_q2: '¿Cómo funciona la Inteligencia Artificial en el sistema?',
-                faq_a2: 'Puede chatear con la IA para registrar gastos por texto ("Gasté 50 mil en súper"), enviar foto del ticket o nota de voz. La IA reconoce el monto, fecha y categoría y lo registra al instante con 10 segundos para deshacer.',
+                faq_a2: 'Podés chatear con la IA para registrar gastos por texto ("Gasté 50 mil en súper"), enviar foto del ticket o nota de voz. La IA reconoce el monto, fecha y categoría y lo registra al instante con 10 segundos para deshacer.',
                 faq_q3: '¿Cómo funciona el modo sin conexión?',
-                faq_a3: 'En los planes Premium y Pro, al instalar MyFinance como app en el celular (iOS/Android), usted registra movimientos incluso sin señal de internet. Cuando el teléfono se reconecte, todo se sincroniza automáticamente.',
+                faq_a3: 'En los planes Premium y Pro, al instalar MyFinance como app en el celular (iOS/Android), registrás movimientos incluso sin señal de internet. Cuando el teléfono se reconecte, todo se sincroniza automáticamente.',
                 faq_q4: '¿Qué monedas son compatibles?',
-                faq_a4: 'MyFinance trabaja con Guaraníes (Gs. PYG), Real (R$ BRL), Dólar ($ USD), Peso argentino (ARS) y Euro (€ EUR). Usted elige la moneda en Configuración, y el sistema está disponible en portugués, español e inglés.',
+                faq_a4: 'MyFinance trabaja con Guaraníes (Gs. PYG), Real (R$ BRL), Dólar ($ USD), Peso argentino (ARS) y Euro (€ EUR). Elegís la moneda en Configuración, y el sistema está disponible en portugués, español e inglés.',
                 faq_q5: '¿Mis datos están seguros?',
-                faq_a5: 'Sí. Cada cuenta solo ve sus propios datos, las contraseñas se guardan con hash, la conexión usa HTTPS y las acciones están protegidas contra CSRF. En el plan Pro además exporta una copia de seguridad en JSON cuando quiera, y puede eliminar su cuenta y sus datos en cualquier momento.',
+                faq_a5: 'Sí. Cada cuenta solo ve sus propios datos, las contraseñas se guardan con hash, la conexión usa HTTPS y las acciones están protegidas contra CSRF. En el plan Pro además exportás una copia de seguridad en JSON cuando quieras, y podés eliminar tu cuenta y tus datos en cualquier momento.',
                 nav_casos: 'Casos de uso',
-                hero_titulo: 'Deje de preguntarse <em>a dónde se fue su dinero.</em>',
-                hero_sub: 'MyFinance reúne sus cuentas, cuotas y gastos en un solo lugar, y la Inteligencia Artificial registra todo por usted: por texto, foto del recibo o voz. En minutos ve el mes completo con claridad.',
+                hero_titulo: 'Dejá de preguntarte <em>a dónde se fue tu dinero.</em>',
+                hero_sub: 'MyFinance reúne tus cuentas, cuotas y gastos en un solo lugar, y la Inteligencia Artificial registra todo por vos: por texto, foto del recibo o voz. En minutos ves el mes completo con claridad.',
                 hero_chip1: 'Sin tarjeta de crédito',
                 hero_chip2: 'Guaraníes, reales, dólares, euros o pesos',
                 hero_chip3: 'En el navegador y en el celular (app instalable)',
-                dores_badge: '¿Se reconoce?',
+                dores_badge: '¿Te reconocés?',
                 dores_titulo: 'Sin control, el dinero se escapa sin que lo note',
                 dores_sub: 'No es falta de ingresos. Es falta de visión. Estos tres problemas cuestan caro todos los meses:',
                 dor1_tit: '"¿A dónde se fue mi sueldo?"',
-                dor1_desc: 'Los pequeños gastos del día a día suman mucho, y sin registro lo descubre cuando el saldo ya se acabó.',
+                dor1_desc: 'Los pequeños gastos del día a día suman mucho, y sin registro lo descubrís cuando el saldo ya se acabó.',
                 dor2_tit: 'Cuotas y cuentas que se vuelven sorpresa',
                 dor2_desc: 'Las compras en cuotas y las cuentas fijas se acumulan. Olvidar un vencimiento significa multa, intereses y estrés.',
                 dor3_tit: 'Una planilla que nadie mantiene',
-                dor3_desc: 'Empieza con entusiasmo, se vuelve obligación y se abandona en semanas. Al final, vuelve a decidir a ciegas.',
-                dores_fecho: 'MyFinance resuelve los tres: usted registra en segundos y el sistema <em>hace las cuentas, muestra lo pendiente y avisa lo que vence</em> para que decida con seguridad.',
+                dor3_desc: 'Empezás con entusiasmo, se vuelve obligación y la abandonás en semanas. Al final, volvés a decidir a ciegas.',
+                dores_fecho: 'MyFinance resuelve los tres: registrás en segundos y el sistema <em>hace las cuentas, muestra lo pendiente y avisa lo que vence</em> para que decidas con seguridad.',
                 casos_badge: 'Casos de uso',
-                casos_titulo: 'Hecho para su rutina, sea cual sea',
-                casos_sub: 'Vea cómo personas como usted usan MyFinance para tener el control que faltaba.',
+                casos_titulo: 'Hecho para tu rutina, sea cual sea',
+                casos_sub: 'Mirá cómo personas como vos usan MyFinance para tener el control que faltaba.',
                 lbl_situacao: 'Situación',
                 lbl_solucao: 'Con MyFinance',
                 lbl_ver_plano: 'Ver plan →',
@@ -1817,44 +1826,45 @@
                 c1_quem: 'Familias',
                 c1_tit: 'Cerrar el mes en positivo, sin sustos',
                 c1_sit: 'Entra el sueldo y, hacia el día 20, el dinero se acaba sin que nadie sepa en qué.',
-                c1_sol: 'Define un límite por categoría (supermercado, escuela, ocio) y sigue cuánto ya gastó y cuánto aún puede gastar en cada una.',
+                c1_sol: 'Definí un límite por categoría (supermercado, escuela, ocio) y seguí cuánto ya gastaste y cuánto aún podés gastar en cada una.',
                 c2_quem: 'Autónomos y freelancers',
                 c2_tit: 'Separar lo personal del negocio',
-                c2_sit: 'Todo cae en la misma cuenta y, a fin de año, no sabe si realmente ganó.',
-                c2_sol: 'Cuentas ilimitadas, transferencias entre ellas con contrapartida automática, flujo de caja y demostrativo anual para ver el resultado real y exportarlo a su contador.',
+                c2_sit: 'Todo cae en la misma cuenta y, a fin de año, no sabés si realmente ganaste.',
+                c2_sol: 'Cuentas ilimitadas, transferencias entre ellas con contrapartida automática, flujo de caja y demostrativo anual para ver el resultado real y exportarlo a tu contador.',
                 c3_quem: 'Pequeños comerciantes',
                 c3_tit: 'Anotar en el mostrador, incluso sin señal',
                 c3_sit: 'Entra y sale dinero todo el día, y lo que no se anota en el momento se pierde.',
-                c3_sol: 'Instale la app en el celular y registre al instante, incluso sin internet: todo se sincroniza cuando vuelve la señal. Con internet, fotografíe el recibo y la IA hace el registro.',
+                c3_sol: 'Instalá la app en el celular y registrá al instante, incluso sin internet: todo se sincroniza cuando vuelve la señal. Con internet, fotografiá el recibo y la IA hace el registro.',
                 c4_quem: 'Quien compra en cuotas',
                 c4_tit: 'Cuotas que nunca más son una sorpresa',
-                c4_sit: 'Tres compras en 10 cuotas y pierde la cuenta de lo que todavía va a pagar en los próximos meses.',
-                c4_sol: 'Cargue la compra una vez y el sistema crea todas las cuotas. La lista de pendientes muestra lo que vence y usted navega por los meses para ver el peso de cada uno.',
+                c4_sit: 'Tres compras en 10 cuotas y perdés la cuenta de lo que todavía vas a pagar en los próximos meses.',
+                c4_sol: 'Cargá la compra una vez y el sistema crea todas las cuotas. La lista de pendientes muestra lo que vence y navegás por los meses para ver el peso de cada uno.',
                 c5_quem: 'Vida entre dos países',
-                c5_tit: 'En su moneda y en su idioma',
-                c5_sit: 'Vive, trabaja o viaja entre países, y el sistema que usa no habla su idioma ni su moneda.',
-                c5_sol: 'Elija la moneda (guaraní, real, dólar, euro o peso argentino) y el idioma (portugués, español o inglés) y use todo a su manera, en la computadora y en el celular.',
+                c5_tit: 'En tu moneda y en tu idioma',
+                c5_sit: 'Vivís, trabajás o viajás entre países, y el sistema que usás no habla tu idioma ni tu moneda.',
+                c5_sol: 'Elegí la moneda (guaraní, real, dólar, euro o peso argentino) y el idioma (portugués, español o inglés) y usá todo a tu manera, en la computadora y en el celular.',
                 c6_quem: 'Quien no tiene tiempo',
                 c6_tit: 'Registrar un gasto en 5 segundos',
-                c6_sit: 'Sabe que debería anotar todo, pero con la prisa nadie abre una planilla.',
-                c6_sol: 'Escriba "gasté 45 mil en el almuerzo", envíe la foto del ticket o un audio. La IA elige monto, fecha y categoría, y usted tiene 10 segundos para deshacer.',
+                c6_sit: 'Sabés que deberías anotar todo, pero con la prisa nadie abre una planilla.',
+                c6_sol: 'Escribí "gasté 45 mil en el almuerzo", enviá la foto del ticket o un audio. La IA elige monto, fecha y categoría, y tenés 10 segundos para deshacer.',
                 como_badge: 'Cómo funciona',
                 como_titulo: 'Del registro al control en pocos minutos',
                 como_sub: 'Sin instalación complicada, sin configuración lenta.',
-                passo1_tit: 'Cree su cuenta',
-                passo1_desc: 'Elija el plan que quiere probar y úselo 3 días, gratis y sin tarjeta. Durante la prueba puede cambiar de plan.',
-                passo2_tit: 'Registre de la forma más fácil',
-                passo2_desc: 'Escriba, fotografíe el recibo o hable con la IA. Las cuotas y cuentas fijas se crean de una sola vez.',
-                passo3_tit: 'Vea la verdad de los números',
+                passo1_tit: 'Creá tu cuenta',
+                passo1_desc: 'Elegí el plan que querés probar y usalo 3 días, gratis y sin tarjeta. Durante la prueba podés cambiar de plan.',
+                passo2_tit: 'Registrá de la forma más fácil',
+                passo2_desc: 'Escribí, fotografiá el recibo o hablá con la IA. Las cuotas y cuentas fijas se crean de una sola vez.',
+                passo3_tit: 'Mirá la verdad de los números',
                 passo3_desc: 'Panel del mes, gráficos, pendientes y demostrativo anual siempre actualizados, para decidir con claridad.',
                 faq_q6: '¿Qué plan debo elegir?',
                 faq_a6: 'El <b>Básico</b> sirve para registrar y seguir el mes (hasta 2 cuentas). El <b>Premium</b> agrega presupuesto por categoría, IA y registro sin conexión, y tiene la mejor relación costo-beneficio. El <b>Pro</b> incluye cuentas ilimitadas, flujo de caja, exportación y más registros por foto y audio. Como la prueba de 3 días vale para cualquier plan y se puede cambiar durante ella, la mejor forma de decidir es probar.',
                 faq_q7: '¿Cómo contrato y pago un plan?',
-                faq_a7: 'Elija el plan en la pantalla de suscripción y haga la solicitud. Nos ponemos en contacto con los datos de pago (transferencia bancaria o Tigo Money) y activamos su suscripción apenas confirmemos el pago.',
+                faq_a7: 'Elegí el plan en la pantalla de suscripción y hacé la solicitud. Nos ponemos en contacto con los datos de pago (transferencia bancaria o Tigo Money) y activamos tu suscripción apenas confirmemos el pago.',
                 cta_titulo: 'Cada mes sin control es dinero que se escapa',
-                cta_sub: 'Empiece hoy. En pocos minutos sabe exactamente a dónde va cada guaraní y pasa a decidir con seguridad.',
+                cta_sub: 'Empezá hoy. En pocos minutos sabés exactamente a dónde va cada guaraní y pasás a decidir con seguridad.',
                 cta_btn: 'Empezar mi prueba gratis de 3 días',
-                cta_nota: 'Sin tarjeta de crédito. Usted elige el plan y puede cambiar durante la prueba.',
+                cta_nota: 'Sin tarjeta de crédito. Elegís el plan y podés cambiar durante la prueba.',
+                promo_teste: '<b>Black Friday:</b> empezá tu prueba hasta el 30/11 y usala gratis <b>10 días</b>, sin tarjeta.',
                 direitos: 'Todos los derechos reservados.',
                 termos: 'Términos de Uso',
                 privacidade: 'Privacidad'
@@ -2044,6 +2054,7 @@
                 cta_sub: 'Start today. In a few minutes you will know exactly where every guarani goes and start deciding with confidence.',
                 cta_btn: 'Start my 3-day free trial',
                 cta_nota: 'No credit card. You pick the plan and can switch during the trial.',
+                promo_teste: '<b>Black Friday:</b> start your trial by Nov 30 and use it free for <b>10 days</b>, no card needed.',
                 direitos: 'All rights reserved.',
                 termos: 'Terms of Use',
                 privacidade: 'Privacy'
@@ -2051,6 +2062,18 @@
         };
 
         // Idioma Engine
+        // Promocao do teste gratis (mesmo periodo de TRIAL_PROMO em src/node/core/negocio.js): mostra a faixa e troca os dias do teste na pagina.
+        const PROMO_TESTE = { dias: 10, inicio: '2026-11-20T00:00:00-03:00', fim: '2026-12-01T00:00:00-03:00' };
+        function aplicarPromoTeste() {
+            const agora = Date.now();
+            if (agora < Date.parse(PROMO_TESTE.inicio) || agora >= Date.parse(PROMO_TESTE.fim)) return;
+            document.getElementById('promo-teste').hidden = false;
+            const textos = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+            while (textos.nextNode()) {
+                const n = textos.currentNode;
+                if (n.parentNode.nodeName !== 'SCRIPT') n.nodeValue = n.nodeValue.replace(/\b3(?=[ -](?:dias|días|days?)\b)/gi, String(PROMO_TESTE.dias));
+            }
+        }
         const langSelect = document.getElementById('lang-toggle');
         // Sem escolha anterior, abre no idioma do navegador (es -> espanhol, en -> ingles, o resto -> portugues).
         function idiomaDoNavegador() {
@@ -2085,6 +2108,7 @@
                 if (opt && opt.value !== valorPagina && opt.getAttribute('data-href')) location.replace(opt.getAttribute('data-href'));
             }
             atualizarCobrancas(paginaLang);
+            aplicarPromoTeste();
         } else {
             if (!TRANSLATIONS[idiomaSalvo]) idiomaSalvo = idiomaDoNavegador();
             langSelect.value = idiomaSalvo;
@@ -2110,6 +2134,7 @@
 
             // Atualiza cobranca
             atualizarCobrancas(lang);
+            aplicarPromoTeste();
         }
 
         function atualizarCobrancas(lang) {

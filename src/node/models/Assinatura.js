@@ -1,5 +1,5 @@
 const db = require('../config/db');
-const { TRIAL_DIAS, CICLOS, PLANOS_VENDA } = require('../core/negocio');
+const { trialDias, CICLOS, PLANOS_VENDA } = require('../core/negocio');
 const Estatisticas = require('./Estatisticas');
 
 const SELECT_BASE = `
@@ -95,7 +95,7 @@ class Assinatura {
             `UPDATE assinaturas SET plano_id = ?, status = 'trial', trial_inicio = NOW(), trial_fim = DATE_ADD(NOW(), INTERVAL ? DAY)
              WHERE user_id = ? AND status = 'trial' AND (trial_fim IS NULL OR trial_fim <= NOW())
                AND plano_id = (SELECT id FROM planos WHERE codigo = 'prueba')`,
-            [plano.id, TRIAL_DIAS, userId]
+            [plano.id, trialDias(), userId]
         );
         return r.affectedRows === 1 ? plano : null;
     }

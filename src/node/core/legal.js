@@ -11,7 +11,7 @@
 // tratado como definitivo. Se o conteudo mudar de forma relevante, aumente TERMOS_VERSAO em negocio.js (todos
 // precisam aceitar de novo). Dados do titular (razao social, RUC, endereco) entram sozinhos se as variaveis de ambiente
 // EMPRESA_NOME, EMPRESA_RUC e EMPRESA_ENDERECO estiverem preenchidas.
-const { NOME_APP, EMAIL_SUPORTE, TRIAL_DIAS } = require('./negocio');
+const { NOME_APP, EMAIL_SUPORTE, trialDias } = require('./negocio');
 
 function fmt(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
 
@@ -29,7 +29,7 @@ function textos(lang, precos) {
     const contato = EMAIL_SUPORTE || '—';
     const b = fmt(precos.basico), p = fmt(precos.premium), o = fmt(precos.pro || 0);
     const app = NOME_APP;
-    const dias = TRIAL_DIAS;
+    const dias = trialDias();
     const ident = identificacao(l);
 
     if (l === 'es') {

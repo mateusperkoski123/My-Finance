@@ -27,7 +27,7 @@ const SEO = {
     },
     'es-PY': {
         titulo: 'MyFinance: control financiero con IA para cuentas y cuotas',
-        descricao: 'Organice cuentas, cuotas y gastos en un solo lugar. La IA registra por texto, foto o voz. Pruebe gratis 3 días, sin tarjeta. Para Gs., R$, US$ y €.',
+        descricao: 'Organizá cuentas, cuotas y gastos en un solo lugar. La IA registra por texto, foto o voz. Probá gratis 3 días, sin tarjeta. Para Gs., R$, US$ y €.',
         imagemAlt: 'MyFinance: control financiero con inteligencia artificial'
     },
     'en-US': {
