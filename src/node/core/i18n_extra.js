@@ -483,11 +483,14 @@ module.exports = {
     'flash.cadastro_codigo_invalido': ['Conta criada! O código de desconto {codigo} não é válido; dá para digitar outro na hora de assinar.', '¡Cuenta creada! El código de descuento {codigo} no es válido; puede ingresar otro al suscribirse.', 'Account created! The discount code {codigo} is not valid; you can enter another one when you subscribe.'],
     // Configuracoes > Preferencia: cor do tema
     'config.cor_tema': ['Cor do tema', 'Color del tema', 'Theme color'],
-    'config.cor_tema_ajuda': ['Muda o topo, os botões e os destaques. Receitas continuam verdes e despesas vermelhas. O padrão é o verde.', 'Cambia la barra superior, los botones y los destaques. Los ingresos siguen en verde y los gastos en rojo. El predeterminado es el verde.', 'Changes the top bar, buttons and highlights. Income stays green and expenses stay red. Green is the default.'],
+    'config.cor_tema_ajuda': ['Muda o topo, os botões e os destaques. Receitas continuam verdes e despesas vermelhas. O padrão é o verde. O Corporativo também deixa o visual mais sóbrio: azul-marinho, topo liso e cantos retos.', 'Cambia la barra superior, los botones y los destaques. Los ingresos siguen en verde y los gastos en rojo. El predeterminado es el verde. El Corporativo además deja el aspecto más sobrio: azul marino, barra lisa y esquinas rectas.', 'Changes the top bar, buttons and highlights. Income stays green and expenses stay red. Green is the default. Corporate also gives a more sober look: navy, flat top bar and square corners.'],
     'cor_tema.verde': ['Verde', 'Verde', 'Green'],
     'cor_tema.azul': ['Azul', 'Azul', 'Blue'],
+    'cor_tema.petroleo': ['Petróleo', 'Petróleo', 'Teal'],
     'cor_tema.preto': ['Preto', 'Negro', 'Black'],
     'cor_tema.roxo': ['Roxo', 'Violeta', 'Purple'],
+    'cor_tema.rosa': ['Rosa', 'Rosa', 'Pink'],
+    'cor_tema.corporativo': ['Corporativo', 'Corporativo', 'Corporate'],
     // Painel: cartoes de resumo do periodo (saldo, receitas, despesas, saldo previsto)
     'painel.kpi.aria': ['Resumo do período', 'Resumen del período', 'Period summary'],
     'painel.kpi.todas_contas': ['Somando todas as contas ativas', 'Sumando todas las cuentas activas', 'All active accounts combined'],

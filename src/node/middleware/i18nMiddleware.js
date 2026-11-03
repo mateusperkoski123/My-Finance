@@ -1,6 +1,6 @@
 const { t } = require('../core/i18n');
 const { IDIOMAS, detectarIdioma, normalizarIdioma } = require('../core/idiomas');
-const { CORES_TEMA, COR_VISITANTE } = require('../core/negocio');
+const { CORES_TEMA, COR_VISITANTE, TOPO_VISITANTE } = require('../core/negocio');
 
 function i18nMiddleware(req, res, next) {
     // Veio da landing (myfinance.systempy.com/es/ -> /cadastro?lang=es): o visitante segue no idioma que estava lendo.
@@ -24,7 +24,7 @@ function i18nMiddleware(req, res, next) {
     res.locals.currency = currency;
     res.locals.theme = theme;
     res.locals.corTema = corTema;
-    res.locals.corTopo = CORES_TEMA[corTema].topo[theme === 'escuro' ? 'escuro' : 'claro'];
+    res.locals.corTopo = req.user ? CORES_TEMA[corTema].topo[theme === 'escuro' ? 'escuro' : 'claro'] : TOPO_VISITANTE;
     res.locals.t = req.t;
 
     // Mensagem de retorno (flash): so e consumida quando uma pagina e de fato montada (res.render le res.locals).

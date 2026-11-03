@@ -6,16 +6,22 @@ module.exports = {
     // Promocao de Black Friday: quem comeca o teste neste periodo ganha mais dias (horario do Paraguai; o fim nao entra).
     // A landing repete o periodo em PROMO_TESTE (views/landing.ejs).
     TRIAL_PROMO: { dias: 10, inicio: '2026-11-20T00:00:00-03:00', fim: '2026-12-01T00:00:00-03:00' },
-    // Cores do tema (Configuracoes > Preferencia); verde e o padrao. topo = cor da barra do navegador no celular
-    // em cada tema, amostra = as duas cores mostradas no seletor.
+    // Cores do tema (Configuracoes > Preferencia), na ordem do seletor; verde e o padrao. topo = cor da barra do
+    // navegador no celular em cada tema (igual ao --nav-bg do app.css), amostra = as duas cores mostradas no seletor.
+    // A chave "roxo" aparece como Violeta. Corporativo tambem muda a forma (cantos retos, topo liso; ver app.css).
     CORES_TEMA: {
         verde: { topo: { claro: '#15803d', escuro: '#0f2a1c' }, amostra: ['#15803d', '#ecfdf3'] },
         azul: { topo: { claro: '#1d4ed8', escuro: '#0f1d3a' }, amostra: ['#1d4ed8', '#eff6ff'] },
+        petroleo: { topo: { claro: '#0e7490', escuro: '#0b3a47' }, amostra: ['#0e7490', '#ecfeff'] },
+        roxo: { topo: { claro: '#4338ca', escuro: '#28246a' }, amostra: ['#4338ca', '#eef2ff'] },
+        rosa: { topo: { claro: '#be185d', escuro: '#561236' }, amostra: ['#be185d', '#fdf2f8'] },
         preto: { topo: { claro: '#0b0d12', escuro: '#000000' }, amostra: ['#0b0d12', '#f1f2f4'] },
-        // Roxo = paleta da landing; e tambem a das telas de entrada (quem ainda nao entrou na conta).
-        roxo: { topo: { claro: '#0b0d12', escuro: '#000000' }, amostra: ['#4338ca', '#eef2ff'] }
+        corporativo: { topo: { claro: '#14233c', escuro: '#14233c' }, amostra: ['#14233c', '#dadfe6'] }
     },
-    COR_VISITANTE: 'roxo',
+    // Telas de entrada (quem ainda nao entrou na conta): a paleta da landing, topo preto com destaques roxos.
+    // Fica fora de CORES_TEMA de proposito: nao aparece no seletor nem pode ser gravada na conta.
+    COR_VISITANTE: 'landing',
+    TOPO_VISITANTE: '#0b0d12',
     // Limite mensal de mensagens do Chat IA quando o plano nao define um (planos.ia_limite_mes).
     IA_LIMITE_PADRAO: parseInt(process.env.IA_LIMITE_MENSAGENS_MES || '300', 10),
     // Mudar este valor obriga todos os usuarios a aceitar os termos novamente.

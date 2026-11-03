@@ -167,9 +167,176 @@
   --focus-ring: rgba(231, 233, 238, .25);
   --input-border: #353a45;
 }
-/* Roxo = a paleta da landing (topo preto, botoes e destaques roxos). Tambem e a das telas de entrada (login e cadastro),
-   para quem vem da landing nao mudar de visual no meio do caminho. */
+/* Violeta (chave "roxo"): topo violeta de verdade, nos dois temas. Antes o topo era preto (a paleta da landing) e quem
+   escolhia Violeta achava que nao tinha mudado nada. */
 :root[data-tema="claro"][data-cor="roxo"] {
+  --bg: #f6f6fb;
+  --border: #e4e4f0;
+  --muted: #5a5d75;
+  --nav-bg: #4338ca;
+  --nav-text-muted: #eef2ff;
+  --primary: #4338ca;
+  --primary-hover: #3730a3;
+  --brand: #4f46e5;
+  --brand-dark: #312e81;
+  --brand-soft: #eef2ff;
+  --brand-line: #c7d2fe;
+  --brand-text: #4338ca;
+  --on-brand: #ffffff;
+  --brand-shadow: rgba(67, 56, 202, .25);
+  --focus-ring: rgba(79, 70, 229, .28);
+  --input-border: #d7d8e6;
+}
+:root[data-tema="escuro"][data-cor="roxo"] {
+  --bg: #0d0c17;
+  --card: #161527;
+  --text: #e8e8f4;
+  --muted: #a3a3c0;
+  --border: #2b2a46;
+  --nav-bg: #28246a;
+  --nav-text: #eef2ff;
+  --nav-text-muted: #c3c6f0;
+  --primary: #818cf8;
+  --primary-hover: #a5b4fc;
+  --primary-text: #0b0d12;
+  --brand: #6366f1;
+  --brand-dark: #1e1b4b;
+  --brand-soft: #1f1d47;
+  --brand-line: #34386e;
+  --brand-text: #a5b4fc;
+  --on-brand: #ffffff;
+  --focus-ring: rgba(129, 140, 248, .3);
+  --input-border: #37355a;
+}
+/* Petroleo: azul esverdeado (ciano escuro), bem diferente do verde das receitas e do azul. */
+:root[data-tema="claro"][data-cor="petroleo"] {
+  --bg: #f3f7f8;
+  --border: #dde8eb;
+  --muted: #52636a;
+  --nav-bg: #0e7490;
+  --nav-text-muted: #ecfeff;
+  --primary: #0e7490;
+  --primary-hover: #155e75;
+  --brand: #0891b2;
+  --brand-dark: #164e63;
+  --brand-soft: #ecfeff;
+  --brand-line: #a5f3fc;
+  --brand-text: #0e7490;
+  --on-brand: #ffffff;
+  --brand-shadow: rgba(14, 116, 144, .25);
+  --focus-ring: rgba(8, 145, 178, .28);
+  --input-border: #cfdde1;
+}
+:root[data-tema="escuro"][data-cor="petroleo"] {
+  --bg: #0a1215;
+  --card: #111c20;
+  --text: #e3eef1;
+  --muted: #98aeb5;
+  --border: #213238;
+  --nav-bg: #0b3a47;
+  --nav-text: #ecfeff;
+  --nav-text-muted: #a8d3dd;
+  --primary: #22d3ee;
+  --primary-hover: #67e8f9;
+  --primary-text: #083344;
+  --brand: #06b6d4;
+  --brand-dark: #164e63;
+  --brand-soft: #0c2a31;
+  --brand-line: #155e75;
+  --brand-text: #67e8f9;
+  --on-brand: #083344;
+  --focus-ring: rgba(34, 211, 238, .3);
+  --input-border: #2c434a;
+}
+/* Rosa: puxado para o magenta, para nao confundir com o vermelho das despesas. */
+:root[data-tema="claro"][data-cor="rosa"] {
+  --bg: #faf5f8;
+  --border: #eee2e8;
+  --muted: #675a62;
+  --nav-bg: #be185d;
+  --nav-text-muted: #fdf2f8;
+  --primary: #be185d;
+  --primary-hover: #9d174d;
+  --brand: #db2777;
+  --brand-dark: #831843;
+  --brand-soft: #fdf2f8;
+  --brand-line: #fbcfe8;
+  --brand-text: #be185d;
+  --on-brand: #ffffff;
+  --brand-shadow: rgba(190, 24, 93, .25);
+  --focus-ring: rgba(219, 39, 119, .28);
+  --input-border: #e4d4dc;
+}
+:root[data-tema="escuro"][data-cor="rosa"] {
+  --bg: #130c10;
+  --card: #1d1419;
+  --text: #f3e8ee;
+  --muted: #bba5b0;
+  --border: #3a2631;
+  --nav-bg: #561236;
+  --nav-text: #fdf2f8;
+  --nav-text-muted: #ebbdd3;
+  --primary: #f472b6;
+  --primary-hover: #f9a8d4;
+  --primary-text: #3b0a1f;
+  --brand: #ec4899;
+  --brand-dark: #831843;
+  --brand-soft: #34121f;
+  --brand-line: #5c1d3a;
+  --brand-text: #f9a8d4;
+  --on-brand: #3b0a1f;
+  --focus-ring: rgba(244, 114, 182, .3);
+  --input-border: #4a3140;
+}
+/* Corporativo: azul-marinho com cinza neutro e visual sobrio (topo liso, cantos retos, sombras minimas, sem os
+   quadradinhos coloridos nos titulos). As regras de forma ficam em "Visual corporativo", no fim do arquivo. */
+:root[data-tema="claro"][data-cor="corporativo"] {
+  --bg: #f2f4f7;
+  --text: #111827;
+  --border: #dadfe6;
+  --muted: #4b5563;
+  --nav-bg: #14233c;
+  --nav-text-muted: #cbd5e1;
+  --primary: #1f4f8f;
+  --primary-hover: #173d70;
+  --brand: #2b5ea7;
+  --brand-dark: #14233c;
+  --brand-soft: #edf2f9;
+  --brand-line: #c8d6ea;
+  --brand-text: #1f4f8f;
+  --on-brand: #ffffff;
+  --brand-shadow: rgba(20, 35, 60, .16);
+  --focus-ring: rgba(43, 94, 167, .25);
+  --input-border: #c9d0da;
+  --shadow: 0 1px 2px rgba(16, 24, 40, .06);
+  --shadow-hover: 0 2px 8px rgba(16, 24, 40, .09);
+}
+:root[data-tema="escuro"][data-cor="corporativo"] {
+  --bg: #0f1217;
+  --card: #171b22;
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --border: #2a3039;
+  --nav-bg: #14233c;
+  --nav-text: #e5e7eb;
+  --nav-text-muted: #aab4c3;
+  --primary: #8fb3e3;
+  --primary-hover: #b4cdee;
+  --primary-text: #0b1526;
+  --brand: #5b8bd0;
+  --brand-dark: #14233c;
+  --brand-soft: #1a2433;
+  --brand-line: #2c3d57;
+  --brand-text: #9dbde8;
+  --on-brand: #0b1526;
+  --focus-ring: rgba(143, 179, 227, .3);
+  --input-border: #343b46;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3);
+  --shadow-hover: 0 2px 10px rgba(0, 0, 0, .4);
+}
+/* Paleta da landing (topo preto, botoes e destaques roxos): so nas telas de entrada (login, cadastro, recuperar senha),
+   para quem vem da landing nao mudar de visual no meio do caminho. Nao aparece no seletor de Configuracoes. */
+:root[data-tema="claro"][data-cor="landing"] {
   --bg: #f5f6f8;
   --text: #16181d;
   --border: #e5e7eb;
@@ -188,27 +355,6 @@
   --brand-shadow: rgba(67, 56, 202, .25);
   --focus-ring: rgba(79, 70, 229, .28);
   --input-border: #d6d9de;
-}
-:root[data-tema="escuro"][data-cor="roxo"] {
-  --bg: #0e1015;
-  --card: #171a21;
-  --text: #e7e9ee;
-  --muted: #9aa0aa;
-  --border: #2a2e37;
-  --nav-bg: #000000;
-  --nav-text: #e7e9ee;
-  --nav-text-muted: #8b909b;
-  --primary: #818cf8;
-  --primary-hover: #a5b4fc;
-  --primary-text: #0b0d12;
-  --brand: #6366f1;
-  --brand-dark: #000000;
-  --brand-soft: #1f2147;
-  --brand-line: #34386e;
-  --brand-text: #a5b4fc;
-  --on-brand: #ffffff;
-  --focus-ring: rgba(129, 140, 248, .3);
-  --input-border: #353a45;
 }
 
 :root { --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; }
@@ -3289,8 +3435,8 @@ a.navbar__avatar { text-decoration: none; }
 .navbar__logo { width: 34px; height: 34px; border-radius: 10px; background: #fff; color: var(--brand); display: inline-flex; align-items: center; justify-content: center; font-size: 26px; flex-shrink: 0; box-shadow: 0 2px 6px rgba(0, 0, 0, .14); }
 :root[data-tema="escuro"] .navbar__logo { background: var(--brand); color: var(--on-brand); }
 .navbar__nome { font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
-/* Roxo (igual a landing): o quadrado do logotipo e roxo com o simbolo branco, no topo e nas telas de entrada */
-[data-cor="roxo"] .navbar__logo, [data-cor="roxo"] .auth-marca__logo { background: var(--brand); color: #fff; }
+/* Paleta da landing (topo preto): o quadrado do logotipo e roxo com o simbolo branco, no topo e nas telas de entrada */
+[data-cor="landing"] .navbar__logo, [data-cor="landing"] .auth-marca__logo { background: var(--brand); color: #fff; }
 .navbar__link { border-radius: 12px; border-bottom-color: transparent !important; transition: background-color .15s ease, color .15s ease; }
 .navbar__link:hover, .navbar__mais[open] > summary { background: rgba(255, 255, 255, .1); }
 .navbar__link.is-active { background: rgba(255, 255, 255, .18); color: #fff; }
@@ -3431,4 +3577,36 @@ button, input, select, textarea { font-family: inherit; }
   :root[data-tema="escuro"] .barra-inf__novo { background: var(--brand); color: var(--on-brand); box-shadow: 0 8px 18px rgba(0, 0, 0, .45); }
   .folha__item.is-active { background: var(--brand-soft); color: var(--brand-text); }
   .folha__item.is-active i { color: var(--brand-text); }
+}
+
+/* ==========================================================================
+   Visual corporativo (Configuracoes > Preferencia > Cor do tema > Corporativo)
+   Mesmas telas, aparencia mais sobria: topo liso sem degrade, cantos retos, sem sombras coloridas e titulos sem o
+   quadradinho colorido. As cores ficam nos tokens do topo do arquivo; aqui so a forma. Selos e etiquetas pequenas
+   continuam em pilula (sao marcadores, nao controles).
+   ========================================================================== */
+:root[data-cor="corporativo"] .navbar { background: var(--nav-bg); box-shadow: 0 1px 0 rgba(255, 255, 255, .06), 0 1px 3px rgba(0, 0, 0, .18); }
+:root[data-cor="corporativo"] .navbar__logo { border-radius: 6px; box-shadow: none; }
+:root[data-cor="corporativo"] .navbar__link { border-radius: 4px; }
+:root[data-cor="corporativo"] .navbar__link.is-active { background: rgba(255, 255, 255, .1); box-shadow: inset 0 -2px 0 #fff; }
+:root[data-cor="corporativo"] .navbar__novo { border-radius: 6px; box-shadow: none; }
+:root[data-cor="corporativo"] .navbar__novo:hover { transform: none; box-shadow: 0 0 0 2px rgba(255, 255, 255, .35); }
+:root[data-cor="corporativo"] .page-header h1 { font-weight: 700; letter-spacing: -.01em; }
+:root[data-cor="corporativo"] .page-header h1 > .ph:first-child { width: auto; height: auto; background: none; border: 0; border-radius: 0; font-size: 26px; }
+/* Cartoes, janelas, botoes e campos: !important porque varias telas trazem o arredondado escrito no HTML
+   (style="border-radius: 16px" em contas, relatorios, extrato, lista de lancamentos, janelas do layout). */
+:root[data-cor="corporativo"] :is(.card, .modal) { border-radius: 6px !important; }
+:root[data-cor="corporativo"] :is(.btn, .input) { border-radius: 4px !important; }
+/* Painel: a caixa do seletor de mes nao tem classe, so o arredondado no style= */
+:root[data-cor="corporativo"] .myfinance-top-controls > div > div { border-radius: 6px !important; }
+/* Demais caixas e controles (seletores simples dentro do :is: um composto ali deixaria todas as regras mais fortes) */
+:root[data-cor="corporativo"] :is(.cmp-kpi, .cmp-lista, .lanc-campo, .lista-grupo, .saldos-contas__item, .mes-nav, .pedido-resumo, .plano-card__preco,
+  .cor-tema-opcao, .ia-form, .pkpi__chip, .kpi-card, .bloq__icone, .estado-fech__icone, .navbar__mais-menu) { border-radius: 6px; }
+:root[data-cor="corporativo"] :is(.btn-acao, .tabs__item, .seg, .planos__ciclo, .assin-abas, .pendencias__filtro, .gf-card__filtro, .settings-menu__item,
+  .tema-opcao, .navbar__mais-item, .folha__item, .pkpi__icone, .pkpi__novo, .navbar__hamb) { border-radius: 4px; }
+:root[data-cor="corporativo"] .seg > :is(a, button), :root[data-cor="corporativo"] .planos__ciclo button { border-radius: 3px; }
+:root[data-cor="corporativo"] :is(.btn-primary, .seg > .is-on) { box-shadow: none; }
+:root[data-cor="corporativo"] .boas-vindas { border-top-width: 3px; }
+@media (max-width: 768px) {
+  :root[data-tema="claro"][data-cor="corporativo"] .barra-inf__novo { background: var(--primary); box-shadow: 0 4px 10px rgba(16, 24, 40, .18); }
 }
