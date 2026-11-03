@@ -77,17 +77,18 @@ const cartoesController = {
     fatura: async (req, res) => {
         const cartao = await cartaoDoUsuario(req, res);
         if (!cartao) return;
+        const aberto = await Cartao.mesDeNovaCompra(cartao, hoje());
         let mes = fatura.mesValido(req.query.mes) ? req.query.mes : null;
-        if (!mes) {
-            const aberto = await Cartao.mesDeNovaCompra(cartao, hoje());
-            mes = (await Cartao.mesFechadoSemPagamento(cartao.id, aberto)) || aberto;
-        }
+        if (!mes) mes = (await Cartao.mesFechadoSemPagamento(cartao.id, aberto)) || aberto;
         const [f, categorias, contas, usado] = await Promise.all([
             Cartao.fatura(cartao, req.user.id, mes), Compra.categoriasDespesa(req.user.id), Conta.buscarPorUsuario(req.user.id, false),
-            Cartao.calcularUsado(cartao.id, cartao.dia_fechamento)
+            Cartao.calcularUsado(cartao.id)
         ]);
         res.render('cartoes/fatura', {
             title: cartao.nome, menuAtivo: 'cartoes', cartao, fatura: f, categorias, contas, usado,
+            // Fatura de um mes depois da que esta aberta agora: so tem cobrancas programadas (assinaturas, parcelas) e
+            // ainda nao pode ser paga.
+            futura: mes > aberto,
             mesAnterior: fatura.somarMeses(mes, -1), mesSeguinte: fatura.somarMeses(mes, 1), hoje: hoje()
         });
     },
@@ -119,8 +120,9 @@ const cartoesController = {
         const voltar = (mes) => res.redirect(`/cartoes/${cartao.id}${mes ? `?mes=${mes}` : ''}`);
         if (!descricao || !(valor > 0)) { avisar(req, 'erro', req.t('cartoes.erro_compra')); return voltar(fatura.mesValido(req.body.mes) ? req.body.mes : null); }
         let mes = null;
+        const escopo = req.body.escopo_serie === 'esta_e_proximas' ? 'esta_e_proximas' : 'apenas_esta';
         try {
-            mes = await Cartao.atualizarCompra(inteiro(req.params.compraId), cartao, req.user.id, { descricao, valor, data, categoria_id: inteiro(req.body.categoria_id) || null });
+            mes = await Cartao.atualizarCompra(inteiro(req.params.compraId), cartao, req.user.id, { descricao, valor, data, categoria_id: inteiro(req.body.categoria_id) || null }, escopo);
             avisar(req, mes ? 'sucesso' : 'erro', req.t(mes ? 'cartoes.flash_compra_salva' : 'cartoes.erro_compra_paga'));
         } catch (err) {
             if (!err.codigo) throw err;
@@ -132,8 +134,9 @@ const cartoesController = {
     excluirCompra: async (req, res) => {
         const cartao = await cartaoDoUsuario(req, res);
         if (!cartao) return;
-        const ok = await Cartao.excluirCompra(inteiro(req.params.compraId), cartao.id, req.user.id);
-        avisar(req, ok ? 'sucesso' : 'erro', req.t(ok ? 'cartoes.flash_compra_excluida' : 'cartoes.erro_compra_paga'));
+        const escopo = req.body.escopo_serie === 'esta_e_proximas' ? 'esta_e_proximas' : 'apenas_esta';
+        const n = await Cartao.excluirCompra(inteiro(req.params.compraId), cartao.id, req.user.id, escopo);
+        avisar(req, n ? 'sucesso' : 'erro', n > 1 ? req.t('cartoes.flash_compras_excluidas', { n }) : req.t(n ? 'cartoes.flash_compra_excluida' : 'cartoes.erro_compra_paga'));
         res.redirect(`/cartoes/${cartao.id}${fatura.mesValido(req.body.mes) ? `?mes=${req.body.mes}` : ''}`);
     },
 
@@ -143,6 +146,8 @@ const cartoesController = {
         const mes = fatura.mesValido(req.body.mes) ? req.body.mes : null;
         const voltar = `/cartoes/${cartao.id}${mes ? `?mes=${mes}` : ''}`;
         if (!mes) { avisar(req, 'erro', req.t('cartoes.erro_fatura')); return res.redirect(voltar); }
+        // Fatura de um mes depois da aberta: as cobrancas dela (assinaturas, parcelas) ainda nao aconteceram.
+        if (mes > (await Cartao.mesDeNovaCompra(cartao, hoje()))) { avisar(req, 'erro', req.t('cartoes.erro_fatura_futura')); return res.redirect(voltar); }
         try {
             await Cartao.pagar(req.user.id, cartao, mes, dataValida(req.body.data) ? req.body.data : hoje());
             avisar(req, 'sucesso', req.t('cartoes.flash_paga'));

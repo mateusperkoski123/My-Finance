@@ -3,22 +3,16 @@ const Categoria = require('../models/Categoria');
 const Lancamento = require('../models/Lancamento');
 const Cartao = require('../models/Cartao');
 const { parseMoeda, toLocalYMD, moeda, hojeLocal, dataValida, mesAnoValidos } = require('../core/helpers');
+const { caminhoLocal } = require('../middleware/authMiddleware');
 
 const AGRUPAR_VALIDOS = ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'conta', 'status'];
 const ORDENAR_VALIDOS = ['data', 'vencimento', 'valor', 'criacao'];
 
 // Destino pos-acao: campo 'voltar' do formulario (somente caminho local), senao Referer, senao '/'.
-const destinoRetorno = (req) => {
-    const v = req.body && req.body.voltar;
-    if (typeof v === 'string' && v.startsWith('/') && !v.startsWith('//')) return v;
-    return req.get('Referrer') || '/';
-};
+const destinoRetorno = (req) => caminhoLocal(req.body && req.body.voltar) || req.get('Referrer') || '/';
 
 // Formularios abertos fora do Painel (ex.: Relatorios > Pendentes) enviam "voltar"; sem ele o destino e o Painel.
-const voltarOuInicio = (req) => {
-    const v = req.body && req.body.voltar;
-    return (typeof v === 'string' && v.startsWith('/') && !v.startsWith('//')) ? v : '/';
-};
+const voltarOuInicio = (req) => caminhoLocal(req.body && req.body.voltar) || '/';
 
 const cleanVal = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '' && v !== 'sem_agrupamento') ? String(v).trim() : null;
 
@@ -170,7 +164,8 @@ const dashboardController = {
                     descricao: String(b.descricao).trim().slice(0, 190),
                     valor: val,
                     data: dataLanc,
-                    categoria_id: b.categoria_id || null,
+                    // Mesmo criterio dos lancamentos: a compra guarda a subcategoria quando ela foi escolhida.
+                    categoria_id: b.subcategoria_id || b.categoria_id || null,
                     e_fixo: b.e_fixo === '1' || b.e_fixo === true,
                     repetir: b.repetir === '1' || b.repetir === true,
                     periodicidade: b.periodicidade,
@@ -269,9 +264,22 @@ const dashboardController = {
                 return res.redirect(destinoRetorno(req));
             }
             const escopo = ['esta_e_proximas', 'toda_serie'].includes(b.escopo_serie) ? b.escopo_serie : 'apenas_esta';
-            const n = await Cartao.converterLancamentos(userId, cartao, {
-                id, serieId: itemAtual.serie_id, escopo, dataRef: toLocalYMD(itemAtual.data_competencia)
-            });
+            let n;
+            try {
+                n = await Cartao.converterLancamentos(userId, cartao, {
+                    id, serieId: itemAtual.serie_id, escopo, dataRef: toLocalYMD(itemAtual.data_competencia),
+                    // O que foi editado no mesmo formulario tambem vale (descricao, valor e categoria em todas; data so nesta).
+                    novos: {
+                        descricao: String(b.descricao).trim().slice(0, 190), valor: val,
+                        categoria_id: b.subcategoria_id || b.categoria_id || null,
+                        data: dataValida(b.data_competencia) ? b.data_competencia : null
+                    }
+                });
+            } catch (err) {
+                if (!err.codigo) throw err;
+                req.session.flash = { tipo: 'erro', mensagem: req.t('cartoes.erro_categoria') };
+                return res.redirect(destinoRetorno(req));
+            }
             req.session.flash = n > 0
                 ? { tipo: 'sucesso', mensagem: req.t('modal.lanc_movido_cartao', { n }) }
                 : { tipo: 'erro', mensagem: req.t('flash.generico_erro') };
@@ -291,6 +299,16 @@ const dashboardController = {
             e_fixo: b.e_fixo === '1' || b.e_fixo === true ? 1 : undefined,
             observacoes: b.observacoes !== undefined ? (String(b.observacoes).slice(0, 500) || null) : undefined
         };
+
+        // Lancamento criado pelo pagamento de uma fatura: descricao, categoria e data podem mudar; valor, conta e situacao
+        // nao (a fatura continuaria "paga" com outro valor saindo da conta).
+        if ((await Lancamento.idsDeFatura(userId, [id])).size) {
+            const atual = await Lancamento.buscarPorId(id, userId);
+            if (atual && (Math.abs(Math.abs(parseFloat(atual.valor)) - val) > 0.004 || String(atual.conta_id) !== String(b.conta_id || atual.conta_id) || payload.status !== atual.status)) {
+                req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_da_fatura') };
+                return res.redirect(destinoRetorno(req));
+            }
+        }
 
         const escopo = ['esta_e_proximas', 'toda_serie'].includes(b.escopo_serie) ? b.escopo_serie : 'apenas_esta';
         try {
@@ -368,6 +386,10 @@ const dashboardController = {
     excluirLancamento: async (req, res) => {
         const userId = req.user.id;
         const id = req.params.id;
+        if ((await Lancamento.idsDeFatura(userId, [id])).size) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_da_fatura') };
+            return res.redirect(destinoRetorno(req));
+        }
         await Lancamento.excluir(id, userId, req.body.escopo_serie || 'apenas_esta');
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.lancamento_excluido') };
         res.redirect(destinoRetorno(req));
@@ -402,6 +424,12 @@ const dashboardController = {
         } else {
             ids = [].concat(b.ids || []);
         }
+        // Os lancamentos de faturas de cartao pagas ficam (so saem desfazendo o pagamento na tela do cartao).
+        const daFatura = await Lancamento.idsDeFatura(req.user.id, ids);
+        if (daFatura.size) {
+            ids = ids.filter((v) => !daFatura.has(parseInt(v, 10)));
+            mantidos += daFatura.size;
+        }
         if (!ids.length) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('lote.nenhum') };
             return res.redirect(destinoRetorno(req));
@@ -418,6 +446,10 @@ const dashboardController = {
         const antes = await Lancamento.buscarPorId(id, userId);
         if (!antes) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.generico_erro') };
+            return res.redirect(destinoRetorno(req));
+        }
+        if (status === 'pendente' && (await Lancamento.idsDeFatura(userId, [id])).size) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.lanc_da_fatura') };
             return res.redirect(destinoRetorno(req));
         }
         await Lancamento.marcarComoPago(id, userId, status);

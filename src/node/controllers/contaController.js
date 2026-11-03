@@ -22,7 +22,7 @@ const contaController = {
         if (req.user.email_verificado_em) return res.redirect(req.get('Referrer') || '/');
         try {
             const token = await User.gerarTokenVerificacao(req.user.id);
-            const link = `${req.protocol || 'https'}://${req.get('host')}/verificar-email/${token}`;
+            const link = `${require('../core/helpers').urlBase(req)}/verificar-email/${token}`;
             // Espera o envio por no maximo 12 s: com o SMTP sem resposta a requisicao nao fica pendurada ate o proxy derrubar.
             const envio = sendVerificationEmail(req.user.email, link, req.user.idioma);
             envio.catch(() => {});
@@ -45,7 +45,7 @@ const contaController = {
         }
         // Contas criadas so com Google nao tem senha conhecida; as demais confirmam com a senha.
         if (!user.google_id) {
-            if (!bcrypt.compareSync(String(req.body.senha || ''), user.senha_hash)) {
+            if (!(await bcrypt.compare(String(req.body.senha || ''), user.senha_hash))) {
                 req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_atual_incorreta') };
                 return res.redirect('/configuracoes/conta');
             }

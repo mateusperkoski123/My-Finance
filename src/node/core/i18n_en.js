@@ -357,7 +357,7 @@ module.exports = {
     'flash.cadastro_incompleto': 'Please fill in all the registration fields.',
     'flash.login_invalido': 'Incorrect e-mail or password.',
     'flash.senhas_diferentes': 'The passwords entered do not match.',
-    'flash.senha_curta': 'The password must be at least 6 characters long.',
+    'flash.senha_curta': 'The password must be at least {n} characters long.',
     'flash.email_em_uso': 'This e-mail is already registered in the system.',
     'flash.cadastro_sucesso': 'Account created successfully! Welcome.',
     'flash.categoria_nome_obrigatorio': 'The category name is required.',

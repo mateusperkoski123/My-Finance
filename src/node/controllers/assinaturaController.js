@@ -98,6 +98,7 @@ const assinaturaController = {
             fmt,
             recursosDoPlano,
             paises: telefone.PAISES,
+            ddiPadrao: require('../core/paises').dadosPais(req.user.pais).ddi,
             indicacao: await indicacaoDaTela(req),
             pagoOnline: pagopar.disponivel(),
             // Codigo de desconto digitado no cadastro: vem preenchido (e ja aplicado) na janela de compra ate a 1a compra paga.
@@ -154,7 +155,7 @@ const assinaturaController = {
         try {
             await sendPlanRequestNotice({
                 usuario: req.user, plano: solicitado.nome, ciclo, telefone: telefone.formatar(tel.codigo, tel.numero),
-                link: `${req.protocol || 'https'}://${req.get('host')}/admin`
+                link: `${require('../core/helpers').urlBase(req)}/admin`
             });
         } catch (err) {
             console.error('Falha ao avisar admin sobre pedido de plano:', err.message);

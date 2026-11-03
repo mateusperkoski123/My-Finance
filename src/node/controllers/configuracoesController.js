@@ -6,7 +6,8 @@ const Lancamento = require('../models/Lancamento');
 const db = require('../config/db');
 const { IDIOMAS } = require('../core/idiomas');
 const { t: traduzir } = require('../core/i18n');
-const { CORES_TEMA } = require('../core/negocio');
+const { CORES_TEMA, SENHA_MINIMA } = require('../core/negocio');
+const { PAISES_CONTA, PAIS_PADRAO, normalizarPais } = require('../core/paises');
 
 // Opcoes oferecidas em Configuracoes > Preferencia (e as unicas aceitas ao salvar).
 const MOEDAS = {
@@ -24,7 +25,8 @@ const configuracoesController = {
         res.render('configuracoes/index', {
             title: req.t('config.titulo'),
             menuAtivo: 'preferencia',
-            config: { idiomas: IDIOMAS, moedas: MOEDAS, temas: TEMAS, cores: CORES_TEMA }
+            config: { idiomas: IDIOMAS, paises: PAISES_CONTA, moedas: MOEDAS, temas: TEMAS, cores: CORES_TEMA },
+            paisAtual: normalizarPais(req.user.pais) || PAIS_PADRAO
         });
     },
 
@@ -32,10 +34,12 @@ const configuracoesController = {
         const userId = req.user.id;
         // Valor fora da lista (formulario adulterado) mantem o que o usuario ja tinha.
         const idioma = IDIOMAS[req.body.idioma] ? req.body.idioma : (req.user.idioma || 'pt-BR');
+        // Pais nao muda a moeda ja escolhida; muda o fuso do "hoje" e os Termos (outro pais pede aceitar os termos de la).
+        const pais = normalizarPais(req.body.pais) || normalizarPais(req.user.pais) || PAIS_PADRAO;
         const moeda = MOEDAS[req.body.moeda] ? req.body.moeda : (req.user.moeda || 'PYG');
         const tema = TEMAS[req.body.tema] ? req.body.tema : (req.user.tema || 'claro');
         const cor_tema = CORES_TEMA[req.body.cor_tema] ? req.body.cor_tema : (CORES_TEMA[req.user.cor_tema] ? req.user.cor_tema : 'verde');
-        await User.updatePreferencias(userId, { idioma, moeda, tema, cor_tema });
+        await User.updatePreferencias(userId, { idioma, pais, moeda, tema, cor_tema });
         req.session.idioma = idioma;
         // A confirmacao ja sai no idioma que acabou de ser escolhido.
         req.session.flash = { tipo: 'sucesso', mensagem: traduzir('flash.preferencias_salvas', {}, idioma) };
@@ -88,7 +92,7 @@ const configuracoesController = {
         }
 
         const user = await User.findById(userId);
-        if (!bcrypt.compareSync(senha_atual, user.senha_hash)) {
+        if (!(await bcrypt.compare(senha_atual, user.senha_hash))) {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_atual_incorreta') };
             return res.redirect('/configuracoes/perfil');
         }
@@ -96,13 +100,14 @@ const configuracoesController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senhas_diferentes') };
             return res.redirect('/configuracoes/perfil');
         }
-        if (nova_senha.length < 6) {
-            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_curta') };
+        if (nova_senha.length < SENHA_MINIMA) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_curta', { n: SENHA_MINIMA }) };
             return res.redirect('/configuracoes/perfil');
         }
 
-        const hash = bcrypt.hashSync(nova_senha, 10);
-        await User.updateSenha(userId, hash);
+        const hash = await bcrypt.hash(nova_senha, 10);
+        // As outras sessoes e os aparelhos com a senha antiga saem; esta continua valendo.
+        req.session.iniciada_em = await User.updateSenha(userId, hash);
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.senha_atualizada') };
         res.redirect('/configuracoes/perfil');
     },
@@ -130,6 +135,15 @@ const configuracoesController = {
             data_competencia: ymd(l.data_competencia),
             data_pagamento: ymd(l.data_pagamento)
         }));
+        // Cartoes de credito: compras em aberto (ainda fora do saldo) e faturas pagas tambem fazem parte do backup.
+        const [cartoes] = await db.query(
+            'SELECT id, conta_id, nome, bandeira, limite_total, dia_fechamento, dia_vencimento, status FROM cartoes WHERE user_id = ? ORDER BY id', [userId]);
+        const [cartaoCompras] = await db.query(
+            `SELECT id, cartao_id, categoria_id, descricao, valor, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra, fatura_mes,
+                    lancamento_id, serie_id, recorrente
+             FROM cartao_compras WHERE user_id = ? ORDER BY id`, [userId]);
+        const [cartaoFaturas] = await db.query(
+            "SELECT id, cartao_id, mes, total, DATE_FORMAT(pago_em, '%Y-%m-%d') AS pago_em FROM cartao_faturas WHERE user_id = ? ORDER BY id", [userId]);
 
         const payload = {
             versao: "1.0",
@@ -144,7 +158,10 @@ const configuracoesController = {
             },
             contas,
             categorias,
-            lancamentos: lancamentosExport
+            lancamentos: lancamentosExport,
+            cartoes,
+            cartao_compras: cartaoCompras,
+            cartao_faturas: cartaoFaturas
         };
 
         const filename = `backup_gestao_financeira_${new Date().toISOString().slice(0,10)}.json`;
@@ -308,6 +325,60 @@ const configuracoesController = {
                 if (l.tipo === 'transferencia' && meu && par) {
                     await conn.query('UPDATE lancamentos SET transferencia_par_id = ? WHERE id = ? AND user_id = ? AND transferencia_par_id IS NULL', [par, meu, userId]);
                 }
+            }
+
+            // 4. Cartoes de credito (backups a partir de nov/2026): cartao (mescla por nome + conta), faturas pagas e compras.
+            // Cartao alem do limite do plano entra arquivado (os dados ficam guardados e podem ser restaurados depois).
+            const dia = (v) => Math.min(Math.max(parseInt(v, 10) || 1, 1), 31);
+            const mesFatura = (v) => (/^\d{4}-(0[1-9]|1[0-2])$/.test(String(v || '')) ? String(v) : null);
+            const maxCartoes = req.ehAdmin || !req.assinatura || !req.assinatura.plano ? null : req.assinatura.plano.max_cartoes;
+            const [[{ ativosCartoes }]] = await conn.query("SELECT COUNT(*) AS ativosCartoes FROM cartoes WHERE user_id = ? AND status = 'ativo'", [userId]);
+            let cartoesAtivos = Number(ativosCartoes) || 0;
+            const cartaoMap = {};
+            for (const k of lista(payload && payload.cartoes)) {
+                const nome = String(k.nome || '').trim().slice(0, 80);
+                const contaId = contaMap[k.conta_id];
+                if (!nome || !contaId) continue;
+                const [existente] = await conn.query('SELECT id FROM cartoes WHERE user_id = ? AND conta_id = ? AND nome = ? LIMIT 1', [userId, contaId, nome]);
+                if (existente.length) { cartaoMap[k.id] = existente[0].id; continue; }
+                let status = k.status === 'arquivado' ? 'arquivado' : 'ativo';
+                if (status === 'ativo' && maxCartoes !== null && maxCartoes !== undefined && cartoesAtivos >= maxCartoes) status = 'arquivado';
+                if (status === 'ativo') cartoesAtivos++;
+                const [r] = await conn.query(
+                    `INSERT INTO cartoes (user_id, conta_id, nome, bandeira, limite_total, dia_fechamento, dia_vencimento, status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [userId, contaId, nome, String(k.bandeira || '').trim().slice(0, 30), Math.max(parseFloat(k.limite_total) || 0, 0),
+                     dia(k.dia_fechamento), dia(k.dia_vencimento), status]
+                );
+                cartaoMap[k.id] = r.insertId;
+            }
+            for (const f of lista(payload && payload.cartao_faturas)) {
+                const cartaoId = cartaoMap[f.cartao_id];
+                const mes = mesFatura(f.mes);
+                const pagoEm = normData(f.pago_em);
+                if (!cartaoId || !mes || !pagoEm) continue;
+                await conn.query('INSERT IGNORE INTO cartao_faturas (user_id, cartao_id, mes, total, pago_em) VALUES (?, ?, ?, ?, ?)',
+                    [userId, cartaoId, mes, Math.abs(parseFloat(f.total) || 0), pagoEm]);
+            }
+            for (const c of lista(payload && payload.cartao_compras)) {
+                const cartaoId = cartaoMap[c.cartao_id];
+                const mes = mesFatura(c.fatura_mes);
+                const dataCompra = normData(c.data_compra);
+                const valor = Math.abs(parseFloat(c.valor) || 0);
+                const descricao = String(c.descricao || '').trim().slice(0, 190);
+                if (!cartaoId || !mes || !dataCompra || !(valor > 0) || !descricao) continue;
+                const [dup] = await conn.query(
+                    'SELECT id FROM cartao_compras WHERE user_id = ? AND cartao_id = ? AND descricao = ? AND valor = ? AND data_compra = ? AND fatura_mes = ? LIMIT 1',
+                    [userId, cartaoId, descricao, valor, dataCompra, mes]
+                );
+                if (dup.length) continue;
+                await conn.query(
+                    `INSERT INTO cartao_compras (user_id, cartao_id, categoria_id, descricao, valor, data_compra, fatura_mes, lancamento_id, serie_id, recorrente)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [userId, cartaoId, c.categoria_id ? (catMap[c.categoria_id] || null) : null, descricao, valor, dataCompra, mes,
+                     c.lancamento_id ? (lancMap[c.lancamento_id] || null) : null,
+                     c.serie_id ? String(c.serie_id).slice(0, 36) : null, c.recorrente ? 1 : 0]
+                );
             }
 
             await conn.commit();

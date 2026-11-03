@@ -119,7 +119,12 @@ app.use((req, res, next) => {
 app.use(async (req, res, next) => {
     if (req.session && req.session.user_id) {
         try {
-            const user = await User.findById(req.session.user_id);
+            let user = await User.findById(req.session.user_id);
+            // Sessao aberta antes da ultima troca de senha: encerrada (a pessoa entra de novo com a senha nova).
+            if (user && user.sessoes_desde && !(Number(req.session.iniciada_em) >= Number(user.sessoes_desde))) {
+                delete req.session.user_id;
+                user = null;
+            }
             if (user) {
                 req.user = user;
                 res.locals.usuarioLogado = user;
@@ -138,6 +143,11 @@ app.use(async (req, res, next) => {
     }
     next();
 });
+
+// "Hoje" no fuso do pais da conta (Paraguai, Brasil...) durante toda a requisicao; visitante usa o fuso de negocio.
+const { comFuso } = require('./src/node/core/helpers');
+const { dadosPais } = require('./src/node/core/paises');
+app.use((req, res, next) => (req.user ? comFuso(dadosPais(req.user.pais).fuso, next) : next()));
 
 // i18n & CSRF middlewares
 app.use(i18nMiddleware);
@@ -286,6 +296,8 @@ const { migrar, promoverAdmins } = require('./src/node/core/migrator');
             } catch (err) {
                 console.error('Falha no agendador de lembretes:', err.message);
             }
+            // Registros de entrada com mais de 6 meses (Marco Civil pede 6 meses; a LGPD, apagar depois).
+            await User.limparRegistrosLogin().catch((err) => console.error('Falha ao limpar registros de login:', err.message));
         };
         const agendar = () => {
             // +5s de folga para garantir que o relogio ja passou de :00/:30

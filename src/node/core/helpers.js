@@ -106,7 +106,7 @@ function formatDateTime(valor, tz) {
     if (!valor) return '';
     const d = new Date(valor);
     if (isNaN(d.getTime())) return '';
-    const zona = tz || process.env.IA_TIMEZONE || 'America/Asuncion';
+    const zona = tz || fusoAtual();
     try {
         const p = new Intl.DateTimeFormat('en-GB', { timeZone: zona, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false }).formatToParts(d)
             .reduce((o, x) => { o[x.type] = x.value; return o; }, {});
@@ -128,10 +128,18 @@ function truncarTexto(str, max = 45) {
 // Fuso de negocio do app (padrao Paraguai). O servidor (Hostinger) costuma rodar em UTC; sem isso, depois das 21h locais
 // o "hoje" viraria o dia seguinte (e o "Este mes" no ultimo dia do mes).
 const FUSO_APP = process.env.APP_TIMEZONE || process.env.IA_TIMEZONE || 'America/Asuncion';
+
+// Fuso da pessoa logada (vem do pais da conta, ver server.js): vale para a requisicao inteira sem passar parametro por
+// todas as funcoes. Fora de uma requisicao (rotinas agendadas) vale o fuso de negocio.
+const { AsyncLocalStorage } = require('async_hooks');
+const fusoDaRequisicao = new AsyncLocalStorage();
+const fusoAtual = () => { const s = fusoDaRequisicao.getStore(); return (s && s.fuso) || FUSO_APP; };
+const comFuso = (fuso, fn) => fusoDaRequisicao.run({ fuso }, fn);
+
 function hojeLocal(agora = new Date()) {
     try {
         const p = {};
-        new Intl.DateTimeFormat('en-CA', { timeZone: FUSO_APP, year: 'numeric', month: '2-digit', day: '2-digit' })
+        new Intl.DateTimeFormat('en-CA', { timeZone: fusoAtual(), year: 'numeric', month: '2-digit', day: '2-digit' })
             .formatToParts(agora).forEach((x) => { if (x.type !== 'literal') p[x.type] = parseInt(x.value, 10); });
         return new Date(p.year, p.month - 1, p.day);
     } catch (e) {
@@ -236,7 +244,20 @@ function descricaoLancamento(l, t) {
     return d;
 }
 
+// Endereco publico do app para links enviados por e-mail (verificar e-mail, redefinir senha). Nao confia no cabecalho
+// Host da requisicao: ele pode ser forjado e levar o link de redefinicao (com o token) para o site de outra pessoa.
+function urlBase(req) {
+    const fixo = process.env.APP_URL
+        || (process.env.HOST_OFICIAL ? `https://${process.env.HOST_OFICIAL}` : '')
+        || (process.env.NODE_ENV === 'production' ? 'https://myfinanceacess.systempy.com' : '');
+    if (fixo) return fixo.replace(/\/+$/, '');
+    return `${req.protocol || 'http'}://${req.get('host')}`;
+}
+
 module.exports = {
+    urlBase,
+    fusoAtual,
+    comFuso,
     descricaoLancamento,
     addMonthsYMD,
     PERIODICIDADES,

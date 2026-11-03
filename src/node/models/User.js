@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const db = require('../config/db');
-const { TERMOS_VERSAO } = require('../core/negocio');
+const { versaoTermos } = require('../core/negocio');
+const { normalizarPais, dadosPais, PAIS_PADRAO } = require('../core/paises');
 
 const sha256 = (v) => crypto.createHash('sha256').update(String(v)).digest('hex');
 
@@ -15,25 +16,26 @@ class User {
         return rows[0] || null;
     }
 
-    // Cadastro por e-mail/senha. Registra aceite dos termos; o teste gratis comeca quando a pessoa escolhe o plano.
-    // Retorna { id, tokenVerificacao } (o token vai por e-mail; no banco fica so o hash).
-    static async create({ nome, email, senha_hash, idioma = 'pt-BR', moeda = 'PYG', tema = 'claro', origem = 'web' }) {
+    // Cadastro por e-mail/senha. Registra aceite dos termos (os do pais escolhido); o teste gratis comeca quando a pessoa
+    // escolhe o plano. A moeda inicial vem do pais. Retorna { id, tokenVerificacao } (no banco fica so o hash do token).
+    static async create({ nome, email, senha_hash, idioma = 'pt-BR', pais = PAIS_PADRAO, tema = 'claro', origem = 'web' }) {
+        const p = normalizarPais(pais) || PAIS_PADRAO;
         const tokenVerificacao = crypto.randomBytes(24).toString('hex');
         const [result] = await db.query(
-            `INSERT INTO users (nome, email, senha_hash, idioma, moeda, tema, origem, email_verif_token,
+            `INSERT INTO users (nome, email, senha_hash, idioma, pais, moeda, tema, origem, email_verif_token,
                                 termos_aceitos_em, termos_versao, politica_aceita_em, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, NOW(), NOW(), NOW())`,
-            [nome, email, senha_hash, idioma, moeda, tema, origem, sha256(tokenVerificacao), TERMOS_VERSAO]
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), ?, NOW(), NOW(), NOW())`,
+            [nome, email, senha_hash, idioma, p, dadosPais(p).moeda, tema, origem, sha256(tokenVerificacao), versaoTermos(p)]
         );
         await require('./Categoria').criarPadrao(result.insertId, idioma);
         await require('./Assinatura').criarPendente(result.insertId);
         return { id: result.insertId, tokenVerificacao };
     }
 
-    static async updatePreferencias(id, { idioma, moeda, tema, cor_tema }) {
+    static async updatePreferencias(id, { idioma, pais, moeda, tema, cor_tema }) {
         await db.query(
-            'UPDATE users SET idioma = ?, moeda = ?, tema = ?, cor_tema = ?, updated_at = NOW() WHERE id = ?',
-            [idioma, moeda, tema, cor_tema, id]
+            'UPDATE users SET idioma = ?, pais = ?, moeda = ?, tema = ?, cor_tema = ?, updated_at = NOW() WHERE id = ?',
+            [idioma, normalizarPais(pais) || PAIS_PADRAO, moeda, tema, cor_tema, id]
         );
     }
 
@@ -58,11 +60,16 @@ class User {
         await db.query('UPDATE users SET telefone_codigo = ?, telefone_numero = ?, updated_at = NOW() WHERE id = ?', [codigo, numero, id]);
     }
 
+    // Nova senha: encerra as outras sessoes e os tokens do app (quem tinha a senha antiga perde o acesso).
+    // Devolve o instante gravado; a sessao atual, se houver, deve passar a ter iniciada_em = esse valor.
     static async updateSenha(id, senha_hash) {
+        const agora = Date.now();
         await db.query(
-            'UPDATE users SET senha_hash = ?, reset_token = NULL, reset_expires = NULL, updated_at = NOW() WHERE id = ?',
-            [senha_hash, id]
+            'UPDATE users SET senha_hash = ?, reset_token = NULL, reset_expires = NULL, sessoes_desde = ?, updated_at = NOW() WHERE id = ?',
+            [senha_hash, agora, id]
         );
+        await db.query('UPDATE dispositivos SET revogado_em = NOW() WHERE user_id = ? AND revogado_em IS NULL', [id]);
+        return agora;
     }
 
     static async salvarTokenRecuperacao(id, token, expiresAt) {
@@ -85,7 +92,7 @@ class User {
         return rows[0] || null;
     }
 
-    static async findOrCreateFromGoogle({ googleId, nome, email, idioma = 'pt-BR' }) {
+    static async findOrCreateFromGoogle({ googleId, nome, email, idioma = 'pt-BR', pais = PAIS_PADRAO }) {
         // 1. Find by google_id
         let user = await this.findByGoogleId(googleId);
         if (user) return user;
@@ -93,6 +100,13 @@ class User {
         // 2. Find by email
         user = await this.findByEmail(email);
         if (user) {
+            // Conta criada com senha e e-mail nunca confirmado: qualquer pessoa pode ter cadastrado esse e-mail antes do dono.
+            // Ao confirmar a posse pelo Google, a senha antiga deixa de valer (e as sessoes/tokens dela), para quem criou a
+            // conta no lugar do dono nao continuar entrando nela.
+            if (!user.email_verificado_em) {
+                const bcrypt = require('bcryptjs');
+                await this.updateSenha(user.id, await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 10));
+            }
             await db.query('UPDATE users SET google_id = ?, email_verificado_em = COALESCE(email_verificado_em, NOW()), updated_at = NOW() WHERE id = ?', [googleId, user.id]);
             user.google_id = googleId;
             return user;
@@ -100,13 +114,14 @@ class User {
 
         // 3. Create new user (o Google ja verificou o e-mail; os termos sao pedidos no primeiro acesso)
         const bcrypt = require('bcryptjs');
-        const randomPass = require('crypto').randomBytes(16).toString('hex');
-        const hash = bcrypt.hashSync(randomPass, 10);
+        const randomPass = crypto.randomBytes(16).toString('hex');
+        const hash = await bcrypt.hash(randomPass, 10);
 
+        const p = normalizarPais(pais) || PAIS_PADRAO;
         const [result] = await db.query(
-            `INSERT INTO users (nome, email, senha_hash, google_id, idioma, moeda, tema, origem, email_verificado_em, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'google', NOW(), NOW(), NOW())`,
-            [nome, email, hash, googleId, idioma, 'PYG', 'claro']
+            `INSERT INTO users (nome, email, senha_hash, google_id, idioma, pais, moeda, tema, origem, email_verificado_em, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'google', NOW(), NOW(), NOW())`,
+            [nome, email, hash, googleId, idioma, p, dadosPais(p).moeda, 'claro']
         );
 
         await require('./Categoria').criarPadrao(result.insertId, idioma);
@@ -129,11 +144,19 @@ class User {
         }
     }
 
-    static async aceitarTermos(id) {
+    // Aceite dos Termos/Politica na versao do pais da conta.
+    static async aceitarTermos(id, pais) {
         await db.query(
             'UPDATE users SET termos_aceitos_em = NOW(), termos_versao = ?, politica_aceita_em = NOW() WHERE id = ?',
-            [TERMOS_VERSAO, id]
+            [versaoTermos(pais), id]
         );
+    }
+
+    // Registros de entrada (IP, aparelho) ficam 6 meses: o Marco Civil (art. 15) pede essa guarda e a LGPD pede apagar o que
+    // nao e mais necessario. Apaga em lotes para nao travar a tabela.
+    static async limparRegistrosLogin() {
+        const [r] = await db.query('DELETE FROM login_logs WHERE created_at < DATE_SUB(NOW(), INTERVAL 6 MONTH) LIMIT 5000');
+        return r.affectedRows;
     }
 
     // Gera novo token de verificacao de e-mail; devolve o token em texto (so o hash e salvo).

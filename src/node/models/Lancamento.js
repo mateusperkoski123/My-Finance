@@ -555,6 +555,18 @@ class Lancamento {
         return apagados;
     }
 
+    // Ids (entre os informados) que foram criados pelo pagamento de uma fatura de cartao. Apagar um deles deixaria a fatura
+    // "paga" com o dinheiro de volta na conta: so o "Desfazer pagamento" do cartao pode tira-los.
+    static async idsDeFatura(userId, ids) {
+        const lista = [...new Set((ids || []).map((v) => parseInt(v, 10)).filter((n) => n > 0))];
+        if (!lista.length) return new Set();
+        const [rows] = await db.query(
+            `SELECT lancamento_id FROM cartao_compras WHERE user_id = ? AND lancamento_id IN (${lista.map(() => '?').join(',')})`,
+            [userId, ...lista]
+        );
+        return new Set(rows.map((r) => r.lancamento_id));
+    }
+
     // Transferencia agendada = duas pernas (saida e entrada) ligadas por transferencia_par_id; as duas andam juntas.
     static async idsDoPar(id, userId) {
         const item = await this.buscarPorId(id, userId);

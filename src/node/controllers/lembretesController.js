@@ -132,6 +132,8 @@ const lembretesController = {
     cron: async (req, res) => {
         if (!tokenValido(req.get('x-cron-token') || req.query.token)) return res.status(403).json({ sucesso: false });
         try {
+            // Quem usa so o cron externo (LEMBRETES_AGENDADOR=0) tambem limpa os registros de entrada com mais de 6 meses.
+            await require('../models/User').limparRegistrosLogin().catch(() => {});
             res.json(Object.assign({ sucesso: true }, await lembretes.processarDevidos()));
         } catch (err) {
             console.error('Falha no cron de lembretes:', err);

@@ -40,6 +40,8 @@
                 <%- csrfCampo %><input type="hidden" name="mes" value="<%= fatura.mes %>">
                 <button type="submit" class="btn btn-outline btn-sm"><i class="ph ph-arrow-counter-clockwise"></i> <%= t('cartoes.desfazer_pagamento') %></button>
             </form>
+        <% } else if (futura) { %>
+            <span class="badge badge-neutro"><i class="ph ph-calendar-blank"></i> <%= t('cartoes.situacao_futura') %></span>
         <% } else { %>
             <%# Situacao pela data de hoje: depois do vencimento com compras = vencida; depois do fechamento = fechada (falta pagar). %>
             <% if (fatura.compras.length && hoje > fatura.vencimento) { %>
@@ -54,6 +56,7 @@
     </div>
 </div>
 <% if (_paga) { %><p class="muted" style="font-size: 13px;"><%= t('cartoes.fatura_paga_aviso') %></p><% } %>
+<% if (!_paga && futura) { %><p class="muted" style="font-size: 13px;"><%= t('cartoes.fatura_futura_aviso') %></p><% } %>
 
 <div class="card cartao-compras">
 <% if (!fatura.compras.length) { %>
@@ -61,16 +64,22 @@
 <% } else { fatura.compras.forEach(function (c) { %>
     <div class="cartao-compra">
         <div class="cartao-compra__info">
-            <strong><%= c.descricao %></strong>
+            <strong><%= c.descricao %>
+                <% if (c.serie_id) { %><span class="badge badge-neutro" style="font-size: 11px; margin-left: 4px;"><i class="ph ph-repeat"></i> <%= c.recorrente ? t('cartoes.assinatura') : t('cartoes.parcela', { n: c.serie_pos, total: c.serie_total }) %></span><% } %>
+            </strong>
             <span class="muted"><%= formatDate(c.data_compra, 'DD/MM/YYYY') %> · <%= c.categoria_nome || t('cartoes.sem_categoria') %></span>
         </div>
         <b class="num"><%= moeda(c.valor, _m) %></b>
         <% if (!_paga) { %>
         <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-compra-<%= c.id %>" title="<%= t('cartoes.editar_compra') %>" aria-label="<%= t('cartoes.editar_compra') %>"><i class="ph ph-pencil-simple"></i></button>
+        <% if (c.serie_id) { %>
+        <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-excluir-compra-<%= c.id %>" title="<%= t('cartoes.excluir_compra') %>" aria-label="<%= t('cartoes.excluir_compra') %>"><i class="ph ph-trash"></i></button>
+        <% } else { %>
         <form method="post" action="/cartoes/<%= cartao.id %>/compras/<%= c.id %>/excluir" data-confirm="<%= t('cartoes.confirmar_excluir_compra') %>">
             <%- csrfCampo %><input type="hidden" name="mes" value="<%= fatura.mes %>">
             <button type="submit" class="btn btn-outline btn-sm" title="<%= t('cartoes.excluir_compra') %>" aria-label="<%= t('cartoes.excluir_compra') %>"><i class="ph ph-trash"></i></button>
         </form>
+        <% } %>
         <% } %>
     </div>
 <% }); } %>
@@ -78,6 +87,28 @@
 
 <% if (!_paga) { fatura.compras.forEach(function (c) { %>
 <%- include('_modal_compra', { idModal: 'modal-compra-' + c.id, acao: '/cartoes/' + cartao.id + '/compras/' + c.id + '/editar', titulo: t('cartoes.editar_compra'), categorias: categorias, hoje: hoje, moedaCod: _m, compra: c, mes: fatura.mes }) %>
+<% if (c.serie_id) { %>
+<%# Compra que se repete (assinatura/parcelas): excluir so esta ou esta e as proximas ainda nao pagas. %>
+<div class="modal-backdrop" id="modal-excluir-compra-<%= c.id %>" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('cartoes.excluir_compra') %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="/cartoes/<%= cartao.id %>/compras/<%= c.id %>/excluir" class="form">
+            <%- csrfCampo %><input type="hidden" name="mes" value="<%= fatura.mes %>">
+            <p style="margin: 0 0 6px;"><strong><%= c.descricao %></strong> · <span class="num"><%= moeda(c.valor, _m) %></span></p>
+            <p class="muted" style="font-size: 13px; margin: 0 0 12px;"><%= t('cartoes.excluir_serie_ajuda') %></p>
+            <label class="lanc-serie__opcao"><input type="radio" name="escopo_serie" value="apenas_esta" checked> <%= t('cartoes.serie_apenas_esta') %></label>
+            <label class="lanc-serie__opcao"><input type="radio" name="escopo_serie" value="esta_e_proximas"> <%= t('cartoes.serie_proximas') %></label>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary" style="background: var(--red); border: none;"><i class="ph ph-trash"></i> <%= t('cartoes.excluir_compra') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+<% } %>
 <% }); } %>
 
 <div class="modal-backdrop" id="modal-nova-compra" data-modal>

@@ -23,20 +23,19 @@ class Cartao {
              ORDER BY k.nome ASC`,
             [userId, arquivados ? 'arquivado' : 'ativo']
         );
-        await Promise.all(rows.map(async (k) => { k.usado = await this.calcularUsado(k.id, k.dia_fechamento); }));
+        await Promise.all(rows.map(async (k) => { k.usado = await this.calcularUsado(k.id); }));
         return rows;
     }
 
-    // Quanto do limite esta em uso agora: soma as compras de faturas ainda nao pagas, ATE a fatura aberta hoje -
-    // nao conta ocorrencias futuras de uma assinatura/parcela ja criadas de antemao (essas so entram no limite
-    // quando a fatura delas abrir de verdade, mes a mes).
-    static async calcularUsado(cartaoId, diaFechamento) {
-        const mesAberto = fatura.mesDaCompra(toLocalYMD(hojeLocal()), diaFechamento);
+    // Quanto do limite esta em uso agora: compras de faturas ainda nao pagas. Parcelas contam inteiras desde a compra
+    // (como no banco: a compra parcelada ocupa o limite todo e libera a cada fatura paga), mas cada cobranca de uma
+    // assinatura (recorrente) so conta a partir da data dela - as dos meses seguintes, criadas de antemao, ainda nao.
+    static async calcularUsado(cartaoId) {
         const [[r]] = await db.query(
             `SELECT COALESCE(SUM(cc.valor), 0) AS usado FROM cartao_compras cc
              LEFT JOIN cartao_faturas f ON f.cartao_id = cc.cartao_id AND f.mes = cc.fatura_mes
-             WHERE cc.cartao_id = ? AND f.id IS NULL AND cc.fatura_mes <= ?`,
-            [cartaoId, mesAberto]
+             WHERE cc.cartao_id = ? AND f.id IS NULL AND (cc.recorrente = 0 OR cc.data_compra <= ?)`,
+            [cartaoId, toLocalYMD(hojeLocal())]
         );
         return dinheiro(r.usado);
     }
@@ -88,11 +87,15 @@ class Cartao {
         return rows[0] || null;
     }
 
-    // A fatura de um mes: compras, total e (se paga) quando foi paga.
+    // A fatura de um mes: compras, total e (se paga) quando foi paga. Compra em serie traz a posicao ("3/12") e o total.
     static async fatura(cartao, userId, mes) {
         const [[compras], paga] = await Promise.all([
             db.query(
-                `SELECT cc.*, c.nome AS categoria_nome FROM cartao_compras cc
+                `SELECT cc.*, c.nome AS categoria_nome,
+                        IF(cc.serie_id IS NULL, NULL, (SELECT COUNT(*) FROM cartao_compras s WHERE s.user_id = cc.user_id AND s.serie_id = cc.serie_id
+                            AND (s.data_compra < cc.data_compra OR (s.data_compra = cc.data_compra AND s.id <= cc.id)))) AS serie_pos,
+                        IF(cc.serie_id IS NULL, NULL, (SELECT COUNT(*) FROM cartao_compras s WHERE s.user_id = cc.user_id AND s.serie_id = cc.serie_id)) AS serie_total
+                 FROM cartao_compras cc
                  LEFT JOIN categorias c ON c.id = cc.categoria_id
                  WHERE cc.cartao_id = ? AND cc.user_id = ? AND cc.fatura_mes = ?
                  ORDER BY cc.data_compra DESC, cc.id DESC`,
@@ -164,7 +167,10 @@ class Cartao {
     // Muda a forma de pagamento de um lancamento (ja existente, numa conta) para este cartao: vira(m) compra(s) de
     // cartao, saindo da tabela lancamentos. So pega ocorrencias AINDA PENDENTES - o que ja foi pago fica como estava,
     // porque aquele valor ja saiu de verdade do saldo da conta (o modelo de cartao so toca o saldo ao pagar a fatura).
-    static async converterLancamentos(userId, cartao, { id, serieId, escopo, dataRef }) {
+    // `novos` traz o que foi editado no mesmo formulario: descricao, valor e categoria valem para todas as ocorrencias
+    // convertidas; a data, so para a ocorrencia editada (mesma regra da edicao de serie em Lancamento.atualizar).
+    static async converterLancamentos(userId, cartao, { id, serieId, escopo, dataRef, novos = {} }) {
+        if (novos.categoria_id) await Lancamento.validarPropriedade(userId, null, novos.categoria_id);
         let onde, params;
         if (serieId && escopo === 'esta_e_proximas') {
             onde = "user_id = ? AND serie_id = ? AND tipo = 'despesa' AND status = 'pendente' AND data_competencia >= ?";
@@ -186,12 +192,13 @@ class Cartao {
         try {
             await conn.beginTransaction();
             for (const row of rows) {
-                const dataYMD = toLocalYMD(row.data_competencia);
+                const dataYMD = String(row.id) === String(id) && novos.data ? novos.data : toLocalYMD(row.data_competencia);
                 const mes = await this.mesDeNovaCompra(cartao, dataYMD);
                 await conn.query(
                     `INSERT INTO cartao_compras (user_id, cartao_id, categoria_id, descricao, valor, data_compra, fatura_mes, serie_id, recorrente)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [userId, cartao.id, row.categoria_id, row.descricao, Math.abs(Number(row.valor)), dataYMD, mes, serieNovaId, recorrenteNovo]
+                    [userId, cartao.id, novos.categoria_id || row.categoria_id, limpar(novos.descricao || row.descricao, 190),
+                     novos.valor > 0 ? dinheiro(novos.valor) : Math.abs(Number(row.valor)), dataYMD, mes, serieNovaId, recorrenteNovo]
                 );
             }
             const idsApagar = rows.map((r) => r.id);
@@ -210,15 +217,28 @@ class Cartao {
     }
 
     // Edita uma compra de fatura em aberto; a fatura e recalculada pela nova data. Devolve o mes da fatura ou null.
-    static async atualizarCompra(id, cartao, userId, { descricao, valor, data, categoria_id }) {
+    // Compra em serie com escopo "esta_e_proximas" (ex.: a assinatura mudou de preco): descricao, valor e categoria
+    // valem tambem para as proximas ocorrencias ainda nao pagas; a data muda so nesta.
+    static async atualizarCompra(id, cartao, userId, { descricao, valor, data, categoria_id }, escopo = 'apenas_esta') {
         if (categoria_id) await Lancamento.validarPropriedade(userId, null, categoria_id);
-        const [rows] = await db.query('SELECT fatura_mes FROM cartao_compras WHERE id = ? AND cartao_id = ? AND user_id = ? LIMIT 1', [id, cartao.id, userId]);
+        const [rows] = await db.query(
+            "SELECT fatura_mes, serie_id, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra FROM cartao_compras WHERE id = ? AND cartao_id = ? AND user_id = ? LIMIT 1",
+            [id, cartao.id, userId]
+        );
         if (!rows.length || (await this.faturaPaga(cartao.id, rows[0].fatura_mes))) return null;
         const mes = await this.mesDeNovaCompra(cartao, data);
         await db.query(
             'UPDATE cartao_compras SET descricao = ?, valor = ?, data_compra = ?, categoria_id = ?, fatura_mes = ? WHERE id = ? AND cartao_id = ? AND user_id = ?',
             [limpar(descricao, 190), dinheiro(valor), data, categoria_id || null, mes, id, cartao.id, userId]
         );
+        if (escopo === 'esta_e_proximas' && rows[0].serie_id) {
+            await db.query(
+                `UPDATE cartao_compras cc SET cc.descricao = ?, cc.valor = ?, cc.categoria_id = ?
+                 WHERE cc.user_id = ? AND cc.cartao_id = ? AND cc.serie_id = ? AND cc.id <> ? AND cc.data_compra >= ?
+                   AND NOT EXISTS (SELECT 1 FROM cartao_faturas f WHERE f.cartao_id = cc.cartao_id AND f.mes = cc.fatura_mes)`,
+                [limpar(descricao, 190), dinheiro(valor), categoria_id || null, userId, cartao.id, rows[0].serie_id, id, rows[0].data_compra]
+            );
+        }
         return mes;
     }
 
@@ -247,16 +267,35 @@ class Cartao {
     }
 
     // Compra de fatura paga nao pode ser apagada (o lancamento ja existe): desfaca o pagamento antes.
-    static async excluirCompra(id, cartaoId, userId) {
-        const onde = 'id = ? AND cartao_id = ? AND user_id = ? AND NOT EXISTS (SELECT 1 FROM cartao_faturas f WHERE f.cartao_id = cartao_compras.cartao_id AND f.mes = cartao_compras.fatura_mes)';
-        await SyncExclusao.registrar('cartao_compras', onde, [id, cartaoId, userId]);
-        const [res] = await db.query(
-            `DELETE cc FROM cartao_compras cc
-             WHERE cc.id = ? AND cc.cartao_id = ? AND cc.user_id = ?
-               AND NOT EXISTS (SELECT 1 FROM cartao_faturas f WHERE f.cartao_id = cc.cartao_id AND f.mes = cc.fatura_mes)`,
-            [id, cartaoId, userId]
-        );
-        return res.affectedRows > 0;
+    // Compra em serie com escopo "esta_e_proximas" (cancelar uma assinatura ou as parcelas restantes): apaga esta e as
+    // ocorrencias seguintes que ainda estao em faturas nao pagas. Devolve quantas foram apagadas.
+    static async excluirCompra(id, cartaoId, userId, escopo = 'apenas_esta') {
+        const naoPaga = 'NOT EXISTS (SELECT 1 FROM cartao_faturas f WHERE f.cartao_id = cartao_compras.cartao_id AND f.mes = cartao_compras.fatura_mes)';
+        let onde = `id = ? AND cartao_id = ? AND user_id = ? AND ${naoPaga}`;
+        let params = [id, cartaoId, userId];
+        if (escopo === 'esta_e_proximas') {
+            const [[c]] = await db.query(
+                "SELECT serie_id, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra FROM cartao_compras WHERE id = ? AND cartao_id = ? AND user_id = ? LIMIT 1",
+                [id, cartaoId, userId]
+            );
+            if (c && c.serie_id) {
+                onde = `user_id = ? AND cartao_id = ? AND serie_id = ? AND (id = ? OR data_compra >= ?) AND ${naoPaga}`;
+                params = [userId, cartaoId, c.serie_id, id, c.data_compra];
+            }
+        }
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            await SyncExclusao.registrar('cartao_compras', onde, params, conn);
+            const [res] = await conn.query(`DELETE FROM cartao_compras WHERE ${onde}`, params);
+            await conn.commit();
+            return res.affectedRows;
+        } catch (err) {
+            await conn.rollback();
+            throw err;
+        } finally {
+            conn.release();
+        }
     }
 
     // ---------- Pagamento ----------

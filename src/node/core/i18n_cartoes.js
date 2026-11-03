@@ -106,5 +106,17 @@ module.exports = {
     'cartoes.erro_compra_paga': ['Esta compra está numa fatura paga. Desfaça o pagamento para alterar.', 'Esta compra está en una factura pagada. Deshacé el pago para cambiar.', 'This purchase is on a paid statement. Undo the payment to change it.'],
     'cartoes.erro_fatura': ['Fatura inválida.', 'Factura inválida.', 'Invalid statement.'],
     'cartoes.erro_ja_paga': ['Esta fatura já foi paga.', 'Esta factura ya fue pagada.', 'This statement was already paid.'],
-    'cartoes.erro_vazia': ['Não há compras para pagar nesta fatura.', 'No hay compras para pagar en esta factura.', 'There are no purchases to pay on this statement.']
+    'cartoes.erro_vazia': ['Não há compras para pagar nesta fatura.', 'No hay compras para pagar en esta factura.', 'There are no purchases to pay on this statement.'],
+
+    // ---- Fatura futura e compras em serie (assinatura / parcelas) ----
+    'cartoes.situacao_futura': ['Futura', 'Futura', 'Upcoming'],
+    'cartoes.fatura_futura_aviso': ['Fatura futura: mostra as cobranças já programadas (assinaturas e parcelas). Ela só pode ser paga depois que abrir.', 'Factura futura: muestra los cobros ya programados (suscripciones y cuotas). Solo se puede pagar después de que abra.', 'Upcoming statement: it shows the charges already scheduled (subscriptions and installments). It can only be paid once it opens.'],
+    'cartoes.erro_fatura_futura': ['Esta fatura ainda não abriu: só dá para pagar a fatura atual ou as anteriores.', 'Esta factura todavía no abrió: solo se puede pagar la factura actual o las anteriores.', 'This statement has not opened yet: only the current or previous statements can be paid.'],
+    'cartoes.assinatura': ['Assinatura', 'Suscripción', 'Subscription'],
+    'cartoes.parcela': ['Parcela {n}/{total}', 'Cuota {n}/{total}', 'Installment {n}/{total}'],
+    'cartoes.serie_escopo': ['Esta compra se repete. Aplicar a alteração em:', 'Esta compra se repite. Aplicar el cambio en:', 'This purchase repeats. Apply the change to:'],
+    'cartoes.serie_apenas_esta': ['Só esta', 'Solo esta', 'Only this one'],
+    'cartoes.serie_proximas': ['Esta e as próximas (ainda não pagas)', 'Esta y las próximas (aún no pagadas)', 'This and the next ones (not paid yet)'],
+    'cartoes.excluir_serie_ajuda': ['Para cancelar uma assinatura ou as parcelas que faltam, escolha "Esta e as próximas". O que já está em faturas pagas não muda.', 'Para cancelar una suscripción o las cuotas que faltan, elegí "Esta y las próximas". Lo que ya está en facturas pagadas no cambia.', 'To cancel a subscription or the remaining installments, choose "This and the next ones". What is already on paid statements does not change.'],
+    'cartoes.flash_compras_excluidas': ['{n} compras excluídas.', '{n} compras eliminadas.', '{n} purchases deleted.']
 };

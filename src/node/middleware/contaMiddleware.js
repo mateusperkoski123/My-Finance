@@ -38,7 +38,7 @@ async function contaMiddleware(req, res, next) {
     res.locals.ehAdmin = ehAdmin;
 
     // Termos de uso (versao atual) precisam estar aceitos.
-    if (user.termos_versao !== negocio.TERMOS_VERSAO && !comecaCom(req.path, ROTAS_TERMOS)) {
+    if (user.termos_versao !== negocio.versaoTermos(user.pais) && !comecaCom(req.path, ROTAS_TERMOS)) {
         return res.redirect('/aceitar-termos');
     }
 

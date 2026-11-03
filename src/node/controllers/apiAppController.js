@@ -411,7 +411,8 @@ class ApiAppController {
                     idioma: req.user.idioma || 'pt-BR',
                     moeda: req.user.moeda || 'PYG',
                     tema: req.user.tema || 'escuro',
-                    fuso: process.env.IA_TIMEZONE || 'America/Asuncion',
+                    fuso: require('../core/paises').dadosPais(req.user.pais).fuso,
+                    pais: req.user.pais || 'PY',
                     assinatura: {
                         status_efetivo: req.statusEfetivo,
                         dias_restantes: req.assinatura ? req.assinatura.dias_restantes : null,

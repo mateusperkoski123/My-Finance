@@ -3,10 +3,12 @@ const crypto = require('crypto');
 const { normalizarIdioma } = require('../core/idiomas');
 const User = require('../models/User');
 const { iniciarSessao } = require('../middleware/authMiddleware');
-const { PLANOS_VENDA } = require('../core/negocio');
+const { PLANOS_VENDA, SENHA_MINIMA } = require('../core/negocio');
+const { normalizarPais, PAIS_PADRAO, PAISES_CONTA } = require('../core/paises');
 const Indicacao = require('../models/Indicacao');
 const Assinatura = require('../models/Assinatura');
 const { fmt } = require('../core/legal');
+const { urlBase } = require('../core/helpers');
 
 // Campo de formulario como texto (um campo repetido ou em formato de objeto vira vazio em vez de quebrar a rota).
 const texto = (v) => (typeof v === 'string' ? v : '');
@@ -31,7 +33,8 @@ const authController = {
         const infoLog = { email, ip: req.ip, userAgent: req.get('User-Agent') };
         const hash = user && user.senha_hash ? user.senha_hash : HASH_FALSO;
         // O cadastro guarda a senha sem espacos nas pontas; quem digita com um espaco sobrando ainda entra.
-        const senhaOk = bcrypt.compareSync(senha, hash) || (senha !== senha.trim() && bcrypt.compareSync(senha.trim(), hash));
+        // bcrypt assincrono: a versao "Sync" trava o servidor inteiro (todas as pessoas) durante cada comparacao.
+        const senhaOk = (await bcrypt.compare(senha, hash)) || (senha !== senha.trim() && (await bcrypt.compare(senha.trim(), hash)));
         if (!user || !senhaOk) {
             await User.registrarLogin(user ? user.id : null, { ...infoLog, sucesso: false }).catch(() => {});
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.login_invalido') };
@@ -55,9 +58,13 @@ const authController = {
         // Link de indicacao (?codigo=XYZ) ou codigo ja conferido nesta visita: o campo de desconto vem preenchido.
         const codigoLink = Indicacao.normalizar(texto(req.query.codigo)).slice(0, 20);
         if (codigoLink) req.session.codigo_desconto = codigoLink;
+        // Pais: o da landing (?pais=BR) ou ja escolhido nesta visita; sem nenhum, o navegador sugere pelo fuso (cadastro.ejs).
+        const paisLink = normalizarPais(req.query.pais);
+        if (paisLink) req.session.pais = paisLink;
         res.render('auth/cadastro', {
             title: req.t('auth.titulo_cadastro'), planoTeste,
-            codigoDesconto: req.session.codigo_desconto || '', pctDesconto: Indicacao.DESCONTO_PERCENTUAL
+            codigoDesconto: req.session.codigo_desconto || '', pctDesconto: Indicacao.DESCONTO_PERCENTUAL,
+            paises: PAISES_CONTA, paisEscolhido: normalizarPais(req.session.pais) || ''
         });
     },
 
@@ -86,6 +93,8 @@ const authController = {
         const { aceitar_termos } = req.body;
         // Idioma escolhido no cadastro: define a interface da conta e o idioma das categorias iniciais.
         const idioma = normalizarIdioma(req.body.idioma) || req.lang || 'pt-BR';
+        // Pais (independente do idioma): moeda inicial, fuso e quais Termos valem.
+        const pais = normalizarPais(req.body.pais) || PAIS_PADRAO;
         const s = texto(req.body.senha).trim();
         const cs = texto(req.body.confirmar_senha).trim();
 
@@ -101,8 +110,8 @@ const authController = {
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senhas_diferentes') };
             return res.redirect('/cadastro');
         }
-        if (s.length < 6) {
-            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_curta') };
+        if (s.length < SENHA_MINIMA) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_curta', { n: SENHA_MINIMA }) };
             return res.redirect('/cadastro');
         }
         if (!aceitar_termos) {
@@ -119,7 +128,7 @@ const authController = {
         const codigoDigitado = Indicacao.normalizar(texto(req.body.codigo_desconto)).slice(0, 20);
         const codigoOk = codigoDigitado ? await Indicacao.validarCodigo(codigoDigitado) : null;
 
-        const hash = bcrypt.hashSync(s, 10);
+        const hash = await bcrypt.hash(s, 10);
         let userId;
         try {
             userId = await User.create({
@@ -127,7 +136,7 @@ const authController = {
                 email,
                 senha_hash: hash,
                 idioma,
-                moeda: 'PYG',
+                pais,
                 tema: 'claro'
             });
         } catch (err) {
@@ -141,7 +150,7 @@ const authController = {
 
         // E-mail de verificacao: sai em segundo plano. A pessoa entra na hora; se o envio falhar ou demorar,
         // o cadastro continua e da para reenviar depois (a falha e registrada no log com o motivo).
-        const link = `${req.protocol || 'https'}://${req.get('host')}/verificar-email/${userId.tokenVerificacao}`;
+        const link = `${urlBase(req)}/verificar-email/${userId.tokenVerificacao}`;
         require('../core/mailer').sendVerificationEmail(email, link, idioma)
             .catch((err) => console.error('Falha ao enviar e-mail de verificacao (cadastro):', err.code || '', err.message));
         await User.registrarLogin(userId.id, { email, ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
@@ -181,9 +190,7 @@ const authController = {
 
             await User.salvarTokenRecuperacao(user.id, token, expiresAt);
 
-            const protocol = req.protocol || 'https';
-            const host = req.get('host');
-            const magicLink = `${protocol}://${host}/redefinir-senha/${token}`;
+            const magicLink = `${urlBase(req)}/redefinir-senha/${token}`;
 
             // Em segundo plano: a resposta e sempre igual e rapida (um erro ou uma demora so para e-mails existentes
             // revelaria quem tem conta). Se o envio falhar, o motivo vai para o log.
@@ -228,13 +235,13 @@ const authController = {
             return res.redirect(`/redefinir-senha/${token}`);
         }
 
-        if (s.length < 6) {
-            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_minimo6') };
+        if (s.length < SENHA_MINIMA) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('flash.senha_curta', { n: SENHA_MINIMA }) };
             return res.redirect(`/redefinir-senha/${token}`);
         }
 
-        const hash = bcrypt.hashSync(s, 10);
-        await User.updateSenha(user.id, hash);
+        // Tambem encerra as sessoes e os aparelhos que estavam entrando com a senha antiga.
+        await User.updateSenha(user.id, await bcrypt.hash(s, 10));
 
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.senha_redefinida') };
         res.redirect('/login');
@@ -256,6 +263,9 @@ const authController = {
         // "state": valor aleatorio guardado na sessao e conferido na volta, para ninguem conseguir entrar na conta Google de outra pessoa neste navegador.
         const state = crypto.randomBytes(16).toString('hex');
         req.session.google_state = state;
+        // Pais escolhido na tela (cadastro) ou sugerido pelo fuso do navegador (login): vale se o Google criar a conta.
+        const pais = normalizarPais(req.query.pais);
+        if (pais) req.session.pais = pais;
         const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${state}`;
         res.redirect(url);
     },
@@ -330,7 +340,8 @@ const authController = {
                 googleId: userinfo.id,
                 nome: userinfo.name || userinfo.email.split('@')[0],
                 email: userinfo.email,
-                idioma: normalizarIdioma(req.session.idioma) || 'pt-BR'
+                idioma: normalizarIdioma(req.session.idioma) || 'pt-BR',
+                pais: normalizarPais(req.session.pais) || PAIS_PADRAO
             });
 
             if (user.status && user.status !== 'ativo') {

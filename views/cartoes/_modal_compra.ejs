@@ -40,6 +40,14 @@
                 </select>
                 <small class="muted"><%= t('cartoes.compra_vai_para') %></small>
             </div>
+            <% if (_c.serie_id) { %>
+            <%# Assinatura/parcelas: a alteracao pode valer so para esta ou tambem para as proximas ainda nao pagas. %>
+            <div class="form-group">
+                <p class="muted" style="font-size: 13px; margin: 0 0 6px;"><%= t('cartoes.serie_escopo') %></p>
+                <label class="lanc-serie__opcao"><input type="radio" name="escopo_serie" value="apenas_esta" checked> <%= t('cartoes.serie_apenas_esta') %></label>
+                <label class="lanc-serie__opcao"><input type="radio" name="escopo_serie" value="esta_e_proximas"> <%= t('cartoes.serie_proximas') %></label>
+            </div>
+            <% } %>
             <div class="modal__actions">
                 <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
                 <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('clientes.salvar') %></button>

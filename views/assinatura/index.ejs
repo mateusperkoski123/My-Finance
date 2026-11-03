@@ -359,7 +359,7 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
                 <span><%= t('assinatura.telefone') %></span>
                 <div class="pedido-tel">
                     <select class="input" name="telefone_codigo" aria-label="<%= t('assinatura.pais') %>">
-                        <% paises.forEach(pa => { %><option value="<%= pa.codigo %>" <%= (usuarioLogado.telefone_codigo || '+595') === pa.codigo ? 'selected' : '' %>><%= pa.bandeira %> <%= pa.nome[idiomaTel] %> (<%= pa.codigo %>)</option><% }) %>
+                        <% paises.forEach(pa => { %><option value="<%= pa.codigo %>" <%= (usuarioLogado.telefone_codigo || ddiPadrao) === pa.codigo ? 'selected' : '' %>><%= pa.bandeira %> <%= pa.nome[idiomaTel] %> (<%= pa.codigo %>)</option><% }) %>
                     </select>
                     <input class="input" type="tel" name="telefone_numero" inputmode="tel" autocomplete="tel-national" required maxlength="20"
                            placeholder="981 123 456" value="<%= usuarioLogado.telefone_numero || '' %>">

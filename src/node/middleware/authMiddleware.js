@@ -50,6 +50,8 @@ function iniciarSessao(req, userId) {
         req.session.regenerate((err) => {
             if (err) return reject(err);
             req.session.user_id = userId;
+            // Comparado com users.sessoes_desde (troca de senha encerra as sessoes iniciadas antes dela).
+            req.session.iniciada_em = Date.now();
             if (idioma) req.session.idioma = idioma;
             if (planoTeste) req.session.plano_teste = planoTeste;
             resolve(destino);

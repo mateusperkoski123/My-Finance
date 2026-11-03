@@ -1,6 +1,8 @@
 const Dispositivo = require('../models/Dispositivo');
 const User = require('../models/User');
 const Assinatura = require('../models/Assinatura');
+const { comFuso } = require('../core/helpers');
+const { dadosPais } = require('../core/paises');
 
 async function exigirToken(req, res, next) {
     let token = null;
@@ -41,7 +43,8 @@ async function exigirToken(req, res, next) {
         // Atualizar ultimo uso de forma assincrona
         Dispositivo.atualizarUltimoUso(disp.id).catch(() => {});
 
-        next();
+        // "Hoje" no fuso do pais da conta, como no site (server.js).
+        comFuso(dadosPais(user.pais).fuso, next);
     } catch (err) {
         console.error('Erro na autenticacao por token:', err);
         res.status(500).json({ sucesso: false, erro: 'erro_interno' });

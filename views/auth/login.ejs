@@ -39,6 +39,20 @@
         </svg>
         <%= t('auth.google') %>
     </a>
+    <script>
+    // Se o Google criar uma conta nova por aqui, o pais dela vem do fuso do navegador (o idioma nao diz onde a pessoa mora).
+    (function () {
+        var a = document.querySelector('.auth-card a[href="/auth/google"]');
+        var tz = '';
+        try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { return; }
+        var br = ['Sao_Paulo', 'Manaus', 'Bahia', 'Fortaleza', 'Recife', 'Belem', 'Maceio', 'Araguaina', 'Santarem', 'Cuiaba',
+            'Campo_Grande', 'Porto_Velho', 'Boa_Vista', 'Rio_Branco', 'Eirunepe', 'Noronha'];
+        var pais = tz === 'America/Asuncion' ? 'PY'
+            : (tz.indexOf('America/Argentina/') === 0 || tz === 'America/Buenos_Aires') ? 'AR'
+            : (tz.indexOf('America/') === 0 && br.indexOf(tz.slice(8)) >= 0) ? 'BR' : '';
+        if (a && pais) a.setAttribute('href', '/auth/google?pais=' + pais);
+    })();
+    </script>
 
     <% } %>
 
