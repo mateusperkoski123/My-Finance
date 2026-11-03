@@ -26,8 +26,6 @@ module.exports = {
     IA_LIMITE_PADRAO: parseInt(process.env.IA_LIMITE_MENSAGENS_MES || '300', 10),
     // Mudar este valor obriga todos os usuarios a aceitar os termos novamente.
     TERMOS_VERSAO: '1.2',
-    // Tamanho minimo de senha nova (cadastro, redefinicao e troca). Senhas antigas mais curtas continuam entrando.
-    SENHA_MINIMA: 8,
     EMAIL_SUPORTE: process.env.SUPPORT_EMAIL || '',
     CICLOS: ['mensal', 'anual'],
     // Planos que podem ser testados e contratados (o "prueba" e o teste antigo de 7 dias, com tudo liberado).
@@ -40,11 +38,6 @@ module.exports = {
     // escolher/contratar um plano, sair, ler os termos e excluir a propria conta.
     ROTAS_LIVRES_BLOQUEIO: ['/logout', '/api/app/logout', '/assinatura', '/teste', '/termos', '/privacidade', '/aceitar-termos', '/verificar-email', '/configuracoes/conta', '/perfil/foto', '/idioma', '/offline', '/landing']
 };
-
-// Versao dos Termos/Politica que vale para o pais da conta. O Brasil tem documento proprio (LGPD, CDC); os demais seguem
-// o do Paraguai. Mudar a versao de um pais obriga so as contas daquele pais a aceitar de novo.
-module.exports.TERMOS_VERSAO_PAIS = { BR: 'BR-1.0' };
-module.exports.versaoTermos = (pais) => module.exports.TERMOS_VERSAO_PAIS[pais] || module.exports.TERMOS_VERSAO;
 
 // Dias de teste de quem comeca agora: os da promocao, se estiver no periodo.
 module.exports.trialDias = (agora = new Date()) => {

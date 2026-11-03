@@ -356,7 +356,7 @@ const ptBR = {
     'flash.cadastro_incompleto': 'Por favor, preencha todos os campos do cadastro.',
     'flash.login_invalido': 'E-mail ou senha incorretos.',
     'flash.senhas_diferentes': 'As senhas informadas não coincidem.',
-    'flash.senha_curta': 'A senha deve ter no mínimo {n} caracteres.',
+    'flash.senha_curta': 'A senha deve ter no mínimo 6 caracteres.',
     'flash.email_em_uso': 'Este e-mail já está cadastrado no sistema.',
     'flash.cadastro_sucesso': 'Conta criada com sucesso! Seja bem-vindo.',
     'flash.categoria_nome_obrigatorio': 'O nome da categoria é obrigatório.',
@@ -753,7 +753,7 @@ const esPY = {
     'flash.cadastro_incompleto': 'Por favor, completá todos los campos del registro.',
     'flash.login_invalido': 'Correo o contraseña incorrectos.',
     'flash.senhas_diferentes': 'Las contraseñas ingresadas no coinciden.',
-    'flash.senha_curta': 'La contraseña debe tener al menos {n} caracteres.',
+    'flash.senha_curta': 'La contraseña debe tener al menos 6 caracteres.',
     'flash.email_em_uso': 'Este correo ya está registrado en el sistema.',
     'flash.cadastro_sucesso': '¡Cuenta creada con éxito! Bienvenido/a.',
     'flash.categoria_nome_obrigatorio': 'El nombre de la categoría es obligatorio.',
@@ -792,7 +792,7 @@ const esPY = {
     'flash.lancamento_marcado_pago': '¡Movimiento marcado como pagado/cobrado!'
 };
 
-const extra = Object.assign({}, require('./i18n_extra'), require('./i18n_assinatura'), require('./i18n_comunidade'), require('./i18n_ia'), require('./i18n_lembretes'), require('./i18n_financeiro'), require('./i18n_extrato'), require('./i18n_moedas'), require('./i18n_clientes'), require('./i18n_compras'), require('./i18n_cartoes'), require('./i18n_categorias'), require('./i18n_limites'));
+const extra = Object.assign({}, require('./i18n_extra'), require('./i18n_assinatura'), require('./i18n_comunidade'), require('./i18n_ia'), require('./i18n_lembretes'), require('./i18n_financeiro'), require('./i18n_extrato'), require('./i18n_moedas'), require('./i18n_clientes'), require('./i18n_compras'), require('./i18n_cartoes'), require('./i18n_categorias'), require('./i18n_limites'), require('./i18n_onboarding'));
 const enUS = require('./i18n_en');
 
 // Mescla as chaves adicionais ([pt, es, en]) nos tres dicionarios.

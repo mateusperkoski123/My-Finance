@@ -88,12 +88,10 @@
                 <span class="navbar__logo" aria-hidden="true"><i class="ph-fill ph-currency-circle-dollar"></i></span>
                 <span class="navbar__nome">MyFinance</span>
             </a>
-            <% if (usuarioLogado) { %><%# Nas telas de entrada (visitante) o selo "Conectado" nao diz nada a quem ainda nao tem conta. %>
             <div id="pwa-status-badge" class="pwa-status-badge" role="status" aria-live="polite">
                 <span class="pwa-status-dot"></span>
                 <span id="pwa-status-text" class="pwa-status-text"><%= t('pwa.online') %></span>
             </div>
-            <% } %>
             <button type="button" id="pwa-fila-btn" class="pwa-fila-btn" hidden aria-label="<%= t('off.fila_aria') %>" title="<%= t('off.fila_titulo') %>">
                 <i class="ph ph-clock-counter-clockwise"></i><span id="pwa-fila-n">0</span>
             </button>
@@ -145,6 +143,7 @@
                         <% if (_mostrarIa) { %><a href="/ia" class="navbar__mais-item <%= currentRoute.startsWith('/ia') ? 'is-active' : '' %>"><i class="ph ph-sparkle"></i> <%= t('nav.ia') %><% if (_seloIa) { %> <span class="navbar__coroa" title="<%= t('bloq.disponivel_no', { plano: t('plano.premium.nome') }) %>"><i class="ph-fill ph-crown-simple" aria-hidden="true"></i></span><% } %></a><% } %>
                         <a href="/comunidade" class="navbar__mais-item <%= currentRoute.startsWith('/comunidade') ? 'is-active' : '' %>"><i class="ph ph-users-three"></i> <%= t('nav.comunidad') %><% if (novidadesNovas > 0) { %> <span class="selo-novidade" title="<%= t('novidades.selo_titulo', { n: novidadesNovas }) %>"><%= novidadesNovas > 9 ? '9+' : novidadesNovas %></span><% } %></a>
                         <% if (_adm) { %><a href="/admin" class="navbar__mais-item <%= currentRoute.startsWith('/admin') ? 'is-active' : '' %>"><i class="ph ph-shield-star"></i> <%= t('nav.admin') %></a><% } %>
+                        <a href="/guia" class="navbar__mais-item" data-onb-abrir><i class="ph ph-rocket-launch"></i> <%= t('onb.menu') %></a>
                         <a href="/configuracoes" class="navbar__mais-item <%= currentRoute.startsWith('/configuracoes') ? 'is-active' : '' %>"><i class="ph ph-gear"></i> <%= t('nav.configuracoes') %></a>
                     </div>
                 </details>
@@ -248,6 +247,7 @@ document.addEventListener('keydown', function (e) {
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/comunidade') ? 'is-active' : '' %>" href="/comunidade"><i class="ph ph-users-three"></i> <%= t('nav.comunidad') %><% if (novidadesNovas > 0) { %> <span class="selo-novidade" title="<%= t('novidades.selo_titulo', { n: novidadesNovas }) %>"><%= novidadesNovas > 9 ? '9+' : novidadesNovas %></span><% } %></a>
         <% if (_mostrarIa && !_iaNaBarra) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/ia') ? 'is-active' : '' %>" href="/ia"><i class="ph ph-sparkle"></i> <%= t('nav.ia') %><% if (_seloIa) { %> <%- include('partials/selo_plano', { plano: 'premium' }) %><% } %></a><% } %>
         <% if (_adm) { %><a role="menuitem" class="folha__item <%= _rota.startsWith('/admin') ? 'is-active' : '' %>" href="/admin"><i class="ph ph-shield-star"></i> <%= t('nav.admin') %></a><% } %>
+        <a role="menuitem" class="folha__item" href="/guia" data-onb-abrir><i class="ph ph-rocket-launch"></i> <%= t('onb.menu') %></a>
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/guia') ? 'is-active' : '' %>" href="/guia"><i class="ph ph-book-open"></i> <%= t('guia.titulo') %></a>
         <a role="menuitem" class="folha__item <%= _rota === '/assinatura' ? 'is-active' : '' %>" href="/assinatura"><i class="ph ph-crown-simple"></i> <%= t('config.menu.assinatura') %></a>
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/configuracoes') ? 'is-active' : '' %>" href="/configuracoes"><i class="ph ph-gear"></i> <%= t('nav.configuracoes') %></a>
@@ -376,6 +376,7 @@ window.GF_OFF_T = {
 <script src="/assets/js/app-provisorios.js?v=<%= assetVersion %>"></script>
 <script src="/assets/js/app-foto.js?v=<%= assetVersion %>"></script>
 <script src="/assets/js/app.js?v=<%= assetVersion %>"></script>
+<% if (usuarioLogado && !_bloq) { %><script src="/assets/js/onboarding.js?v=<%= assetVersion %>" defer></script><% } %>
 <script>
 // PWA Service Worker Registration & Installation Handler
 (function() {
