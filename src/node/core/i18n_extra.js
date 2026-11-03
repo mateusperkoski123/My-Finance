@@ -471,6 +471,9 @@ module.exports = {
     'modal.escolha_cartao': ['Escolha o cartão usado nesta compra', 'Elegí la tarjeta usada en esta compra', 'Choose the card used for this purchase'],
     'modal.cartao_aviso_saldo': ['Entra na fatura do cartão. O saldo da conta só muda quando você pagar a fatura.', 'Entra en la factura de la tarjeta. El saldo de la cuenta solo cambia cuando pagás la factura.', 'Goes on the card statement. The account balance only changes when you pay the statement.'],
     'modal.cartao_invalido': ['Selecione um cartão de crédito válido.', 'Seleccioná una tarjeta de crédito válida.', 'Select a valid credit card.'],
+    // Trocar a forma de pagamento de um lancamento ja existente (de conta para cartao), so quando ainda pendente
+    'modal.lanc_ja_pago': ['Este lançamento já foi pago e não pode virar compra de cartão. Se quiser, desfaça o pagamento primeiro.', 'Este movimiento ya fue pagado y no puede pasar a ser compra de tarjeta. Si querés, deshacé el pago primero.', 'This entry was already paid and can\'t become a card purchase. If you want, undo the payment first.'],
+    'modal.lanc_movido_cartao': ['Movido para o cartão de crédito: {n} ocorrência(s).', 'Movido a la tarjeta de crédito: {n} ocurrencia(s).', 'Moved to the credit card: {n} occurrence(s).'],
     'painel.ocultar_saldo': ['Ocultar ou mostrar os valores', 'Ocultar o mostrar los montos', 'Hide or show the amounts'],
     // Cadastro: codigo de desconto (indicacao), conferido na hora e guardado para a primeira compra
     'auth.codigo_desconto': ['Código de desconto (opcional)', 'Código de descuento (opcional)', 'Discount code (optional)'],

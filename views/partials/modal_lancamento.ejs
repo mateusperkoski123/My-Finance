@@ -2,6 +2,8 @@
    public/assets/js/app.js a partir do botao [data-editar-lanc]). Uma instancia por modo e tipo.
    Espera: modo ('novo'|'editar'), tipo ('receita'|'despesa'), contas, categoriasArvore, currentUrl;
    no modo 'novo': dataHoje e, opcional, voltar (caminho para onde retornar depois de salvar).
+   opcional: cartoes (despesa, novo e editar) - permite escolher "Cartao de credito" em vez de "Conta"; no editar,
+   so faz sentido enquanto pendente (o JS esconde a opcao se o lancamento ja estiver pago).
    A data e uma so: o dia do vencimento (pendente) ou o dia em que foi pago/recebido (pago). %>
 <%
 const _rec = tipo === 'receita';
@@ -57,7 +59,9 @@ const _salvar = _novo ? (_rec ? t('painel.salvar_receita') : t('painel.salvar_de
 
             <h4 class="lanc-form__secao"><%= t('modal.config_transacao') %></h4>
 
-            <% const _comCartoes = _novo && !_rec && (cartoes || []).length; %>
+            <%# No "editar", a opcao de cartao so faz sentido enquanto o lancamento ainda estiver pendente (o que ja foi
+               pago fica como esta); isso e decidido no JS que preenche o modal (esconde data-gf-forma-pagamento-box). %>
+            <% const _comCartoes = !_rec && (cartoes || []).length; %>
             <% if (_comCartoes) { %>
             <div class="lanc-campo" data-gf-forma-pagamento-box>
                 <label class="lanc-campo__rotulo">

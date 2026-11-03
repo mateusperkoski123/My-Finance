@@ -4,7 +4,7 @@ const db = require('../config/db');
 const Lancamento = require('./Lancamento');
 const SyncExclusao = require('./SyncExclusao');
 const fatura = require('../core/cartao_fatura');
-const { addMonthsYMD, passoMeses } = require('../core/helpers');
+const { addMonthsYMD, passoMeses, toLocalYMD, hojeLocal } = require('../core/helpers');
 
 const limpar = (v, max) => String(v === null || v === undefined ? '' : v).trim().slice(0, max);
 const dinheiro = (v) => Math.round((Number(v) || 0) * 100) / 100;
@@ -17,16 +17,28 @@ class Cartao {
     // Cartoes com o limite usado (compras de faturas ainda nao pagas) e a conta a que pertencem.
     static async listar(userId, arquivados = false) {
         const [rows] = await db.query(
-            `SELECT k.*, ct.nome AS conta_nome, ct.moeda AS conta_moeda,
-                    COALESCE((SELECT SUM(cc.valor) FROM cartao_compras cc
-                              LEFT JOIN cartao_faturas f ON f.cartao_id = cc.cartao_id AND f.mes = cc.fatura_mes
-                              WHERE cc.cartao_id = k.id AND f.id IS NULL), 0) AS usado
+            `SELECT k.*, ct.nome AS conta_nome, ct.moeda AS conta_moeda
              FROM cartoes k JOIN contas ct ON ct.id = k.conta_id
              WHERE k.user_id = ? AND k.status = ?
              ORDER BY k.nome ASC`,
             [userId, arquivados ? 'arquivado' : 'ativo']
         );
+        await Promise.all(rows.map(async (k) => { k.usado = await this.calcularUsado(k.id, k.dia_fechamento); }));
         return rows;
+    }
+
+    // Quanto do limite esta em uso agora: soma as compras de faturas ainda nao pagas, ATE a fatura aberta hoje -
+    // nao conta ocorrencias futuras de uma assinatura/parcela ja criadas de antemao (essas so entram no limite
+    // quando a fatura delas abrir de verdade, mes a mes).
+    static async calcularUsado(cartaoId, diaFechamento) {
+        const mesAberto = fatura.mesDaCompra(toLocalYMD(hojeLocal()), diaFechamento);
+        const [[r]] = await db.query(
+            `SELECT COALESCE(SUM(cc.valor), 0) AS usado FROM cartao_compras cc
+             LEFT JOIN cartao_faturas f ON f.cartao_id = cc.cartao_id AND f.mes = cc.fatura_mes
+             WHERE cc.cartao_id = ? AND f.id IS NULL AND cc.fatura_mes <= ?`,
+            [cartaoId, mesAberto]
+        );
+        return dinheiro(r.usado);
     }
 
     static async buscar(id, userId) {
@@ -141,6 +153,54 @@ class Cartao {
             }
             await conn.commit();
             return primeiro;
+        } catch (err) {
+            await conn.rollback();
+            throw err;
+        } finally {
+            conn.release();
+        }
+    }
+
+    // Muda a forma de pagamento de um lancamento (ja existente, numa conta) para este cartao: vira(m) compra(s) de
+    // cartao, saindo da tabela lancamentos. So pega ocorrencias AINDA PENDENTES - o que ja foi pago fica como estava,
+    // porque aquele valor ja saiu de verdade do saldo da conta (o modelo de cartao so toca o saldo ao pagar a fatura).
+    static async converterLancamentos(userId, cartao, { id, serieId, escopo, dataRef }) {
+        let onde, params;
+        if (serieId && escopo === 'esta_e_proximas') {
+            onde = "user_id = ? AND serie_id = ? AND tipo = 'despesa' AND status = 'pendente' AND data_competencia >= ?";
+            params = [userId, serieId, dataRef];
+        } else if (serieId && escopo === 'toda_serie') {
+            onde = "user_id = ? AND serie_id = ? AND tipo = 'despesa' AND status = 'pendente'";
+            params = [userId, serieId];
+        } else {
+            onde = "user_id = ? AND id = ? AND tipo = 'despesa' AND status = 'pendente'";
+            params = [userId, id];
+        }
+        const [rows] = await db.query(`SELECT * FROM lancamentos WHERE ${onde} ORDER BY data_competencia ASC, id ASC`, params);
+        if (!rows.length) return 0;
+
+        const serieNovaId = rows.length > 1 ? uuidv4() : null;
+        const recorrenteNovo = rows[0].recorrente ? 1 : 0;
+
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            for (const row of rows) {
+                const dataYMD = toLocalYMD(row.data_competencia);
+                const mes = await this.mesDeNovaCompra(cartao, dataYMD);
+                await conn.query(
+                    `INSERT INTO cartao_compras (user_id, cartao_id, categoria_id, descricao, valor, data_compra, fatura_mes, serie_id, recorrente)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [userId, cartao.id, row.categoria_id, row.descricao, Math.abs(Number(row.valor)), dataYMD, mes, serieNovaId, recorrenteNovo]
+                );
+            }
+            const idsApagar = rows.map((r) => r.id);
+            const ondeDel = `user_id = ? AND id IN (${idsApagar.map(() => '?').join(',')})`;
+            const paramsDel = [userId, ...idsApagar];
+            await SyncExclusao.registrar('lancamentos', ondeDel, paramsDel, conn);
+            await conn.query(`DELETE FROM lancamentos WHERE ${ondeDel}`, paramsDel);
+            await conn.commit();
+            return rows.length;
         } catch (err) {
             await conn.rollback();
             throw err;

@@ -250,6 +250,34 @@ const dashboardController = {
             return res.redirect(destinoRetorno(req));
         }
 
+        // Trocar a forma de pagamento de "conta" para "cartao de credito": o lancamento (so se ainda pendente - o que
+        // ja foi pago fica como esta, ver Cartao.converterLancamentos) vira compra de cartao. Mesma logica/escopo de
+        // serie usados para excluir/editar (apenas esta, esta e proximas, toda a serie).
+        if (b.forma_pagamento === 'cartao' && b.cartao_id) {
+            const itemAtual = await Lancamento.buscarPorId(id, userId);
+            if (!itemAtual || itemAtual.tipo !== 'despesa') {
+                req.session.flash = { tipo: 'erro', mensagem: req.t('flash.generico_erro') };
+                return res.redirect(destinoRetorno(req));
+            }
+            if (itemAtual.status === 'pago') {
+                req.session.flash = { tipo: 'erro', mensagem: req.t('modal.lanc_ja_pago') };
+                return res.redirect(destinoRetorno(req));
+            }
+            const cartao = await Cartao.buscar(parseInt(b.cartao_id, 10) || 0, userId);
+            if (!cartao || cartao.status !== 'ativo') {
+                req.session.flash = { tipo: 'erro', mensagem: req.t('modal.cartao_invalido') };
+                return res.redirect(destinoRetorno(req));
+            }
+            const escopo = ['esta_e_proximas', 'toda_serie'].includes(b.escopo_serie) ? b.escopo_serie : 'apenas_esta';
+            const n = await Cartao.converterLancamentos(userId, cartao, {
+                id, serieId: itemAtual.serie_id, escopo, dataRef: toLocalYMD(itemAtual.data_competencia)
+            });
+            req.session.flash = n > 0
+                ? { tipo: 'sucesso', mensagem: req.t('modal.lanc_movido_cartao', { n }) }
+                : { tipo: 'erro', mensagem: req.t('flash.generico_erro') };
+            return res.redirect(destinoRetorno(req));
+        }
+
         const payload = {
             conta_id: b.conta_id,
             categoria_id: b.categoria_id || null,

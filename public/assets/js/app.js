@@ -338,8 +338,10 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   // Despesa paga com cartao de credito: esconde o status pago/pendente (nao existe por compra, so por fatura) e
-  // troca o campo "Conta" pelo de "Cartao". Fixa e repetir continuam disponiveis (assinaturas e parcelas no cartao
-  // usam a mesma logica: uma compra por mes/periodo).
+  // troca o campo "Conta" pelo de "Cartao". Em "Nova despesa", fixa e repetir continuam disponiveis (assinaturas e
+  // parcelas no cartao usam a mesma logica: uma compra por mes/periodo). Em "Editar despesa", escolher cartao move
+  // o lancamento (pendente) para o cartao (ver dashboardController.atualizarLancamento) - fixa/repetir nao se aplicam
+  // a essa troca, por isso ficam escondidos ali.
   gfBinders.push(function (root) {
     root.querySelectorAll('[data-gf-forma-pagamento]').forEach(function (grupo) {
       if (grupo.getAttribute('data-gf-bound') === '1') return;
@@ -349,6 +351,7 @@ document.addEventListener('DOMContentLoaded', function () {
       var campoConta = form.querySelector('[data-gf-campo-conta]');
       var campoCartao = form.querySelector('[data-gf-campo-cartao]');
       var campoStatus = form.querySelector('[data-gf-status-box]');
+      var campoFixoRepetir = form.querySelector('[data-ed-novo-serie]');
       var selectConta = campoConta ? campoConta.querySelector('select[name="conta_id"]') : null;
       var selectCartao = campoCartao ? campoCartao.querySelector('select[name="cartao_id"]') : null;
 
@@ -358,6 +361,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (campoConta) campoConta.hidden = ehCartao;
         if (campoCartao) campoCartao.hidden = !ehCartao;
         if (campoStatus) campoStatus.hidden = ehCartao;
+        if (campoFixoRepetir) campoFixoRepetir.hidden = ehCartao;
         if (selectConta) selectConta.required = !ehCartao;
         if (selectCartao) selectCartao.required = ehCartao;
       };
@@ -812,6 +816,16 @@ document.addEventListener('DOMContentLoaded', function () {
     var status = form.elements.status;
     status.checked = d.status === 'pago';
     disparar(status, 'change');
+
+    // Forma de pagamento (so despesa, quando ha cartoes): sempre volta para "Conta" ao abrir a edicao, e so oferece
+    // "Cartao de credito" (mover para o cartao) enquanto o lancamento ainda estiver pendente - o que ja foi pago fica
+    // como esta (dashboardController.atualizarLancamento recusa a troca nesse caso).
+    var formaBox = form.querySelector('[data-gf-forma-pagamento-box]');
+    if (formaBox) {
+        formaBox.hidden = d.status === 'pago';
+        var formaConta = form.querySelector('input[name="forma_pagamento"][value="conta"]');
+        if (formaConta) { formaConta.checked = true; disparar(formaConta, 'change'); }
+    }
 
     // Fixa/Repetir: so para transacao avulsa; em serie aparece a escolha do escopo.
     var fixo = form.elements.e_fixo, repetir = form.elements.repetir;

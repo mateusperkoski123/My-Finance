@@ -82,16 +82,12 @@ const cartoesController = {
             const aberto = await Cartao.mesDeNovaCompra(cartao, hoje());
             mes = (await Cartao.mesFechadoSemPagamento(cartao.id, aberto)) || aberto;
         }
-        const [f, categorias, contas] = await Promise.all([
-            Cartao.fatura(cartao, req.user.id, mes), Compra.categoriasDespesa(req.user.id), Conta.buscarPorUsuario(req.user.id, false)
+        const [f, categorias, contas, usado] = await Promise.all([
+            Cartao.fatura(cartao, req.user.id, mes), Compra.categoriasDespesa(req.user.id), Conta.buscarPorUsuario(req.user.id, false),
+            Cartao.calcularUsado(cartao.id, cartao.dia_fechamento)
         ]);
-        const [[usadoRow]] = await require('../config/db').query(
-            `SELECT COALESCE(SUM(cc.valor), 0) AS usado FROM cartao_compras cc
-             LEFT JOIN cartao_faturas fa ON fa.cartao_id = cc.cartao_id AND fa.mes = cc.fatura_mes
-             WHERE cc.cartao_id = ? AND fa.id IS NULL`, [cartao.id]
-        );
         res.render('cartoes/fatura', {
-            title: cartao.nome, menuAtivo: 'cartoes', cartao, fatura: f, categorias, contas, usado: Number(usadoRow.usado),
+            title: cartao.nome, menuAtivo: 'cartoes', cartao, fatura: f, categorias, contas, usado,
             mesAnterior: fatura.somarMeses(mes, -1), mesSeguinte: fatura.somarMeses(mes, 1), hoje: hoje()
         });
     },
