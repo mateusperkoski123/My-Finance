@@ -1,0 +1,107 @@
+/* Primeiros passos (public/assets/js/onboarding.js): botao no canto, lista de passos e o passo a passo com destaque.
+   Usa os tokens do tema (app.css), entao acompanha claro/escuro e a cor escolhida. */
+
+/* Fica abaixo das folhas e dos formularios: quando eles abrem, cobrem a lista. */
+.onb-lancador {
+  position: fixed; right: 20px; bottom: 20px; z-index: 89;
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 14px; border-radius: 999px; border: 1px solid var(--brand-line, var(--border));
+  background: var(--card); color: var(--text); font: inherit; font-size: 14px; font-weight: 600;
+  box-shadow: 0 8px 24px rgba(16, 24, 40, .16); cursor: pointer;
+}
+.onb-lancador i { font-size: 18px; color: var(--brand-text, var(--primary)); }
+.onb-lancador b {
+  min-width: 34px; padding: 2px 8px; border-radius: 999px; text-align: center; font-size: 12px;
+  background: var(--brand, var(--primary)); color: var(--on-brand, #fff);
+}
+.onb-lancador:hover { border-color: var(--brand, var(--primary)); }
+.onb-lancador:focus-visible, .onb-painel button:focus-visible, .onb-balao button:focus-visible { outline: 3px solid var(--brand, var(--primary)); outline-offset: 2px; }
+.onb-lancador[hidden], .onb-painel[hidden], .onb-foco[hidden] { display: none; }
+
+.onb-painel {
+  position: fixed; right: 20px; bottom: 76px; z-index: 89;
+  width: 380px; max-width: calc(100vw - 32px); max-height: calc(100vh - 120px); overflow-y: auto;
+  background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 18px;
+  box-shadow: 0 18px 48px rgba(16, 24, 40, .22); padding: 16px 16px 12px;
+}
+.onb-painel__topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.onb-painel__topo strong { display: block; font-size: 16px; }
+.onb-painel__topo small { color: var(--muted); font-size: 13px; }
+.onb-painel__x {
+  flex: none; width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--border);
+  background: transparent; color: var(--muted); cursor: pointer; display: grid; place-items: center; font-size: 16px;
+}
+.onb-barra { height: 6px; border-radius: 999px; background: var(--border); margin: 12px 0 10px; overflow: hidden; }
+.onb-barra span { display: block; height: 100%; border-radius: inherit; background: var(--brand, var(--primary)); transition: width .3s ease; }
+.onb-aviso {
+  margin: 0 0 10px; padding: 10px 12px; border-radius: 12px; font-size: 13px; line-height: 1.45;
+  background: var(--brand-soft, var(--green-bg)); color: var(--text);
+}
+.onb-aviso i { color: var(--brand-text, var(--green)); }
+.onb-lista { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.onb-item { display: grid; grid-template-columns: 30px 1fr auto; align-items: center; gap: 10px; padding: 9px 6px; border-radius: 12px; }
+.onb-item.is-proximo { background: var(--brand-soft, var(--bg)); }
+.onb-item__marca {
+  width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: 13px; font-weight: 700;
+  border: 2px solid var(--border); color: var(--muted);
+}
+.onb-item.is-proximo .onb-item__marca { border-color: var(--brand, var(--primary)); color: var(--brand-text, var(--primary)); }
+.onb-item.is-feito .onb-item__marca { border-color: transparent; background: var(--brand, var(--green)); color: var(--on-brand, #fff); }
+.onb-item__txt { min-width: 0; }
+.onb-item__txt strong { display: block; font-size: 14px; line-height: 1.3; }
+.onb-item__txt em { font-style: normal; font-weight: 500; font-size: 11px; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 0 6px; margin-left: 4px; }
+.onb-item__txt small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.35; margin-top: 2px; }
+.onb-item.is-feito .onb-item__txt strong { color: var(--muted); }
+.onb-item.is-bloqueado { opacity: .6; }
+.onb-item .btn { white-space: nowrap; }
+.onb-painel__rodape { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; border-top: 1px solid var(--border); margin-top: 10px; padding-top: 10px; font-size: 13px; }
+.onb-painel__rodape a { color: var(--brand-text, var(--primary)); text-decoration: none; font-weight: 600; }
+.onb-link { background: none; border: 0; padding: 4px 0; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; }
+
+/* Passo a passo: acima dos formularios (z-index 2000) e abaixo dos avisos (3000). O escuro em volta sao 4 faixas
+   (uma sombra gigante no proprio destaque nao e desenhada em celulares de alta densidade). Nada bloqueia o toque. */
+.onb-veu {
+  position: fixed; z-index: 2599; pointer-events: none; background: rgba(10, 14, 20, .55);
+  transition: top .2s ease, left .2s ease, width .2s ease, height .2s ease;
+}
+.onb-foco {
+  position: fixed; z-index: 2600; pointer-events: none; border-radius: 12px;
+  box-shadow: 0 0 0 4px var(--brand, var(--primary));
+  transition: top .2s ease, left .2s ease, width .2s ease, height .2s ease;
+}
+.onb-balao {
+  position: fixed; z-index: 2601; background: var(--card); color: var(--text);
+  border: 1px solid var(--border); border-radius: 16px; padding: 14px 16px 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .28); transition: opacity .15s ease;
+}
+.onb-balao.is-esperando { opacity: 0; pointer-events: none; }
+.onb-balao__passo { display: block; color: var(--brand-text, var(--primary)); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; }
+.onb-balao__titulo { display: block; font-size: 16px; margin: 2px 0 4px; }
+.onb-balao p { margin: 0 0 12px; font-size: 14px; line-height: 1.5; color: var(--text); }
+.onb-balao__acoes { display: flex; align-items: center; gap: 8px; }
+.onb-balao__acoes span { flex: 1; }
+
+.onb-toast {
+  position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 3000;
+  max-width: calc(100vw - 32px); padding: 12px 16px; border-radius: 12px; font-size: 14px;
+  background: var(--text); color: var(--card); box-shadow: 0 10px 30px rgba(0, 0, 0, .25); transition: opacity .4s ease;
+}
+.onb-toast.is-saindo { opacity: 0; }
+
+/* Celular: acima da barra de baixo; o botao mostra so o icone e a contagem. */
+@media (max-width: 768px) {
+  .onb-lancador { right: 12px; bottom: calc(80px + env(safe-area-inset-bottom, 0px)); padding: 9px 11px; }
+  .onb-lancador__txt { display: none; }
+  .onb-painel { left: 8px; right: 8px; width: auto; max-width: none; bottom: calc(132px + env(safe-area-inset-bottom, 0px)); max-height: calc(100vh - 200px); }
+  .onb-toast { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 380px) {
+  .onb-item { grid-template-columns: 28px 1fr; }
+  .onb-item .btn { grid-column: 2; justify-self: start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .onb-veu, .onb-foco, .onb-barra span, .onb-balao, .onb-toast { transition: none; }
+}
+@media print {
+  .onb-lancador, .onb-painel, .onb-veu, .onb-foco, .onb-balao, .onb-toast { display: none !important; }
+}

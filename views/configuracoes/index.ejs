@@ -37,6 +37,18 @@
                 </div>
             </div>
 
+            <%# Pais da conta (independe do idioma): fuso do "hoje" e lei dos Termos. Trocar de pais pede aceitar os termos de la. %>
+            <div class="form-group">
+                <label for="pais"><%= t('config.pais') %></label>
+                <% const _l = String(lang || '').slice(0, 2) === 'es' ? 'es' : (String(lang || '').slice(0, 2) === 'en' ? 'en' : 'pt'); %>
+                <select class="input" id="pais" name="pais">
+                    <% Object.entries(config.paises).forEach(([codigo, p]) => { %>
+                        <option value="<%= codigo %>" <%= paisAtual === codigo ? 'selected' : '' %>><%= p.bandeira %> <%= p.nome[_l] %></option>
+                    <% }) %>
+                </select>
+                <small class="form-help"><%= t('config.pais_ajuda') %></small>
+            </div>
+
             <div class="form-group">
                 <label><%= t('config.tema') %></label>
                 <div class="tema-opcoes">

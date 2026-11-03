@@ -88,10 +88,12 @@
                 <span class="navbar__logo" aria-hidden="true"><i class="ph-fill ph-currency-circle-dollar"></i></span>
                 <span class="navbar__nome">MyFinance</span>
             </a>
+            <% if (usuarioLogado) { %><%# Nas telas de entrada (visitante) o selo "Conectado" nao diz nada a quem ainda nao tem conta. %>
             <div id="pwa-status-badge" class="pwa-status-badge" role="status" aria-live="polite">
                 <span class="pwa-status-dot"></span>
                 <span id="pwa-status-text" class="pwa-status-text"><%= t('pwa.online') %></span>
             </div>
+            <% } %>
             <button type="button" id="pwa-fila-btn" class="pwa-fila-btn" hidden aria-label="<%= t('off.fila_aria') %>" title="<%= t('off.fila_titulo') %>">
                 <i class="ph ph-clock-counter-clockwise"></i><span id="pwa-fila-n">0</span>
             </button>

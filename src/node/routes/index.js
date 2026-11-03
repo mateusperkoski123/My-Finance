@@ -113,6 +113,11 @@ router.post('/pagopar/resposta', cronLimiter, assinaturaController.webhookPagopa
 router.get('/guia', requireAuth, (req, res) => {
     res.render('guia/index', { title: req.t('guia.titulo'), secoes: require('../core/guia').montar(req.lang, { modulos: (req.ehAdmin || req.user.compras_habilitado) ? ['compras'] : [] }) });
 });
+// Primeiros passos: lista, passo a passo e o que ja foi feito (public/assets/js/onboarding.js)
+router.get('/onboarding/dados', requireAuth, async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    res.json(await require('../core/onboarding').dados(req.user, req.t));
+});
 // Teste gratis: escolher o plano do teste (uma vez) e trocar o plano enquanto o teste esta em andamento.
 router.get('/teste', requireAuth, assinaturaController.escolherTeste);
 router.post('/teste/iniciar', requireAuth, assinaturaController.iniciarTeste);
