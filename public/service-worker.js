@@ -189,14 +189,19 @@ self.addEventListener('fetch', (event) => {
 });
 
 // ---- Notificacoes push (lembretes de vencimento) ----
+// icon = moeda verde do app, ao lado do texto. badge = a mesma moeda em branco sobre fundo transparente: o Android usa
+// so a transparencia dele (barra de status e cabecalho); com o icone opaco do app ele mostrava um "M" generico.
+const ICONE_NOTIF = '/assets/icons/notif-icon-192.png';
+const BADGE_NOTIF = '/assets/icons/notif-badge-96.png';
+
 self.addEventListener('push', (event) => {
     let dados = {};
     try { dados = event.data ? event.data.json() : {}; } catch (e) { dados = {}; }
     // O servidor pode mandar botoes e vibracao (Financeiro); o icone e sempre o do app.
     const opcoes = {
         body: dados.body || '',
-        icon: '/assets/icons/icon-192.png',
-        badge: '/assets/icons/icon-192.png',
+        icon: ICONE_NOTIF,
+        badge: BADGE_NOTIF,
         tag: dados.tag || 'myfinance',
         renotify: true,
         timestamp: Date.now(),
@@ -219,8 +224,8 @@ async function acaoFinanceiro(acao, token, destino) {
         const r = await resp.json();
         await self.registration.showNotification(r.titulo || 'MyFinance', {
             body: r.mensagem || '',
-            icon: '/assets/icons/icon-192.png',
-            badge: '/assets/icons/icon-192.png',
+            icon: ICONE_NOTIF,
+            badge: BADGE_NOTIF,
             tag: 'financeiro-confirma'
         });
         await new Promise((ok) => setTimeout(ok, 6000));

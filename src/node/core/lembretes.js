@@ -5,7 +5,9 @@ const { t } = require('./i18n');
 const { moeda, descricaoLancamento } = require('./helpers');
 
 const FUSO_PADRAO = process.env.IA_TIMEZONE || 'America/Asuncion';
-const MAX_ITENS_NA_NOTIFICACAO = 3;
+// Itens listados no texto expandido da notificacao (o Android mostra a lista inteira ao tocar na seta).
+const MAX_ITENS_NA_NOTIFICACAO = 5;
+const MAX_NOME = 30;
 const LOTE = 10;
 
 function fusoValido(fuso) {
@@ -83,30 +85,66 @@ function totalTexto(lista, padrao) {
     return Object.keys(porMoeda).map((c) => moeda(porMoeda[c], c)).join(' + ');
 }
 
-// Monta a notificacao de uma data (ou null se nao ha nada). Cada item mostra nome e valor; ao final, os totais.
-// "atrasadas" (despesas vencidas e ainda pendentes) entram so na notificacao que as carrega.
+// Data de um lancamento como "AAAA-MM-DD" (o mysql2 devolve DATE como Date a meia-noite local, ou texto).
+function ymd(v) {
+    if (v instanceof Date) return `${v.getFullYear()}-${String(v.getMonth() + 1).padStart(2, '0')}-${String(v.getDate()).padStart(2, '0')}`;
+    return String(v || '').slice(0, 10);
+}
+
+function diasEntre(deYMD, ateYMD) {
+    const [a1, m1, d1] = deYMD.split('-').map(Number);
+    const [a2, m2, d2] = ateYMD.split('-').map(Number);
+    return Math.round((Date.UTC(a2, m2 - 1, d2) - Date.UTC(a1, m1 - 1, d1)) / 86400000);
+}
+
+function encurtar(txt) {
+    const s = String(txt || '').replace(/\s+/g, ' ').trim();
+    return s.length > MAX_NOME ? s.slice(0, MAX_NOME - 1).trimEnd() + '…' : s;
+}
+
+// Monta a notificacao de uma data (ou null se nao ha nada). "atrasadas" (despesas vencidas e ainda pendentes) entram so
+// na notificacao do dia. Formato (sem emojis):
+//   titulo  "Vence hoy: 2 a pagar, 1 a cobrar"  ou, so com atrasos, "4 pagos atrasados"
+//   linha 1 os totais, que e o que aparece com a notificacao fechada
+//   depois  ate 5 lancamentos "Pagar · Alquiler · Gs. 2.000.000 · 3 días de atraso" e "y N más", vistos ao expandir
 function montarNotificacao(itens, atrasadas, dataYMD, deslocamentoDias, { idioma, moeda: cod }) {
     const g = agrupar(itens);
     if (!itens.length && !atrasadas.length) return null;
     const tr = (k, p) => t(k, p, idioma);
-    const partes = [];
-    if (g.pagar.length) partes.push(tr('lembrete.parte_pagar', { n: g.pagar.length }));
-    if (g.receber.length) partes.push(tr('lembrete.parte_receber', { n: g.receber.length }));
-    if (g.transf.length) partes.push(tr('lembrete.parte_transf', { n: g.transf.length }));
-    if (atrasadas.length) partes.push(tr('lembrete.parte_atrasadas', { n: atrasadas.length }));
-    const titulo = tr(deslocamentoDias === 0 ? 'lembrete.t_hoje' : 'lembrete.t_amanha', { partes: partes.join(', ') });
+    const plural = (chave, n) => tr(n === 1 ? chave + '_1' : chave, { n });
 
+    let titulo;
     const linhas = [];
-    const todos = [
-        ...g.pagar.map((i) => [tr('lembrete.rot_pagar'), i.descricao, i.valor_abs, i.conta_moeda]),
-        ...g.receber.map((i) => [tr('lembrete.rot_receber'), i.descricao, i.valor_abs, i.conta_moeda]),
-        ...g.transf.map((i) => [tr('lembrete.rot_transf'), descricaoLancamento(i, (k) => tr(k)), i.valor_abs, i.conta_moeda])
+    if (itens.length) {
+        const partes = [];
+        if (g.pagar.length) partes.push(tr('lembrete.parte_pagar', { n: g.pagar.length }));
+        if (g.receber.length) partes.push(tr('lembrete.parte_receber', { n: g.receber.length }));
+        if (g.transf.length) partes.push(plural('lembrete.parte_transf', g.transf.length));
+        titulo = tr(deslocamentoDias === 0 ? 'lembrete.t_hoje' : 'lembrete.t_amanha', { partes: partes.join(', ') });
+        const totais = [];
+        if (g.pagar.length) totais.push(tr('lembrete.resumo_pagar', { valor: totalTexto(g.pagar, cod) }));
+        if (g.receber.length) totais.push(tr('lembrete.resumo_receber', { valor: totalTexto(g.receber, cod) }));
+        if (g.transf.length) totais.push(tr('lembrete.resumo_transf', { valor: totalTexto(g.transf, cod) }));
+        linhas.push(totais.join(' · '));
+        if (atrasadas.length) linhas.push(tr('lembrete.atrasadas', { n: atrasadas.length, valor: totalTexto(atrasadas, cod) }));
+    } else {
+        titulo = plural('lembrete.so_atrasadas', atrasadas.length);
+        linhas.push(tr('lembrete.resumo_atraso', { valor: totalTexto(atrasadas, cod) }));
+    }
+
+    // Os do dia primeiro (o titulo fala deles, maiores valores antes), depois os atrasados (os mais antigos antes).
+    const lista = [
+        ...g.pagar.map((i) => ({ i, rot: 'lembrete.rot_pagar' })),
+        ...g.receber.map((i) => ({ i, rot: 'lembrete.rot_receber' })),
+        ...g.transf.map((i) => ({ i, rot: 'lembrete.rot_transf', nome: descricaoLancamento(i, (k) => tr(k)) })),
+        ...atrasadas.map((i) => ({ i, rot: 'lembrete.rot_pagar', atraso: diasEntre(ymd(i.data_competencia), dataYMD) }))
     ];
-    // Ate 3 itens: lista cada um (nome e valor). Mais que isso: so a quantidade (no titulo) e os totais, sem listar.
-    if (todos.length <= MAX_ITENS_NA_NOTIFICACAO) todos.forEach(([rot, nome, valor, moedaItem]) => linhas.push(`${rot} ${nome}: ${moeda(valor, moedaItem || cod)}`));
-    if (g.pagar.length) linhas.push(tr('lembrete.total', { valor: totalTexto(g.pagar, cod) }));
-    if (g.receber.length) linhas.push(tr('lembrete.total_receber', { valor: totalTexto(g.receber, cod) }));
-    if (atrasadas.length) linhas.push(tr('lembrete.atrasadas', { n: atrasadas.length, valor: totalTexto(atrasadas, cod) }));
+    lista.slice(0, MAX_ITENS_NA_NOTIFICACAO).forEach(({ i, rot, nome, atraso }) => {
+        const campos = [tr(rot), encurtar(nome || i.descricao), moeda(i.valor_abs, i.conta_moeda || cod)];
+        if (atraso > 0) campos.push(tr(atraso === 1 ? 'painel.dia_atraso' : 'painel.dias_atraso', { n: atraso }));
+        linhas.push(campos.join(' · '));
+    });
+    if (lista.length > MAX_ITENS_NA_NOTIFICACAO) linhas.push(tr('lembrete.itens_mais', { n: lista.length - MAX_ITENS_NA_NOTIFICACAO }));
     return { title: titulo, body: linhas.join('\n'), url: `/lembretes/vencimentos?data=${dataYMD}`, tag: `vencimentos-${dataYMD}` };
 }
 

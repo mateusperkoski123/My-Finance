@@ -3,18 +3,26 @@ module.exports = {
     'config.menu.lembretes': ['Lembretes', 'Recordatorios', 'Reminders'],
 
     // ---- Texto das notificacoes ----
-    'lembrete.t_hoje': ['Hoje: {partes}', 'Hoy: {partes}', 'Today: {partes}'],
-    'lembrete.t_amanha': ['Amanhã: {partes}', 'Mañana: {partes}', 'Tomorrow: {partes}'],
+    // Titulo: o que vence no dia; so com atrasos, quantos estao atrasados
+    'lembrete.t_hoje': ['Vence hoje: {partes}', 'Vence hoy: {partes}', 'Due today: {partes}'],
+    'lembrete.t_amanha': ['Vence amanhã: {partes}', 'Vence mañana: {partes}', 'Due tomorrow: {partes}'],
     'lembrete.parte_pagar': ['{n} a pagar', '{n} a pagar', '{n} to pay'],
     'lembrete.parte_receber': ['{n} a receber', '{n} a cobrar', '{n} to receive'],
-    'lembrete.parte_transf': ['{n} transferência(s)', '{n} transferencia(s)', '{n} transfer(s)'],
-    'lembrete.parte_atrasadas': ['{n} atrasada(s)', '{n} atrasado(s)', '{n} overdue'],
+    'lembrete.parte_transf': ['{n} transferências', '{n} transferencias', '{n} transfers'],
+    'lembrete.parte_transf_1': ['1 transferência', '1 transferencia', '1 transfer'],
+    'lembrete.so_atrasadas': ['{n} contas atrasadas', '{n} pagos atrasados', '{n} overdue payments'],
+    'lembrete.so_atrasadas_1': ['1 conta atrasada', '1 pago atrasado', '1 overdue payment'],
+    // Primeira linha (a que aparece com a notificacao fechada): os totais
+    'lembrete.resumo_pagar': ['A pagar {valor}', 'A pagar {valor}', 'To pay {valor}'],
+    'lembrete.resumo_receber': ['A receber {valor}', 'A cobrar {valor}', 'To receive {valor}'],
+    'lembrete.resumo_transf': ['Transferir {valor}', 'Transferir {valor}', 'To transfer {valor}'],
+    'lembrete.resumo_atraso': ['Total em atraso: {valor}', 'Total en atraso: {valor}', 'Total overdue: {valor}'],
+    'lembrete.atrasadas': ['Atrasadas: {n} ({valor})', 'Atrasados: {n} ({valor})', 'Overdue: {n} ({valor})'],
+    // Lista ao expandir: "Pagar · Alquiler · Gs. 2.000.000" (ate 5) e quantos ficaram de fora
     'lembrete.rot_pagar': ['Pagar', 'Pagar', 'Pay'],
     'lembrete.rot_receber': ['Receber', 'Cobrar', 'Receive'],
-    'lembrete.rot_transf': ['Transf.', 'Transf.', 'Transfer'],
-    'lembrete.total_receber': ['Total a receber: {valor}', 'Total a cobrar: {valor}', 'Total to receive: {valor}'],
-    'lembrete.atrasadas': ['Atrasadas: {n} ({valor})', 'Atrasados: {n} ({valor})', 'Overdue: {n} ({valor})'],
-    'lembrete.total': ['Total a pagar: {valor}', 'Total a pagar: {valor}', 'Total to pay: {valor}'],
+    'lembrete.rot_transf': ['Transferir', 'Transferir', 'Transfer'],
+    'lembrete.itens_mais': ['e mais {n}. Toque para ver todos.', 'y {n} más. Tocá para ver todos.', 'and {n} more. Tap to see all.'],
     'lembrete.teste_titulo': ['Notificações ativadas', 'Notificaciones activadas', 'Notifications enabled'],
     'lembrete.teste_corpo': ['Você receberá aqui os avisos das despesas que vencem.', 'Recibirás aquí los avisos de los gastos que vencen.', 'You will get your due-expense alerts here.'],
 
