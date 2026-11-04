@@ -266,7 +266,8 @@ const authController = {
         // Pais escolhido na tela (cadastro) ou sugerido pelo fuso do navegador (login): vale se o Google criar a conta.
         const pais = normalizarPais(req.query.pais);
         if (pais) req.session.pais = pais;
-        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${state}`;
+        // "prompt=select_account": o Google sempre mostra a lista de contas, senao entra direto na ultima conta usada no navegador e nao da para trocar.
+        const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${scope}&state=${state}&prompt=select_account`;
         res.redirect(url);
     },
 
