@@ -2,7 +2,7 @@
 module.exports = {
     NOME_APP: process.env.APP_NAME || 'MyFinance',
     // Teste gratis: a pessoa escolhe o plano e usa esse plano por TRIAL_DIAS dias (uma vez so).
-    TRIAL_DIAS: 3,
+    TRIAL_DIAS: 7,
     // Promocao de Black Friday: quem comeca o teste neste periodo ganha mais dias (horario do Paraguai; o fim nao entra).
     // A landing repete o periodo em PROMO_TESTE (views/landing.ejs).
     TRIAL_PROMO: { dias: 10, inicio: '2026-11-20T00:00:00-03:00', fim: '2026-12-01T00:00:00-03:00' },

@@ -164,8 +164,8 @@ module.exports = {
     'painel.sobrou': ['Sobrou', 'Sobró', 'Left'],
     'painel.resumo_dica': ['Só o que já foi recebido e pago neste período.', 'Solo lo ya cobrado y pagado en este período.', 'Only what was already received and paid in this period.'],
     'painel.abrir': ['Abrir', 'Abrir', 'Open'],
-    'faixa.trial_curto': ['Teste: {dias} dia(s)', 'Prueba: {dias} día(s)', 'Trial: {dias} day(s)'],
-    'faixa.trial_curto_plano': ['Teste {plano}: {dias} dia(s)', 'Prueba {plano}: {dias} día(s)', '{plano} trial: {dias} day(s)'],
-    'faixa.confirmar_email_curto': ['confirme o e-mail', 'confirme su correo', 'confirm your e-mail'],
+    'faixa.trial_curto': ['Teste: {dias} {dias:dia|dias}', 'Prueba: {dias} {dias:día|días}', 'Trial: {dias} {dias:day|days}'],
+    'faixa.trial_curto_plano': ['Teste {plano}: {dias} {dias:dia|dias}', 'Prueba {plano}: {dias} {dias:día|días}', '{plano} trial: {dias} {dias:day|days}'],
+    'faixa.confirmar_email_curto': ['confirme o e-mail', 'confirmá tu correo', 'confirm your e-mail'],
     'contas.mais_acoes': ['Mais ações da conta', 'Más acciones de la cuenta', 'More account actions'],
 };

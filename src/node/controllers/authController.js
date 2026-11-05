@@ -156,6 +156,7 @@ const authController = {
         await User.registrarLogin(userId.id, { email, ip: req.ip, userAgent: req.get('User-Agent') }).catch(() => {});
         if (codigoOk && !codigoOk.erro) await User.salvarCodigoDesconto(userId.id, codigoOk.c.codigo);
         delete req.session.codigo_desconto;
+        await require('../core/origem').gravarNaConta(userId.id, req);
 
         req.session.idioma = idioma;
         await iniciarSessao(req, userId.id);
@@ -357,6 +358,7 @@ const authController = {
                 if (!v.erro) await User.salvarCodigoDesconto(user.id, v.c.codigo, true);
                 delete req.session.codigo_desconto;
             }
+            await require('../core/origem').gravarNaConta(user.id, req);
             const destino = await iniciarSessao(req, user.id);
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.google_bemvindo', { nome: user.nome }) };
             res.redirect(destino);

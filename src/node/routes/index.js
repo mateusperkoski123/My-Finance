@@ -150,6 +150,12 @@ router.post('/admin/usuarios/:id/compras', requireAuth, exigirAdmin, adminContro
 router.post('/admin/usuarios/:id/ia', requireAuth, exigirAdmin, adminController.alternarIa);
 router.post('/admin/usuarios/:id/arquivar', requireAuth, exigirAdmin, adminController.arquivar);
 router.get('/admin/arquivados', requireAuth, exigirAdmin, adminController.arquivados);
+// Funil de vendas (por origem do link de divulgacao) e erros do servidor guardados no banco
+const adminRelatoriosController = require('../controllers/adminRelatoriosController');
+router.get('/admin/funil', requireAuth, exigirAdmin, adminRelatoriosController.funil);
+router.get('/admin/erros', requireAuth, exigirAdmin, adminRelatoriosController.erros);
+router.post('/admin/erros/limpar', requireAuth, exigirAdmin, adminRelatoriosController.limparErros);
+router.post('/admin/erros/:id(\\d+)/apagar', requireAuth, exigirAdmin, adminRelatoriosController.apagarErro);
 router.post('/admin/usuarios/:id/desarquivar', requireAuth, exigirAdmin, adminController.desarquivar);
 router.post('/admin/usuarios/:id/excluir', requireAuth, exigirAdmin, adminController.excluirDefinitivo);
 

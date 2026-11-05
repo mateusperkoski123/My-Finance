@@ -22,17 +22,17 @@ const IDIOMAS = [
 const SEO = {
     'pt-BR': {
         titulo: 'MyFinance: controle financeiro com IA para contas e parcelas',
-        descricao: 'Organize contas, parcelas e gastos num só lugar. A IA registra por texto, foto ou voz. Teste grátis por 3 dias, sem cartão. Para Gs., R$, US$ e €.',
+        descricao: 'Organize contas, parcelas e gastos num só lugar. A IA registra por texto, foto ou voz. Teste grátis por 7 dias, sem cartão. Para Gs., R$, US$ e €.',
         imagemAlt: 'MyFinance: controle financeiro com inteligência artificial'
     },
     'es-PY': {
         titulo: 'MyFinance: control financiero con IA para cuentas y cuotas',
-        descricao: 'Organizá cuentas, cuotas y gastos en un solo lugar. La IA registra por texto, foto o voz. Probá gratis 3 días, sin tarjeta. Para Gs., R$, US$ y €.',
+        descricao: 'Organizá cuentas, cuotas y gastos en un solo lugar. La IA registra por texto, foto o voz. Probá gratis 7 días, sin tarjeta. Para Gs., R$, US$ y €.',
         imagemAlt: 'MyFinance: control financiero con inteligencia artificial'
     },
     'en-US': {
         titulo: 'MyFinance: personal finance tracker with AI',
-        descricao: 'Keep accounts, installments and spending in one place. AI records by text, photo or voice. Free 3-day trial, no card. Works in Gs., R$, US$ and €.',
+        descricao: 'Keep accounts, installments and spending in one place. AI records by text, photo or voice. Free 7-day trial, no card. Works in Gs., R$, US$ and €.',
         imagemAlt: 'MyFinance: personal finance control with artificial intelligence'
     }
 };

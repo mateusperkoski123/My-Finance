@@ -1,0 +1,83 @@
+<%
+const nf = (v) => Number(v || 0).toLocaleString(lang);
+const pct = (a, b) => (b ? Math.round((a / b) * 100) + '%' : '—');
+const T = f.total;
+const ICONES = { cadastros: 'ph-user-plus', testes: 'ph-gift', ativos: 'ph-receipt', pediram: 'ph-hand-coins', pagaram: 'ph-crown-simple' };
+const exemplo = 'https://myfinance.systempy.com/es/?utm_source=whatsapp&utm_campaign=grupo-emprendedores';
+%>
+<%- include('_abas', { abaAdmin: 'funil' }) %>
+
+<style>
+.funil-periodos { margin: 4px 0 4px; }
+.funil-etapas { display: flex; flex-direction: column; gap: 10px; }
+.funil-etapa { display: grid; grid-template-columns: minmax(150px, 230px) 1fr 110px; align-items: center; gap: 12px; font-size: 14px; }
+.funil-etapa__nome { display: flex; align-items: center; gap: 8px; }
+.funil-etapa__nome i { color: var(--brand-text, var(--primary)); }
+.funil-etapa__barra { height: 14px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.funil-etapa__barra span { display: block; height: 100%; border-radius: inherit; background: var(--brand, var(--primary)); }
+.funil-etapa__num { text-align: right; font-variant-numeric: tabular-nums; }
+.funil-etapa__num small { color: var(--muted); margin-left: 6px; }
+.funil-exemplo { display: block; padding: 10px 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); font-size: 13px; overflow-wrap: anywhere; margin: 8px 0; }
+@media (max-width: 600px) { .funil-etapa { grid-template-columns: 1fr 90px; } .funil-etapa__barra { grid-column: 1 / -1; grid-row: 2; } }
+</style>
+
+<div class="page-header">
+    <h1><i class="ph ph-funnel"></i> <%= t('fun.titulo') %></h1>
+    <p class="muted"><%= t('fun.subtitulo') %></p>
+</div>
+
+<div class="seg funil-periodos" role="group">
+    <% periodos.forEach((d) => { %>
+        <a href="/admin/funil?dias=<%= d %>" class="<%= d === f.dias ? 'is-on' : '' %>"><%= t('fun.periodo', { dias: d }) %></a>
+    <% }) %>
+</div>
+
+<section class="card adm-secao">
+    <h2 class="adm-secao__titulo"><i class="ph ph-chart-bar-horizontal"></i> <%= t('fun.total', { dias: f.dias }) %></h2>
+    <% if (!T.cadastros) { %>
+        <p class="muted" style="margin: 0;"><%= t('fun.vazio') %></p>
+    <% } else { %>
+    <div class="funil-etapas">
+        <% etapas.forEach((e) => { %>
+            <div class="funil-etapa">
+                <span class="funil-etapa__nome"><i class="ph <%= ICONES[e] %>"></i> <%= t('fun.etapa.' + e) %></span>
+                <span class="funil-etapa__barra" aria-hidden="true"><span style="width: <%= Math.round((T[e] / T.cadastros) * 100) %>%"></span></span>
+                <span class="funil-etapa__num"><b><%= nf(T[e]) %></b><small><%= pct(T[e], T.cadastros) %></small></span>
+            </div>
+        <% }) %>
+    </div>
+    <p class="muted" style="margin: 12px 0 0; font-size: 13px;"><%= t('fun.ativos_dica') %></p>
+    <% } %>
+</section>
+
+<% if (T.cadastros) { %>
+<section class="card adm-secao">
+    <h2 class="adm-secao__titulo"><i class="ph ph-link"></i> <%= t('fun.por_origem') %></h2>
+    <div class="tabela-container">
+        <table class="tabela adm-tabela">
+            <thead><tr>
+                <th><%= t('fun.origem') %></th><th><%= t('fun.campanha') %></th>
+                <% etapas.forEach((e) => { %><th class="num" title="<%= t('fun.etapa.' + e) %>"><%= t('fun.col.' + e) %></th><% }) %>
+                <th class="num" title="<%= t('fun.conversao_dica') %>"><%= t('fun.conversao') %></th>
+            </tr></thead>
+            <tbody>
+            <% f.grupos.forEach((g) => { %>
+                <tr>
+                    <td><% if (g.origem) { %><b><%= g.origem %></b><% } else { %><span class="muted" title="<%= t('fun.direto_dica') %>"><%= t('fun.direto') %></span><% } %></td>
+                    <td><%= g.campanha || '—' %></td>
+                    <% etapas.forEach((e) => { %><td class="num"><%= nf(g[e]) %></td><% }) %>
+                    <td class="num"><b><%= pct(g.pagaram, g.cadastros) %></b></td>
+                </tr>
+            <% }) %>
+            </tbody>
+        </table>
+    </div>
+</section>
+<% } %>
+
+<section class="card adm-secao">
+    <h2 class="adm-secao__titulo"><i class="ph ph-tag"></i> <%= t('fun.como_titulo') %></h2>
+    <p style="margin: 0;"><%= t('fun.como_texto') %></p>
+    <code class="funil-exemplo"><%= exemplo %></code>
+    <p class="muted" style="margin: 0; font-size: 13px;"><%= t('fun.como_dica') %></p>
+</section>

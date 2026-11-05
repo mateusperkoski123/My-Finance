@@ -1,0 +1,58 @@
+<%- include('_abas', { abaAdmin: 'erros' }) %>
+
+<style>
+.erros-lista { display: flex; flex-direction: column; gap: 12px; }
+.erro-item { padding: 14px 16px; border-radius: 14px; }
+.erro-item__topo { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.erro-item__msg { font-weight: 700; overflow-wrap: anywhere; }
+.erro-item__meta { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; color: var(--muted); font-size: 13px; }
+.erro-item__meta code { overflow-wrap: anywhere; }
+.erro-item details { margin-top: 8px; font-size: 13px; }
+.erro-item pre { margin: 8px 0 0; padding: 10px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); overflow-x: auto; font-size: 12px; white-space: pre; }
+</style>
+
+<div class="page-header page-header--acoes">
+    <div>
+        <h1><i class="ph ph-bug"></i> <%= t('err.titulo') %></h1>
+        <p class="muted"><%= t('err.subtitulo', { dias: diasGuardados }) %></p>
+    </div>
+    <% if (erros.length) { %>
+    <form method="post" action="/admin/erros/limpar" data-confirm="<%= t('err.limpar_confirmar') %>">
+        <%- csrfCampo %>
+        <button type="submit" class="btn btn-outline btn-sm"><i class="ph ph-trash"></i> <%= t('err.limpar') %></button>
+    </form>
+    <% } %>
+</div>
+
+<% if (!erros.length) { %>
+    <section class="card adm-secao"><p class="muted" style="margin: 0;"><i class="ph ph-check-circle"></i> <%= t('err.vazio') %></p></section>
+<% } else { %>
+<div class="erros-lista">
+    <% erros.forEach((e) => { %>
+    <article class="card erro-item">
+        <div class="erro-item__topo">
+            <div style="min-width: 0;">
+                <div class="erro-item__msg"><%= e.mensagem %></div>
+                <div class="erro-item__meta">
+                    <span><i class="ph ph-repeat"></i> <b><%= t('err.ocorrencias', { n: e.ocorrencias }) %></b></span>
+                    <span><%= t('err.ultimo', { data: formatDateTime(e.ultimo_em) }) %></span>
+                    <span><%= t('err.primeiro', { data: formatDateTime(e.primeiro_em) }) %></span>
+                    <% if (e.rota) { %><span><code><%= e.metodo %> <%= e.rota %></code></span><% } else { %><span><%= t('err.sem_rota') %></span><% } %>
+                    <% if (e.user_email) { %><span><%= t('err.usuario', { email: e.user_email }) %></span><% } %>
+                </div>
+            </div>
+            <form method="post" action="/admin/erros/<%= e.id %>/apagar">
+                <%- csrfCampo %>
+                <button type="submit" class="btn btn-outline btn-sm" title="<%= t('err.apagar') %>"><i class="ph ph-trash"></i> <%= t('err.apagar') %></button>
+            </form>
+        </div>
+        <% if (e.stack) { %>
+        <details>
+            <summary><%= t('err.detalhe') %></summary>
+            <pre><%= e.stack %></pre>
+        </details>
+        <% } %>
+    </article>
+    <% }) %>
+</div>
+<% } %>

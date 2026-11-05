@@ -137,8 +137,11 @@
         }
     }
 
+    // Plano sem registro offline (Basico) ou conta sem plano: o servidor recusa a sincronizacao (403), entao nem tenta.
+    function planoSincroniza() { return !(window.GF_OFF && window.GF_OFF.offline === false); }
+
     async function executarSincronizacao() {
-        if (!dbDisponivel() || !navigator.onLine || emAndamento) return;
+        if (!dbDisponivel() || !navigator.onLine || emAndamento || !planoSincroniza()) return;
         emAndamento = true;
         try {
             const token = await garantirToken();

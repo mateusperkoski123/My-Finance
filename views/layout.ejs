@@ -361,7 +361,7 @@ window.GF_INSTALAR_T = {
     pergunta: <%- JSON.stringify(t('pwa.pergunta_instalar')) %>, sim: <%- JSON.stringify(t('pwa.sim')) %>, nao: <%- JSON.stringify(t('pwa.nao')) %>,
     dica_ios: <%- JSON.stringify(t('pwa.instalar_dica_ios')) %>, entendi: <%- JSON.stringify(t('pwa.entendi')) %>, instalado_toast: <%- JSON.stringify(t('pwa.instalado_toast')) %>
 };
-window.GF_OFF = { moeda: <%- JSON.stringify(currency || '') %>, lang: <%- JSON.stringify(lang) %>, offline: <%- (typeof pode === 'function' && pode('rec_offline')) ? 'true' : 'false' %> };
+window.GF_OFF = { moeda: <%- JSON.stringify(currency || '') %>, lang: <%- JSON.stringify(lang) %>, offline: <%- (typeof pode === 'function' && pode('rec_offline') && !_bloq) ? 'true' : 'false' %> };
 window.GF_OFF_T = {
     "conectado": <%- JSON.stringify(t('pwa.online')) %>,
     "sem_conexao": <%- JSON.stringify(t('pwa.offline')) %>,

@@ -97,6 +97,8 @@ app.use(
         }
     })
 );
+// Origem do cadastro (utm_* do link de divulgacao), para o funil do admin.
+app.use(require('./src/node/core/origem').capturar);
 
 // EJS setup & Layouts
 app.set('views', path.join(__dirname, 'views'));
@@ -249,9 +251,17 @@ app.use((req, res) => {
 });
 
 // Production Error handler (500)
+// Os erros tambem ficam guardados no banco (Admin > Erros), porque o log da hospedagem zera a cada deploy.
+const ErroSistema = require('./src/node/models/ErroSistema');
 app.use((err, req, res, next) => {
     console.error('Unhandled Application Error:', err);
+    ErroSistema.registrar(err, req);
     res.status(500).render('500', { title: res.locals.t ? res.locals.t('erro500.titulo') : 'Erro no Servidor' });
+});
+// Promessa rejeitada fora de uma requisicao (agendadores, envios em segundo plano): registra e mantem o servidor no ar.
+process.on('unhandledRejection', (motivo) => {
+    console.error('Unhandled Rejection:', motivo);
+    ErroSistema.registrar(motivo, null);
 });
 
 // Inicializacao: aplica migrations pendentes (tolerante e com trava), promove admins por

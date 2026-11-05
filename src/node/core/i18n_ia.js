@@ -44,7 +44,7 @@ module.exports = {
     'admin.ia_desligada': ['IA desligada', 'IA deshabilitada', 'AI off'],
     'admin.ia_nivel1': ['IA nível 1', 'IA nivel 1', 'AI level 1'],
     'ia.erro_texto': ['Escreva uma mensagem de até {n} caracteres.', 'Escribí un mensaje de hasta {n} caracteres.', 'Write a message of up to {n} characters.'],
-    'ia.erro_plano': ['O Chat IA não está incluído no seu plano. Veja os planos disponíveis.', 'El Chat IA no está incluido en su plan. Vea los planes disponibles.', 'AI Chat is not included in your plan. See the available plans.'],
+    'ia.erro_plano': ['O Chat IA não está incluído no seu plano. Veja os planos disponíveis.', 'El Chat IA no está incluido en tu plan. Mirá los planes disponibles.', 'AI Chat is not included in your plan. See the available plans.'],
     'ia.erro_plano_midia': ['Registrar por foto e áudio faz parte do Plano Premium e do Plano Pro.', 'Registrar por foto y audio forma parte del Plan Premium y del Plan Pro.', 'Recording by photo and voice is part of the Premium and Pro plans.'],
     'ia.erro_limite_mes': ['Você atingiu o limite de mensagens deste mês.', 'Alcanzaste el límite de mensajes de este mes.', 'You reached this month\'s message limit.'],
     'ia.erro_limite_rapido': ['Muitas mensagens seguidas. Aguarde alguns minutos.', 'Demasiados mensajes seguidos. Esperá unos minutos.', 'Too many messages in a row. Please wait a few minutes.'],

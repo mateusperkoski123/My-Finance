@@ -792,7 +792,7 @@ const esPY = {
     'flash.lancamento_marcado_pago': '¡Movimiento marcado como pagado/cobrado!'
 };
 
-const extra = Object.assign({}, require('./i18n_extra'), require('./i18n_assinatura'), require('./i18n_comunidade'), require('./i18n_ia'), require('./i18n_lembretes'), require('./i18n_financeiro'), require('./i18n_extrato'), require('./i18n_moedas'), require('./i18n_clientes'), require('./i18n_compras'), require('./i18n_cartoes'), require('./i18n_categorias'), require('./i18n_limites'), require('./i18n_onboarding'));
+const extra = Object.assign({}, require('./i18n_extra'), require('./i18n_assinatura'), require('./i18n_comunidade'), require('./i18n_ia'), require('./i18n_lembretes'), require('./i18n_financeiro'), require('./i18n_extrato'), require('./i18n_moedas'), require('./i18n_clientes'), require('./i18n_compras'), require('./i18n_cartoes'), require('./i18n_categorias'), require('./i18n_limites'), require('./i18n_onboarding'), require('./i18n_admin_relatorios'));
 const enUS = require('./i18n_en');
 
 // Mescla as chaves adicionais ([pt, es, en]) nos tres dicionarios.
@@ -809,9 +809,11 @@ function dicionario(lang) {
     return ptBR;
 }
 
+// Plural nos textos: {dias:dia|dias} vira "dia" quando o parametro dias vale 1 e "dias" nos outros casos.
 function t(key, params = {}, lang = 'pt-BR') {
     let text = dicionario(lang)[key] || ptBR[key] || key;
     if (params && typeof params === 'object') {
+        text = text.replace(/\{(\w+):([^|{}]*)\|([^{}]*)\}/g, (m, k, um, varios) => (k in params ? (Number(params[k]) === 1 ? um : varios) : m));
         for (const [k, v] of Object.entries(params)) {
             text = text.replace(new RegExp(`{${k}}`, 'g'), () => String(v));
         }
