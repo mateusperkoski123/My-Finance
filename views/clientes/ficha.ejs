@@ -13,6 +13,7 @@
     <div class="page-header__botoes">
         <button type="button" class="btn btn-outline" data-modal-open="modal-editar-cliente"><i class="ph ph-pencil-simple"></i> <%= t('clientes.editar') %></button>
         <% if (cliente.status === 'ativo') { %>
+        <a class="btn btn-outline" href="/clientes/vendas/nova?cliente=<%= cliente.id %>"><i class="ph ph-shopping-bag"></i> <%= t('vendas.nova') %></a>
         <button type="button" class="btn btn-primary" data-modal-open="modal-novo-contrato"><i class="ph ph-plus-circle"></i> <%= t('clientes.novo_contrato') %></button>
         <% } %>
         <details class="menu-acoes">
@@ -136,6 +137,17 @@
     </div>
 </div>
 <% } %>
+<% }) %>
+
+<h2 class="clientes-subtitulo"><%= t('vendas.compras_do_cliente') %><% if (totalVendas > vendas.length) { %> <span class="muted" style="font-size: 13px; font-weight: 400;"><%= t('vendas.ultimas_n', { n: vendas.length, total: totalVendas }) %></span><% } %></h2>
+<% if (!vendas.length) { %>
+    <div class="card placeholder-card">
+        <p class="muted" style="margin: 0 0 12px;"><%= t('vendas.sem_compras') %></p>
+        <% if (cliente.status === 'ativo') { %><a class="btn btn-outline btn-sm" href="/clientes/vendas/nova?cliente=<%= cliente.id %>"><i class="ph ph-shopping-bag"></i> <%= t('vendas.nova') %></a><% } %>
+    </div>
+<% } %>
+<% vendas.forEach(function (v) { %>
+<%- include('_venda_card', { venda: v, voltar: _voltar, hoje }) %>
 <% }) %>
 
 <%- include('_modal_cliente', { idModal: 'modal-editar-cliente', acao: '/clientes/' + cliente.id + '/atualizar', titulo: t('clientes.editar'), cliente: cliente }) %>

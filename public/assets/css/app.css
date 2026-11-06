@@ -3243,6 +3243,128 @@ a.navbar__avatar { text-decoration: none; }
     .cuotas-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
 }
 
+/* ---- Modulo Clientes: venda de produtos (produtos com foto, nova venda, cartao da venda) ---- */
+.erro-campo { color: var(--red); font-size: 13px; font-weight: 600; margin: 6px 0 0; }
+.erro-campo[hidden] { display: none; }
+.is-negativo { color: var(--red); }
+.produtos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.produto-card { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.produto-card__foto { position: relative; aspect-ratio: 4 / 3; background: var(--bg); display: flex; align-items: center; justify-content: center; border-bottom: 1px solid var(--border); }
+.produto-card__foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.produto-card__foto > .ph { font-size: 44px; color: var(--muted); }
+.produto-card__selo { position: absolute; top: 8px; left: 8px; }
+.produto-card__corpo { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px 4px; flex: 1; }
+.produto-card__nome { font-size: 15px; overflow-wrap: anywhere; }
+.produto-card__preco { font-size: 18px; font-weight: 700; }
+.produto-card__linha { font-size: 13px; }
+.produto-card__acoes { display: flex; gap: 6px; flex-wrap: wrap; padding: 10px 14px 14px; }
+.produto-card__acoes .btn-primary { flex: 1; justify-content: center; }
+.produtos-busca { flex-wrap: nowrap; }
+.produtos-busca .input { flex: 1; min-width: 0; }
+.produto-foto-campo { display: flex; gap: 14px; align-items: center; margin-bottom: 14px; }
+.produto-foto-campo__previa { width: 96px; height: 96px; flex-shrink: 0; border-radius: 12px; border: 1px dashed var(--border); background: var(--bg); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.produto-foto-campo__previa img { width: 100%; height: 100%; object-fit: cover; }
+.produto-foto-campo__previa .ph { font-size: 32px; color: var(--muted); }
+.produto-foto-campo__botoes { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
+.produto-foto-campo__remover { display: flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.produto-foto-campo__remover[hidden] { display: none; }
+.produto-check { display: flex; align-items: flex-start; gap: 10px; margin: 4px 0 12px; cursor: pointer; font-size: 14px; }
+.produto-check input { margin-top: 3px; flex-shrink: 0; width: 18px; height: 18px; }
+.produto-check[hidden], #produto-estoque-campos[hidden], #venda-prazo[hidden] { display: none; }
+.produto-margem--negativa { color: var(--red); }
+
+.venda-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; align-items: start; }
+.venda-principal, .venda-lateral { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.venda-lateral { position: sticky; top: 12px; }
+.venda-secao { padding: 16px; }
+.venda-secao__titulo { font-size: 16px; margin: 0 0 12px; display: flex; align-items: center; gap: 4px; }
+.venda-cliente-escolhido { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 12px; border-radius: 10px; background: var(--brand-soft, var(--bg)); border: 1px solid var(--brand-line, var(--border)); }
+.venda-cliente-escolhido[hidden], #venda-cliente-busca[hidden] { display: none; }
+.venda-cliente-escolhido .ph { font-size: 22px; }
+.venda-cliente-escolhido strong { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.venda-busca-linha { display: flex; gap: 8px; }
+.venda-busca-linha .input { flex: 1; min-width: 0; }
+.venda-cliente-resultados { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; max-height: 260px; overflow-y: auto; }
+.venda-cliente-opcao { display: flex; justify-content: space-between; gap: 10px; text-align: left; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--card); color: var(--text); font: inherit; cursor: pointer; }
+.venda-cliente-opcao:hover, .venda-cliente-opcao:focus-visible { border-color: var(--primary); }
+.venda-produtos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.venda-produto { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 0 0 10px; text-align: left; border: 1px solid var(--border); border-radius: 12px; background: var(--card); color: var(--text); font: inherit; cursor: pointer; overflow: hidden; }
+.venda-produto[hidden] { display: none; }
+.venda-produto:hover { border-color: var(--primary); }
+.venda-produto:disabled { opacity: .5; cursor: not-allowed; }
+.venda-produto.is-no-carrinho { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.venda-produto__foto { aspect-ratio: 1 / 1; background: var(--bg); display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+.venda-produto__foto img { width: 100%; height: 100%; object-fit: cover; }
+.venda-produto__foto .ph { font-size: 34px; color: var(--muted); }
+.venda-produto__nome, .venda-produto__preco, .venda-produto__estoque { padding: 0 10px; }
+.venda-produto__nome { font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.venda-produto__preco { font-size: 14px; font-weight: 700; }
+.venda-produto__estoque { font-size: 12px; }
+.venda-produto__qtd { position: absolute; top: 6px; right: 6px; min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: var(--primary); color: var(--primary-text); font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.venda-produto__qtd[hidden] { display: none; }
+.venda-carrinho { display: flex; flex-direction: column; gap: 10px; }
+.venda-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border: 1px solid var(--border); border-radius: 12px; }
+.venda-item.is-erro { border-color: var(--red); background: var(--red-bg); }
+.venda-item__foto { width: 48px; height: 48px; flex-shrink: 0; border-radius: 8px; background: var(--bg); display: inline-flex; align-items: center; justify-content: center; overflow: hidden; }
+.venda-item__foto img { width: 100%; height: 100%; object-fit: cover; }
+.venda-item__foto .ph { font-size: 22px; color: var(--muted); }
+.venda-item__foto--p { width: 36px; height: 36px; border-radius: 6px; }
+.venda-item__foto--p .ph { font-size: 18px; }
+.venda-item__info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.venda-item__nome { font-size: 14px; overflow-wrap: anywhere; }
+.venda-item__linha { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.venda-item__preco { flex: 1; min-width: 110px; }
+.venda-item__rodape { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.venda-item__aviso { color: var(--red); font-weight: 600; }
+.venda-item__remover { background: none; border: 0; color: var(--muted); cursor: pointer; padding: 4px; font-size: 18px; }
+.venda-item__remover:hover { color: var(--red); }
+.venda-qtd { display: inline-flex; align-items: center; gap: 4px; }
+.venda-qtd .btn { padding: 6px 8px; }
+.venda-qtd__campo { width: 64px; text-align: center; padding-left: 4px; padding-right: 4px; }
+.venda-totais { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--border); display: grid; gap: 6px; }
+.venda-totais[hidden] { display: none; }
+.venda-totais div { display: flex; justify-content: space-between; gap: 12px; }
+.venda-totais dt { color: var(--muted); }
+.venda-totais dd { margin: 0; font-weight: 700; text-align: right; }
+.venda-totais div:first-child dd { font-size: 20px; }
+.venda-formas { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+.venda-forma { display: flex; gap: 8px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+.venda-forma:has(input:checked) { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.venda-forma input { margin-top: 3px; flex-shrink: 0; }
+.venda-forma span { display: flex; flex-direction: column; gap: 2px; }
+.venda-forma small { font-size: 12px; line-height: 1.35; }
+.venda-parcelas-previa { font-size: 13px; margin: 0 0 12px; }
+.venda-parcelas-previa:empty { display: none; }
+.venda-confirmar { width: 100%; justify-content: center; margin-top: 4px; }
+.venda-card__titulo { font-size: 16px; }
+.venda-itens { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.venda-itens li, .venda-top__lista li { display: flex; align-items: center; gap: 10px; }
+.venda-itens__nome { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.venda-itens__qtd { font-size: 13px; white-space: nowrap; }
+.venda-itens__sub { white-space: nowrap; }
+.venda-card__totais { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+.venda-top { padding: 16px; margin-bottom: 16px; }
+.venda-top__lista { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.venda-tabela__itens { max-width: 320px; overflow-wrap: anywhere; font-size: 13px; }
+@media (max-width: 900px) {
+    .venda-layout { grid-template-columns: 1fr; }
+    .venda-lateral { position: static; }
+}
+@media (max-width: 768px) {
+    .produtos-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+    .produto-card__preco { font-size: 16px; }
+    .produto-card__acoes { padding: 8px 10px 12px; }
+    .produto-card__acoes .btn-primary { flex-basis: 100%; }
+    .produto-card__corpo { padding: 10px 10px 4px; }
+    .venda-produtos { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); }
+    .venda-formas { grid-template-columns: 1fr; }
+    .so-desktop { display: none; }
+    .venda-itens li { flex-wrap: wrap; }
+    .venda-itens__nome { flex-basis: calc(100% - 46px); }
+    .venda-itens__qtd { margin-left: 46px; }
+    .venda-itens__sub { margin-left: auto; }
+}
+
 .periodo-atalhos { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 16px; }
 
 /* ---- Modulo Compras (lista de compras) ---- */

@@ -90,6 +90,7 @@
     </select>
     <select class="input" name="servico" aria-label="<%= t('clientes.filtro_servico') %>">
         <option value=""><%= t('clientes.todos_servicos') %></option>
+        <option value="vendas" <%= filtro.servico === 'vendas' ? 'selected' : '' %>><%= t('vendas.filtro_vendas') %></option>
         <% servicos.forEach(function (s) { %><option value="<%= s.id %>" <%= filtro.servico === s.id ? 'selected' : '' %>><%= s.nome %></option><% }) %>
     </select>
     <button type="submit" class="btn btn-primary"><i class="ph ph-funnel"></i> <%= t('clientes.filtrar') %></button>
@@ -118,13 +119,24 @@
         <% cuotas.forEach(function (c) {
             const pago = c.status === 'pago';
             const atraso = !pago ? _atraso(c.venc) : 0;
-            const resumoPagar = c.cliente_nome + ' · ' + c.servico_nome + ' · ' + moeda(c.valor, c.moeda);
+            // Parcela de venda de produtos: "Venda #12 · Camiseta ×3" no lugar do nome do servico.
+            const _ehVenda = Boolean(c.venda_id);
+            const _nomeItem = _ehVenda ? t('vendas.venda_n', { n: c.venda_numero }) + ' · ' + c.venda_resumo : c.servico_nome;
+            const _parcela = _ehVenda
+                ? (Number(c.cuotas_total) > 1 ? c.cuota_num + '/' + c.cuotas_total : '')
+                : (c.cuotas_total ? (c.cuota_num + '/' + c.cuotas_total) : ('#' + c.cuota_num));
+            const resumoPagar = c.cliente_nome + ' · ' + _nomeItem + ' · ' + moeda(c.valor, c.moeda);
             // Cobranca pelo WhatsApp: mensagem no idioma da conta; so aparece com celular utilizavel e parcela em aberto.
-            const _waTexto = pago ? '' : t(atraso > 0 ? 'clientes.wa_vencida' : 'clientes.wa_pendente', {
-                nome: String(c.cliente_nome).trim().split(/\s+/)[0], servico: c.servico_nome,
-                parcela: c.cuotas_total ? (c.cuota_num + '/' + c.cuotas_total) : ('#' + c.cuota_num),
-                valor: moeda(c.valor, c.moeda), data: formatDate(c.venc, 'DD/MM/YYYY')
-            });
+            const _waTexto = pago ? '' : (_ehVenda
+                ? t(atraso > 0 ? 'vendas.wa_vencida' : 'vendas.wa_pendente', {
+                    nome: String(c.cliente_nome).trim().split(/\s+/)[0], itens: c.venda_resumo,
+                    parcela: _parcela ? ' (' + t('vendas.parcela_x', { p: _parcela }) + ')' : '',
+                    valor: moeda(c.valor, c.moeda), data: formatDate(c.venc, 'DD/MM/YYYY')
+                })
+                : t(atraso > 0 ? 'clientes.wa_vencida' : 'clientes.wa_pendente', {
+                    nome: String(c.cliente_nome).trim().split(/\s+/)[0], servico: c.servico_nome, parcela: _parcela,
+                    valor: moeda(c.valor, c.moeda), data: formatDate(c.venc, 'DD/MM/YYYY')
+                }));
             const _wa = pago ? '' : linkWhatsapp(c.celular, _waTexto);
             const _waApp = pago ? '' : linkWhatsappApp(c.celular, _waTexto);
         %>
@@ -134,7 +146,10 @@
                     <a href="/clientes/<%= c.cliente_id %>"><strong><%= c.cliente_nome %></strong></a>
                     <% if (c.celular) { %><div class="muted" style="font-size: 12px;"><i class="ph ph-phone"></i> <%= c.celular %></div><% } %>
                 </td>
-                <td><%= c.servico_nome %> <span class="muted">· <%= c.cuotas_total ? (c.cuota_num + '/' + c.cuotas_total) : ('#' + c.cuota_num) %></span></td>
+                <td>
+                    <% if (_ehVenda) { %><a href="/clientes/vendas/<%= c.venda_id %>"><i class="ph ph-shopping-bag"></i> <%= _nomeItem %></a><% } else { %><%= _nomeItem %><% } %>
+                    <% if (_parcela) { %><span class="muted">· <%= _parcela %></span><% } %>
+                </td>
                 <td class="tabela__num"><%= moeda(c.valor, c.moeda) %></td>
                 <td>
                     <% if (pago) { %><span class="badge badge-sucesso"><%= t('clientes.st_paga') %><% if (c.pago_em) { %> · <%= formatDate(c.pago_em, 'DD/MM/YYYY') %><% } %></span>

@@ -4,7 +4,7 @@ module.exports = {
 
     // ---- Geral ----
     'clientes.titulo': ['Clientes', 'Clientes', 'Clients'],
-    'clientes.subtitulo': ['Controle quem já pagou as parcelas dos serviços que você vende.', 'Controlá quién ya pagó las cuotas de los servicios que vendés.', 'Track who has already paid the installments for the services you sell.'],
+    'clientes.subtitulo': ['Controle quem já pagou as parcelas dos serviços e produtos que você vende.', 'Controlá quién ya pagó las cuotas de los servicios y productos que vendés.', 'Track who has already paid the installments for the services and products you sell.'],
     'clientes.aba_cobrancas': ['Cobranças', 'Cobranzas', 'Collections'],
     'clientes.aba_clientes': ['Clientes', 'Clientes', 'Clients'],
     'clientes.aba_servicos': ['Serviços', 'Servicios', 'Services'],
@@ -112,7 +112,7 @@ module.exports = {
     'clientes.flash_inativado': ['Cliente marcado como inativo.', 'Cliente marcado como inactivo.', 'Client marked as inactive.'],
     'clientes.flash_reativado': ['Cliente reativado.', 'Cliente reactivado.', 'Client reactivated.'],
     'clientes.excluir': ['Excluir cliente', 'Eliminar cliente', 'Delete client'],
-    'clientes.excluir_ajuda': ['Isso apaga o cliente, os contratos e as parcelas pendentes. Quem já pagou alguma parcela não pode ser excluído: marque como inativo.', 'Esto borra el cliente, los contratos y las cuotas pendientes. Quien ya pagó alguna cuota no se puede eliminar: marcalo como inactivo.', 'This deletes the client, the contracts and the pending installments. A client who already paid an installment cannot be deleted: mark as inactive instead.'],
+    'clientes.excluir_ajuda': ['Isso apaga o cliente, os contratos, as vendas de produtos (o estoque volta) e as parcelas pendentes. Quem já pagou alguma parcela não pode ser excluído: marque como inativo.', 'Esto borra el cliente, los contratos, las ventas de productos (el stock vuelve) y las cuotas pendientes. Quien ya pagó alguna cuota no se puede eliminar: marcalo como inactivo.', 'This deletes the client, the contracts, the product sales (stock is restored) and the pending installments. A client who already paid an installment cannot be deleted: mark as inactive instead.'],
     'clientes.erro_excluir_pagas': ['Este cliente já pagou parcelas e não pode ser excluído. Marque como inativo.', 'Este cliente ya pagó cuotas y no se puede eliminar. Marcalo como inactivo.', 'This client already paid installments and cannot be deleted. Mark as inactive instead.'],
     'clientes.selecionar_todos': ['Selecionar todos', 'Seleccionar todos', 'Select all'],
     'clientes.selecionar': ['Selecionar cliente', 'Seleccionar cliente', 'Select client'],

@@ -221,6 +221,28 @@ router.post('/clientes/excluir-lote', requireAuth, exigirClientes, clientesContr
 router.post('/clientes/contratos/:id/atualizar', requireAuth, exigirClientes, clientesController.atualizarContrato);
 router.post('/clientes/contratos/:id/cancelar', requireAuth, exigirClientes, clientesController.cancelarContrato);
 router.post('/clientes/cuotas/:id/pagar', requireAuth, exigirClientes, clientesController.pagarCuota);
+// Venda de produtos (dentro de Clientes): produtos com foto/estoque/custo e vendas a vista ou parceladas.
+const vendasController = require('../controllers/vendasController');
+const uploadProduto = (req, res, next) => {
+    multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024, files: 1, fields: 20 } }).single('foto')(req, res, (err) => {
+        if (err) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t(err.code === 'LIMIT_FILE_SIZE' ? 'produtos.erro_foto_grande' : 'produtos.erro_foto_tipo') };
+            return res.redirect('/clientes/produtos');
+        }
+        next();
+    });
+};
+router.get('/clientes/produtos', requireAuth, exigirClientes, vendasController.produtos);
+router.post('/clientes/produtos/criar', requireAuth, exigirClientes, uploadProduto, vendasController.criarProduto);
+router.post('/clientes/produtos/:id(\\d+)/atualizar', requireAuth, exigirClientes, uploadProduto, vendasController.atualizarProduto);
+router.post('/clientes/produtos/:id(\\d+)/arquivar', requireAuth, exigirClientes, vendasController.arquivarProduto);
+router.get('/clientes/produtos/:id(\\d+)/foto', requireAuth, exigirClientes, vendasController.foto);
+router.get('/clientes/vendas', requireAuth, exigirClientes, vendasController.vendas);
+router.get('/clientes/vendas/nova', requireAuth, exigirClientes, vendasController.novaVenda);
+router.post('/clientes/vendas/criar', requireAuth, exigirClientes, vendasController.criarVenda);
+router.get('/clientes/vendas/:id(\\d+)', requireAuth, exigirClientes, vendasController.detalhe);
+router.post('/clientes/vendas/:id(\\d+)/cancelar', requireAuth, exigirClientes, vendasController.cancelar);
+router.get('/clientes/busca', requireAuth, exigirClientes, vendasController.buscarClientes);
 router.get('/clientes/:id(\\d+)', requireAuth, exigirClientes, clientesController.ficha);
 router.post('/clientes/:id(\\d+)/atualizar', requireAuth, exigirClientes, clientesController.atualizarCliente);
 router.post('/clientes/:id(\\d+)/estado', requireAuth, exigirClientes, clientesController.definirEstado);

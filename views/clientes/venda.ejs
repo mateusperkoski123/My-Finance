@@ -1,0 +1,14 @@
+<div class="page-header page-header--acoes">
+    <div>
+        <h1><i class="ph ph-shopping-bag"></i> <%= t('vendas.venda_n', { n: venda.numero }) %></h1>
+        <p class="muted">
+            <a href="/clientes/vendas"><i class="ph ph-arrow-left"></i> <%= t('vendas.voltar_vendas') %></a>
+            · <a href="/clientes/<%= venda.cliente_id %>"><i class="ph ph-user"></i> <%= venda.cliente_nome %></a>
+        </p>
+    </div>
+    <div class="page-header__botoes">
+        <a class="btn btn-primary" href="/clientes/vendas/nova?cliente=<%= venda.cliente_id %>"><i class="ph ph-plus-circle"></i> <%= t('vendas.nova_para_cliente') %></a>
+    </div>
+</div>
+
+<%- include('_venda_card', { venda, voltar: '/clientes/vendas/' + venda.id, hoje, mostrarCliente: true }) %>

@@ -1,0 +1,105 @@
+<%# Cartao de uma venda de produtos. Parametros: venda (com itens e cuotas), voltar, hoje, mostrarCliente (opcional) %>
+<%
+    const _v = venda;
+    const _ativa = _v.status === 'ativa';
+    const _hp = hoje.split('-').map(Number);
+    const _atrasoV = (venc) => Math.max(0, Math.round((Date.UTC(_hp[0], _hp[1] - 1, _hp[2]) - Date.UTC(+venc.slice(0, 4), +venc.slice(5, 7) - 1, +venc.slice(8, 10))) / 86400000));
+    const _semCusto = Number(_v.itens_sem_custo) > 0;
+    const _lucroV = Number(_v.total) - Number(_v.custo_total);
+    const _quitada = Number(_v.lancadas) > 0 && Number(_v.pagas) === Number(_v.lancadas);
+%>
+<div class="card clientes-contrato venda-card <%= _ativa ? '' : 'is-cancelado' %>">
+    <div class="clientes-contrato__topo">
+        <div>
+            <a href="/clientes/vendas/<%= _v.id %>" class="venda-card__titulo"><strong><%= t('vendas.venda_n', { n: _v.numero }) %></strong></a>
+            <span class="muted"> · <%= formatDate(_v.data, 'DD/MM/YYYY') %></span>
+            <% if (!_ativa) { %><span class="badge badge-neutro"><%= t('vendas.cancelada_em', { data: formatDate(_v.cancelada, 'DD/MM/YYYY') }) %></span><% } %>
+            <div class="muted" style="font-size: 13px;">
+                <% if (typeof mostrarCliente !== 'undefined' && mostrarCliente) { %><a href="/clientes/<%= _v.cliente_id %>"><%= _v.cliente_nome %></a> · <% } %>
+                <%= _v.forma === 'avista' ? t('vendas.forma_avista') : (Number(_v.parcelas) > 1 ? t('vendas.em_parcelas', { n: _v.parcelas }) : t('vendas.forma_prazo')) %>
+                · <%= _v.conta_nome %>
+            </div>
+        </div>
+        <div class="clientes-contrato__resumo">
+            <% if (_ativa) { %>
+                <% if (_quitada) { %><span class="badge badge-sucesso"><i class="ph-bold ph-check"></i> <%= t('vendas.st_recebida') %></span>
+                <% } else if (Number(_v.vencidas) > 0) { %><span class="badge badge-pendente"><%= t('vendas.st_vencidas', { n: _v.vencidas }) %></span>
+                <% } else { %><span class="badge badge-alerta"><%= t('vendas.st_a_receber', { valor: moeda(_v.a_receber, _v.moeda) }) %></span><% } %>
+                <% if (Number(_v.parcelas) > 1) { %><span class="badge badge-neutro"><%= t('clientes.pagaram_de', { pagas: _v.pagas, total: _v.lancadas }) %></span><% } %>
+                <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-cancelar-venda-<%= _v.id %>"><i class="ph ph-prohibit"></i> <%= t('vendas.cancelar') %></button>
+            <% } %>
+        </div>
+    </div>
+
+    <ul class="venda-itens">
+        <% _v.itens.forEach(function (i) { %>
+        <li>
+            <span class="venda-item__foto venda-item__foto--p"><% if (i.produto_id && i.foto_v) { %><img src="/clientes/produtos/<%= i.produto_id %>/foto?v=<%= i.foto_v %>" alt="" loading="lazy"><% } else { %><i class="ph ph-package"></i><% } %></span>
+            <span class="venda-itens__nome"><%= i.nome %></span>
+            <span class="muted venda-itens__qtd"><%= i.quantidade %> × <%= moeda(i.preco_unit, _v.moeda) %></span>
+            <strong class="venda-itens__sub"><%= moeda(Number(i.preco_unit) * Number(i.quantidade), _v.moeda) %></strong>
+        </li>
+        <% }) %>
+    </ul>
+    <div class="venda-card__totais">
+        <span><%= t('vendas.total') %>: <strong><%= moeda(_v.total, _v.moeda) %></strong></span>
+        <% if (!_semCusto) { %>
+            <span class="muted"><%= t('vendas.lucro') %>: <strong class="<%= _lucroV < 0 ? 'is-negativo' : '' %>"><%= moeda(_lucroV, _v.moeda) %></strong></span>
+        <% } else { %>
+            <span class="muted" title="<%= t('vendas.lucro_sem_custo_ajuda') %>"><%= t('vendas.lucro') %>: <%= t('vendas.lucro_sem_custo') %></span>
+        <% } %>
+    </div>
+    <% if (_v.observacoes) { %><p class="muted" style="margin: 8px 0 0; font-size: 13px; white-space: pre-line;"><i class="ph ph-note"></i> <%= _v.observacoes %></p><% } %>
+
+    <% if (_v.cuotas.length) { %>
+    <div class="cuotas-grid" style="margin-top: 12px;">
+        <% _v.cuotas.forEach(function (c) {
+            const pago = c.status === 'pago';
+            const atraso = !pago ? _atrasoV(c.venc) : 0;
+            const clase = pago ? 'pago' : (atraso > 0 ? 'vencida' : 'pendente');
+            const rotulo = Number(_v.parcelas) > 1 ? c.cuota_num + '/' + _v.parcelas : (pago ? t('vendas.chip_recebido') : t('vendas.chip_a_receber'));
+            const titulo = pago ? t('clientes.st_paga') + (c.pago_em ? ' · ' + formatDate(c.pago_em, 'DD/MM/YYYY') : '') : (atraso > 0 ? t('clientes.st_vencida', { n: atraso }) : t('clientes.st_pendente'));
+        %>
+        <% if (_ativa) { %>
+        <form method="post" action="/clientes/cuotas/<%= c.id %>/pagar" class="cuota-chip cuota-chip--<%= clase %>" <% if (pago) { %>data-confirm="<%= t('vendas.confirmar_desfazer') %>"<% } %>>
+            <%- csrfCampo %><input type="hidden" name="voltar" value="<%= voltar %>">
+            <% if (pago) { %><input type="hidden" name="acao" value="desfazer"><% } %>
+            <button type="submit" title="<%= titulo %> — <%= pago ? t('clientes.desfazer') : t('vendas.cobrar') %>">
+        <% } else { %>
+        <div class="cuota-chip cuota-chip--<%= clase %>"><button type="button" disabled title="<%= titulo %>">
+        <% } %>
+                <span class="cuota-chip__n"><i class="ph-bold ph-<%= pago ? 'check-circle' : (atraso > 0 ? 'warning-circle' : 'circle') %>"></i> <%= rotulo %></span>
+                <span class="cuota-chip__data"><%= formatDate(c.venc, 'DD/MM/YYYY') %></span>
+                <span class="cuota-chip__valor"><%= moeda(c.valor, _v.moeda) %></span>
+            </button>
+        <%- _ativa ? '</form>' : '</div>' %>
+        <% }) %>
+    </div>
+    <% if (_ativa && !_quitada) { %><p class="muted" style="font-size: 12px; margin: 10px 0 0;"><i class="ph ph-info"></i> <%= t('vendas.dica_chip') %></p><% } %>
+    <% } %>
+</div>
+
+<% if (_ativa) { %>
+<div class="modal-backdrop" id="modal-cancelar-venda-<%= _v.id %>" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('vendas.cancelar') %> · <%= t('vendas.venda_n', { n: _v.numero }) %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="/clientes/vendas/<%= _v.id %>/cancelar" class="form">
+            <%- csrfCampo %><input type="hidden" name="voltar" value="<%= voltar %>">
+            <p style="margin-top: 0;"><%= t('vendas.cancelar_ajuda') %></p>
+            <% if (Number(_v.pagas) > 0) { %>
+            <label class="produto-check">
+                <input type="checkbox" name="apagar_recebidas" value="1">
+                <span><%= t('vendas.cancelar_apagar_recebidas', { n: _v.pagas, valor: moeda(_v.recebido, _v.moeda) }) %></span>
+            </label>
+            <% } %>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-danger"><i class="ph ph-prohibit"></i> <%= t('vendas.cancelar') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+<% } %>

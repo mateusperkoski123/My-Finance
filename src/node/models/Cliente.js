@@ -152,9 +152,11 @@ class Cliente {
             `SELECT c.*,
                 (SELECT COUNT(*) FROM cliente_contratos k WHERE k.cliente_id = c.id AND k.status = 'ativo') AS contratos_ativos,
                 (SELECT COUNT(*) FROM lancamentos l JOIN cliente_contratos k ON k.id = l.contrato_id
-                  WHERE k.cliente_id = c.id AND l.status = 'pendente' AND l.data_competencia < ?) AS vencidas
+                  WHERE k.cliente_id = c.id AND l.status = 'pendente' AND l.data_competencia < ?)
+                + (SELECT COUNT(*) FROM lancamentos l JOIN cliente_vendas v ON v.id = l.venda_id
+                  WHERE v.cliente_id = c.id AND l.status = 'pendente' AND l.data_competencia < ?) AS vencidas
              FROM clientes c WHERE ${where} ORDER BY c.nome ASC LIMIT ? OFFSET ?`,
-            [hoje, ...params, porPagina, (Math.max(1, pagina) - 1) * porPagina]
+            [hoje, hoje, ...params, porPagina, (Math.max(1, pagina) - 1) * porPagina]
         );
         return { clientes: rows, total: tot.n };
     }
@@ -211,14 +213,16 @@ class Cliente {
         await db.query('UPDATE clientes SET status = ? WHERE id = ? AND user_id = ?', [status === 'inativo' ? 'inativo' : 'ativo', id, userId]);
     }
 
-    // Exclui o cliente, os contratos e as cuotas pendentes. Quem ja pagou alguma cuota nao pode ser excluido (o historico
-    // de receitas fica); nesse caso a saida e marcar como inativo.
+    // Exclui o cliente, os contratos, as vendas e as parcelas pendentes (o estoque das vendas volta). Quem ja pagou alguma
+    // cuota ou parcela de venda nao pode ser excluido (o historico de receitas fica); nesse caso a saida e marcar como inativo.
     static async excluirCliente(userId, id) {
         const c = await this.buscarCliente(id, userId);
         if (!c) return { naoEncontrado: true };
         const [[p]] = await db.query(
-            `SELECT COUNT(*) AS n FROM lancamentos l JOIN cliente_contratos k ON k.id = l.contrato_id
-             WHERE k.cliente_id = ? AND k.user_id = ? AND l.status = 'pago'`, [id, userId]
+            `SELECT (SELECT COUNT(*) FROM lancamentos l JOIN cliente_contratos k ON k.id = l.contrato_id
+                     WHERE k.cliente_id = ? AND k.user_id = ? AND l.status = 'pago')
+                  + (SELECT COUNT(*) FROM lancamentos l JOIN cliente_vendas v ON v.id = l.venda_id
+                     WHERE v.cliente_id = ? AND v.user_id = ? AND l.status = 'pago') AS n`, [id, userId, id, userId]
         );
         if (p.n > 0) return { temPagas: true };
         const conn = await db.getConnection();
@@ -227,6 +231,7 @@ class Cliente {
             const onde = 'user_id = ? AND contrato_id IN (SELECT id FROM cliente_contratos WHERE cliente_id = ? AND user_id = ?)';
             await SyncExclusao.registrar('lancamentos', onde, [userId, id, userId], conn);
             await conn.query(`DELETE FROM lancamentos WHERE ${onde}`, [userId, id, userId]);
+            await require('./Venda').antesDeExcluirClientes(conn, userId, [id]);
             await conn.query('DELETE FROM clientes WHERE id = ? AND user_id = ?', [id, userId]);
             await conn.commit();
         } catch (err) {
@@ -258,9 +263,13 @@ class Cliente {
             let alvo = existentes.map((x) => x.id);
             if (!alvo.length) continue;
             if (!incluirPagas) {
+                const marcasAlvo = alvo.map(() => '?').join(',');
                 const [pagos] = await db.query(
                     `SELECT DISTINCT k.cliente_id AS id FROM lancamentos l JOIN cliente_contratos k ON k.id = l.contrato_id
-                     WHERE k.user_id = ? AND l.status = 'pago' AND k.cliente_id IN (${alvo.map(() => '?').join(',')})`, [userId, ...alvo]
+                     WHERE k.user_id = ? AND l.status = 'pago' AND k.cliente_id IN (${marcasAlvo})
+                     UNION
+                     SELECT DISTINCT v.cliente_id AS id FROM lancamentos l JOIN cliente_vendas v ON v.id = l.venda_id
+                     WHERE v.user_id = ? AND l.status = 'pago' AND v.cliente_id IN (${marcasAlvo})`, [userId, ...alvo, userId, ...alvo]
                 );
                 const comPagas = new Set(pagos.map((x) => x.id));
                 r.comPagas += comPagas.size;
@@ -275,6 +284,7 @@ class Cliente {
                 await SyncExclusao.registrar('lancamentos', onde, prm, conn);
                 const [del] = await conn.query(`DELETE FROM lancamentos WHERE ${onde}`, prm);
                 r.lancamentos += del.affectedRows;
+                r.lancamentos += await require('./Venda').antesDeExcluirClientes(conn, userId, alvo);
                 await conn.query(`DELETE FROM clientes WHERE user_id = ? AND id IN (${alvo.map(() => '?').join(',')})`, [userId, ...alvo]);
                 await conn.commit();
                 r.excluidos += alvo.length;
@@ -496,13 +506,25 @@ class Cliente {
              WHERE l.user_id = ? AND ${filtro}`,
             [userId, clienteId || servicoId]
         );
+        // Parcelas das vendas de produtos do cliente: "Itens · Cliente · 1/3" (os itens nao mudam depois da venda).
+        if (clienteId) {
+            await db.query(
+                `UPDATE lancamentos l
+                 JOIN cliente_vendas v ON v.id = l.venda_id
+                 JOIN clientes c ON c.id = v.cliente_id
+                 SET l.descricao = LEFT(CONCAT(v.resumo, ' · ', c.nome, IF(v.parcelas > 1, CONCAT(' · ', l.cuota_num, '/', v.parcelas), '')), 190),
+                     l.updated_at = NOW(3)
+                 WHERE l.user_id = ? AND v.cliente_id = ?`,
+                [userId, clienteId]
+            );
+        }
     }
 
-    // ---------- Cuotas: pagar, desfazer e consultas do painel ----------
+    // ---------- Cuotas (de contratos e de vendas de produtos): pagar, desfazer e consultas do painel ----------
     static async pagarCuota(userId, id, dataPagamento) {
         const [r] = await db.query(
             `UPDATE lancamentos SET status = 'pago', data_pagamento = ?, updated_at = NOW(3)
-             WHERE id = ? AND user_id = ? AND contrato_id IS NOT NULL`,
+             WHERE id = ? AND user_id = ? AND (contrato_id IS NOT NULL OR venda_id IS NOT NULL)`,
             [dataPagamento || hojeYMD(), id, userId]
         );
         return r.affectedRows > 0;
@@ -511,17 +533,26 @@ class Cliente {
     static async desfazerPagamento(userId, id) {
         const [r] = await db.query(
             `UPDATE lancamentos SET status = 'pendente', data_pagamento = NULL, updated_at = NOW(3)
-             WHERE id = ? AND user_id = ? AND contrato_id IS NOT NULL`,
+             WHERE id = ? AND user_id = ? AND (contrato_id IS NOT NULL OR venda_id IS NOT NULL)`,
             [id, userId]
         );
         return r.affectedRows > 0;
     }
 
+    // Parcelas de contratos de servico e de vendas de produtos. A linha sem nenhum dos dois nao acha cliente e fica de fora.
     static _baseCuotas = `FROM lancamentos l
-        JOIN cliente_contratos k ON k.id = l.contrato_id
-        JOIN clientes c ON c.id = k.cliente_id AND c.status = 'ativo'
-        JOIN cliente_servicos s ON s.id = k.servico_id
+        LEFT JOIN cliente_contratos k ON k.id = l.contrato_id
+        LEFT JOIN cliente_vendas v ON v.id = l.venda_id
+        JOIN clientes c ON c.id = COALESCE(k.cliente_id, v.cliente_id) AND c.status = 'ativo'
+        LEFT JOIN cliente_servicos s ON s.id = k.servico_id
         JOIN contas cb ON cb.id = l.conta_id AND cb.status = 'ativa'`;
+
+    // Filtro "servico": o id de um servico ou 'vendas' (so as vendas de produtos).
+    static _condServico(servicoId, params) {
+        if (servicoId === 'vendas') return ' AND l.venda_id IS NOT NULL';
+        if (servicoId) { params.push(servicoId); return ' AND k.servico_id = ?'; }
+        return '';
+    }
 
     static _condEstado(estado, hoje, params) {
         if (estado === 'pagas') return " AND l.status = 'pago'";
@@ -538,7 +569,7 @@ class Cliente {
         if (dia) { where += ' AND l.data_competencia = ?'; params.push(dia); }
         else { where += ' AND l.data_competencia BETWEEN ? AND ?'; params.push(inicio, fim); }
         where += this._condEstado(estado, hoje, params);
-        if (servicoId) { where += ' AND k.servico_id = ?'; params.push(servicoId); }
+        where += this._condServico(servicoId, params);
         const termo = String(q || '').trim();
         if (termo) {
             const like = likeSeguro(termo);
@@ -548,7 +579,9 @@ class Cliente {
         const [[tot]] = await db.query(`SELECT COUNT(*) AS n ${this._baseCuotas} ${where}`, params);
         const [rows] = await db.query(
             `SELECT l.id, l.cuota_num, l.valor, l.status, DATE_FORMAT(l.data_competencia, '${ND}') AS venc,
-                    DATE_FORMAT(l.data_pagamento, '${ND}') AS pago_em, k.id AS contrato_id, k.cuotas_total,
+                    DATE_FORMAT(l.data_pagamento, '${ND}') AS pago_em, k.id AS contrato_id,
+                    IF(v.id IS NULL, k.cuotas_total, v.parcelas) AS cuotas_total,
+                    v.id AS venda_id, v.numero AS venda_numero, v.resumo AS venda_resumo,
                     c.id AS cliente_id, c.nome AS cliente_nome, c.celular, s.nome AS servico_nome, cb.moeda AS moeda
              ${this._baseCuotas} ${where}
              ORDER BY l.data_competencia ASC, c.nome ASC, l.id ASC LIMIT ? OFFSET ?`,
@@ -561,8 +594,7 @@ class Cliente {
     static async resumoPeriodo(userId, inicio, fim, servicoId = null) {
         const hoje = hojeYMD();
         const params = [hoje, hoje, hoje, hoje, userId, inicio, fim];
-        let extra = '';
-        if (servicoId) { extra = ' AND k.servico_id = ?'; params.push(servicoId); }
+        const extra = this._condServico(servicoId, params);
         const [rows] = await db.query(
             `SELECT cb.moeda,
                 SUM(l.status = 'pago') AS pagas_n,

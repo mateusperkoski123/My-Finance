@@ -85,7 +85,7 @@ class Lembrete {
         return `FROM lancamentos l
              JOIN contas cb ON cb.id = l.conta_id AND cb.status = 'ativa'
              WHERE l.user_id = ? AND l.status = 'pendente'
-               AND l.contrato_id IS NULL
+               AND l.contrato_id IS NULL AND l.venda_id IS NULL
                AND (l.tipo IN ('receita', 'despesa') OR (l.tipo = 'transferencia' AND l.transferencia_par_id IS NOT NULL AND l.valor < 0))`;
     }
 

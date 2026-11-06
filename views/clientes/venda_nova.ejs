@@ -1,0 +1,373 @@
+<%
+    const _produtos = produtos.map(function (p) {
+        return { id: p.id, nome: p.nome, preco: Number(p.preco), custo: p.custo === null ? null : Number(p.custo), estoque: p.estoque, foto: p.foto_v ? '/clientes/produtos/' + p.id + '/foto?v=' + p.foto_v : '' };
+    });
+    const _contaPadrao = contas.find(function (c) { return c.conta_padrao; }) || contas[0];
+%>
+<div class="page-header page-header--acoes">
+    <div>
+        <h1><i class="ph ph-shopping-bag"></i> <%= t('vendas.nova') %></h1>
+        <p class="muted"><a href="/clientes/vendas"><i class="ph ph-arrow-left"></i> <%= t('vendas.voltar_vendas') %></a></p>
+    </div>
+</div>
+
+<% if (!produtos.length) { %>
+    <div class="card placeholder-card">
+        <p class="muted" style="margin: 0 0 12px;"><%= t('vendas.sem_produtos_aviso') %></p>
+        <a class="btn btn-primary" href="/clientes/produtos"><i class="ph ph-package"></i> <%= t('produtos.novo') %></a>
+    </div>
+<% } else if (!contas.length) { %>
+    <div class="card placeholder-card">
+        <p class="muted" style="margin: 0 0 12px;"><%= t('clientes.sem_contas_aviso') %></p>
+        <a class="btn btn-primary" href="/contas"><%= t('nav.contas') %></a>
+    </div>
+<% } else { %>
+<form method="post" action="/clientes/vendas/criar" class="venda-layout" id="form-venda" novalidate>
+    <%- csrfCampo %>
+    <input type="hidden" name="itens_json" id="venda-itens-json" value="[]">
+    <input type="hidden" name="cliente_id" id="venda-cliente-id" value="<%= cliente ? cliente.id : '' %>">
+
+    <div class="venda-principal">
+        <section class="card venda-secao">
+            <h2 class="venda-secao__titulo"><span class="clientes-passo">1</span> <%= t('vendas.passo_cliente') %></h2>
+            <div class="venda-cliente-escolhido" id="venda-cliente-escolhido" <%= cliente ? '' : 'hidden' %>>
+                <i class="ph ph-user-circle"></i>
+                <strong id="venda-cliente-nome"><%= cliente ? cliente.nome : '' %></strong>
+                <button type="button" class="btn btn-outline btn-sm" id="venda-cliente-trocar"><%= t('vendas.trocar') %></button>
+            </div>
+            <div id="venda-cliente-busca" <%= cliente ? 'hidden' : '' %>>
+                <div class="venda-busca-linha">
+                    <input class="input" type="search" id="venda-cliente-q" placeholder="<%= t('vendas.buscar_cliente_ph') %>" autocomplete="off" aria-label="<%= t('vendas.passo_cliente') %>">
+                    <button type="button" class="btn btn-outline" data-modal-open="modal-novo-cliente"><i class="ph ph-user-plus"></i> <span class="so-desktop"><%= t('clientes.novo') %></span></button>
+                </div>
+                <div class="venda-cliente-resultados" id="venda-cliente-resultados" role="listbox"></div>
+            </div>
+        </section>
+
+        <section class="card venda-secao">
+            <h2 class="venda-secao__titulo"><span class="clientes-passo">2</span> <%= t('vendas.passo_produtos') %></h2>
+            <input class="input" type="search" id="venda-produto-q" placeholder="<%= t('produtos.buscar_ph') %>" autocomplete="off" aria-label="<%= t('produtos.buscar_ph') %>" style="margin-bottom: 12px;">
+            <div class="venda-produtos" id="venda-produtos">
+                <% _produtos.forEach(function (p) {
+                    const esgotado = p.estoque !== null && p.estoque <= 0;
+                %>
+                <button type="button" class="venda-produto" data-produto-id="<%= p.id %>" data-busca="<%= p.nome.toLowerCase() %>" <%= esgotado ? 'disabled' : '' %>>
+                    <span class="venda-produto__foto"><% if (p.foto) { %><img src="<%= p.foto %>" alt="" loading="lazy"><% } else { %><i class="ph ph-package"></i><% } %></span>
+                    <span class="venda-produto__nome"><%= p.nome %></span>
+                    <span class="venda-produto__preco"><%= moeda(p.preco) %></span>
+                    <span class="venda-produto__estoque muted">
+                        <% if (p.estoque === null) { %>&nbsp;<% } else if (esgotado) { %><%= t('produtos.sem_estoque') %><% } else { %><%= t('produtos.em_estoque', { n: p.estoque }) %><% } %>
+                    </span>
+                    <span class="venda-produto__qtd" data-qtd-selo hidden></span>
+                </button>
+                <% }) %>
+            </div>
+            <p class="muted" id="venda-produtos-vazio" hidden style="margin: 0;"><%= t('clientes.sem_resultados') %></p>
+        </section>
+    </div>
+
+    <aside class="venda-lateral">
+        <section class="card venda-secao">
+            <h2 class="venda-secao__titulo"><span class="clientes-passo">3</span> <%= t('vendas.passo_carrinho') %></h2>
+            <p class="muted" id="venda-carrinho-vazio" style="margin: 0;"><%= t('vendas.carrinho_vazio') %></p>
+            <div class="venda-carrinho" id="venda-carrinho"></div>
+            <dl class="venda-totais" id="venda-totais" hidden>
+                <div><dt><%= t('vendas.total') %></dt><dd id="venda-total"></dd></div>
+                <div id="venda-lucro-linha"><dt><%= t('vendas.lucro_estimado') %></dt><dd id="venda-lucro"></dd></div>
+            </dl>
+        </section>
+
+        <section class="card venda-secao">
+            <h2 class="venda-secao__titulo"><span class="clientes-passo">4</span> <%= t('vendas.passo_pagamento') %></h2>
+            <div class="clientes-fila">
+                <div class="form-group">
+                    <label for="venda-conta"><%= t('vendas.campo_conta') %></label>
+                    <select class="input" id="venda-conta" name="conta_id" required>
+                        <% contas.forEach(function (c) { %><option value="<%= c.id %>" data-moeda="<%= c.moeda %>" <%= _contaPadrao && c.id === _contaPadrao.id ? 'selected' : '' %>><%= c.nome %> (<%= c.moeda %>)</option><% }) %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="venda-data"><%= t('vendas.campo_data') %></label>
+                    <input class="input" type="date" id="venda-data" name="data" value="<%= hoje %>" max="<%= hoje %>" required>
+                </div>
+            </div>
+            <div class="venda-formas" role="radiogroup" aria-label="<%= t('vendas.passo_pagamento') %>">
+                <label class="venda-forma"><input type="radio" name="forma" value="avista" checked> <span><strong><%= t('vendas.forma_avista') %></strong><small class="muted"><%= t('vendas.forma_avista_ajuda') %></small></span></label>
+                <label class="venda-forma"><input type="radio" name="forma" value="prazo"> <span><strong><%= t('vendas.forma_prazo') %></strong><small class="muted"><%= t('vendas.forma_prazo_ajuda') %></small></span></label>
+            </div>
+            <div id="venda-prazo" hidden>
+                <div class="clientes-fila">
+                    <div class="form-group">
+                        <label for="venda-parcelas"><%= t('vendas.campo_parcelas') %></label>
+                        <select class="input" id="venda-parcelas" name="parcelas">
+                            <% for (let n = 1; n <= maxParcelas; n++) { %><option value="<%= n %>"><%= n === 1 ? t('vendas.parcela_unica') : n + 'x' %></option><% } %>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="venda-vencimento" id="venda-vencimento-rotulo"><%= t('vendas.campo_vencimento') %></label>
+                        <input class="input" type="date" id="venda-vencimento" name="vencimento" value="<%= hoje %>">
+                    </div>
+                </div>
+                <label class="produto-check" id="venda-entrada-linha" hidden>
+                    <input type="checkbox" name="entrada" value="1" id="venda-entrada">
+                    <span><%= t('vendas.campo_entrada') %></span>
+                </label>
+                <p class="muted venda-parcelas-previa" id="venda-parcelas-previa"></p>
+            </div>
+            <div class="form-group">
+                <label for="venda-obs"><%= t('vendas.campo_obs') %></label>
+                <input class="input" type="text" id="venda-obs" name="observacoes" maxlength="500">
+            </div>
+            <p class="erro-campo" id="venda-erro" role="alert" hidden></p>
+            <button type="submit" class="btn btn-primary venda-confirmar" id="venda-confirmar"><i class="ph ph-check-circle"></i> <span id="venda-confirmar-texto"><%= t('vendas.registrar') %></span></button>
+        </section>
+    </aside>
+</form>
+
+<template id="venda-item-modelo">
+    <div class="venda-item">
+        <span class="venda-item__foto"></span>
+        <div class="venda-item__info">
+            <strong class="venda-item__nome"></strong>
+            <div class="venda-item__linha">
+                <div class="venda-qtd" role="group">
+                    <button type="button" class="btn btn-outline btn-sm" data-acao="menos" aria-label="<%= t('vendas.menos') %>"><i class="ph ph-minus"></i></button>
+                    <input class="input venda-qtd__campo" type="number" min="1" max="99999" step="1" inputmode="numeric" aria-label="<%= t('vendas.quantidade') %>">
+                    <button type="button" class="btn btn-outline btn-sm" data-acao="mais" aria-label="<%= t('vendas.mais') %>"><i class="ph ph-plus"></i></button>
+                </div>
+                <span class="muted">×</span>
+                <input class="input venda-item__preco" type="text" data-money aria-label="<%= t('vendas.preco_unit') %>">
+            </div>
+            <div class="venda-item__rodape"><span class="venda-item__aviso"></span><strong class="venda-item__subtotal"></strong></div>
+        </div>
+        <button type="button" class="venda-item__remover" data-acao="remover" aria-label="<%= t('vendas.remover') %>" title="<%= t('vendas.remover') %>"><i class="ph ph-trash"></i></button>
+    </div>
+</template>
+
+<%- include('_modal_cliente', { idModal: 'modal-novo-cliente', acao: '/clientes/criar', titulo: t('clientes.novo'), cliente: null, depois: 'venda' }) %>
+
+<script>
+(function () {
+    const PRODUTOS = <%- JSON.stringify(_produtos).replace(/</g, '\\u003c') %>;
+    const TXT = <%- JSON.stringify({
+        erroCliente: t('vendas.erro_cliente'), erroItens: t('vendas.erro_sem_itens'), erroTotal: t('vendas.erro_total'),
+        erroVenc: t('vendas.erro_vencimento'), erroEstoque: t('vendas.so_tem', { n: '{n}' }), semResultado: t('clientes.sem_resultados'),
+        registrar: t('vendas.registrar_total', { total: '{total}' }), registrarVazio: t('vendas.registrar'),
+        previa: t('vendas.previa_parcelas', { n: '{n}', valor: '{valor}' }), previaUltima: t('vendas.previa_ultima', { valor: '{valor}' }),
+        previaEntrada: t('vendas.previa_entrada'), vencUnica: t('vendas.campo_vencimento'), vencPrimeira: t('vendas.campo_vencimento_1'),
+        semCusto: t('vendas.lucro_sem_custo')
+    }).replace(/</g, '\\u003c') %>;
+    const MAX_ITENS = <%= maxItens %>;
+    const porId = new Map(PRODUTOS.map(function (p) { return [p.id, p]; }));
+    const form = document.getElementById('form-venda');
+    const carrinhoEl = document.getElementById('venda-carrinho');
+    const modelo = document.getElementById('venda-item-modelo');
+    const conta = document.getElementById('venda-conta');
+    const parcelas = document.getElementById('venda-parcelas');
+    const vencimento = document.getElementById('venda-vencimento');
+    const entrada = document.getElementById('venda-entrada');
+    const erroEl = document.getElementById('venda-erro');
+    const carrinho = []; // { produto, el, qtd, preco(input) }
+
+    const moedaConta = function () { const o = conta.options[conta.selectedIndex]; return o ? o.getAttribute('data-moeda') : null; };
+    const casas = function () { return moedaConta() === 'PYG' ? 0 : 2; };
+    const fmt = function (v) { return window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(Number(v.toFixed(casas())), moedaConta()) : String(v); };
+    const ler = function (input) { return window.AppRegras ? (window.AppRegras.parseMoeda(input.value) || 0) : (parseFloat(input.value) || 0); };
+    const arred = function (v) { const f = Math.pow(10, casas()); return Math.round(v * f) / f; };
+
+    function mostrarErro(msg) { erroEl.textContent = msg || ''; erroEl.hidden = !msg; }
+
+    // ---------- Cliente ----------
+    const cliId = document.getElementById('venda-cliente-id');
+    const cliEscolhido = document.getElementById('venda-cliente-escolhido');
+    const cliBusca = document.getElementById('venda-cliente-busca');
+    const cliQ = document.getElementById('venda-cliente-q');
+    const cliRes = document.getElementById('venda-cliente-resultados');
+    let buscaTimer = null, buscaSeq = 0;
+    function escolherCliente(id, nome) {
+        cliId.value = id;
+        document.getElementById('venda-cliente-nome').textContent = nome;
+        cliEscolhido.hidden = false; cliBusca.hidden = true; cliRes.textContent = ''; mostrarErro('');
+    }
+    document.getElementById('venda-cliente-trocar').addEventListener('click', function () {
+        cliId.value = ''; cliEscolhido.hidden = true; cliBusca.hidden = false; cliQ.value = ''; cliQ.focus();
+    });
+    cliQ.addEventListener('input', function () {
+        clearTimeout(buscaTimer);
+        const q = cliQ.value.trim();
+        if (!q) { cliRes.textContent = ''; return; }
+        buscaTimer = setTimeout(async function () {
+            const seq = ++buscaSeq;
+            try {
+                const r = await fetch('/clientes/busca?q=' + encodeURIComponent(q), { credentials: 'same-origin', headers: { Accept: 'application/json' } });
+                const j = await r.json();
+                if (seq !== buscaSeq) return;
+                cliRes.textContent = '';
+                if (!j.clientes || !j.clientes.length) {
+                    const p = document.createElement('p'); p.className = 'muted'; p.style.margin = '8px 0 0'; p.textContent = TXT.semResultado; cliRes.appendChild(p); return;
+                }
+                j.clientes.forEach(function (c) {
+                    const b = document.createElement('button');
+                    b.type = 'button'; b.className = 'venda-cliente-opcao'; b.setAttribute('role', 'option');
+                    const n = document.createElement('strong'); n.textContent = c.nome; b.appendChild(n);
+                    if (c.detalhe) { const d = document.createElement('span'); d.className = 'muted'; d.textContent = c.detalhe; b.appendChild(d); }
+                    b.addEventListener('click', function () { escolherCliente(c.id, c.nome); });
+                    cliRes.appendChild(b);
+                });
+            } catch (e) { /* sem conexao: tenta de novo ao digitar */ }
+        }, 250);
+    });
+
+    // ---------- Produtos e carrinho ----------
+    document.getElementById('venda-produto-q').addEventListener('input', function (e) {
+        const q = e.target.value.trim().toLowerCase();
+        let visiveis = 0;
+        document.querySelectorAll('.venda-produto').forEach(function (b) {
+            const ok = !q || b.getAttribute('data-busca').indexOf(q) !== -1;
+            b.hidden = !ok; if (ok) visiveis++;
+        });
+        document.getElementById('venda-produtos-vazio').hidden = visiveis > 0;
+    });
+
+    function qtdNoCarrinho(produtoId) {
+        return carrinho.filter(function (i) { return i.produto.id === produtoId; }).reduce(function (s, i) { return s + i.qtd; }, 0);
+    }
+
+    function adicionar(produto) {
+        const existente = carrinho.find(function (i) { return i.produto.id === produto.id; });
+        if (existente) { definirQtd(existente, existente.qtd + 1); return; }
+        if (carrinho.length >= MAX_ITENS) return;
+        const el = modelo.content.firstElementChild.cloneNode(true);
+        const foto = el.querySelector('.venda-item__foto');
+        if (produto.foto) { const i = document.createElement('img'); i.alt = ''; i.src = produto.foto; foto.appendChild(i); }
+        else { const ic = document.createElement('i'); ic.className = 'ph ph-package'; foto.appendChild(ic); }
+        el.querySelector('.venda-item__nome').textContent = produto.nome;
+        const preco = el.querySelector('.venda-item__preco');
+        preco.setAttribute('data-moeda-cod', moedaConta());
+        preco.value = produto.preco > 0 ? fmt(produto.preco) : '';
+        const item = { produto: produto, el: el, qtd: 1, preco: preco, campoQtd: el.querySelector('.venda-qtd__campo') };
+        item.campoQtd.value = 1;
+        carrinho.push(item);
+        carrinhoEl.appendChild(el);
+        if (window.gfBind) window.gfBind(el);
+        el.addEventListener('click', function (e) {
+            const b = e.target.closest('[data-acao]');
+            if (!b) return;
+            const acao = b.getAttribute('data-acao');
+            if (acao === 'mais') definirQtd(item, item.qtd + 1);
+            else if (acao === 'menos') { if (item.qtd > 1) definirQtd(item, item.qtd - 1); else remover(item); }
+            else if (acao === 'remover') remover(item);
+        });
+        item.campoQtd.addEventListener('input', function () { const n = parseInt(item.campoQtd.value, 10); if (n >= 1) { item.qtd = Math.min(n, 99999); atualizar(); } });
+        item.campoQtd.addEventListener('blur', function () { item.campoQtd.value = item.qtd; });
+        preco.addEventListener('input', atualizar);
+        atualizar();
+    }
+
+    function definirQtd(item, n) { item.qtd = Math.max(1, Math.min(99999, n)); item.campoQtd.value = item.qtd; atualizar(); }
+    function remover(item) { const i = carrinho.indexOf(item); if (i !== -1) carrinho.splice(i, 1); item.el.remove(); atualizar(); }
+
+    document.getElementById('venda-produtos').addEventListener('click', function (e) {
+        const b = e.target.closest('.venda-produto');
+        if (!b || b.disabled) return;
+        const p = porId.get(parseInt(b.getAttribute('data-produto-id'), 10));
+        if (p) { adicionar(p); mostrarErro(''); }
+    });
+
+    function totais() {
+        let total = 0, custo = 0, semCusto = false;
+        carrinho.forEach(function (i) {
+            const sub = arred(ler(i.preco)) * i.qtd;
+            total += sub;
+            if (i.produto.custo === null) semCusto = true; else custo += i.produto.custo * i.qtd;
+        });
+        return { total: arred(total), custo: custo, semCusto: semCusto };
+    }
+
+    // Divide igual ao servidor: na menor unidade da moeda, com a diferenca na ultima parcela.
+    function dividir(total, n) {
+        const f = Math.pow(10, casas()), u = Math.round(total * f), base = Math.floor(u / n);
+        return { base: base / f, ultima: (u - base * (n - 1)) / f };
+    }
+
+    function atualizar() {
+        mostrarErro('');
+        document.getElementById('venda-carrinho-vazio').hidden = carrinho.length > 0;
+        document.getElementById('venda-totais').hidden = !carrinho.length;
+        carrinho.forEach(function (i) {
+            i.el.querySelector('.venda-item__subtotal').textContent = fmt(arred(ler(i.preco)) * i.qtd);
+            const tem = i.produto.estoque;
+            const passou = tem !== null && qtdNoCarrinho(i.produto.id) > tem;
+            const aviso = i.el.querySelector('.venda-item__aviso');
+            aviso.textContent = passou ? TXT.erroEstoque.replace('{n}', Math.max(0, tem)) : '';
+            i.el.classList.toggle('is-erro', passou);
+        });
+        document.querySelectorAll('.venda-produto').forEach(function (b) {
+            const n = qtdNoCarrinho(parseInt(b.getAttribute('data-produto-id'), 10));
+            const selo = b.querySelector('[data-qtd-selo]');
+            selo.hidden = !n; selo.textContent = n;
+            b.classList.toggle('is-no-carrinho', n > 0);
+        });
+        const t = totais();
+        document.getElementById('venda-total').textContent = fmt(t.total);
+        const lucro = t.total - t.custo;
+        document.getElementById('venda-lucro').textContent = t.semCusto ? TXT.semCusto : fmt(lucro);
+        document.getElementById('venda-lucro').classList.toggle('is-negativo', !t.semCusto && lucro < 0);
+        document.getElementById('venda-confirmar-texto').textContent = t.total > 0 ? TXT.registrar.replace('{total}', fmt(t.total)) : TXT.registrarVazio;
+        atualizarPrazo();
+    }
+
+    // ---------- Pagamento ----------
+    function forma() { const r = form.querySelector('input[name="forma"]:checked'); return r ? r.value : 'avista'; }
+    function atualizarPrazo() {
+        const prazo = forma() === 'prazo';
+        document.getElementById('venda-prazo').hidden = !prazo;
+        const n = parseInt(parcelas.value, 10) || 1;
+        document.getElementById('venda-entrada-linha').hidden = n < 2;
+        if (n < 2) entrada.checked = false;
+        document.getElementById('venda-vencimento-rotulo').textContent = n > 1 ? TXT.vencPrimeira : TXT.vencUnica;
+        const t = totais().total;
+        const previa = document.getElementById('venda-parcelas-previa');
+        if (!prazo || !(t > 0) || n < 2) { previa.textContent = ''; return; }
+        const d = dividir(t, n);
+        let txt = TXT.previa.replace('{n}', n).replace('{valor}', fmt(d.base));
+        if (d.ultima !== d.base) txt += ' ' + TXT.previaUltima.replace('{valor}', fmt(d.ultima));
+        if (entrada.checked) txt += ' ' + TXT.previaEntrada;
+        previa.textContent = txt;
+    }
+    form.querySelectorAll('input[name="forma"]').forEach(function (r) { r.addEventListener('change', atualizarPrazo); });
+    parcelas.addEventListener('change', atualizarPrazo);
+    entrada.addEventListener('change', atualizarPrazo);
+    conta.addEventListener('change', function () {
+        carrinho.forEach(function (i) { if (window.gfDefinirMoedaCampo) window.gfDefinirMoedaCampo(i.preco, moedaConta()); });
+        atualizar();
+    });
+
+    form.addEventListener('submit', function (e) {
+        const t = totais();
+        const semEstoque = carrinho.find(function (i) { return i.el.classList.contains('is-erro'); });
+        let msg = '';
+        if (!cliId.value) msg = TXT.erroCliente;
+        else if (!carrinho.length) msg = TXT.erroItens;
+        else if (semEstoque) msg = semEstoque.produto.nome + ': ' + TXT.erroEstoque.replace('{n}', Math.max(0, semEstoque.produto.estoque));
+        else if (!(t.total > 0)) msg = TXT.erroTotal;
+        else if (forma() === 'prazo' && !vencimento.value) msg = TXT.erroVenc;
+        if (msg) { e.preventDefault(); mostrarErro(msg); erroEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+        document.getElementById('venda-itens-json').value = JSON.stringify(carrinho.map(function (i) {
+            return { produto_id: i.produto.id, quantidade: i.qtd, preco: arred(ler(i.preco)) };
+        }));
+        document.getElementById('venda-confirmar').disabled = true;
+    });
+
+    // O formatador de valores nasce no DOMContentLoaded do app.js (que vem depois deste script): espera ele rodar.
+    // Produto ja escolhido pela tela de Produtos (?produto=ID).
+    document.addEventListener('DOMContentLoaded', function () {
+        setTimeout(function () {
+            const pedido = parseInt(new URLSearchParams(location.search).get('produto'), 10);
+            if (pedido && porId.has(pedido)) adicionar(porId.get(pedido));
+            atualizar();
+        }, 0);
+    });
+})();
+</script>
+<% } %>

@@ -133,7 +133,22 @@ function linkWhatsappApp(celular, texto) {
     return numero ? `whatsapp://send?phone=${numero}&text=${encodeURIComponent(texto || '')}` : '';
 }
 
+// Mes pedido (?mes=2026-10) ou o atual, com os links do mes anterior e do seguinte (Cobrancas e Vendas).
+function periodoDoMes(pedido, hojeYmd) {
+    // "todos": todos os meses juntos (usado para ver tudo o que esta vencido e nao foi pago).
+    if (pedido === 'todos') return { mes: 'todos', ano: 0, numero: 0, inicio: '1900-01-01', fim: '2999-12-31', atual: hojeYmd.slice(0, 7) };
+    const m = /^(\d{4})-(\d{2})$/.exec(String(pedido || ''));
+    let ano = parseInt(hojeYmd.slice(0, 4), 10), mes = parseInt(hojeYmd.slice(5, 7), 10);
+    if (m && +m[2] >= 1 && +m[2] <= 12 && +m[1] >= 2000 && +m[1] <= 2100) { ano = +m[1]; mes = +m[2]; }
+    const chaveMes = (a, n) => { const d = new Date(Date.UTC(a, n - 1, 1)); return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`; };
+    return {
+        mes: chaveMes(ano, mes), ano, numero: mes,
+        inicio: `${chaveMes(ano, mes)}-01`, fim: `${chaveMes(ano, mes)}-${pad(ultimoDiaDoMes(ano, mes))}`,
+        anterior: chaveMes(ano, mes - 1), proximo: chaveMes(ano, mes + 1), atual: hojeYmd.slice(0, 7)
+    };
+}
+
 module.exports = {
     numeroWhatsapp, linkWhatsapp, linkWhatsappApp, ultimoDiaDoMes, vencimento, primeiroVencimento, passoMeses, vencimentoDaCuota, totalDeCuotas,
-    somarMeses, horizonte, cuotasAGerar, rotuloCuota, descricaoDaCuota, chave, validarContrato
+    somarMeses, horizonte, cuotasAGerar, rotuloCuota, descricaoDaCuota, chave, validarContrato, periodoDoMes
 };

@@ -1,4 +1,4 @@
-<%# Parametros: idModal, acao, titulo, cliente (opcional: preenche o formulario), voltar (opcional) %>
+<%# Parametros: idModal, acao, titulo, cliente (opcional: preenche o formulario), voltar (opcional), depois (opcional: 'venda' volta para a nova venda com o cliente criado) %>
 <% const _c = typeof cliente !== 'undefined' && cliente ? cliente : {}; %>
 <div class="modal-backdrop" id="<%= idModal %>" data-modal>
     <div class="modal card">
@@ -9,6 +9,7 @@
         <form method="post" action="<%= acao %>" class="form">
             <%- csrfCampo %>
             <% if (typeof voltar !== 'undefined' && voltar) { %><input type="hidden" name="voltar" value="<%= voltar %>"><% } %>
+            <% if (typeof depois !== 'undefined' && depois === 'venda') { %><input type="hidden" name="depois" value="venda"><% } %>
             <div class="form-group">
                 <label for="<%= idModal %>-nome"><%= t('clientes.campo_nome') %> *</label>
                 <input class="input" type="text" id="<%= idModal %>-nome" name="nome" maxlength="150" required value="<%= _c.nome || '' %>">

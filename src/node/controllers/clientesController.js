@@ -1,4 +1,5 @@
 const Cliente = require('../models/Cliente');
+const Venda = require('../models/Venda');
 const Conta = require('../models/Conta');
 const regras = require('../core/clientes_regras');
 const importacao = require('../core/clientes_import');
@@ -21,20 +22,7 @@ function avisar(req, tipo, mensagem) {
     req.session.flash = { tipo, mensagem };
 }
 
-// Mes pedido (?mes=2026-10) ou o atual, com os links do mes anterior e do seguinte.
-function periodoDoMes(pedido, hojeYmd) {
-    // "todos": todos os meses juntos (usado para ver tudo o que esta vencido e nao foi pago).
-    if (pedido === 'todos') return { mes: 'todos', ano: 0, numero: 0, inicio: '1900-01-01', fim: '2999-12-31', atual: hojeYmd.slice(0, 7) };
-    const m = /^(\d{4})-(\d{2})$/.exec(String(pedido || ''));
-    let ano = parseInt(hojeYmd.slice(0, 4), 10), mes = parseInt(hojeYmd.slice(5, 7), 10);
-    if (m && +m[2] >= 1 && +m[2] <= 12 && +m[1] >= 2000 && +m[1] <= 2100) { ano = +m[1]; mes = +m[2]; }
-    const chave = (a, n) => { const d = new Date(Date.UTC(a, n - 1, 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`; };
-    return {
-        mes: chave(ano, mes), ano, numero: mes,
-        inicio: `${chave(ano, mes)}-01`, fim: `${chave(ano, mes)}-${String(regras.ultimoDiaDoMes(ano, mes)).padStart(2, '0')}`,
-        anterior: chave(ano, mes - 1), proximo: chave(ano, mes + 1), atual: hojeYmd.slice(0, 7)
-    };
-}
+const periodoDoMes = regras.periodoDoMes;
 
 function paginar(total, pagina) {
     const paginas = Math.max(1, Math.ceil(total / POR_PAGINA));
@@ -54,7 +42,8 @@ const clientesController = {
         const diaPedido = dataValida(req.query.dia) ? req.query.dia : null;
         const periodo = periodoDoMes(diaPedido ? diaPedido.slice(0, 7) : req.query.mes, h);
         const estado = ESTADOS.includes(req.query.estado) ? req.query.estado : 'todas';
-        const servicoId = inteiro(req.query.servico);
+        // Filtro do servico: o id de um servico ou 'vendas' (so as parcelas das vendas de produtos).
+        const servicoId = req.query.servico === 'vendas' ? 'vendas' : inteiro(req.query.servico);
         const q = String(req.query.q || '').trim().slice(0, 80);
         const filtro = { inicio: periodo.inicio, fim: periodo.fim, estado, servicoId, q, dia: diaPedido };
         const pedida = inteiro(req.query.pagina, 1);
@@ -125,6 +114,8 @@ const clientesController = {
         avisar(req, 'sucesso', repetido
             ? req.t('clientes.flash_criado_cedula_repetida', { nome: repetido.nome })
             : req.t('clientes.flash_criado'));
+        // Criado na tela de nova venda: volta para ela com o cliente ja escolhido.
+        if (req.body.depois === 'venda') return res.redirect(`/clientes/vendas/nova?cliente=${id}`);
         res.redirect(`/clientes/${id}`);
     },
 
@@ -132,13 +123,15 @@ const clientesController = {
         const id = inteiro(req.params.id);
         const cliente = await Cliente.buscarCliente(id, req.user.id);
         if (!cliente) return res.status(404).render('404', { title: req.t('erro404.titulo') });
-        const [contratos, servicos, contas] = await Promise.all([
+        const [contratos, servicos, contas, vendas] = await Promise.all([
             Cliente.contratosDoCliente(req.user.id, id),
             Cliente.listarServicos(req.user.id),
-            Conta.buscarPorUsuario(req.user.id, false)
+            Conta.buscarPorUsuario(req.user.id, false),
+            Venda.vendasDoCliente(req.user.id, id)
         ]);
         res.render('clientes/ficha', {
-            title: cliente.nome, menuAtivo: 'clientes', aba: 'clientes', cliente, contratos, servicos, contas, hoje: hoje()
+            title: cliente.nome, menuAtivo: 'clientes', aba: 'clientes', cliente, contratos, servicos, contas, hoje: hoje(),
+            vendas: vendas.vendas, totalVendas: vendas.total
         });
     },
 
