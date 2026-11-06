@@ -4,7 +4,7 @@ const telefone = require('../core/telefone');
 const { fmt } = require('../core/legal');
 const { recursosDoPlano } = require('../core/planos_recursos');
 const { sendPlanRequestNotice } = require('../core/mailer');
-const { trialDias, PLANOS_VENDA, NOME_APP } = require('../core/negocio');
+const { trialDias, PLANOS_VENDA, NOME_APP, EMPRESA } = require('../core/negocio');
 const { caminhoLocal } = require('../middleware/authMiddleware');
 const pagopar = require('../core/pagopar');
 const Indicacao = require('../models/Indicacao');
@@ -117,7 +117,8 @@ const assinaturaController = {
             title: req.t('assinatura.recibo_titulo'),
             pagamento,
             fmt,
-            app: NOME_APP
+            app: NOME_APP,
+            empresa: EMPRESA
         });
     },
 

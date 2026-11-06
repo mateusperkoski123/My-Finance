@@ -65,6 +65,14 @@ async function sendVerificationEmail(email, link, lang = 'pt-BR') {
     });
 }
 
+// Aviso de fim do teste ou de vencimento do plano (textos ja prontos no idioma da conta, em core/avisos_plano.js).
+async function sendPlanNotice(email, { titulo, texto, botao, link }, lang = 'pt-BR') {
+    await enviar({
+        to: email, subject: t('avisoplano.email_assunto', { titulo, app: NOME_APP }, lang), textoLog: `${titulo} - ${texto} (${link})`,
+        html: modelo({ titulo, texto, botao, link, aviso: t('avisoplano.email_rodape', { app: NOME_APP }, lang), lang })
+    });
+}
+
 // Aviso para o(s) administrador(es) quando alguem pede um plano pago.
 async function sendPlanRequestNotice({ usuario, plano, ciclo, telefone = '', link }) {
     const admins = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim()).filter(Boolean);
@@ -79,4 +87,4 @@ async function sendPlanRequestNotice({ usuario, plano, ciclo, telefone = '', lin
     });
 }
 
-module.exports = { sendResetPasswordEmail, sendVerificationEmail, sendPlanRequestNotice };
+module.exports = { sendResetPasswordEmail, sendVerificationEmail, sendPlanNotice, sendPlanRequestNotice };

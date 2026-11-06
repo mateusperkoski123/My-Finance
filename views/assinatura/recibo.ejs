@@ -50,6 +50,10 @@ const status = { pago: 'assinatura.pg_pago', pendente: 'assinatura.pg_pendente',
         <span class="selo"><%= t(status) %></span>
     </div>
     <dl>
+        <% if (empresa && empresa.nome) { %>
+        <dt><%= t('assinatura.recibo_emitente') %></dt>
+        <dd><%= empresa.nome %><br><span style="font-weight: 400; color: #5a6270;"><% if (empresa.ruc) { %>RUC <%= empresa.ruc %><% } %><% if (empresa.endereco) { %> · <%= empresa.endereco %><% } %><% if (empresa.telefone) { %> · <%= t('assinatura.recibo_tel') %> <%= empresa.telefone %><% } %></span></dd>
+        <% } %>
         <dt><%= t('assinatura.recibo_cliente') %></dt>
         <dd><%= usuarioLogado.nome %><br><span style="font-weight: 400; color: #5a6270;"><%= usuarioLogado.email %></span></dd>
         <dt><%= t('assinatura.recibo_descricao') %></dt>

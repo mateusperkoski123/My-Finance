@@ -317,7 +317,8 @@ const selecionado = comprar.some(p => p.codigo === 'premium') ? 'premium' : (com
 })();
 </script>
 
-<p class="muted" style="font-size: 13px; margin-top: 4px;"><i class="ph ph-info"></i> <%= negocio.EMAIL_SUPORTE ? t('assinatura.como_pagar') : t('assinatura.como_pagar').replace(/\s*[^.]*:\s*$/, '') %><% if (negocio.EMAIL_SUPORTE) { %> <b><%= negocio.EMAIL_SUPORTE %></b><% } %></p>
+<% const chaveComoPagar = pagoOnline ? 'assinatura.como_pagar_online' : 'assinatura.como_pagar'; %>
+<p class="muted" style="font-size: 13px; margin-top: 4px;"><i class="ph ph-info"></i> <%= negocio.EMAIL_SUPORTE ? t(chaveComoPagar) : t(chaveComoPagar).replace(/\s*[^.]*:\s*$/, '') %><% if (negocio.EMAIL_SUPORTE) { %> <b><%= negocio.EMAIL_SUPORTE %></b><% } %></p>
 <% if (acessoBloqueado) { %>
     <%# Unico caminho para a tela da conta enquanto o resto do sistema esta fechado (a pessoa pode excluir a conta e os dados). %>
     <p class="muted" style="font-size: 13px;"><a href="/configuracoes/conta"><i class="ph ph-identification-card"></i> <%= t('config.menu.conta') %>: <%= t('conta.excluir_titulo') %></a></p>

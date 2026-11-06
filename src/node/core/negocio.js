@@ -25,10 +25,18 @@ module.exports = {
     // Limite mensal de mensagens do Chat IA quando o plano nao define um (planos.ia_limite_mes).
     IA_LIMITE_PADRAO: parseInt(process.env.IA_LIMITE_MENSAGENS_MES || '300', 10),
     // Mudar este valor obriga todos os usuarios a aceitar os termos novamente.
-    TERMOS_VERSAO: '1.2',
+    TERMOS_VERSAO: '1.3',
     // Tamanho minimo de senha nova (cadastro, redefinicao e troca). Senhas antigas mais curtas continuam entrando.
     SENHA_MINIMA: 8,
     EMAIL_SUPORTE: process.env.SUPPORT_EMAIL || '',
+    // Titular do servico no Paraguai (dados publicos, os mesmos da factura): aparece nos Termos/Politica e no comprovante
+    // de pagamento. As variaveis EMPRESA_* do ambiente substituem, se existirem. O Brasil tem dados proprios (legal.js).
+    EMPRESA: {
+        nome: process.env.EMPRESA_NOME || 'Mateus Enrique Perkoski Haas - Perkoski Solutions',
+        ruc: process.env.EMPRESA_RUC || '6076834-7',
+        endereco: process.env.EMPRESA_ENDERECO || 'A 200 metros de la Plaza La Isla, Santa Rita, Alto Paraná, Paraguay',
+        telefone: process.env.EMPRESA_TELEFONE || '(0992) 718773'
+    },
     CICLOS: ['mensal', 'anual'],
     // Planos que podem ser testados e contratados (o "prueba" e o teste antigo de 7 dias, com tudo liberado).
     PLANOS_VENDA: ['basico', 'premium', 'pro'],

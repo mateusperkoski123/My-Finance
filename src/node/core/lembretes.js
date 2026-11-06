@@ -271,6 +271,12 @@ function montarAvisoClientes(v, dataYMD, { idioma, moeda: cod }) {
 async function processarDevidos() {
     const agora = Date.now();
     const resumo = { devidos: 0, avisos: 0, erros: 0 };
+    // Fim do teste e vencimento do plano: tambem vao por e-mail, entao rodam mesmo sem push configurado.
+    try {
+        resumo.plano = await require('./avisos_plano').processar(agora);
+    } catch (err) {
+        console.error('Falha nos avisos de plano:', err.message);
+    }
     if (!push.disponivel()) return Object.assign(resumo, { desligado: true });
     const lista = await Lembrete.devidos(agora);
     resumo.devidos = lista.length;
