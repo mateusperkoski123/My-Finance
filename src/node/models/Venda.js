@@ -11,28 +11,32 @@ const SyncExclusao = require('./SyncExclusao');
 const hojeYMD = () => toLocalYMD(hojeLocal());
 const ND = '%Y-%m-%d';
 
-// Categoria "Vendas de produtos" (pai de todas as vendas) no idioma da conta.
+// Categorias (pai) no idioma da conta: "Vendas de produtos" (receita) e "Compra de mercadorias" (despesa da reposicao).
 const CATEGORIA_VENDAS = { 'pt-BR': 'Vendas de produtos', 'es-PY': 'Venta de productos', 'en-US': 'Product sales' };
+const CATEGORIA_ESTOQUE = { 'pt-BR': 'Compra de mercadorias', 'es-PY': 'Compra de mercaderías', 'en-US': 'Inventory purchases' };
 const COR_VENDAS = '#F59E0B';
+const COR_ESTOQUE = '#8B5CF6';
 
 const likeSeguro = (q) => `%${String(q).replace(/[\\%_]/g, (c) => '\\' + c)}%`;
 const falha = (codigo, extra = {}) => Object.assign(new Error(codigo), { codigo, ...extra });
 
 class Venda {
-    // ---------- Categoria das vendas ----------
-    static async categoriaVendas(userId, conn = db) {
-        const [[u]] = await conn.query('SELECT idioma, categoria_vendas_id FROM users WHERE id = ? LIMIT 1', [userId]);
-        if (u && u.categoria_vendas_id) {
-            const [r] = await conn.query('SELECT id, status, parent_id FROM categorias WHERE id = ? AND user_id = ? LIMIT 1', [u.categoria_vendas_id, userId]);
+    // ---------- Categorias ----------
+    // Categoria pai guardada no usuario (coluna `coluna`): reaproveita a que ja existe com o nome (em qualquer idioma),
+    // reativa se estiver arquivada e cria se nao houver.
+    static async _categoriaPai(userId, { coluna, nomes, tipo, cor }, conn = db) {
+        const [[u]] = await conn.query(`SELECT idioma, ${coluna} AS atual FROM users WHERE id = ? LIMIT 1`, [userId]);
+        if (u && u.atual) {
+            const [r] = await conn.query('SELECT id, status, parent_id FROM categorias WHERE id = ? AND user_id = ? LIMIT 1', [u.atual, userId]);
             if (r[0] && !r[0].parent_id) {
                 if (r[0].status !== 'ativa') await conn.query("UPDATE categorias SET status = 'ativa' WHERE id = ?", [r[0].id]);
                 return r[0].id;
             }
         }
-        const nome = CATEGORIA_VENDAS[u && u.idioma] || CATEGORIA_VENDAS['es-PY'];
+        const nome = nomes[u && u.idioma] || nomes['es-PY'];
         const [ex] = await conn.query(
-            "SELECT id FROM categorias WHERE user_id = ? AND parent_id IS NULL AND sistema = 0 AND tipo IN ('receita', 'ambas') AND nome IN (?) ORDER BY id LIMIT 1",
-            [userId, Object.values(CATEGORIA_VENDAS)]
+            "SELECT id FROM categorias WHERE user_id = ? AND parent_id IS NULL AND sistema = 0 AND tipo IN (?, 'ambas') AND nome IN (?) ORDER BY id LIMIT 1",
+            [userId, tipo, Object.values(nomes)]
         );
         let id;
         if (ex[0]) {
@@ -41,13 +45,45 @@ class Venda {
         } else {
             const [ins] = await conn.query(
                 `INSERT INTO categorias (user_id, parent_id, nome, cor, tipo, sistema, status, created_at, updated_at)
-                 VALUES (?, NULL, ?, ?, 'receita', 0, 'ativa', NOW(), NOW())`,
-                [userId, nome, COR_VENDAS]
+                 VALUES (?, NULL, ?, ?, ?, 0, 'ativa', NOW(), NOW())`,
+                [userId, nome, cor, tipo]
             );
             id = ins.insertId;
         }
-        await conn.query('UPDATE users SET categoria_vendas_id = ? WHERE id = ?', [id, userId]);
+        await conn.query(`UPDATE users SET ${coluna} = ? WHERE id = ?`, [id, userId]);
         return id;
+    }
+
+    static categoriaVendas(userId, conn = db) {
+        return this._categoriaPai(userId, { coluna: 'categoria_vendas_id', nomes: CATEGORIA_VENDAS, tipo: 'receita', cor: COR_VENDAS }, conn);
+    }
+
+    static categoriaEstoque(userId, conn = db) {
+        return this._categoriaPai(userId, { coluna: 'categoria_estoque_id', nomes: CATEGORIA_ESTOQUE, tipo: 'despesa', cor: COR_ESTOQUE }, conn);
+    }
+
+    // ---------- Historico do estoque ----------
+    // Registra uma mudanca de unidades (quantidade com sinal; saldo = estoque logo depois).
+    static async _movimento(conn, userId, produtoId, { tipo, quantidade, saldo, custo = null, vendaId = null, lancamentoId = null, observacao = null }) {
+        await conn.query(
+            `INSERT INTO cliente_estoque_movimentos (user_id, produto_id, tipo, quantidade, saldo, custo_unit, venda_id, lancamento_id, observacao)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [userId, produtoId, tipo, quantidade, saldo, custo, vendaId, lancamentoId, observacao]
+        );
+    }
+
+    static async historicoEstoque(userId, produtoId, limite = 200) {
+        const [rows] = await db.query(
+            `SELECT m.id, m.tipo, m.quantidade, m.saldo, m.custo_unit, m.venda_id, v.numero AS venda_numero, m.lancamento_id,
+                    ABS(l.valor) AS gasto, cb.moeda AS gasto_moeda, m.observacao, DATE_FORMAT(m.created_at, '%Y-%m-%d %H:%i') AS quando
+             FROM cliente_estoque_movimentos m
+             LEFT JOIN cliente_vendas v ON v.id = m.venda_id
+             LEFT JOIN lancamentos l ON l.id = m.lancamento_id
+             LEFT JOIN contas cb ON cb.id = l.conta_id
+             WHERE m.user_id = ? AND m.produto_id = ? ORDER BY m.id DESC LIMIT ?`,
+            [userId, produtoId, limite]
+        );
+        return rows;
     }
 
     // ---------- Produtos ----------
@@ -86,28 +122,91 @@ class Venda {
     }
 
     static async criarProduto(userId, d) {
+        const conn = await db.getConnection();
         try {
-            const [r] = await db.query(
+            await conn.beginTransaction();
+            const [r] = await conn.query(
                 'INSERT INTO cliente_produtos (user_id, nome, descricao, preco, custo, estoque, estoque_minimo) VALUES (?, ?, ?, ?, ?, ?, ?)',
                 [userId, d.nome, d.descricao, d.preco, d.custo, d.estoque, d.minimo]
             );
+            if (d.estoque) await this._movimento(conn, userId, r.insertId, { tipo: 'inicial', quantidade: d.estoque, saldo: d.estoque, custo: d.custo });
+            await conn.commit();
             return { id: r.insertId };
         } catch (err) {
+            await conn.rollback();
             if (err.code === 'ER_DUP_ENTRY') return { duplicado: true };
             throw err;
+        } finally {
+            conn.release();
         }
     }
 
+    // Editar o produto. Se o numero de unidades mudou, fica registrado no historico como ajuste (ou estoque inicial,
+    // quando o produto passa a controlar estoque).
     static async atualizarProduto(userId, id, d) {
+        const conn = await db.getConnection();
         try {
-            const [r] = await db.query(
+            await conn.beginTransaction();
+            const [[atual]] = await conn.query('SELECT id, estoque FROM cliente_produtos WHERE id = ? AND user_id = ? FOR UPDATE', [id, userId]);
+            if (!atual) { await conn.rollback(); return { naoEncontrado: true }; }
+            await conn.query(
                 'UPDATE cliente_produtos SET nome = ?, descricao = ?, preco = ?, custo = ?, estoque = ?, estoque_minimo = ? WHERE id = ? AND user_id = ?',
                 [d.nome, d.descricao, d.preco, d.custo, d.estoque, d.minimo, id, userId]
             );
-            return r.affectedRows ? { ok: true } : { naoEncontrado: true };
+            if (d.estoque !== null && d.estoque !== atual.estoque) {
+                const antes = atual.estoque === null ? 0 : atual.estoque;
+                await this._movimento(conn, userId, id, {
+                    tipo: atual.estoque === null ? 'inicial' : 'ajuste', quantidade: d.estoque - antes, saldo: d.estoque, custo: d.custo
+                });
+            }
+            await conn.commit();
+            return { ok: true };
         } catch (err) {
+            await conn.rollback();
             if (err.code === 'ER_DUP_ENTRY') return { duplicado: true };
             throw err;
+        } finally {
+            conn.release();
+        }
+    }
+
+    // Reposicao de estoque: soma as unidades, atualiza o custo (media ponderada) e, se pedido, lanca o gasto na conta
+    // (despesa paga na categoria "Compra de mercadorias"). Erros com `codigo`: produto, sem_controle, conta.
+    static async registrarEntrada(userId, produtoId, { quantidade, custo, gasto, data, contaId }) {
+        const [[p0]] = await db.query("SELECT id, nome, estoque FROM cliente_produtos WHERE id = ? AND user_id = ? AND status = 'ativo' LIMIT 1", [produtoId, userId]);
+        if (!p0) throw falha('produto');
+        if (p0.estoque === null) throw falha('sem_controle');
+        const dia = data || toLocalYMD(hojeLocal());
+        let lancamentoId = null;
+        let valorGasto = null;
+        if (gasto) {
+            const [[cta]] = await db.query("SELECT id, moeda FROM contas WHERE id = ? AND user_id = ? AND status = 'ativa' LIMIT 1", [contaId, userId]);
+            if (!cta) throw falha('conta');
+            valorGasto = regras.arredondar(quantidade * custo, regras.casasDaMoeda(cta.moeda));
+            const categoriaId = await this.categoriaEstoque(userId);
+            const [id] = await require('./Lancamento').criar(userId, {
+                tipo: 'despesa', conta_id: cta.id, categoria_id: categoriaId, valor: valorGasto,
+                descricao: `${p0.nome} ×${quantidade}`.slice(0, 190), data_competencia: dia, status: 'pago', data_pagamento: dia
+            });
+            lancamentoId = id;
+        }
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            const [[p]] = await conn.query('SELECT id, estoque, custo FROM cliente_produtos WHERE id = ? AND user_id = ? FOR UPDATE', [produtoId, userId]);
+            const novoCusto = regras.custoMedio(p, quantidade, custo);
+            const saldo = p.estoque + quantidade;
+            await conn.query('UPDATE cliente_produtos SET estoque = ?, custo = ? WHERE id = ? AND user_id = ?', [saldo, novoCusto, produtoId, userId]);
+            await this._movimento(conn, userId, produtoId, { tipo: 'entrada', quantidade, saldo, custo, lancamentoId });
+            await conn.commit();
+            return { saldo, custo: novoCusto, gasto: valorGasto, lancamentoId };
+        } catch (err) {
+            await conn.rollback();
+            // O gasto ja foi lancado: desfaz para a conta nao ficar com despesa de uma entrada que nao aconteceu.
+            if (lancamentoId) await require('./Lancamento').excluir(lancamentoId, userId).catch(() => {});
+            throw err;
+        } finally {
+            conn.release();
         }
     }
 
@@ -174,14 +273,25 @@ class Venda {
             if (!cta) throw falha('conta');
 
             // Trava os produtos ate o fim: duas vendas ao mesmo tempo nao vendem a mesma ultima unidade.
-            const ids = [...new Set(itens.map((i) => i.produtoId))];
-            const [prods] = await conn.query(
+            const ids = [...new Set(itens.filter((i) => i.produtoId).map((i) => i.produtoId))];
+            const [prods] = ids.length ? await conn.query(
                 'SELECT id, nome, custo, estoque, status FROM cliente_produtos WHERE user_id = ? AND id IN (?) FOR UPDATE',
                 [userId, ids]
-            );
+            ) : [[]];
             const porId = new Map(prods.map((p) => [p.id, p]));
+            // Servicos vendidos avulso: sem estoque e sem custo de material (custo 0).
+            const idsServico = [...new Set(itens.filter((i) => i.servicoId).map((i) => i.servicoId))];
+            const [servs] = idsServico.length ? await conn.query(
+                'SELECT id, nome, status FROM cliente_servicos WHERE user_id = ? AND id IN (?)', [userId, idsServico]
+            ) : [[]];
+            const servicoPorId = new Map(servs.map((s) => [s.id, s]));
             const pedido = new Map();
             for (const it of itens) {
+                if (it.servicoId) {
+                    const s = servicoPorId.get(it.servicoId);
+                    if (!s || s.status !== 'ativo') throw falha('produto');
+                    continue;
+                }
                 const p = porId.get(it.produtoId);
                 if (!p || p.status !== 'ativo') throw falha('produto');
                 pedido.set(p.id, (pedido.get(p.id) || 0) + it.quantidade);
@@ -195,8 +305,13 @@ class Venda {
 
             const casas = regras.casasDaMoeda(cta.moeda);
             const linhas = itens.map((it) => {
+                const preco = regras.arredondar(it.preco, casas);
+                if (it.servicoId) {
+                    const s = servicoPorId.get(it.servicoId);
+                    return { produtoId: null, servicoId: s.id, nome: s.nome, quantidade: it.quantidade, preco, custo: 0 };
+                }
                 const p = porId.get(it.produtoId);
-                return { produtoId: p.id, nome: p.nome, quantidade: it.quantidade, preco: regras.arredondar(it.preco, casas), custo: p.custo === null ? null : Number(p.custo) };
+                return { produtoId: p.id, servicoId: null, nome: p.nome, quantidade: it.quantidade, preco, custo: p.custo === null ? null : Number(p.custo) };
             });
             const total = regras.arredondar(linhas.reduce((s, l) => s + l.preco * l.quantidade, 0), casas);
             if (!(total > 0) || total >= 1e12) throw falha('total');
@@ -213,13 +328,14 @@ class Venda {
             );
             const vendaId = ins.insertId;
             await conn.query(
-                'INSERT INTO cliente_venda_itens (venda_id, produto_id, nome, quantidade, preco_unit, custo_unit) VALUES ?',
-                [linhas.map((l) => [vendaId, l.produtoId, l.nome, l.quantidade, l.preco, l.custo])]
+                'INSERT INTO cliente_venda_itens (venda_id, produto_id, servico_id, nome, quantidade, preco_unit, custo_unit) VALUES ?',
+                [linhas.map((l) => [vendaId, l.produtoId, l.servicoId, l.nome, l.quantidade, l.preco, l.custo])]
             );
             for (const [id, qtd] of pedido) {
-                if (porId.get(id).estoque !== null) {
-                    await conn.query('UPDATE cliente_produtos SET estoque = estoque - ? WHERE id = ? AND user_id = ?', [qtd, id, userId]);
-                }
+                const p = porId.get(id);
+                if (p.estoque === null) continue;
+                await conn.query('UPDATE cliente_produtos SET estoque = estoque - ? WHERE id = ? AND user_id = ?', [qtd, id, userId]);
+                await this._movimento(conn, userId, id, { tipo: 'venda', quantidade: -qtd, saldo: p.estoque - qtd, vendaId });
             }
 
             // Parcelas = receitas. A vista: uma so, paga na data da venda. A prazo: mensais a partir do 1o vencimento.
@@ -274,6 +390,8 @@ class Venda {
         DATE_FORMAT(v.cancelada_em, '${ND}') AS cancelada, cb.moeda, cb.nome AS conta_nome,
         (SELECT COUNT(*) FROM lancamentos l WHERE l.venda_id = v.id) AS lancadas,
         (SELECT COUNT(*) FROM lancamentos l WHERE l.venda_id = v.id AND l.status = 'pago') AS pagas,
+        (SELECT COUNT(DISTINCT l.cuota_num) FROM lancamentos l WHERE l.venda_id = v.id)
+          - (SELECT COUNT(DISTINCT l.cuota_num) FROM lancamentos l WHERE l.venda_id = v.id AND l.status = 'pendente') AS quitadas,
         (SELECT COALESCE(SUM(l.valor), 0) FROM lancamentos l WHERE l.venda_id = v.id AND l.status = 'pago') AS recebido,
         (SELECT COALESCE(SUM(l.valor), 0) FROM lancamentos l WHERE l.venda_id = v.id AND l.status = 'pendente') AS a_receber,
         (SELECT COUNT(*) FROM lancamentos l WHERE l.venda_id = v.id AND l.status = 'pendente' AND l.data_competencia < ?) AS vencidas`;
@@ -294,13 +412,13 @@ class Venda {
         if (!vendas.length) return vendas;
         const ids = vendas.map((v) => v.id);
         const [itens] = await db.query(
-            `SELECT i.venda_id, i.produto_id, i.nome, i.quantidade, i.preco_unit, i.custo_unit, UNIX_TIMESTAMP(p.foto_em) AS foto_v
+            `SELECT i.venda_id, i.produto_id, i.servico_id, i.nome, i.quantidade, i.preco_unit, i.custo_unit, UNIX_TIMESTAMP(p.foto_em) AS foto_v
              FROM cliente_venda_itens i LEFT JOIN cliente_produtos p ON p.id = i.produto_id
              WHERE i.venda_id IN (?) ORDER BY i.id`,
             [ids]
         );
         const [cuotas] = await db.query(
-            `SELECT l.id, l.venda_id, l.cuota_num, l.valor, l.status, DATE_FORMAT(l.data_competencia, '${ND}') AS venc,
+            `SELECT l.id, l.venda_id, l.conta_id, l.cuota_num, l.valor, l.status, DATE_FORMAT(l.data_competencia, '${ND}') AS venc,
                     DATE_FORMAT(l.data_pagamento, '${ND}') AS pago_em
              FROM lancamentos l WHERE l.user_id = ? AND l.venda_id IN (?) ORDER BY l.venda_id, l.cuota_num, l.data_competencia`,
             [userId, ids]
@@ -371,31 +489,38 @@ class Venda {
     // Produtos mais vendidos do periodo (por unidades).
     static async maisVendidos(userId, inicio, fim, limite = 5) {
         const [rows] = await db.query(
-            `SELECT i.produto_id, MAX(i.nome) AS nome, cb.moeda, SUM(i.quantidade) AS unidades,
+            `SELECT i.produto_id, i.servico_id, MAX(i.nome) AS nome, cb.moeda, SUM(i.quantidade) AS unidades,
                 SUM(i.preco_unit * i.quantidade) AS faturamento,
                 SUM(CASE WHEN i.custo_unit IS NOT NULL THEN (i.preco_unit - i.custo_unit) * i.quantidade END) AS lucro,
                 SUM(i.custo_unit IS NULL) AS sem_custo, MAX(UNIX_TIMESTAMP(p.foto_em)) AS foto_v
              FROM cliente_vendas v JOIN cliente_venda_itens i ON i.venda_id = v.id JOIN contas cb ON cb.id = v.conta_id
              LEFT JOIN cliente_produtos p ON p.id = i.produto_id
              WHERE v.user_id = ? AND v.status = 'ativa' AND v.data_venda BETWEEN ? AND ?
-             GROUP BY i.produto_id, cb.moeda ORDER BY unidades DESC, faturamento DESC LIMIT ?`,
+             GROUP BY i.produto_id, i.servico_id, cb.moeda ORDER BY unidades DESC, faturamento DESC LIMIT ?`,
             [userId, inicio, fim, limite]
         );
         return rows;
     }
 
     // Devolve ao estoque os itens das vendas ATIVAS indicadas (produtos que controlam estoque).
-    static async _devolverEstoque(conn, userId, vendaIds) {
+    // Cada devolucao fica no historico do produto (`vendaId` so quando e o cancelamento de uma venda: ao excluir o cliente
+    // a venda some junto).
+    static async _devolverEstoque(conn, userId, vendaIds, vendaId = null) {
         if (!vendaIds.length) return;
-        await conn.query(
-            `UPDATE cliente_produtos p
-             JOIN (SELECT i.produto_id, SUM(i.quantidade) AS q FROM cliente_venda_itens i JOIN cliente_vendas v ON v.id = i.venda_id
-                   WHERE v.user_id = ? AND v.status = 'ativa' AND v.id IN (?) AND i.produto_id IS NOT NULL GROUP BY i.produto_id) x
-               ON x.produto_id = p.id
-             SET p.estoque = p.estoque + x.q
-             WHERE p.user_id = ? AND p.estoque IS NOT NULL`,
+        const [devolver] = await conn.query(
+            `SELECT i.produto_id, SUM(i.quantidade) AS q FROM cliente_venda_itens i
+             JOIN cliente_vendas v ON v.id = i.venda_id
+             JOIN cliente_produtos p ON p.id = i.produto_id AND p.estoque IS NOT NULL
+             WHERE v.user_id = ? AND v.status = 'ativa' AND v.id IN (?) AND p.user_id = ?
+             GROUP BY i.produto_id`,
             [userId, vendaIds, userId]
         );
+        for (const d of devolver) {
+            const q = Number(d.q);
+            await conn.query('UPDATE cliente_produtos SET estoque = estoque + ? WHERE id = ? AND user_id = ?', [q, d.produto_id, userId]);
+            const [[p]] = await conn.query('SELECT estoque FROM cliente_produtos WHERE id = ?', [d.produto_id]);
+            await this._movimento(conn, userId, d.produto_id, { tipo: 'devolucao', quantidade: q, saldo: p.estoque, vendaId });
+        }
     }
 
     // Cancela: o estoque volta, as parcelas a receber saem. As ja recebidas ficam (o dinheiro entrou), a nao ser que
@@ -406,7 +531,7 @@ class Venda {
             await conn.beginTransaction();
             const [[v]] = await conn.query('SELECT id, status FROM cliente_vendas WHERE id = ? AND user_id = ? FOR UPDATE', [id, userId]);
             if (!v || v.status !== 'ativa') { await conn.rollback(); return { naoEncontrado: true }; }
-            await this._devolverEstoque(conn, userId, [id]);
+            await this._devolverEstoque(conn, userId, [id], id);
             const onde = `user_id = ? AND venda_id = ?${apagarRecebidas ? '' : " AND status = 'pendente'"}`;
             await SyncExclusao.registrar('lancamentos', onde, [userId, id], conn);
             const [del] = await conn.query(`DELETE FROM lancamentos WHERE ${onde}`, [userId, id]);

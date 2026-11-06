@@ -39,14 +39,44 @@
     <% if (cliente.observacoes) { %><p class="muted" style="margin: 12px 0 0; white-space: pre-line;"><%= cliente.observacoes %></p><% } %>
 </div>
 
+<% resumo.forEach(function (r) {
+    const _dias = r.desde ? _atraso(r.desde) : 0;
+%>
+<section class="clientes-resumo ficha-resumo">
+    <% if (resumo.length > 1) { %><span class="badge badge-neutro"><%= r.moeda %></span><% } %>
+    <div class="resumo-grid">
+        <div class="card resumo-card">
+            <span class="resumo-card__label"><%= t('clientes.resumo_total') %></span>
+            <span class="resumo-card__valor"><%= moeda(r.total, r.moeda) %></span>
+            <span class="resumo-card__sub muted"><%= t('clientes.cuotas_n', { n: r.parcelas }) %></span>
+        </div>
+        <div class="card resumo-card">
+            <span class="resumo-card__label"><%= t('clientes.resumo_pago') %></span>
+            <span class="resumo-card__valor" style="color: var(--green);"><%= moeda(r.pago, r.moeda) %></span>
+        </div>
+        <div class="card resumo-card">
+            <span class="resumo-card__label"><%= t('clientes.resumo_a_receber') %></span>
+            <span class="resumo-card__valor" style="color: var(--pendente);"><%= moeda(r.a_receber, r.moeda) %></span>
+        </div>
+        <div class="card resumo-card">
+            <span class="resumo-card__label"><%= t('clientes.resumo_atraso') %></span>
+            <span class="resumo-card__valor" style="color: <%= Number(r.vencido) > 0 ? 'var(--red)' : 'var(--muted)' %>;"><%= moeda(r.vencido, r.moeda) %></span>
+            <% if (Number(r.vencido) > 0) { %><span class="resumo-card__sub" style="color: var(--red);"><%= t('clientes.resumo_atraso_desde', { n: _dias }) %></span><% } %>
+        </div>
+    </div>
+</section>
+<% }) %>
+
 <h2 class="clientes-subtitulo"><%= t('clientes.contratos') %></h2>
 <% if (!contratos.length) { %>
     <div class="card placeholder-card"><p class="muted" style="margin: 0;"><%= t('clientes.sem_contratos') %></p></div>
 <% } %>
 
 <% contratos.forEach(function (k) {
-    const pagas = k.cuotas.filter(function (c) { return c.status === 'pago'; }).length;
-    const total = k.cuotas_total || k.cuotas.length;
+    // Parcelas quitadas por inteiro (um recebimento parcial deixa o restante pendente na mesma parcela).
+    const _nums = {}; k.cuotas.forEach(function (c) { _nums[c.cuota_num] = (_nums[c.cuota_num] || 0) + (c.status === 'pendente' ? 1 : 0); });
+    const pagas = Object.keys(_nums).filter(function (n) { return _nums[n] === 0; }).length;
+    const total = k.cuotas_total || Object.keys(_nums).length;
     const ativo = k.status === 'ativo';
 %>
 <div class="card clientes-contrato <%= ativo ? '' : 'is-cancelado' %>">
@@ -64,7 +94,8 @@
         </div>
         <div class="clientes-contrato__resumo">
             <span class="badge badge-sucesso"><%= t('clientes.pagaram_de', { pagas: pagas, total: total }) %></span>
-            <% if (ativo) { %>
+            <% if (ativo) { const _prox = k.cuotas.find(function (c) { return c.status === 'pendente'; }); %>
+            <% if (_prox) { %><button type="button" class="btn btn-outline btn-sm" data-pagar-id="<%= _prox.id %>" data-pagar-resumo="<%= cliente.nome + ' · ' + k.servico_nome + ' · ' + moeda(_prox.valor, k.conta_moeda) %>" data-pagar-valor="<%= Number(_prox.valor) %>" data-pagar-moeda="<%= k.conta_moeda %>" data-pagar-conta="<%= _prox.conta_id %>" data-pagar-venc="<%= _prox.venc %>"><i class="ph ph-sliders-horizontal"></i> <%= t('clientes.receber_opcoes') %></button><% } %>
             <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-editar-contrato-<%= k.id %>"><i class="ph ph-pencil-simple"></i> <%= t('clientes.editar') %></button>
             <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-cancelar-contrato-<%= k.id %>"><i class="ph ph-prohibit"></i> <%= t('clientes.cancelar_contrato') %></button>
             <% } %>
@@ -149,6 +180,9 @@
 <% vendas.forEach(function (v) { %>
 <%- include('_venda_card', { venda: v, voltar: _voltar, hoje }) %>
 <% }) %>
+
+<%- include('_modal_pagar', { voltar: _voltar, hoje, contas }) %>
+<%- include('_wa_script') %>
 
 <%- include('_modal_cliente', { idModal: 'modal-editar-cliente', acao: '/clientes/' + cliente.id + '/atualizar', titulo: t('clientes.editar'), cliente: cliente }) %>
 

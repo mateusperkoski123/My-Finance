@@ -1,0 +1,45 @@
+<div class="page-header page-header--acoes">
+    <div>
+        <h1><i class="ph ph-clock-counter-clockwise"></i> <%= produto.nome %></h1>
+        <p class="muted"><a href="/clientes/produtos"><i class="ph ph-arrow-left"></i> <%= t('produtos.voltar') %></a></p>
+    </div>
+    <div class="page-header__botoes">
+        <% if (produto.estoque !== null) { %><span class="badge badge-neutro"><i class="ph ph-stack"></i> <%= t('produtos.em_estoque', { n: produto.estoque }) %></span><% } %>
+    </div>
+</div>
+
+<%- include('_abas') %>
+
+<div class="card tabela-wrapper clientes-tabela">
+    <% if (!movimentos.length) { %>
+        <p class="muted" style="padding: 20px; margin: 0;"><%= produto.estoque === null ? t('produtos.historico_sem_controle') : t('produtos.historico_vazio') %></p>
+    <% } else { %>
+    <table class="tabela">
+        <thead>
+            <tr>
+                <th><%= t('produtos.mov_quando') %></th>
+                <th><%= t('produtos.mov_tipo') %></th>
+                <th class="tabela__num"><%= t('produtos.mov_quantidade') %></th>
+                <th class="tabela__num"><%= t('produtos.mov_saldo') %></th>
+                <th><%= t('produtos.mov_detalhe') %></th>
+            </tr>
+        </thead>
+        <tbody>
+        <% movimentos.forEach(function (m) { const q = Number(m.quantidade); %>
+            <tr>
+                <td><%= formatDate(m.quando.slice(0, 10), 'DD/MM/YYYY') %> <span class="muted"><%= m.quando.slice(11) %></span></td>
+                <td><span class="badge <%= m.tipo === 'entrada' || m.tipo === 'inicial' ? 'badge-sucesso' : (m.tipo === 'venda' ? 'badge-alerta' : 'badge-neutro') %>"><%= t('produtos.mov_' + m.tipo) %></span></td>
+                <td class="tabela__num"><strong style="color: <%= q < 0 ? 'var(--red)' : 'var(--green)' %>;"><%= q > 0 ? '+' + q : q %></strong></td>
+                <td class="tabela__num"><%= m.saldo === null ? '-' : m.saldo %></td>
+                <td class="muted">
+                    <% if (m.venda_id) { %><a href="/clientes/vendas/<%= m.venda_id %>"><%= t('vendas.venda_n', { n: m.venda_numero }) %></a><% } %>
+                    <% if (m.custo_unit !== null && m.tipo === 'entrada') { %><%= t('produtos.mov_custo', { custo: moeda(m.custo_unit, m.gasto_moeda || undefined) }) %><% } %>
+                    <% if (m.gasto !== null) { %> · <%= t('produtos.mov_gasto', { valor: moeda(m.gasto, m.gasto_moeda) }) %><% } %>
+                    <% if (m.observacao) { %> · <%= m.observacao %><% } %>
+                </td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+    <% } %>
+</div>

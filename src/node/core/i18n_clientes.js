@@ -76,7 +76,7 @@ module.exports = {
         'Hi {nome}! Your {servico} installment ({parcela}) of {valor}, which was due on {data}, is still open. Could you let me know when you can pay? Thanks!'
     ],
     'clientes.pagar': ['Pagar', 'Pagar', 'Mark paid'],
-    'clientes.pagar_otra_fecha': ['Pagar em outra data', 'Pagar con otra fecha', 'Pay on another date'],
+    'clientes.pagar_otra_fecha': ['Receber com outra data, conta ou valor parcial', 'Cobrar con otra fecha, cuenta o monto parcial', 'Receive with another date, account or partial amount'],
     'clientes.pagar_titulo': ['Registrar pagamento', 'Registrar pago', 'Record payment'],
     'clientes.pagar_data': ['Data do pagamento', 'Fecha del pago', 'Payment date'],
     'clientes.desfazer': ['Desfazer', 'Deshacer', 'Undo'],

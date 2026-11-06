@@ -12,3 +12,5 @@
 </div>
 
 <%- include('_venda_card', { venda, voltar: '/clientes/vendas/' + venda.id, hoje, mostrarCliente: true }) %>
+<%- include('_modal_pagar', { voltar: '/clientes/vendas/' + venda.id, hoje, contas }) %>
+<%- include('_wa_script') %>

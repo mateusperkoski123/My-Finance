@@ -1,8 +1,7 @@
+<%# Quatro abas: produtos e servicos ficam juntos em "Catalogo" (com o seletor de _catalogo_abas) e a importacao e um botao da lista de clientes. %>
 <div class="tabs clientes-abas">
     <a href="/clientes" class="tabs__item <%= aba === 'cobrancas' ? 'is-active' : '' %>"><i class="ph ph-receipt"></i> <%= t('clientes.aba_cobrancas') %></a>
-    <a href="/clientes/lista" class="tabs__item <%= aba === 'clientes' ? 'is-active' : '' %>"><i class="ph ph-users"></i> <%= t('clientes.aba_clientes') %></a>
+    <a href="/clientes/lista" class="tabs__item <%= aba === 'clientes' || aba === 'importar' ? 'is-active' : '' %>"><i class="ph ph-users"></i> <%= t('clientes.aba_clientes') %></a>
     <a href="/clientes/vendas" class="tabs__item <%= aba === 'vendas' ? 'is-active' : '' %>"><i class="ph ph-shopping-bag"></i> <%= t('clientes.aba_vendas') %></a>
-    <a href="/clientes/produtos" class="tabs__item <%= aba === 'produtos' ? 'is-active' : '' %>"><i class="ph ph-package"></i> <%= t('clientes.aba_produtos') %></a>
-    <a href="/clientes/servicos" class="tabs__item <%= aba === 'servicos' ? 'is-active' : '' %>"><i class="ph ph-tag"></i> <%= t('clientes.aba_servicos') %></a>
-    <a href="/clientes/importar" class="tabs__item <%= aba === 'importar' ? 'is-active' : '' %>"><i class="ph ph-upload-simple"></i> <%= t('clientes.aba_importar') %></a>
+    <a href="/clientes/produtos" class="tabs__item <%= aba === 'produtos' || aba === 'servicos' ? 'is-active' : '' %>"><i class="ph ph-package"></i> <%= t('clientes.aba_catalogo') %></a>
 </div>

@@ -3336,6 +3336,18 @@ a.navbar__avatar { text-decoration: none; }
 .venda-parcelas-previa { font-size: 13px; margin: 0 0 12px; }
 .venda-parcelas-previa:empty { display: none; }
 .venda-confirmar { width: 100%; justify-content: center; margin-top: 4px; }
+.catalogo-abas { display: inline-flex; gap: 4px; padding: 4px; margin: 0 0 16px; border: 1px solid var(--border); border-radius: 999px; background: var(--card); }
+.catalogo-abas__item { display: inline-flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 999px; font-size: 14px; font-weight: 600; color: var(--muted); text-decoration: none; }
+.catalogo-abas__item:hover { color: var(--text); }
+.catalogo-abas__item.is-active { background: var(--brand-soft, var(--bg)); color: var(--brand-text, var(--text)); }
+.ficha-resumo { margin-bottom: 8px; }
+/* Celular: as 4 abas do modulo cabem na largura (sem esconder o Catalogo atras da rolagem lateral). */
+@media (max-width: 480px) {
+    .clientes-abas .tabs__item { padding: 8px 9px; font-size: 13px; }
+    .clientes-abas .tabs__item .ph { display: none; }
+}
+.venda-produto--servico .venda-produto__foto { aspect-ratio: 16 / 9; }
+.venda-produto--servico .venda-produto__foto .ph { color: var(--brand-text, var(--muted)); }
 .venda-card__titulo { font-size: 16px; }
 .venda-itens { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .venda-itens li, .venda-top__lista li { display: flex; align-items: center; gap: 10px; }

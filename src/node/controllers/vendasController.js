@@ -3,10 +3,10 @@ const Venda = require('../models/Venda');
 const Cliente = require('../models/Cliente');
 const Conta = require('../models/Conta');
 const regras = require('../core/vendas_regras');
-const { periodoDoMes } = require('../core/clientes_regras');
+const { periodoDoMes, linkWhatsapp, linkWhatsappApp } = require('../core/clientes_regras');
 const { validarImagem } = require('../core/uploads');
 const { dimensoesImagem } = require('../core/ia_midia');
-const { dataValida, hojeLocal, toLocalYMD } = require('../core/helpers');
+const { dataValida, moeda, hojeLocal, toLocalYMD } = require('../core/helpers');
 const { caminhoLocal } = require('../middleware/authMiddleware');
 
 const POR_PAGINA = 30;
@@ -50,13 +50,41 @@ const vendasController = {
         const arquivados = req.query.aba === 'arquivados';
         const q = String(req.query.q || '').trim().slice(0, 80);
         const estoque = req.query.estoque === 'baixo' ? 'baixo' : '';
-        const [produtos, totais] = await Promise.all([
+        const [produtos, totais, contas] = await Promise.all([
             Venda.listarProdutos(req.user.id, { arquivados, q, estoque }),
-            Venda.totaisEstoque(req.user.id)
+            Venda.totaisEstoque(req.user.id),
+            Conta.buscarPorUsuario(req.user.id, false)
         ]);
         res.render('clientes/produtos', {
             title: req.t('produtos.titulo'), menuAtivo: 'clientes', aba: 'produtos',
-            produtos, totais, arquivados, q, estoque, situacaoEstoque: regras.situacaoEstoque
+            produtos, totais, contas, hoje: hoje(), arquivados, q, estoque, situacaoEstoque: regras.situacaoEstoque
+        });
+    },
+
+    // Reposicao: soma as unidades e, se pedido, lanca o gasto na conta.
+    entradaEstoque: async (req, res) => {
+        const id = inteiro(req.params.id);
+        const v = regras.dadosEntrada(req.body);
+        if (!v.ok) { avisar(req, 'erro', req.t('produtos.erro_entrada_' + v.erro)); return res.redirect('/clientes/produtos'); }
+        try {
+            const r = await Venda.registrarEntrada(req.user.id, id, { ...v.dados, contaId: inteiro(req.body.conta_id) });
+            avisar(req, 'sucesso', req.t(r.gasto ? 'produtos.flash_entrada_gasto' : 'produtos.flash_entrada', {
+                n: v.dados.quantidade, saldo: r.saldo, gasto: r.gasto ? moeda(r.gasto) : ''
+            }));
+        } catch (err) {
+            if (!err.codigo) throw err;
+            avisar(req, 'erro', req.t('produtos.erro_entrada_' + err.codigo));
+        }
+        res.redirect('/clientes/produtos');
+    },
+
+    // Historico de movimentos de estoque do produto.
+    historico: async (req, res) => {
+        const produto = await Venda.buscarProduto(inteiro(req.params.id), req.user.id);
+        if (!produto) return res.status(404).render('404', { title: req.t('erro404.titulo') });
+        const movimentos = await Venda.historicoEstoque(req.user.id, produto.id);
+        res.render('clientes/produto_historico', {
+            title: req.t('produtos.historico_titulo', { nome: produto.nome }), menuAtivo: 'clientes', aba: 'produtos', produto, movimentos
         });
     },
 
@@ -127,14 +155,15 @@ const vendasController = {
 
     novaVenda: async (req, res) => {
         const clienteId = inteiro(req.query.cliente);
-        const [cliente, produtos, contas] = await Promise.all([
+        const [cliente, produtos, servicos, contas] = await Promise.all([
             clienteId ? Cliente.buscarCliente(clienteId, req.user.id) : null,
             Venda.listarProdutos(req.user.id),
+            Cliente.listarServicos(req.user.id),
             Conta.buscarPorUsuario(req.user.id, false)
         ]);
         res.render('clientes/venda_nova', {
             title: req.t('vendas.nova'), menuAtivo: 'clientes', aba: 'vendas',
-            cliente: cliente && cliente.status === 'ativo' ? cliente : null, produtos, contas, hoje: hoje(),
+            cliente: cliente && cliente.status === 'ativo' ? cliente : null, produtos, servicos, contas, hoje: hoje(),
             maxParcelas: regras.MAX_PARCELAS, maxItens: regras.MAX_ITENS
         });
     },
@@ -167,10 +196,14 @@ const vendasController = {
     },
 
     detalhe: async (req, res) => {
-        const venda = await Venda.buscarVenda(inteiro(req.params.id), req.user.id);
+        const [venda, contas] = await Promise.all([
+            Venda.buscarVenda(inteiro(req.params.id), req.user.id),
+            Conta.buscarPorUsuario(req.user.id, false)
+        ]);
         if (!venda) return res.status(404).render('404', { title: req.t('erro404.titulo') });
         res.render('clientes/venda', {
-            title: req.t('vendas.venda_n', { n: venda.numero }), menuAtivo: 'clientes', aba: 'vendas', venda, hoje: hoje()
+            title: req.t('vendas.venda_n', { n: venda.numero }), menuAtivo: 'clientes', aba: 'vendas', venda, contas, hoje: hoje(),
+            linkWhatsapp, linkWhatsappApp
         });
     },
 

@@ -9,6 +9,7 @@
 </div>
 
 <%- include('_abas') %>
+<%- include('_catalogo_abas') %>
 
 <div class="tabs" style="margin-bottom: 16px;">
     <a href="/clientes/servicos" class="tabs__item <%= !arquivados ? 'is-active' : '' %>"><%= t('clientes.servicos_ativos') %></a>
@@ -38,6 +39,7 @@
                 <td class="tabela__num"><%= s.contratos_ativos %></td>
                 <td class="clientes-acoes">
                     <% if (!arquivados) { %>
+                    <a class="btn btn-outline btn-sm" href="/clientes/vendas/nova?servico=<%= s.id %>"><i class="ph ph-shopping-bag"></i> <%= t('clientes.vender_servico') %></a>
                     <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-servico-<%= s.id %>"><i class="ph ph-pencil-simple"></i> <%= t('clientes.editar') %></button>
                     <form method="post" action="/clientes/servicos/<%= s.id %>/arquivar" style="display: inline;" <% if (Number(s.contratos_ativos) > 0) { %>data-confirm="<%= t('clientes.confirmar_arquivar_servico') %>"<% } %>>
                         <%- csrfCampo %>

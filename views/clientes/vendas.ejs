@@ -126,7 +126,7 @@
                     <% } else if (quitada) { %><span class="badge badge-sucesso"><%= t('vendas.st_recebida') %></span>
                     <% } else if (Number(v.vencidas) > 0) { %><span class="badge badge-pendente"><%= t('vendas.st_vencidas', { n: v.vencidas }) %></span>
                     <% } else { %><span class="badge badge-alerta"><%= t('vendas.st_a_receber', { valor: moeda(v.a_receber, v.moeda) }) %></span><% } %>
-                    <% if (v.status === 'ativa' && Number(v.parcelas) > 1) { %><div class="muted" style="font-size: 12px;"><%= t('clientes.pagaram_de', { pagas: v.pagas, total: v.lancadas }) %></div><% } %>
+                    <% if (v.status === 'ativa' && Number(v.parcelas) > 1) { %><div class="muted" style="font-size: 12px;"><%= t('clientes.pagaram_de', { pagas: v.quitadas, total: v.parcelas }) %></div><% } %>
                 </td>
                 <td class="clientes-acoes"><a class="btn btn-outline btn-sm" href="/clientes/vendas/<%= v.id %>"><%= t('clientes.ver') %></a></td>
             </tr>

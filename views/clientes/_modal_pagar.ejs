@@ -1,4 +1,5 @@
-<%# Pagamento com outra data: qualquer botao [data-pagar-id] abre este modal. Parametros: voltar, hoje %>
+<%# Receber com outras opcoes: qualquer botao [data-pagar-id] abre este modal. Parametros: voltar, hoje, contas
+    O botao traz: data-pagar-id, data-pagar-resumo, data-pagar-valor, data-pagar-moeda, data-pagar-conta, data-pagar-venc %>
 <div class="modal-backdrop" id="modal-pagar-data" data-modal>
     <div class="modal card">
         <div class="modal__header">
@@ -9,9 +10,27 @@
             <%- csrfCampo %>
             <input type="hidden" name="voltar" value="<%= voltar %>">
             <p id="pagar-data-resumo" class="muted" style="margin: 0 0 12px;"></p>
+            <div class="clientes-fila">
+                <div class="form-group">
+                    <label for="pagar-data-campo"><%= t('clientes.pagar_data') %></label>
+                    <input class="input" type="date" id="pagar-data-campo" name="data_pagamento" value="<%= hoje %>" required>
+                </div>
+                <div class="form-group">
+                    <label for="pagar-conta"><%= t('clientes.pagar_conta') %></label>
+                    <select class="input" id="pagar-conta" name="conta_id">
+                        <% (typeof contas !== 'undefined' ? contas : []).forEach(function (c) { %><option value="<%= c.id %>" data-moeda="<%= c.moeda %>"><%= c.nome %> (<%= c.moeda %>)</option><% }) %>
+                    </select>
+                </div>
+            </div>
             <div class="form-group">
-                <label for="pagar-data-campo"><%= t('clientes.pagar_data') %></label>
-                <input class="input" type="date" id="pagar-data-campo" name="data_pagamento" value="<%= hoje %>" required>
+                <label for="pagar-valor"><%= t('clientes.pagar_valor') %></label>
+                <input class="input" type="text" id="pagar-valor" name="valor" data-money data-money-positivo>
+                <small class="muted" id="pagar-valor-ajuda"><%= t('clientes.pagar_valor_ajuda') %></small>
+            </div>
+            <div class="form-group" id="pagar-resto" hidden>
+                <label for="pagar-nova-data"><%= t('clientes.pagar_resto_data') %></label>
+                <input class="input" type="date" id="pagar-nova-data" name="nova_data">
+                <small class="muted" id="pagar-resto-aviso"></small>
             </div>
             <div class="modal__actions">
                 <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
@@ -21,12 +40,57 @@
     </div>
 </div>
 <script>
-document.addEventListener('click', function (e) {
-    var b = e.target.closest('[data-pagar-id]');
-    if (!b) return;
-    var f = document.getElementById('form-pagar-data');
-    f.action = '/clientes/cuotas/' + b.getAttribute('data-pagar-id') + '/pagar';
-    document.getElementById('pagar-data-resumo').textContent = b.getAttribute('data-pagar-resumo') || '';
-    document.getElementById('modal-pagar-data').classList.add('is-open');
-});
+// Abre o modal para uma parcela: conta (so as da mesma moeda), valor recebido (menor que o da parcela = pagamento parcial,
+// o restante fica como nova parcela pendente) e data do restante.
+(function () {
+    var TXT = <%- JSON.stringify({ resto: t('clientes.pagar_resto_aviso', { valor: '{valor}' }) }) %>;
+    var form = document.getElementById('form-pagar-data');
+    var conta = document.getElementById('pagar-conta');
+    var valor = document.getElementById('pagar-valor');
+    var resto = document.getElementById('pagar-resto');
+    var novaData = document.getElementById('pagar-nova-data');
+    var aviso = document.getElementById('pagar-resto-aviso');
+    var estado = { total: 0, moeda: null, venc: '' };
+
+    function atualizarResto() {
+        var v = window.AppRegras ? (window.AppRegras.parseMoeda(valor.value) || 0) : (parseFloat(valor.value) || 0);
+        var parcial = v > 0 && v < estado.total - 0.004;
+        resto.hidden = !parcial;
+        if (parcial) {
+            var f = estado.moeda === 'PYG' ? 1 : 100;
+            var falta = Math.round((estado.total - v) * f) / f;
+            aviso.textContent = TXT.resto.replace('{valor}', window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(falta, estado.moeda) : String(falta));
+            if (!novaData.value) novaData.value = estado.venc;
+        }
+        novaData.disabled = !parcial;
+    }
+
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-pagar-id]');
+        if (!b) return;
+        estado.total = parseFloat(b.getAttribute('data-pagar-valor')) || 0;
+        estado.moeda = b.getAttribute('data-pagar-moeda') || null;
+        estado.venc = b.getAttribute('data-pagar-venc') || '';
+        form.action = '/clientes/cuotas/' + b.getAttribute('data-pagar-id') + '/pagar';
+        document.getElementById('pagar-data-resumo').textContent = b.getAttribute('data-pagar-resumo') || '';
+        // Contas da mesma moeda da parcela; a da parcela vem escolhida.
+        Array.prototype.forEach.call(conta.options, function (o) {
+            var ok = !estado.moeda || o.getAttribute('data-moeda') === estado.moeda;
+            o.hidden = !ok; o.disabled = !ok;
+        });
+        conta.value = b.getAttribute('data-pagar-conta') || conta.value;
+        if (conta.options[conta.selectedIndex] && conta.options[conta.selectedIndex].disabled) {
+            var livre = Array.prototype.find.call(conta.options, function (o) { return !o.disabled; });
+            if (livre) conta.value = livre.value;
+        }
+        if (window.gfDefinirMoedaCampo) window.gfDefinirMoedaCampo(valor, estado.moeda);
+        valor.value = window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(estado.total, estado.moeda) : String(estado.total);
+        valor._gfAntes = valor.value;
+        novaData.value = '';
+        atualizarResto();
+        document.getElementById('modal-pagar-data').classList.add('is-open');
+    });
+    valor.addEventListener('input', atualizarResto);
+    valor.addEventListener('change', atualizarResto);
+})();
 </script>

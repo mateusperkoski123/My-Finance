@@ -14,6 +14,7 @@
 </div>
 
 <%- include('_abas') %>
+<%- include('_catalogo_abas') %>
 
 <% if (!arquivados && (totais.sem || totais.baixo) && estoque !== 'baixo') { %>
 <div class="alert alert-aviso clientes-aviso">
@@ -71,8 +72,10 @@
         </div>
         <div class="produto-card__acoes">
             <% if (!arquivados) { %>
+            <% if (sit !== null) { %><button type="button" class="btn btn-outline btn-sm" data-entrada="<%= JSON.stringify({ id: p.id, nome: p.nome, custo: p.custo === null ? null : Number(p.custo), estoque: p.estoque }) %>"><i class="ph ph-arrow-line-down"></i> <%= t('produtos.entrada') %></button><% } %>
             <% if (sit !== 'sem') { %><a class="btn btn-primary btn-sm" href="/clientes/vendas/nova?produto=<%= p.id %>"><i class="ph ph-shopping-bag"></i> <%= t('produtos.vender') %></a><% } %>
             <button type="button" class="btn btn-outline btn-sm" aria-label="<%= t('clientes.editar') %>" title="<%= t('clientes.editar') %>" data-produto-editar="<%= JSON.stringify({ id: p.id, nome: p.nome, descricao: p.descricao || '', preco: Number(p.preco), custo: p.custo === null ? null : Number(p.custo), estoque: p.estoque, minimo: p.estoque_minimo, foto: _fotoUrl(p) }) %>"><i class="ph ph-pencil-simple"></i><% if (sit === 'sem') { %> <%= t('clientes.editar') %><% } %></button>
+            <a class="btn btn-outline btn-sm" href="/clientes/produtos/<%= p.id %>/historico" aria-label="<%= t('produtos.historico') %>" title="<%= t('produtos.historico') %>"><i class="ph ph-clock-counter-clockwise"></i></a>
             <form method="post" action="/clientes/produtos/<%= p.id %>/arquivar" style="display: inline;" data-confirm="<%= t('produtos.confirmar_arquivar') %>">
                 <%- csrfCampo %>
                 <button type="submit" class="btn btn-outline btn-sm" aria-label="<%= t('clientes.arquivar') %>" title="<%= t('clientes.arquivar') %>"><i class="ph ph-archive"></i></button>
@@ -147,6 +150,102 @@
         </form>
     </div>
 </div>
+
+<div class="modal-backdrop" id="modal-entrada" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3 id="entrada-titulo"><%= t('produtos.entrada') %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="" class="form" id="form-entrada">
+            <%- csrfCampo %>
+            <p class="muted" id="entrada-atual" style="margin-top: 0;"></p>
+            <div class="clientes-fila">
+                <div class="form-group">
+                    <label for="entrada-qtd"><%= t('produtos.entrada_unidades') %></label>
+                    <input class="input" type="number" id="entrada-qtd" name="quantidade" min="1" max="9999999" step="1" inputmode="numeric" required>
+                </div>
+                <div class="form-group">
+                    <label for="entrada-custo"><%= t('produtos.entrada_custo') %></label>
+                    <input class="input" type="text" id="entrada-custo" name="custo" data-money>
+                </div>
+            </div>
+            <p class="muted" style="font-size: 13px; margin-top: -4px;"><%= t('produtos.entrada_custo_ajuda') %></p>
+            <label class="produto-check">
+                <input type="checkbox" name="registrar_gasto" value="1" id="entrada-gasto" checked>
+                <span><strong><%= t('produtos.entrada_gasto') %></strong><br><span class="muted" style="font-size: 13px;" id="entrada-gasto-total"><%= t('produtos.entrada_gasto_ajuda') %></span></span>
+            </label>
+            <div class="clientes-fila" id="entrada-gasto-campos">
+                <div class="form-group">
+                    <label for="entrada-conta"><%= t('produtos.entrada_conta') %></label>
+                    <select class="input" id="entrada-conta" name="conta_id">
+                        <% contas.forEach(function (c) { %><option value="<%= c.id %>" data-moeda="<%= c.moeda %>" <%= c.conta_padrao ? 'selected' : '' %>><%= c.nome %> (<%= c.moeda %>)</option><% }) %>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="entrada-data"><%= t('produtos.entrada_data') %></label>
+                    <input class="input" type="date" id="entrada-data" name="data" value="<%= hoje %>" max="<%= hoje %>">
+                </div>
+            </div>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-check"></i> <%= t('produtos.entrada_registrar') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+// Entrada de estoque: soma as unidades, atualiza o custo (media) e pode lancar o gasto como despesa na conta escolhida.
+(function () {
+    const TXT = <%- JSON.stringify({
+        atual: t('produtos.entrada_atual', { n: '{n}', custo: '{custo}' }), total: t('produtos.entrada_gasto_total', { valor: '{valor}' }),
+        ajuda: t('produtos.entrada_gasto_ajuda'), semCusto: t('produtos.entrada_sem_custo')
+    }) %>;
+    const form = document.getElementById('form-entrada');
+    const qtd = document.getElementById('entrada-qtd');
+    const custo = document.getElementById('entrada-custo');
+    const gasto = document.getElementById('entrada-gasto');
+    const conta = document.getElementById('entrada-conta');
+    const campos = document.getElementById('entrada-gasto-campos');
+    const total = document.getElementById('entrada-gasto-total');
+    const moedaConta = function () { const o = conta.options[conta.selectedIndex]; return o ? o.getAttribute('data-moeda') : null; };
+    const ler = function (el) { return window.AppRegras ? (window.AppRegras.parseMoeda(el.value) || 0) : (parseFloat(el.value) || 0); };
+    const fmt = function (v) { return window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(v, moedaConta()) : String(v); };
+
+    function atualizar() {
+        campos.hidden = !gasto.checked;
+        const c = ler(custo), n = parseInt(qtd.value, 10) || 0;
+        if (!gasto.checked) { total.textContent = TXT.ajuda; return; }
+        total.textContent = c > 0 && n > 0 ? TXT.total.replace('{valor}', fmt(Math.round(c * n * 100) / 100)) : TXT.semCusto;
+    }
+
+    document.addEventListener('click', function (e) {
+        const b = e.target.closest('[data-entrada]');
+        if (!b) return;
+        let p; try { p = JSON.parse(b.getAttribute('data-entrada')); } catch (err) { return; }
+        form.reset();
+        form.action = '/clientes/produtos/' + p.id + '/entrada';
+        document.getElementById('entrada-titulo').textContent = p.nome;
+        document.getElementById('entrada-atual').textContent = TXT.atual.replace('{n}', p.estoque).replace('{custo}', p.custo === null ? '-' : fmt(p.custo));
+        if (window.gfDefinirMoedaCampo) window.gfDefinirMoedaCampo(custo, moedaConta());
+        custo.value = p.custo !== null && p.custo > 0 ? fmt(p.custo) : '';
+        custo._gfAntes = custo.value;
+        atualizar();
+        document.getElementById('modal-entrada').classList.add('is-open');
+        setTimeout(function () { qtd.focus(); }, 50);
+    });
+    conta.addEventListener('change', function () {
+        const n = ler(custo);
+        if (window.gfDefinirMoedaCampo) window.gfDefinirMoedaCampo(custo, moedaConta());
+        custo.value = n > 0 ? fmt(n) : '';
+        atualizar();
+    });
+    [qtd, custo].forEach(function (el) { el.addEventListener('input', atualizar); });
+    gasto.addEventListener('change', atualizar);
+    form.addEventListener('submit', function () { form.querySelector('button[type=submit]').disabled = true; });
+})();
+</script>
 
 <script>
 // Formulario do produto (novo e editar no mesmo modal). A foto e reduzida no proprio aparelho (lado maior 900 px, JPEG)

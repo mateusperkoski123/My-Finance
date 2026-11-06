@@ -18,7 +18,8 @@ function arredondar(valor, casas) {
 }
 
 // Carrinho enviado pela tela (JSON). Devolve { ok, itens } ou { ok: false, erro } (codigo de 'vendas.erro_<codigo>').
-// O mesmo produto repetido vira uma linha so, se o preco for o mesmo.
+// Cada item e um produto (produto_id) ou um servico vendido avulso (servico_id). O mesmo item repetido vira uma linha
+// so, se o preco for o mesmo.
 function validarItens(texto) {
     let lista;
     try { lista = JSON.parse(String(texto || '[]')); } catch (e) { return { ok: false, erro: 'itens' }; }
@@ -26,17 +27,43 @@ function validarItens(texto) {
     if (lista.length > MAX_ITENS) return { ok: false, erro: 'muitos_itens' };
     const itens = [];
     for (const bruto of lista) {
-        const produtoId = parseInt(bruto && bruto.produto_id, 10);
+        const produtoId = parseInt(bruto && bruto.produto_id, 10) || null;
+        const servicoId = parseInt(bruto && bruto.servico_id, 10) || null;
         const quantidade = Number(bruto && bruto.quantidade);
         const preco = Number(bruto && bruto.preco);
-        if (!(produtoId > 0)) return { ok: false, erro: 'itens' };
+        if ((produtoId ? 1 : 0) + (servicoId ? 1 : 0) !== 1) return { ok: false, erro: 'itens' };
         if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > MAX_QTD) return { ok: false, erro: 'quantidade' };
         if (!Number.isFinite(preco) || preco < 0 || preco >= MAX_VALOR) return { ok: false, erro: 'preco' };
-        const igual = itens.find((i) => i.produtoId === produtoId && i.preco === preco);
+        const igual = itens.find((i) => i.produtoId === produtoId && i.servicoId === servicoId && i.preco === preco);
         if (igual) igual.quantidade = Math.min(MAX_QTD, igual.quantidade + quantidade);
-        else itens.push({ produtoId, quantidade, preco });
+        else itens.push({ produtoId, servicoId, quantidade, preco });
     }
     return { ok: true, itens };
+}
+
+// Custo do produto depois de uma entrada de estoque: media ponderada entre o que ja tem e o que entrou.
+// Sem estoque (ou sem custo anterior) vale o custo novo; sem custo novo o custo anterior fica como esta.
+function custoMedio({ estoque, custo }, quantidade, custoNovo) {
+    if (custoNovo === null || custoNovo === undefined) return custo === null || custo === undefined ? null : Number(custo);
+    const atual = Number(estoque) || 0;
+    if (custo === null || custo === undefined || atual <= 0) return arredondar(custoNovo, 2);
+    return arredondar((atual * Number(custo) + quantidade * custoNovo) / (atual + quantidade), 2);
+}
+
+// Entrada de estoque (reposicao): quantidade, custo por unidade e, se pedido, o gasto que sai da conta.
+function dadosEntrada(body) {
+    const { parseMoeda, dataValida } = require('./helpers');
+    const quantidade = Number(String(body.quantidade || '').trim());
+    if (!Number.isInteger(quantidade) || quantidade < 1 || quantidade > 9999999) return { ok: false, erro: 'quantidade' };
+    const txt = String(body.custo || '').trim();
+    const custo = txt ? parseMoeda(txt) : null;
+    if (custo !== null && (!(custo >= 0) || custo >= MAX_VALOR)) return { ok: false, erro: 'custo' };
+    const gasto = body.registrar_gasto === '1';
+    if (gasto && !(custo > 0)) return { ok: false, erro: 'custo_gasto' };
+    return {
+        ok: true,
+        dados: { quantidade, custo: custo === null ? null : arredondar(custo, 2), gasto, data: dataValida(body.data) ? body.data : null }
+    };
 }
 
 // Forma de pagamento: 'avista' (ja recebido na data da venda) ou 'prazo' (1 a 48 parcelas mensais a partir do 1o vencimento).
@@ -121,5 +148,5 @@ function situacaoEstoque(p) {
 
 module.exports = {
     MAX_ITENS, MAX_PARCELAS, casasDaMoeda, arredondar, validarItens, validarPagamento, dividirEmParcelas, datasDasParcelas,
-    resumoDosItens, descricaoDaParcela, dadosProduto, situacaoEstoque
+    resumoDosItens, descricaoDaParcela, dadosProduto, situacaoEstoque, custoMedio, dadosEntrada
 };

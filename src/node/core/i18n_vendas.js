@@ -61,9 +61,9 @@ module.exports = {
     'vendas.nova_para_cliente': ['Nova venda para este cliente', 'Nueva venta a este cliente', 'New sale to this client'],
     'vendas.venda_n': ['Venda #{n}', 'Venta #{n}', 'Sale #{n}'],
     'vendas.voltar_vendas': ['Voltar para vendas', 'Volver a ventas', 'Back to sales'],
-    'vendas.sem_produtos_aviso': ['Para lançar uma venda, cadastre antes os produtos que você vende.', 'Para registrar una venta, primero cargá los productos que vendés.', 'To record a sale, first add the products you sell.'],
+    'vendas.sem_produtos_aviso': ['Para lançar uma venda, cadastre antes os produtos ou serviços que você vende.', 'Para registrar una venta, primero cargá los productos o servicios que vendés.', 'To record a sale, first add the products or services you sell.'],
     'vendas.passo_cliente': ['Cliente', 'Cliente', 'Client'],
-    'vendas.passo_produtos': ['Produtos', 'Productos', 'Products'],
+    'vendas.passo_produtos': ['Produtos e serviços', 'Productos y servicios', 'Products and services'],
     'vendas.passo_carrinho': ['Itens da venda', 'Ítems de la venta', 'Sale items'],
     'vendas.passo_pagamento': ['Pagamento', 'Pago', 'Payment'],
     'vendas.trocar': ['Trocar', 'Cambiar', 'Change'],
@@ -161,5 +161,86 @@ module.exports = {
         'Olá {nome}! O pagamento da sua compra ({itens}){parcela} no valor de {valor}, que venceu em {data}, ainda consta em aberto. Pode me confirmar quando consegue pagar? Obrigado!',
         '¡Hola {nome}! El pago de tu compra ({itens}){parcela} por {valor}, que venció el {data}, figura todavía pendiente. ¿Me confirmás cuándo podés pagar? ¡Gracias!',
         'Hi {nome}! The payment for your purchase ({itens}){parcela} of {valor}, which was due on {data}, is still open. Could you let me know when you can pay? Thanks!'
-    ]
+    ],
+
+    // ---- Catalogo unico e servico avulso ----
+    'clientes.aba_catalogo': ['Catálogo', 'Catálogo', 'Catalog'],
+    'clientes.vender_servico': ['Vender', 'Vender', 'Sell'],
+    'vendas.item_servico': ['Serviço', 'Servicio', 'Service'],
+
+    // ---- Receber com outra conta ou valor parcial ----
+    'clientes.receber_opcoes': ['Receber…', 'Cobrar…', 'Receive…'],
+    'clientes.pagar_conta': ['Conta que recebe', 'Cuenta que recibe', 'Receiving account'],
+    'clientes.pagar_valor': ['Valor recebido', 'Monto cobrado', 'Amount received'],
+    'clientes.pagar_valor_ajuda': ['Se o cliente pagou só uma parte, diminua o valor: o resto fica como nova parcela a receber.', 'Si el cliente pagó solo una parte, bajá el monto: el resto queda como nueva cuota a cobrar.', 'If the client paid only part, lower the amount: the rest stays as a new installment to collect.'],
+    'clientes.pagar_resto_data': ['Vencimento do que falta', 'Vencimiento de lo que falta', 'Due date for the remainder'],
+    'clientes.pagar_resto_aviso': ['Fica pendente: {valor}', 'Queda pendiente: {valor}', 'Stays pending: {valor}'],
+    'clientes.flash_pago_parcial': ['Recebimento parcial registrado. Falta receber {resto}.', 'Cobro parcial registrado. Falta cobrar {resto}.', 'Partial payment recorded. {resto} is still to be collected.'],
+    'clientes.erro_pagar_conta': ['A conta escolhida precisa estar ativa e ter a mesma moeda da parcela.', 'La cuenta elegida tiene que estar activa y tener la misma moneda que la cuota.', 'The chosen account must be active and have the same currency as the installment.'],
+    'clientes.erro_pagar_valor': ['O valor recebido precisa ser maior que zero e não passar do valor da parcela.', 'El monto cobrado tiene que ser mayor que cero y no superar el valor de la cuota.', 'The amount received must be greater than zero and not exceed the installment.'],
+
+    // ---- Resumo do cliente e quem mais deve ----
+    'clientes.resumo_total': ['Total', 'Total', 'Total'],
+    'clientes.resumo_pago': ['Já pagou', 'Ya pagó', 'Paid'],
+    'clientes.resumo_a_receber': ['A receber', 'A cobrar', 'To collect'],
+    'clientes.resumo_atraso': ['Em atraso', 'En atraso', 'Overdue'],
+    'clientes.resumo_atraso_desde': ['Há {n} {n:dia|dias} em aberto', 'Hace {n} {n:día|días} sin pagar', 'Open for {n} {n:day|days}'],
+    'clientes.ordem_nome': ['Por nome', 'Por nombre', 'By name'],
+    'clientes.ordem_deve': ['Quem mais deve', 'Quién más debe', 'Owes the most'],
+    'clientes.col_deve': ['Deve (vencido)', 'Debe (vencido)', 'Owes (overdue)'],
+    'clientes.varias_moedas': ['Várias moedas', 'Varias monedas', 'Several currencies'],
+
+    // ---- Comprovante pelo WhatsApp ----
+    'vendas.enviar_comprovante': ['Enviar comprovante', 'Enviar comprobante', 'Send receipt'],
+    'vendas.comp_com_saldo': [
+        'Olá {nome}! Segue o resumo da sua compra #{numero} de {data}:\n{itens}\n\nTotal: {total}\nJá pago: {pago}\nFalta pagar: {resta}\nPróximo vencimento: {proximo}\n\nObrigado!',
+        '¡Hola {nome}! Te paso el resumen de tu compra #{numero} del {data}:\n{itens}\n\nTotal: {total}\nYa pagado: {pago}\nFalta pagar: {resta}\nPróximo vencimiento: {proximo}\n\n¡Gracias!',
+        'Hi {nome}! Here is the summary of your purchase #{numero} from {data}:\n{itens}\n\nTotal: {total}\nPaid so far: {pago}\nStill to pay: {resta}\nNext due date: {proximo}\n\nThank you!'
+    ],
+    'vendas.comp_quitada': [
+        'Olá {nome}! Segue o comprovante da sua compra #{numero} de {data}:\n{itens}\n\nTotal: {total} — pago por completo.\n\nObrigado pela compra!',
+        '¡Hola {nome}! Te paso el comprobante de tu compra #{numero} del {data}:\n{itens}\n\nTotal: {total} — pagado por completo.\n\n¡Gracias por tu compra!',
+        'Hi {nome}! Here is the receipt for your purchase #{numero} from {data}:\n{itens}\n\nTotal: {total} — paid in full.\n\nThank you for your purchase!'
+    ],
+
+    // ---- Entrada de estoque ----
+    'produtos.entrada': ['Entrada', 'Entrada', 'Restock'],
+    'produtos.entrada_atual': ['Em estoque agora: {n} · custo atual: {custo}', 'En stock ahora: {n} · costo actual: {custo}', 'In stock now: {n} · current cost: {custo}'],
+    'produtos.entrada_unidades': ['Unidades que entraram', 'Unidades que entraron', 'Units received'],
+    'produtos.entrada_custo': ['Custo por unidade', 'Costo por unidad', 'Cost per unit'],
+    'produtos.entrada_custo_ajuda': ['O custo do produto passa a ser a média entre o que já tinha e o que entrou.', 'El costo del producto pasa a ser el promedio entre lo que ya había y lo que entró.', 'The product cost becomes the average between what you had and what came in.'],
+    'produtos.entrada_gasto': ['Registrar o gasto na conta', 'Registrar el gasto en la cuenta', 'Record the expense in the account'],
+    'produtos.entrada_gasto_ajuda': ['Só soma as unidades, sem lançar despesa.', 'Solo suma las unidades, sin registrar gasto.', 'Only adds the units, without recording an expense.'],
+    'produtos.entrada_gasto_total': ['Sai da conta: {valor} (despesa em "Compra de mercadorias").', 'Sale de la cuenta: {valor} (gasto en "Compra de mercaderías").', 'Leaves the account: {valor} (expense in "Inventory purchases").'],
+    'produtos.entrada_sem_custo': ['Informe as unidades e o custo para ver o valor do gasto.', 'Ingresá las unidades y el costo para ver el monto del gasto.', 'Enter the units and the cost to see the expense amount.'],
+    'produtos.entrada_conta': ['Conta que paga', 'Cuenta que paga', 'Paying account'],
+    'produtos.entrada_data': ['Data da compra', 'Fecha de la compra', 'Purchase date'],
+    'produtos.entrada_registrar': ['Registrar entrada', 'Registrar entrada', 'Record restock'],
+    'produtos.erro_entrada_quantidade': ['Informe quantas unidades entraram (número inteiro, 1 ou mais).', 'Ingresá cuántas unidades entraron (número entero, 1 o más).', 'Enter how many units came in (whole number, 1 or more).'],
+    'produtos.erro_entrada_custo': ['O custo não é válido.', 'El costo no es válido.', 'The cost is not valid.'],
+    'produtos.erro_entrada_custo_gasto': ['Para lançar o gasto, informe o custo por unidade.', 'Para registrar el gasto, ingresá el costo por unidad.', 'To record the expense, enter the cost per unit.'],
+    'produtos.erro_entrada_produto': ['Produto não encontrado ou arquivado.', 'Producto no encontrado o archivado.', 'Product not found or archived.'],
+    'produtos.erro_entrada_sem_controle': ['Este produto não controla estoque. Ative o controle de estoque ao editá-lo.', 'Este producto no controla stock. Activá el control de stock al editarlo.', 'This product does not track stock. Turn on stock tracking when editing it.'],
+    'produtos.erro_entrada_conta': ['Escolha uma conta ativa para o gasto.', 'Elegí una cuenta activa para el gasto.', 'Choose an active account for the expense.'],
+    'produtos.flash_entrada': ['Entrada registrada: +{n}. Agora são {saldo} em estoque.', 'Entrada registrada: +{n}. Ahora hay {saldo} en stock.', 'Restock recorded: +{n}. Now {saldo} in stock.'],
+    'produtos.flash_entrada_gasto': ['Entrada registrada: +{n} (agora {saldo} em estoque). Gasto de {gasto} lançado na conta.', 'Entrada registrada: +{n} (ahora {saldo} en stock). Gasto de {gasto} registrado en la cuenta.', 'Restock recorded: +{n} (now {saldo} in stock). Expense of {gasto} recorded in the account.'],
+
+    // ---- Historico do estoque ----
+    'produtos.historico': ['Histórico do estoque', 'Historial del stock', 'Stock history'],
+    'produtos.historico_titulo': ['Histórico · {nome}', 'Historial · {nome}', 'History · {nome}'],
+    'produtos.voltar': ['Voltar para produtos', 'Volver a productos', 'Back to products'],
+    'produtos.historico_vazio': ['Ainda não há movimentos de estoque neste produto.', 'Todavía no hay movimientos de stock en este producto.', 'There are no stock movements for this product yet.'],
+    'produtos.historico_sem_controle': ['Este produto não controla estoque. Ative o controle ao editá-lo para começar o histórico.', 'Este producto no controla stock. Activá el control al editarlo para empezar el historial.', 'This product does not track stock. Turn tracking on when editing it to start the history.'],
+    'produtos.mov_quando': ['Quando', 'Cuándo', 'When'],
+    'produtos.mov_tipo': ['Movimento', 'Movimiento', 'Movement'],
+    'produtos.mov_quantidade': ['Unidades', 'Unidades', 'Units'],
+    'produtos.mov_saldo': ['Saldo', 'Saldo', 'Balance'],
+    'produtos.mov_detalhe': ['Detalhe', 'Detalle', 'Details'],
+    'produtos.mov_inicial': ['Estoque inicial', 'Stock inicial', 'Initial stock'],
+    'produtos.mov_entrada': ['Entrada', 'Entrada', 'Restock'],
+    'produtos.mov_venda': ['Venda', 'Venta', 'Sale'],
+    'produtos.mov_devolucao': ['Devolução', 'Devolución', 'Return'],
+    'produtos.mov_ajuste': ['Ajuste', 'Ajuste', 'Adjustment'],
+    'produtos.mov_custo': ['custo {custo} por unidade', 'costo {custo} por unidad', 'cost {custo} per unit'],
+    'produtos.mov_gasto': ['gasto lançado: {valor}', 'gasto registrado: {valor}', 'expense recorded: {valor}']
 };

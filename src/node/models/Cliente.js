@@ -144,21 +144,53 @@ class Cliente {
         return { where, params };
     }
 
+    // `ordem: 'deve'` poe primeiro quem tem mais valor vencido e nao pago (contratos e vendas juntos).
+    // `deve_*`: valor vencido, a moeda (e quantas moedas diferentes, quando ha mais de uma conta em moedas distintas).
     static async listarClientes(userId, filtros = {}, pagina = 1, porPagina = 30) {
         const { where, params } = this._filtroClientes(userId, filtros);
         const hoje = hojeYMD();
         const [[tot]] = await db.query(`SELECT COUNT(*) AS n FROM clientes c WHERE ${where}`, params);
+        const ordem = filtros.ordem === 'deve' ? 'COALESCE(d.valor, 0) DESC, c.nome ASC' : 'c.nome ASC';
         const [rows] = await db.query(
             `SELECT c.*,
                 (SELECT COUNT(*) FROM cliente_contratos k WHERE k.cliente_id = c.id AND k.status = 'ativo') AS contratos_ativos,
-                (SELECT COUNT(*) FROM lancamentos l JOIN cliente_contratos k ON k.id = l.contrato_id
-                  WHERE k.cliente_id = c.id AND l.status = 'pendente' AND l.data_competencia < ?)
-                + (SELECT COUNT(*) FROM lancamentos l JOIN cliente_vendas v ON v.id = l.venda_id
-                  WHERE v.cliente_id = c.id AND l.status = 'pendente' AND l.data_competencia < ?) AS vencidas
-             FROM clientes c WHERE ${where} ORDER BY c.nome ASC LIMIT ? OFFSET ?`,
-            [hoje, hoje, ...params, porPagina, (Math.max(1, pagina) - 1) * porPagina]
+                COALESCE(d.n, 0) AS vencidas, COALESCE(d.valor, 0) AS deve_valor, d.moeda AS deve_moeda, COALESCE(d.moedas, 0) AS deve_moedas
+             FROM clientes c
+             LEFT JOIN (
+                SELECT COALESCE(k.cliente_id, v.cliente_id) AS cliente_id, COUNT(*) AS n, SUM(l.valor) AS valor,
+                       MIN(cb.moeda) AS moeda, COUNT(DISTINCT cb.moeda) AS moedas
+                FROM lancamentos l
+                LEFT JOIN cliente_contratos k ON k.id = l.contrato_id
+                LEFT JOIN cliente_vendas v ON v.id = l.venda_id
+                JOIN contas cb ON cb.id = l.conta_id
+                WHERE l.user_id = ? AND l.status = 'pendente' AND l.data_competencia < ? AND (l.contrato_id IS NOT NULL OR l.venda_id IS NOT NULL)
+                GROUP BY COALESCE(k.cliente_id, v.cliente_id)
+             ) d ON d.cliente_id = c.id
+             WHERE ${where} ORDER BY ${ordem} LIMIT ? OFFSET ?`,
+            [userId, hoje, ...params, porPagina, (Math.max(1, pagina) - 1) * porPagina]
         );
         return { clientes: rows, total: tot.n };
+    }
+
+    // Resumo do cliente por moeda (contratos e compras de produtos juntos): total, pago, a receber e vencido, com a
+    // data do vencimento mais antigo em aberto.
+    static async resumoDoCliente(userId, clienteId) {
+        const hoje = hojeYMD();
+        const [rows] = await db.query(
+            `SELECT cb.moeda, COUNT(*) AS parcelas, COALESCE(SUM(l.valor), 0) AS total,
+                COALESCE(SUM(CASE WHEN l.status = 'pago' THEN l.valor END), 0) AS pago,
+                COALESCE(SUM(CASE WHEN l.status = 'pendente' THEN l.valor END), 0) AS a_receber,
+                COALESCE(SUM(CASE WHEN l.status = 'pendente' AND l.data_competencia < ? THEN l.valor END), 0) AS vencido,
+                DATE_FORMAT(MIN(CASE WHEN l.status = 'pendente' AND l.data_competencia < ? THEN l.data_competencia END), '${ND}') AS desde
+             FROM lancamentos l
+             LEFT JOIN cliente_contratos k ON k.id = l.contrato_id
+             LEFT JOIN cliente_vendas v ON v.id = l.venda_id
+             JOIN contas cb ON cb.id = l.conta_id
+             WHERE l.user_id = ? AND COALESCE(k.cliente_id, v.cliente_id) = ? AND (l.contrato_id IS NOT NULL OR l.venda_id IS NOT NULL)
+             GROUP BY cb.moeda ORDER BY total DESC`,
+            [hoje, hoje, userId, clienteId]
+        );
+        return rows;
     }
 
     static async buscarCliente(id, userId) {
@@ -373,7 +405,7 @@ class Cliente {
         );
         if (!contratos.length) return [];
         const [cuotas] = await db.query(
-            `SELECT l.id, l.contrato_id, l.cuota_num, l.valor, l.status, DATE_FORMAT(l.data_competencia, '${ND}') AS venc,
+            `SELECT l.id, l.contrato_id, l.conta_id, l.cuota_num, l.valor, l.status, DATE_FORMAT(l.data_competencia, '${ND}') AS venc,
                     DATE_FORMAT(l.data_pagamento, '${ND}') AS pago_em
              FROM lancamentos l WHERE l.user_id = ? AND l.contrato_id IN (?) ORDER BY l.contrato_id, l.cuota_num, l.data_competencia`,
             [userId, contratos.map((c) => c.id)]
@@ -521,13 +553,59 @@ class Cliente {
     }
 
     // ---------- Cuotas (de contratos e de vendas de produtos): pagar, desfazer e consultas do painel ----------
-    static async pagarCuota(userId, id, dataPagamento) {
-        const [r] = await db.query(
-            `UPDATE lancamentos SET status = 'pago', data_pagamento = ?, updated_at = NOW(3)
-             WHERE id = ? AND user_id = ? AND (contrato_id IS NOT NULL OR venda_id IS NOT NULL)`,
-            [dataPagamento || hojeYMD(), id, userId]
-        );
-        return r.affectedRows > 0;
+    // Recebe uma parcela. Sem opcoes: o valor todo, hoje, na conta da parcela. Com `contaId` o dinheiro entra em outra
+    // conta (so da mesma moeda). Com `valor` menor que o da parcela e pagamento parcial: a parcela fica paga so com o que
+    // entrou e o restante vira uma nova parcela pendente (no vencimento original ou em `novaData`).
+    // Devolve { ok, parcial?, resto?, moeda? } ou { naoEncontrado | jaPaga | contaInvalida | valorInvalido }.
+    static async pagarCuota(userId, id, { data, contaId, valor, novaData } = {}) {
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            const [[l]] = await conn.query(
+                `SELECT l.*, cb.moeda, DATE_FORMAT(l.data_competencia, '${ND}') AS venc FROM lancamentos l JOIN contas cb ON cb.id = l.conta_id
+                 WHERE l.id = ? AND l.user_id = ? AND (l.contrato_id IS NOT NULL OR l.venda_id IS NOT NULL) FOR UPDATE`,
+                [id, userId]
+            );
+            if (!l) { await conn.rollback(); return { naoEncontrado: true }; }
+            if (l.status === 'pago') { await conn.rollback(); return { jaPaga: true }; }
+
+            let destino = l.conta_id;
+            if (contaId && contaId !== l.conta_id) {
+                const [[cta]] = await conn.query(
+                    "SELECT id FROM contas WHERE id = ? AND user_id = ? AND status = 'ativa' AND moeda = ? LIMIT 1", [contaId, userId, l.moeda]
+                );
+                if (!cta) { await conn.rollback(); return { contaInvalida: true }; }
+                destino = cta.id;
+            }
+
+            const casas = l.moeda === 'PYG' ? 0 : 2;
+            const f = 10 ** casas;
+            const total = Math.round(Number(l.valor) * f) / f;
+            const recebido = valor === undefined || valor === null || valor === '' ? total : Math.round(Number(valor) * f) / f;
+            if (!(recebido > 0) || recebido > total) { await conn.rollback(); return { valorInvalido: true }; }
+            const dataPag = data || hojeYMD();
+
+            const parcial = recebido < total;
+            const resto = parcial ? Math.round((total - recebido) * f) / f : 0;
+            if (parcial) {
+                await conn.query(
+                    `INSERT INTO lancamentos (user_id, serie_id, conta_id, categoria_id, tipo, descricao, valor, data_competencia,
+                        status, recorrente, contrato_id, venda_id, cuota_num) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pendente', 0, ?, ?, ?)`,
+                    [userId, l.serie_id, l.conta_id, l.categoria_id, l.tipo, l.descricao, resto, novaData || l.venc, l.contrato_id, l.venda_id, l.cuota_num]
+                );
+            }
+            await conn.query(
+                `UPDATE lancamentos SET status = 'pago', data_pagamento = ?, valor = ?, conta_id = ?, updated_at = NOW(3) WHERE id = ? AND user_id = ?`,
+                [dataPag, recebido, destino, id, userId]
+            );
+            await conn.commit();
+            return parcial ? { ok: true, parcial: true, resto, moeda: l.moeda } : { ok: true };
+        } catch (err) {
+            await conn.rollback();
+            throw err;
+        } finally {
+            conn.release();
+        }
     }
 
     static async desfazerPagamento(userId, id) {
@@ -578,7 +656,7 @@ class Cliente {
         }
         const [[tot]] = await db.query(`SELECT COUNT(*) AS n ${this._baseCuotas} ${where}`, params);
         const [rows] = await db.query(
-            `SELECT l.id, l.cuota_num, l.valor, l.status, DATE_FORMAT(l.data_competencia, '${ND}') AS venc,
+            `SELECT l.id, l.conta_id, l.cuota_num, l.valor, l.status, DATE_FORMAT(l.data_competencia, '${ND}') AS venc,
                     DATE_FORMAT(l.data_pagamento, '${ND}') AS pago_em, k.id AS contrato_id,
                     IF(v.id IS NULL, k.cuotas_total, v.parcelas) AS cuotas_total,
                     v.id AS venda_id, v.numero AS venda_numero, v.resumo AS venda_resumo,

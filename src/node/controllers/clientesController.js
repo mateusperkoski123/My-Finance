@@ -3,7 +3,7 @@ const Venda = require('../models/Venda');
 const Conta = require('../models/Conta');
 const regras = require('../core/clientes_regras');
 const importacao = require('../core/clientes_import');
-const { dataValida, parseMoeda, hojeLocal, toLocalYMD } = require('../core/helpers');
+const { dataValida, parseMoeda, moeda, hojeLocal, toLocalYMD } = require('../core/helpers');
 const { caminhoLocal } = require('../middleware/authMiddleware');
 
 const POR_PAGINA = 30;
@@ -48,12 +48,13 @@ const clientesController = {
         const filtro = { inicio: periodo.inicio, fim: periodo.fim, estado, servicoId, q, dia: diaPedido };
         const pedida = inteiro(req.query.pagina, 1);
 
-        const [resumo, acumulado, totais, servicos, primeira] = await Promise.all([
+        const [resumo, acumulado, totais, servicos, primeira, contas] = await Promise.all([
             Cliente.resumoPeriodo(userId, periodo.inicio, periodo.fim, servicoId),
             Cliente.vencidoAcumulado(userId),
             Cliente.totaisClientes(userId),
             Cliente.listarServicos(userId),
-            Cliente.cuotasDoPeriodo(userId, filtro, pedida, POR_PAGINA)
+            Cliente.cuotasDoPeriodo(userId, filtro, pedida, POR_PAGINA),
+            Conta.buscarPorUsuario(userId, false)
         ]);
         const pag = paginar(primeira.total, pedida);
         const lista = pag.pagina === pedida ? primeira : await Cliente.cuotasDoPeriodo(userId, filtro, pag.pagina, POR_PAGINA);
@@ -67,13 +68,13 @@ const clientesController = {
         };
         res.render('clientes/index', {
             title: req.t('clientes.titulo'), menuAtivo: 'clientes', aba: 'cobrancas',
-            periodo, resumo, acumulado, totais, servicos, hoje: h,
+            periodo, resumo, acumulado, totais, servicos, contas, hoje: h,
             cuotas: lista.cuotas, filtro: { estado, servico: servicoId, q, dia: diaPedido },
             ...pag, link, linkWhatsapp: regras.linkWhatsapp, linkWhatsappApp: regras.linkWhatsappApp
         });
     },
 
-    // Pagar com a data de hoje (ou a escolhida) e desfazer o pagamento.
+    // Receber (hoje, ou na data, conta e valor escolhidos) e desfazer o recebimento.
     pagarCuota: async (req, res) => {
         const id = inteiro(req.params.id);
         const voltar = voltarPara(req, '/clientes');
@@ -82,9 +83,18 @@ const clientesController = {
             avisar(req, ok ? 'sucesso' : 'erro', req.t(ok ? 'clientes.flash_pago_desfeito' : 'clientes.erro_cuota'));
             return res.redirect(voltar);
         }
-        const data = dataValida(req.body.data_pagamento) ? req.body.data_pagamento : hoje();
-        const ok = await Cliente.pagarCuota(req.user.id, id, data);
-        avisar(req, ok ? 'sucesso' : 'erro', req.t(ok ? 'clientes.flash_pago' : 'clientes.erro_cuota'));
+        const opcoes = {
+            data: dataValida(req.body.data_pagamento) ? req.body.data_pagamento : hoje(),
+            contaId: inteiro(req.body.conta_id) || undefined,
+            valor: String(req.body.valor || '').trim() ? parseMoeda(req.body.valor) : undefined,
+            novaData: dataValida(req.body.nova_data) ? req.body.nova_data : undefined
+        };
+        const r = await Cliente.pagarCuota(req.user.id, id, opcoes);
+        if (r.ok && r.parcial) avisar(req, 'sucesso', req.t('clientes.flash_pago_parcial', { resto: moeda(r.resto, r.moeda) }));
+        else if (r.ok || r.jaPaga) avisar(req, 'sucesso', req.t('clientes.flash_pago'));
+        else if (r.contaInvalida) avisar(req, 'erro', req.t('clientes.erro_pagar_conta'));
+        else if (r.valorInvalido) avisar(req, 'erro', req.t('clientes.erro_pagar_valor'));
+        else avisar(req, 'erro', req.t('clientes.erro_cuota'));
         res.redirect(voltar);
     },
 
@@ -92,14 +102,15 @@ const clientesController = {
     lista: async (req, res) => {
         const status = ['ativo', 'inativo'].includes(req.query.status) ? req.query.status : 'ativo';
         const q = String(req.query.q || '').trim().slice(0, 80);
+        const ordem = req.query.ordem === 'deve' ? 'deve' : '';
         const pedida = inteiro(req.query.pagina, 1);
-        const r = await Cliente.listarClientes(req.user.id, { q, status }, pedida, POR_PAGINA);
+        const r = await Cliente.listarClientes(req.user.id, { q, status, ordem }, pedida, POR_PAGINA);
         const pag = paginar(r.total, pedida);
-        const lista = pag.pagina === pedida ? r : await Cliente.listarClientes(req.user.id, { q, status }, pag.pagina, POR_PAGINA);
+        const lista = pag.pagina === pedida ? r : await Cliente.listarClientes(req.user.id, { q, status, ordem }, pag.pagina, POR_PAGINA);
         const totais = await Cliente.totaisClientes(req.user.id);
         res.render('clientes/lista', {
             title: req.t('clientes.aba_clientes'), menuAtivo: 'clientes', aba: 'clientes',
-            clientes: lista.clientes, status, q, totais, totalFiltrado: lista.total, ...pag
+            clientes: lista.clientes, status, q, ordem, totais, totalFiltrado: lista.total, ...pag
         });
     },
 
@@ -123,15 +134,17 @@ const clientesController = {
         const id = inteiro(req.params.id);
         const cliente = await Cliente.buscarCliente(id, req.user.id);
         if (!cliente) return res.status(404).render('404', { title: req.t('erro404.titulo') });
-        const [contratos, servicos, contas, vendas] = await Promise.all([
+        const [contratos, servicos, contas, vendas, resumo] = await Promise.all([
             Cliente.contratosDoCliente(req.user.id, id),
             Cliente.listarServicos(req.user.id),
             Conta.buscarPorUsuario(req.user.id, false),
-            Venda.vendasDoCliente(req.user.id, id)
+            Venda.vendasDoCliente(req.user.id, id),
+            Cliente.resumoDoCliente(req.user.id, id)
         ]);
         res.render('clientes/ficha', {
             title: cliente.nome, menuAtivo: 'clientes', aba: 'clientes', cliente, contratos, servicos, contas, hoje: hoje(),
-            vendas: vendas.vendas, totalVendas: vendas.total
+            vendas: vendas.vendas, totalVendas: vendas.total, resumo,
+            linkWhatsapp: regras.linkWhatsapp, linkWhatsappApp: regras.linkWhatsappApp
         });
     },
 

@@ -239,6 +239,7 @@ document.addEventListener('keydown', function (e) {
     <div class="folha" id="folha-novo" role="menu" hidden>
         <button type="button" role="menuitem" class="folha__item" data-novo="receita"><i class="ph ph-arrow-circle-up" style="color: var(--green);"></i> <%= t('painel.nova_receita') %></button>
         <button type="button" role="menuitem" class="folha__item" data-novo="despesa"><i class="ph ph-arrow-circle-down" style="color: var(--red);"></i> <%= t('painel.nova_despesa') %></button>
+        <% if (_adm || usuarioLogado.clientes_habilitado) { %><a role="menuitem" class="folha__item" href="/clientes/vendas/nova"><i class="ph ph-shopping-bag" style="color: var(--brand-text, var(--green));"></i> <%= t('vendas.nova') %></a><% } %>
     </div>
     <div class="folha" id="folha-mais" role="menu" hidden>
         <a role="menuitem" class="folha__item <%= _rota.startsWith('/categorias') ? 'is-active' : '' %>" href="/categorias"><i class="ph ph-tag"></i> <%= t('nav.categorias') %></a>

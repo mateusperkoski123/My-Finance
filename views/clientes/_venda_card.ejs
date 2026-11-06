@@ -7,6 +7,17 @@
     const _semCusto = Number(_v.itens_sem_custo) > 0;
     const _lucroV = Number(_v.total) - Number(_v.custo_total);
     const _quitada = Number(_v.lancadas) > 0 && Number(_v.pagas) === Number(_v.lancadas);
+    // Comprovante pelo WhatsApp: itens, total, o que ja foi pago, o que falta e o proximo vencimento (so com celular utilizavel).
+    const _proxima = _v.cuotas.find(function (c) { return c.status === 'pendente'; });
+    const _resta = Number(_v.a_receber);
+    const _linhasComp = _v.itens.map(function (i) { return '• ' + i.quantidade + ' × ' + i.nome + ' — ' + moeda(Number(i.preco_unit) * Number(i.quantidade), _v.moeda); }).join(String.fromCharCode(10));
+    const _textoComp = t(_resta > 0 ? 'vendas.comp_com_saldo' : 'vendas.comp_quitada', {
+        nome: String(_v.cliente_nome).trim().split(' ')[0], numero: _v.numero, data: formatDate(_v.data, 'DD/MM/YYYY'), itens: _linhasComp,
+        total: moeda(_v.total, _v.moeda), pago: moeda(_v.recebido, _v.moeda), resta: moeda(_resta, _v.moeda),
+        proximo: _proxima ? formatDate(_proxima.venc, 'DD/MM/YYYY') + ' (' + moeda(_proxima.valor, _v.moeda) + ')' : ''
+    });
+    const _waComp = _ativa && typeof linkWhatsapp === 'function' ? linkWhatsapp(_v.celular, _textoComp) : '';
+    const _waCompApp = _ativa && typeof linkWhatsappApp === 'function' ? linkWhatsappApp(_v.celular, _textoComp) : '';
 %>
 <div class="card clientes-contrato venda-card <%= _ativa ? '' : 'is-cancelado' %>">
     <div class="clientes-contrato__topo">
@@ -25,7 +36,9 @@
                 <% if (_quitada) { %><span class="badge badge-sucesso"><i class="ph-bold ph-check"></i> <%= t('vendas.st_recebida') %></span>
                 <% } else if (Number(_v.vencidas) > 0) { %><span class="badge badge-pendente"><%= t('vendas.st_vencidas', { n: _v.vencidas }) %></span>
                 <% } else { %><span class="badge badge-alerta"><%= t('vendas.st_a_receber', { valor: moeda(_v.a_receber, _v.moeda) }) %></span><% } %>
-                <% if (Number(_v.parcelas) > 1) { %><span class="badge badge-neutro"><%= t('clientes.pagaram_de', { pagas: _v.pagas, total: _v.lancadas }) %></span><% } %>
+                <% if (Number(_v.parcelas) > 1) { %><span class="badge badge-neutro"><%= t('clientes.pagaram_de', { pagas: _v.quitadas, total: _v.parcelas }) %></span><% } %>
+                <% if (_waComp) { %><a class="btn btn-outline btn-sm" href="<%= _waComp %>" data-wa-app="<%= _waCompApp %>" target="whatsapp"><i class="ph ph-whatsapp-logo" style="color: #25d366;"></i> <%= t('vendas.enviar_comprovante') %></a><% } %>
+                <% if (_proxima) { %><button type="button" class="btn btn-outline btn-sm" data-pagar-id="<%= _proxima.id %>" data-pagar-resumo="<%= _v.cliente_nome + ' · ' + t('vendas.venda_n', { n: _v.numero }) + ' · ' + moeda(_proxima.valor, _v.moeda) %>" data-pagar-valor="<%= Number(_proxima.valor) %>" data-pagar-moeda="<%= _v.moeda %>" data-pagar-conta="<%= _proxima.conta_id %>" data-pagar-venc="<%= _proxima.venc %>"><i class="ph ph-sliders-horizontal"></i> <%= t('clientes.receber_opcoes') %></button><% } %>
                 <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-cancelar-venda-<%= _v.id %>"><i class="ph ph-prohibit"></i> <%= t('vendas.cancelar') %></button>
             <% } %>
         </div>
@@ -34,7 +47,7 @@
     <ul class="venda-itens">
         <% _v.itens.forEach(function (i) { %>
         <li>
-            <span class="venda-item__foto venda-item__foto--p"><% if (i.produto_id && i.foto_v) { %><img src="/clientes/produtos/<%= i.produto_id %>/foto?v=<%= i.foto_v %>" alt="" loading="lazy"><% } else { %><i class="ph ph-package"></i><% } %></span>
+            <span class="venda-item__foto venda-item__foto--p"><% if (i.produto_id && i.foto_v) { %><img src="/clientes/produtos/<%= i.produto_id %>/foto?v=<%= i.foto_v %>" alt="" loading="lazy"><% } else { %><i class="ph ph-<%= i.servico_id ? 'wrench' : 'package' %>"></i><% } %></span>
             <span class="venda-itens__nome"><%= i.nome %></span>
             <span class="muted venda-itens__qtd"><%= i.quantidade %> × <%= moeda(i.preco_unit, _v.moeda) %></span>
             <strong class="venda-itens__sub"><%= moeda(Number(i.preco_unit) * Number(i.quantidade), _v.moeda) %></strong>

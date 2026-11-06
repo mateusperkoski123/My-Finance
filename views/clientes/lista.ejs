@@ -1,7 +1,7 @@
 <%
     const _href = function (extra) {
         const p = new URLSearchParams();
-        const todo = Object.assign({ status: status === 'ativo' ? '' : status, q: q }, extra);
+        const todo = Object.assign({ status: status === 'ativo' ? '' : status, q: q, ordem: ordem }, extra);
         Object.keys(todo).forEach(function (k) { if (todo[k] !== '' && todo[k] !== undefined) p.set(k, todo[k]); });
         const s = p.toString();
         return '/clientes/lista' + (s ? '?' + s : '');
@@ -13,6 +13,7 @@
         <p class="muted"><%= t('clientes.subtitulo') %></p>
     </div>
     <div class="page-header__botoes">
+        <a class="btn btn-outline" href="/clientes/importar"><i class="ph ph-upload-simple"></i> <%= t('clientes.aba_importar') %></a>
         <button type="button" class="btn btn-primary" data-modal-open="modal-novo-cliente"><i class="ph ph-user-plus"></i> <%= t('clientes.novo') %></button>
     </div>
 </div>
@@ -24,8 +25,13 @@
         <a href="<%= _href({ status: '', pagina: '' }) %>" class="tabs__item <%= status === 'ativo' ? 'is-active' : '' %>"><%= t('clientes.ativos_n', { n: totais.ativos }) %></a>
         <a href="<%= _href({ status: 'inativo', pagina: '' }) %>" class="tabs__item <%= status === 'inativo' ? 'is-active' : '' %>"><%= t('clientes.inativos_n', { n: totais.inativos }) %></a>
     </div>
+    <div class="tabs">
+        <a href="<%= _href({ ordem: '', pagina: '' }) %>" class="tabs__item <%= !ordem ? 'is-active' : '' %>"><i class="ph ph-sort-ascending"></i> <%= t('clientes.ordem_nome') %></a>
+        <a href="<%= _href({ ordem: 'deve', pagina: '' }) %>" class="tabs__item <%= ordem === 'deve' ? 'is-active' : '' %>"><i class="ph ph-warning-circle"></i> <%= t('clientes.ordem_deve') %></a>
+    </div>
     <form method="get" action="/clientes/lista" class="clientes-busca">
         <% if (status !== 'ativo') { %><input type="hidden" name="status" value="<%= status %>"><% } %>
+        <% if (ordem) { %><input type="hidden" name="ordem" value="<%= ordem %>"><% } %>
         <input class="input" type="search" name="q" value="<%= q %>" placeholder="<%= t('clientes.buscar_ph') %>" aria-label="<%= t('clientes.buscar') %>">
         <button type="submit" class="btn btn-outline"><i class="ph ph-magnifying-glass"></i> <%= t('clientes.buscar') %></button>
     </form>
@@ -56,6 +62,7 @@
                 <th><%= t('clientes.campo_celular') %></th>
                 <th><%= t('clientes.campo_cedula') %></th>
                 <th class="tabela__num"><%= t('clientes.col_contratos') %></th>
+                <th class="tabela__num"><%= t('clientes.col_deve') %></th>
                 <th><%= t('clientes.col_situacao') %></th>
             </tr>
         </thead>
@@ -67,6 +74,9 @@
                 <td><%= c.celular || '-' %></td>
                 <td><%= c.cedula || c.ruc || '-' %></td>
                 <td class="tabela__num"><%= c.contratos_ativos %></td>
+                <td class="tabela__num">
+                    <% if (Number(c.deve_valor) > 0) { %><strong style="color: var(--red);"><%= Number(c.deve_moedas) > 1 ? t('clientes.varias_moedas') : moeda(c.deve_valor, c.deve_moeda) %></strong><% } else { %>-<% } %>
+                </td>
                 <td>
                     <% if (c.status === 'inativo') { %><span class="badge badge-neutro"><%= t('clientes.inativo') %></span>
                     <% } else if (Number(c.vencidas) > 0) { %><span class="badge badge-pendente"><%= t('clientes.vencidas_n', { n: c.vencidas }) %></span>

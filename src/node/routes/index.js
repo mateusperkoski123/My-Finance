@@ -237,6 +237,8 @@ router.post('/clientes/produtos/criar', requireAuth, exigirClientes, uploadProdu
 router.post('/clientes/produtos/:id(\\d+)/atualizar', requireAuth, exigirClientes, uploadProduto, vendasController.atualizarProduto);
 router.post('/clientes/produtos/:id(\\d+)/arquivar', requireAuth, exigirClientes, vendasController.arquivarProduto);
 router.get('/clientes/produtos/:id(\\d+)/foto', requireAuth, exigirClientes, vendasController.foto);
+router.post('/clientes/produtos/:id(\\d+)/entrada', requireAuth, exigirClientes, vendasController.entradaEstoque);
+router.get('/clientes/produtos/:id(\\d+)/historico', requireAuth, exigirClientes, vendasController.historico);
 router.get('/clientes/vendas', requireAuth, exigirClientes, vendasController.vendas);
 router.get('/clientes/vendas/nova', requireAuth, exigirClientes, vendasController.novaVenda);
 router.post('/clientes/vendas/criar', requireAuth, exigirClientes, vendasController.criarVenda);

@@ -1,0 +1,5 @@
+<%# Seletor dentro do Catalogo: Produtos | Servicos. Parametro: aba ('produtos' ou 'servicos') %>
+<div class="catalogo-abas" role="tablist">
+    <a href="/clientes/produtos" role="tab" aria-selected="<%= aba === 'produtos' %>" class="catalogo-abas__item <%= aba === 'produtos' ? 'is-active' : '' %>"><i class="ph ph-package"></i> <%= t('clientes.aba_produtos') %></a>
+    <a href="/clientes/servicos" role="tab" aria-selected="<%= aba === 'servicos' %>" class="catalogo-abas__item <%= aba === 'servicos' ? 'is-active' : '' %>"><i class="ph ph-wrench"></i> <%= t('clientes.aba_servicos') %></a>
+</div>

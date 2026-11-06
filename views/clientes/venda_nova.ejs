@@ -1,7 +1,10 @@
 <%
+    // Itens que podem entrar na venda: produtos (chave p<id>) e servicos vendidos avulso (chave s<id>, sem estoque, custo 0).
     const _produtos = produtos.map(function (p) {
-        return { id: p.id, nome: p.nome, preco: Number(p.preco), custo: p.custo === null ? null : Number(p.custo), estoque: p.estoque, foto: p.foto_v ? '/clientes/produtos/' + p.id + '/foto?v=' + p.foto_v : '' };
-    });
+        return { key: 'p' + p.id, tipo: 'p', id: p.id, nome: p.nome, preco: Number(p.preco), custo: p.custo === null ? null : Number(p.custo), estoque: p.estoque, foto: p.foto_v ? '/clientes/produtos/' + p.id + '/foto?v=' + p.foto_v : '' };
+    }).concat(servicos.map(function (sv) {
+        return { key: 's' + sv.id, tipo: 's', id: sv.id, nome: sv.nome, preco: Number(sv.valor_padrao), custo: 0, estoque: null, foto: '' };
+    }));
     const _contaPadrao = contas.find(function (c) { return c.conta_padrao; }) || contas[0];
 %>
 <div class="page-header page-header--acoes">
@@ -11,10 +14,11 @@
     </div>
 </div>
 
-<% if (!produtos.length) { %>
+<% if (!produtos.length && !servicos.length) { %>
     <div class="card placeholder-card">
         <p class="muted" style="margin: 0 0 12px;"><%= t('vendas.sem_produtos_aviso') %></p>
         <a class="btn btn-primary" href="/clientes/produtos"><i class="ph ph-package"></i> <%= t('produtos.novo') %></a>
+        <a class="btn btn-outline" href="/clientes/servicos"><i class="ph ph-wrench"></i> <%= t('clientes.novo_servico') %></a>
     </div>
 <% } else if (!contas.length) { %>
     <div class="card placeholder-card">
@@ -51,12 +55,12 @@
                 <% _produtos.forEach(function (p) {
                     const esgotado = p.estoque !== null && p.estoque <= 0;
                 %>
-                <button type="button" class="venda-produto" data-produto-id="<%= p.id %>" data-busca="<%= p.nome.toLowerCase() %>" <%= esgotado ? 'disabled' : '' %>>
-                    <span class="venda-produto__foto"><% if (p.foto) { %><img src="<%= p.foto %>" alt="" loading="lazy"><% } else { %><i class="ph ph-package"></i><% } %></span>
+                <button type="button" class="venda-produto <%= p.tipo === 's' ? 'venda-produto--servico' : '' %>" data-key="<%= p.key %>" data-busca="<%= p.nome.toLowerCase() %>" <%= esgotado ? 'disabled' : '' %>>
+                    <span class="venda-produto__foto"><% if (p.foto) { %><img src="<%= p.foto %>" alt="" loading="lazy"><% } else { %><i class="ph ph-<%= p.tipo === 's' ? 'wrench' : 'package' %>"></i><% } %></span>
                     <span class="venda-produto__nome"><%= p.nome %></span>
                     <span class="venda-produto__preco"><%= moeda(p.preco) %></span>
                     <span class="venda-produto__estoque muted">
-                        <% if (p.estoque === null) { %>&nbsp;<% } else if (esgotado) { %><%= t('produtos.sem_estoque') %><% } else { %><%= t('produtos.em_estoque', { n: p.estoque }) %><% } %>
+                        <% if (p.tipo === 's') { %><%= t('vendas.item_servico') %><% } else if (p.estoque === null) { %>&nbsp;<% } else if (esgotado) { %><%= t('produtos.sem_estoque') %><% } else { %><%= t('produtos.em_estoque', { n: p.estoque }) %><% } %>
                     </span>
                     <span class="venda-produto__qtd" data-qtd-selo hidden></span>
                 </button>
@@ -158,7 +162,7 @@
         semCusto: t('vendas.lucro_sem_custo')
     }).replace(/</g, '\\u003c') %>;
     const MAX_ITENS = <%= maxItens %>;
-    const porId = new Map(PRODUTOS.map(function (p) { return [p.id, p]; }));
+    const porId = new Map(PRODUTOS.map(function (p) { return [p.key, p]; }));
     const form = document.getElementById('form-venda');
     const carrinhoEl = document.getElementById('venda-carrinho');
     const modelo = document.getElementById('venda-item-modelo');
@@ -229,18 +233,18 @@
         document.getElementById('venda-produtos-vazio').hidden = visiveis > 0;
     });
 
-    function qtdNoCarrinho(produtoId) {
-        return carrinho.filter(function (i) { return i.produto.id === produtoId; }).reduce(function (s, i) { return s + i.qtd; }, 0);
+    function qtdNoCarrinho(key) {
+        return carrinho.filter(function (i) { return i.produto.key === key; }).reduce(function (s, i) { return s + i.qtd; }, 0);
     }
 
     function adicionar(produto) {
-        const existente = carrinho.find(function (i) { return i.produto.id === produto.id; });
+        const existente = carrinho.find(function (i) { return i.produto.key === produto.key; });
         if (existente) { definirQtd(existente, existente.qtd + 1); return; }
         if (carrinho.length >= MAX_ITENS) return;
         const el = modelo.content.firstElementChild.cloneNode(true);
         const foto = el.querySelector('.venda-item__foto');
         if (produto.foto) { const i = document.createElement('img'); i.alt = ''; i.src = produto.foto; foto.appendChild(i); }
-        else { const ic = document.createElement('i'); ic.className = 'ph ph-package'; foto.appendChild(ic); }
+        else { const ic = document.createElement('i'); ic.className = 'ph ph-' + (produto.tipo === 's' ? 'wrench' : 'package'); foto.appendChild(ic); }
         el.querySelector('.venda-item__nome').textContent = produto.nome;
         const preco = el.querySelector('.venda-item__preco');
         preco.setAttribute('data-moeda-cod', moedaConta());
@@ -270,7 +274,7 @@
     document.getElementById('venda-produtos').addEventListener('click', function (e) {
         const b = e.target.closest('.venda-produto');
         if (!b || b.disabled) return;
-        const p = porId.get(parseInt(b.getAttribute('data-produto-id'), 10));
+        const p = porId.get(b.getAttribute('data-key'));
         if (p) { adicionar(p); mostrarErro(''); }
     });
 
@@ -297,13 +301,13 @@
         carrinho.forEach(function (i) {
             i.el.querySelector('.venda-item__subtotal').textContent = fmt(arred(ler(i.preco)) * i.qtd);
             const tem = i.produto.estoque;
-            const passou = tem !== null && qtdNoCarrinho(i.produto.id) > tem;
+            const passou = tem !== null && qtdNoCarrinho(i.produto.key) > tem;
             const aviso = i.el.querySelector('.venda-item__aviso');
             aviso.textContent = passou ? TXT.erroEstoque.replace('{n}', Math.max(0, tem)) : '';
             i.el.classList.toggle('is-erro', passou);
         });
         document.querySelectorAll('.venda-produto').forEach(function (b) {
-            const n = qtdNoCarrinho(parseInt(b.getAttribute('data-produto-id'), 10));
+            const n = qtdNoCarrinho(b.getAttribute('data-key'));
             const selo = b.querySelector('[data-qtd-selo]');
             selo.hidden = !n; selo.textContent = n;
             b.classList.toggle('is-no-carrinho', n > 0);
@@ -354,7 +358,9 @@
         else if (forma() === 'prazo' && !vencimento.value) msg = TXT.erroVenc;
         if (msg) { e.preventDefault(); mostrarErro(msg); erroEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         document.getElementById('venda-itens-json').value = JSON.stringify(carrinho.map(function (i) {
-            return { produto_id: i.produto.id, quantidade: i.qtd, preco: arred(ler(i.preco)) };
+            const item = { quantidade: i.qtd, preco: arred(ler(i.preco)) };
+            item[i.produto.tipo === 's' ? 'servico_id' : 'produto_id'] = i.produto.id;
+            return item;
         }));
         document.getElementById('venda-confirmar').disabled = true;
     });
@@ -363,8 +369,9 @@
     // Produto ja escolhido pela tela de Produtos (?produto=ID).
     document.addEventListener('DOMContentLoaded', function () {
         setTimeout(function () {
-            const pedido = parseInt(new URLSearchParams(location.search).get('produto'), 10);
-            if (pedido && porId.has(pedido)) adicionar(porId.get(pedido));
+            const busca = new URLSearchParams(location.search);
+            const chave = busca.get('produto') ? 'p' + parseInt(busca.get('produto'), 10) : (busca.get('servico') ? 's' + parseInt(busca.get('servico'), 10) : '');
+            if (chave && porId.has(chave)) adicionar(porId.get(chave));
             atualizar();
         }, 0);
     });
