@@ -9,7 +9,7 @@ const cleanParam = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '' &&
 
 // Mesmo criterio do resumo e dos saldos: so contas ativas entram em listas, graficos e totais, e so as da moeda em foco
 // (paineis e relatorios mostram uma moeda por vez; ver core/moedaFoco.js). CONTA_ATIVA vira SQL ao ser usado em texto.
-const { CONTA_ATIVA, filtroConta } = require('../core/moedaFoco');
+const { CONTA_ATIVA, CONTA_LISTA, filtroConta } = require('../core/moedaFoco');
 
 class Lancamento {
     static async buscarPorId(id, userId) {
@@ -25,7 +25,8 @@ class Lancamento {
     }
 
     static async buscarFiltrados(userId, periodo, filtros = {}, ordenacao = 'data', pagina = 1, porPagina = 30, agrupamento = 'sem_agrupamento', extra = {}) {
-        let where = 'WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND ' + CONTA_ATIVA;
+        // A lista mostra tambem lancamentos de contas arquivadas (marcados na tela); so os totais as deixam de fora.
+        let where = 'WHERE l.user_id = ? AND l.data_competencia BETWEEN ? AND ? AND ' + CONTA_LISTA;
         // Transferencia agendada tem duas pernas; na lista aparece so a de saida (a entrada continua no extrato da conta de destino).
         where += " AND NOT (l.tipo = 'transferencia' AND l.transferencia_par_id IS NOT NULL AND l.valor > 0)";
         const params = [userId, periodo.inicio, periodo.fim];
@@ -107,7 +108,7 @@ class Lancamento {
                     IF(c.parent_id IS NULL, c.nome, (SELECT p.nome FROM categorias p WHERE p.id = c.parent_id)) as categoria_nome,
                     IF(c.parent_id IS NULL, c.cor, (SELECT p.cor FROM categorias p WHERE p.id = c.parent_id)) as categoria_cor,
                     IF(c.parent_id IS NOT NULL, c.nome, NULL) as subcategoria_nome, c.parent_id AS categoria_parent_id,
-                    cb.nome as conta_nome, cb.cor as conta_cor, cb.moeda as conta_moeda,
+                    cb.nome as conta_nome, cb.cor as conta_cor, cb.moeda as conta_moeda, cb.status as conta_status,
                     (SELECT p.valor FROM lancamentos p WHERE p.id = l.transferencia_par_id) AS par_valor,
                     (SELECT cp.moeda FROM lancamentos p JOIN contas cp ON cp.id = p.conta_id WHERE p.id = l.transferencia_par_id) AS par_moeda,
                     (SELECT cp.nome FROM lancamentos p JOIN contas cp ON cp.id = p.conta_id WHERE p.id = l.transferencia_par_id) AS par_conta_nome,

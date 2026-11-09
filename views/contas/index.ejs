@@ -66,10 +66,7 @@
                             <div class="menu-acoes__lista">
                                 <button type="button" data-modal-open="modal-ajustar-<%= c.id %>"><i class="ph ph-scales"></i> <%= t('contas.ajustar_saldo') %></button>
                                 <button type="button" data-modal-open="modal-editar-<%= c.id %>"><i class="ph ph-pencil-simple"></i> <%= t('contas.editar') %></button>
-                                <form method="post" action="/contas/<%= c.id %>/arquivar">
-                                    <%- csrfCampo %>
-                                    <button type="submit"><i class="ph ph-archive"></i> <%= t('contas.arquivar') %></button>
-                                </form>
+                                <button type="button" data-modal-open="modal-arquivar-<%= c.id %>"><i class="ph ph-archive"></i> <%= t('contas.arquivar') %></button>
                                 <button type="button" class="perigo" data-modal-open="modal-excluir-<%= c.id %>"><i class="ph ph-trash"></i> <%= t('contas.eliminar_titulo') %></button>
                             </div>
                         </details>
@@ -82,6 +79,32 @@
                     <% } %>
                 </div>
             </div>
+
+            <% if (!abaArquivadas) { %>
+            <!-- Modal Arquivar Conta: explica o que muda antes de esconder a conta (os lancamentos nao sao apagados) -->
+            <div class="modal-backdrop" id="modal-arquivar-<%= c.id %>">
+                <div class="modal card">
+                    <div class="modal__header">
+                        <h3><i class="ph ph-archive"></i> <%= t('contas.arquivar') %></h3>
+                        <button type="button" class="modal__close" data-modal-close>&times;</button>
+                    </div>
+                    <div class="modal__body" style="padding: 16px 0;">
+                        <p style="font-size: 15px; font-weight: 500;"><%= t('contas.arquivar_confirma', { nome: c.nome }) %></p>
+                        <div class="aviso-exclusao aviso-exclusao--suave">
+                            <i class="ph ph-info"></i>
+                            <span><%- t('contas.arquivar_aviso', { n: parseInt(c.total_lancamentos, 10) || 0 }) %></span>
+                        </div>
+                    </div>
+                    <div class="modal__actions" style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px;">
+                        <button type="button" class="btn btn-outline" data-modal-close><%= t('contas.cancelar') %></button>
+                        <form method="post" action="/contas/<%= c.id %>/arquivar" style="display:inline;">
+                            <%- csrfCampo %>
+                            <button type="submit" class="btn btn-primary"><%= t('contas.sim_arquivar') %></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <% } %>
 
             <!-- Modal Excluir Conta -->
             <div class="modal-backdrop" id="modal-excluir-<%= c.id %>">

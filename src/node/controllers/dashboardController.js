@@ -67,7 +67,8 @@ const dashboardController = {
             subcategoria_id: cleanVal(query.subcategoria_id)
         };
 
-        const ordenacao = ORDENAR_VALIDOS.includes(query.ordenar) ? query.ordenar : 'data';
+        // Padrao: os adicionados por ultimo primeiro (quem acabou de lancar quer ver o lancamento no topo, seja qual for a data).
+        const ordenacao = ORDENAR_VALIDOS.includes(query.ordenar) ? query.ordenar : 'criacao';
         const agrupamento = AGRUPAR_VALIDOS.includes(query.agrupar) ? query.agrupar : 'sem_agrupamento';
         const pagina = Math.max(parseInt(query.pagina || '1', 10) || 1, 1);
         const porPagina = Math.min(Math.max(parseInt(query.por_pagina || '30', 10) || 30, 10), 500);

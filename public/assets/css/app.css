@@ -1806,6 +1806,9 @@ a.pendencias__filtro:hover { filter: brightness(1.12); }
 
 .aviso-exclusao { display: flex; gap: 10px; align-items: flex-start; margin-top: 12px; padding: 12px; border-radius: 12px; background: var(--red-bg); color: var(--text); font-size: 13px; line-height: 1.45; }
 .aviso-exclusao i { color: var(--red); font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+/* Variante para acoes que nao apagam nada (ex.: arquivar conta): ambar em vez de vermelho. */
+.aviso-exclusao--suave { background: var(--warn-bg); }
+.aviso-exclusao--suave i { color: var(--warn); }
 
 .filtro-ativo { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; padding: 10px 14px; border-radius: 12px; background: var(--card); border: 1px solid var(--border); border-left: 4px solid var(--primary); font-size: 13px; }
 .filtro-ativo i { margin-right: 4px; }

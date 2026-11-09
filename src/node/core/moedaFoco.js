@@ -34,6 +34,13 @@ function contaAtivaSql() {
 // Objeto que vira o SQL ao ser usado em texto (template string ou "+"), mantendo as consultas antigas como estavam.
 const CONTA_ATIVA = { toString: contaAtivaSql, valueOf: contaAtivaSql };
 
+// So para a LISTA de lancamentos: inclui tambem as contas arquivadas (o lancamento aparece marcado "Conta arquivada"), para quem
+// arquivou uma conta nao achar que o historico sumiu. Totais, saldos e relatorios continuam usando CONTA_ATIVA.
+function contaListaSql() {
+    return `l.conta_id IN (SELECT id FROM contas WHERE user_id = l.user_id${filtroConta('contas')})`;
+}
+const CONTA_LISTA = { toString: contaListaSql, valueOf: contaListaSql };
+
 function executarCom(moeda, fn, base = null) { return armazenamento.run({ moeda, base }, fn); }
 
 // Escolhe a moeda em foco: ?moeda=XXX (e lembra na sessao), senao a ultima escolhida, senao a moeda principal do usuario,
@@ -70,4 +77,4 @@ async function moedaFocoMiddleware(req, res, next) {
     }
 }
 
-module.exports = { moedaEmFoco, moedaBase, filtroConta, CONTA_ATIVA, executarCom, moedaFocoMiddleware };
+module.exports = { moedaEmFoco, moedaBase, filtroConta, CONTA_ATIVA, CONTA_LISTA, executarCom, moedaFocoMiddleware };

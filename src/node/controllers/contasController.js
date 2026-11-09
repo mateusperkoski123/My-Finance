@@ -104,8 +104,13 @@ const contasController = {
         try {
             const userId = req.user.id;
             const id = req.params.id;
+            const antes = (await Conta.buscarPorUsuario(userId, true)).find((c) => String(c.id) === String(id));
             await Conta.arquivar(id, userId);
-            req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.conta_arquivada') };
+            req.session.flash = antes
+                ? { tipo: 'sucesso', mensagem: req.t('flash.conta_arquivada_aviso', { nome: antes.nome, n: parseInt(antes.total_lancamentos, 10) || 0 }) }
+                : { tipo: 'sucesso', mensagem: req.t('flash.conta_arquivada') };
+            // Abre a aba Arquivadas: mostra onde a conta foi parar e o botao Restaurar.
+            return res.redirect('/contas?aba=arquivadas');
         } catch (err) {
             console.error('Erro em contasController.arquivar:', err);
             req.session.flash = { tipo: 'erro', mensagem: req.t('flash.conta_erro_arquivar') };

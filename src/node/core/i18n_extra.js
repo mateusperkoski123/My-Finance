@@ -53,6 +53,19 @@ module.exports = {
         'Serão apagados <strong>{n} lançamento(s)</strong> desta conta e o saldo de <strong>{saldo}</strong> deixará de contar no total. Esta ação não pode ser desfeita. Prefere <em>arquivar</em>?',
         'Se eliminarán <strong>{n} movimiento(s)</strong> de esta cuenta y el saldo de <strong>{saldo}</strong> dejará de contar en el total. Esta acción no se puede deshacer. ¿Preferís <em>archivar</em>?',
         '<strong>{n} entry(ies)</strong> of this account will be deleted and the balance of <strong>{saldo}</strong> will no longer count toward the total. This action cannot be undone. Would you rather <em>archive</em> it?'],
+    // Arquivar conta: o que acontece com os lancamentos (aparecem na lista marcados, mas nao entram em totais, saldos e relatorios).
+    'contas.arquivar_confirma': ['Arquivar a conta {nome}?', '¿Archivar la cuenta {nome}?', 'Archive the account {nome}?'],
+    'contas.arquivar_aviso': [
+        'Esta conta tem <strong>{n} {n:lançamento|lançamentos}</strong>. {n:Ele aparece|Eles aparecem} na lista {n:marcado|marcados} como <em>Conta arquivada</em>, mas <strong>não {n:conta|contam}</strong> nos totais, no saldo e nos relatórios. Para voltar a contá-los, restaure a conta na aba <em>Arquivadas</em>. Nada é apagado.',
+        'Esta cuenta tiene <strong>{n} {n:movimiento|movimientos}</strong>. {n:Aparece|Aparecen} en la lista {n:marcado|marcados} como <em>Cuenta archivada</em>, pero <strong>no {n:cuenta|cuentan}</strong> en los totales, el saldo ni los informes. Para volver a contarlos, restaurá la cuenta en la pestaña <em>Archivadas</em>. No se borra nada.',
+        'This account has <strong>{n} {n:entry|entries}</strong>. {n:It appears|They appear} in the list marked as <em>Archived account</em>, but {n:it does|they do} <strong>not count</strong> toward totals, balances or reports. To count {n:it|them} again, restore the account in the <em>Archived</em> tab. Nothing is deleted.'],
+    'contas.sim_arquivar': ['Sim, arquivar', 'Sí, archivar', 'Yes, archive'],
+    'contas.lanc_arquivada': ['Conta arquivada', 'Cuenta archivada', 'Archived account'],
+    'contas.lanc_arquivada_titulo': ['Este lançamento é de uma conta arquivada: aparece aqui, mas não entra nos totais, no saldo nem nos relatórios. Restaure a conta em Contas bancárias > Arquivadas.', 'Este movimiento es de una cuenta archivada: aparece acá, pero no entra en los totales, el saldo ni los informes. Restaurá la cuenta en Cuentas bancarias > Archivadas.', 'This entry belongs to an archived account: it shows here, but does not count toward totals, balance or reports. Restore the account in Bank accounts > Archived.'],
+    'flash.conta_arquivada_aviso': [
+        'Conta {nome} arquivada. {n} {n:lançamento|lançamentos} {n:fica|ficam} {n:marcado|marcados} como "Conta arquivada" na lista e {n:deixa|deixam} de contar nos totais. Para voltar a contá-los, toque em Restaurar.',
+        'Cuenta {nome} archivada. {n} {n:movimiento|movimientos} {n:queda|quedan} {n:marcado|marcados} como "Cuenta archivada" en la lista y {n:deja|dejan} de contar en los totales. Para volver a contarlos, tocá Restaurar.',
+        'Account {nome} archived. {n} {n:entry|entries} {n:stays|stay} marked "Archived account" in the list and {n:no longer counts|no longer count} toward totals. To count {n:it|them} again, tap Restore.'],
     'contas.nome_placeholder': ['Ex.: Itaú, Nubank, BCP...', 'Ej.: Itaú, Nubank, BCP...', 'E.g.: Chase, Nubank, Revolut...'],
     'contas.descricao_placeholder': ['Ex.: Reserva do mês', 'Ej.: Reserva del mes', 'E.g.: Monthly reserve'],
     'auth.google_cadastro': ['Cadastrar com Google', 'Registrarse con Google', 'Sign up with Google'],
