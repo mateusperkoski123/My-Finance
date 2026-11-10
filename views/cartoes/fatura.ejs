@@ -1,9 +1,9 @@
 <%
     const _rotulo = function (mes) { const p = mes.split('-'); var r = new Date(Number(p[0]), Number(p[1]) - 1, 1).toLocaleDateString(lang, { month: 'long', year: 'numeric' }); return r.charAt(0).toUpperCase() + r.slice(1); };
     const _paga = !!fatura.paga;
-    const _limite = Number(cartao.limite_total);
-    const _disponivel = Math.max(_limite - usado, 0);
     const _m = cartao.conta_moeda;
+    const _pctCartao = Number(cartao.reintegro_pct) || 0;
+    const _txtPct = function (n) { return String(Number(n)).replace('.', lang === 'en-US' ? '.' : ','); };
 %>
 <div class="page-header page-header--acoes">
     <div>
@@ -12,7 +12,7 @@
         <p class="muted">
             <%= cartao.bandeira ? cartao.bandeira + ' · ' : '' %><%= cartao.conta_nome %> ·
             <%= t('cartoes.fecha_dia', { dia: cartao.dia_fechamento }) %> · <%= t('cartoes.vence_dia', { dia: cartao.dia_vencimento }) %>
-            <% if (_limite > 0) { %> · <%= t('cartoes.limite_disponivel') %>: <b class="num"><%= moeda(_disponivel, _m) %></b><% } %>
+            <% if (_pctCartao > 0) { %> · <span class="badge badge-sucesso"><i class="ph ph-arrow-u-up-left"></i> <%= t('cartoes.reintegro_pct_cartao', { pct: _txtPct(_pctCartao) }) %></span><% } %>
         </p>
     </div>
     <div class="page-header__botoes">
@@ -20,6 +20,9 @@
         <% if (!_paga) { %><button type="button" class="btn btn-primary" data-modal-open="modal-nova-compra"><i class="ph ph-plus-circle"></i> <%= t('cartoes.nova_compra') %></button><% } %>
     </div>
 </div>
+
+<%# Limite no alto, divida (todas as faturas ainda nao pagas) embaixo e o que sobrou: vale para o cartao inteiro, nao so para o mes. %>
+<%- include('_resumo_limite', { limite: cartao.limite_total, usado: usado, moedaCod: _m }) %>
 
 <div class="cartao-meses">
     <a class="btn btn-outline btn-sm" href="/cartoes/<%= cartao.id %>?mes=<%= mesAnterior %>" title="<%= t('cartoes.mes_anterior') %>" aria-label="<%= t('cartoes.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
@@ -31,6 +34,12 @@
     <div>
         <div class="muted" style="font-size: 13px;"><%= t('cartoes.total_fatura') %></div>
         <div class="cartao-card__valor num"><%= moeda(fatura.total, _m) %></div>
+        <% if (fatura.reintegro > 0) { %>
+        <div class="cartao-resumo__conta">
+            <span><%= t('cartoes.fatura_compras') %>: <b class="num"><%= moeda(fatura.bruto, _m) %></b></span>
+            <span class="is-reintegro">− <%= t('cartoes.fatura_reintegro') %>: <b class="num"><%= moeda(fatura.reintegro, _m) %></b></span>
+        </div>
+        <% } %>
         <div class="muted" style="font-size: 13px;"><%= t('cartoes.fecha_em', { data: formatDate(fatura.fechamento, 'DD/MM/YYYY') }) %> · <%= t('cartoes.vence_em', { data: formatDate(fatura.vencimento, 'DD/MM/YYYY') }) %></div>
     </div>
     <div class="cartao-resumo__lado">
@@ -66,10 +75,15 @@
         <div class="cartao-compra__info">
             <strong><%= c.descricao %>
                 <% if (c.serie_id) { %><span class="badge badge-neutro" style="font-size: 11px; margin-left: 4px;"><i class="ph ph-repeat"></i> <%= c.recorrente ? t('cartoes.assinatura') : t('cartoes.parcela', { n: c.serie_pos, total: c.serie_total }) %></span><% } %>
+                <% if (Number(c.reintegro_valor) > 0) { %><span class="badge badge-sucesso" style="font-size: 11px; margin-left: 4px;"><i class="ph ph-arrow-u-up-left"></i> <%= t('cartoes.reintegro_etiqueta', { pct: _txtPct(c.reintegro_pct) }) %></span><% } %>
             </strong>
             <span class="muted"><%= formatDate(c.data_compra, 'DD/MM/YYYY') %> · <%= c.categoria_nome || t('cartoes.sem_categoria') %></span>
         </div>
-        <b class="num"><%= moeda(c.valor, _m) %></b>
+        <%# Com reintegro: o valor a pagar (compra menos o reintegro) em destaque e o valor da compra riscado embaixo. %>
+        <div class="cartao-compra__valor">
+            <b class="num"><%= moeda(c.liquido, _m) %></b>
+            <% if (Number(c.reintegro_valor) > 0) { %><s class="num"><%= moeda(c.valor, _m) %></s><% } %>
+        </div>
         <% if (!_paga) { %>
         <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-compra-<%= c.id %>" title="<%= t('cartoes.editar_compra') %>" aria-label="<%= t('cartoes.editar_compra') %>"><i class="ph ph-pencil-simple"></i></button>
         <% if (c.serie_id) { %>
@@ -86,7 +100,7 @@
 </div>
 
 <% if (!_paga) { fatura.compras.forEach(function (c) { %>
-<%- include('_modal_compra', { idModal: 'modal-compra-' + c.id, acao: '/cartoes/' + cartao.id + '/compras/' + c.id + '/editar', titulo: t('cartoes.editar_compra'), categorias: categorias, hoje: hoje, moedaCod: _m, compra: c, mes: fatura.mes }) %>
+<%- include('_modal_compra', { idModal: 'modal-compra-' + c.id, acao: '/cartoes/' + cartao.id + '/compras/' + c.id + '/editar', titulo: t('cartoes.editar_compra'), categorias: categorias, hoje: hoje, moedaCod: _m, cartao: cartao, compra: c, mes: fatura.mes }) %>
 <% if (c.serie_id) { %>
 <%# Compra que se repete (assinatura/parcelas): excluir so esta ou esta e as proximas ainda nao pagas. %>
 <div class="modal-backdrop" id="modal-excluir-compra-<%= c.id %>" data-modal>
@@ -111,52 +125,11 @@
 <% } %>
 <% }); } %>
 
-<div class="modal-backdrop" id="modal-nova-compra" data-modal>
-    <div class="modal card">
-        <div class="modal__header">
-            <h3><%= t('cartoes.nova_compra') %></h3>
-            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
-        </div>
-        <form method="post" action="/cartoes/<%= cartao.id %>/compras" class="form" data-gf-moeda="<%= _m %>">
-            <%- csrfCampo %>
-            <div class="form-group">
-                <label for="compra-desc"><%= t('cartoes.compra_descricao') %> *</label>
-                <input class="input" type="text" id="compra-desc" name="descricao" maxlength="190" required>
-            </div>
-            <div class="compras-fila">
-                <div class="form-group">
-                    <label for="compra-valor"><%= t('cartoes.compra_valor') %> (<%= _m %>) *</label>
-                    <input class="input" type="text" id="compra-valor" name="valor" inputmode="decimal" maxlength="20" required autocomplete="off">
-                </div>
-                <div class="form-group">
-                    <label for="compra-data"><%= t('cartoes.compra_data') %></label>
-                    <input class="input" type="date" id="compra-data" name="data" value="<%= hoje %>">
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="compra-categoria"><%= t('cartoes.compra_categoria') %></label>
-                <select class="input" id="compra-categoria" name="categoria_id">
-                    <option value=""><%= t('cartoes.sem_categoria') %></option>
-                    <% categorias.forEach(function (c) { %>
-                        <% if (c.subcategorias.length) { %>
-                        <optgroup label="<%= c.nome %>">
-                            <option value="<%= c.id %>"><%= c.nome %></option>
-                            <% c.subcategorias.forEach(function (s) { %><option value="<%= s.id %>"><%= c.nome %> › <%= s.nome %></option><% }) %>
-                        </optgroup>
-                        <% } else { %>
-                        <option value="<%= c.id %>"><%= c.nome %></option>
-                        <% } %>
-                    <% }) %>
-                </select>
-                <small class="muted"><%= t('cartoes.compra_vai_para') %></small>
-            </div>
-            <div class="modal__actions">
-                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
-                <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('clientes.salvar') %></button>
-            </div>
-        </form>
-    </div>
-</div>
+<%# Mesma arvore categoria > subcategorias que o Painel usa (app.js preenche a subcategoria a partir dela). %>
+<script>
+window.gfCategoriasArvore = <%- jsonScript(categoriasArvore || []) %>;
+</script>
+<%- include('_modal_compra', { idModal: 'modal-nova-compra', acao: '/cartoes/' + cartao.id + '/compras', titulo: t('cartoes.nova_compra'), categorias: categorias, hoje: hoje, moedaCod: _m, cartao: cartao }) %>
 
 <% if (!_paga && fatura.compras.length) { %>
 <div class="modal-backdrop" id="modal-pagar" data-modal>
@@ -168,6 +141,7 @@
         <form method="post" action="/cartoes/<%= cartao.id %>/pagar" class="form">
             <%- csrfCampo %><input type="hidden" name="mes" value="<%= fatura.mes %>">
             <p style="margin: 0 0 8px;"><b class="num"><%= moeda(fatura.total, _m) %></b></p>
+            <% if (fatura.reintegro > 0) { %><p class="muted" style="margin: 0 0 8px; font-size: 13px;"><i class="ph ph-arrow-u-up-left"></i> <%= t('cartoes.pagar_reintegro', { valor: moeda(fatura.reintegro, _m) }) %></p><% } %>
             <p class="muted" style="margin: 0 0 12px;"><%= t('cartoes.pagar_ajuda', { conta: cartao.conta_nome }) %></p>
             <div class="form-group">
                 <label for="pagar-data"><%= t('cartoes.data_pagamento') %></label>

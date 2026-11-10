@@ -10,6 +10,15 @@ const limpar = (v, max) => String(v === null || v === undefined ? '' : v).trim()
 const dinheiro = (v) => Math.round((Number(v) || 0) * 100) / 100;
 const dia = (v) => Math.min(Math.max(parseInt(v, 10) || 1, 1), 31);
 const erro = (codigo) => { const e = new Error(codigo); e.codigo = codigo; return e; };
+// Porcentagem de reintegro (0 a 99,99): aceita "20", "20,5" e "20.5". Fora disso vira 0 (sem reintegro).
+const porcentagem = (v) => {
+    const n = parseFloat(String(v === null || v === undefined ? '' : v).replace(',', '.'));
+    return Number.isFinite(n) ? Math.min(Math.max(Math.round(n * 100) / 100, 0), 99.99) : 0;
+};
+// Quanto o cartao devolve de uma compra de `valor` com `pct` % de reintegro.
+const valorReintegro = (valor, pct) => dinheiro((Number(valor) || 0) * (Number(pct) || 0) / 100);
+// Parte da compra que entra na fatura e no limite usado: o valor menos o reintegro.
+const LIQUIDO = '(cc.valor - cc.reintegro_valor)';
 // Assinatura (compra fixa): cria as proximas 24 ocorrencias, uma por mes, igual ao fixo dos lancamentos.
 const MESES_FIXO = 24;
 
@@ -32,7 +41,7 @@ class Cartao {
     // assinatura (recorrente) so conta a partir da data dela - as dos meses seguintes, criadas de antemao, ainda nao.
     static async calcularUsado(cartaoId) {
         const [[r]] = await db.query(
-            `SELECT COALESCE(SUM(cc.valor), 0) AS usado FROM cartao_compras cc
+            `SELECT COALESCE(SUM(${LIQUIDO}), 0) AS usado FROM cartao_compras cc
              LEFT JOIN cartao_faturas f ON f.cartao_id = cc.cartao_id AND f.mes = cc.fatura_mes
              WHERE cc.cartao_id = ? AND f.id IS NULL AND (cc.recorrente = 0 OR cc.data_compra <= ?)`,
             [cartaoId, toLocalYMD(hojeLocal())]
@@ -55,23 +64,24 @@ class Cartao {
         if (!c.length) throw erro('conta_invalida');
     }
 
-    static async criar(userId, { nome, bandeira, conta_id, limite_total, dia_fechamento, dia_vencimento }) {
+    static async criar(userId, { nome, bandeira, conta_id, limite_total, reintegro_pct, dia_fechamento, dia_vencimento }) {
         await this.validarConta(userId, conta_id);
         const [res] = await db.query(
-            `INSERT INTO cartoes (user_id, conta_id, nome, bandeira, limite_total, dia_fechamento, dia_vencimento)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [userId, conta_id, limpar(nome, 80), limpar(bandeira, 30), Math.max(dinheiro(limite_total), 0), dia(dia_fechamento), dia(dia_vencimento)]
+            `INSERT INTO cartoes (user_id, conta_id, nome, bandeira, limite_total, reintegro_pct, dia_fechamento, dia_vencimento)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+            [userId, conta_id, limpar(nome, 80), limpar(bandeira, 30), Math.max(dinheiro(limite_total), 0), porcentagem(reintegro_pct), dia(dia_fechamento), dia(dia_vencimento)]
         );
         return res.insertId;
     }
 
     // A conta pode mudar: as faturas ja pagas ficam como estao (os lancamentos gerados continuam na conta de antes).
-    static async atualizar(id, userId, { nome, bandeira, conta_id, limite_total, dia_fechamento, dia_vencimento }) {
+    // Mudar a porcentagem de reintegro vale para as compras novas; as que ja foram feitas guardam a porcentagem da epoca.
+    static async atualizar(id, userId, { nome, bandeira, conta_id, limite_total, reintegro_pct, dia_fechamento, dia_vencimento }) {
         await this.validarConta(userId, conta_id);
         const [res] = await db.query(
-            `UPDATE cartoes SET nome = ?, bandeira = ?, conta_id = ?, limite_total = ?, dia_fechamento = ?, dia_vencimento = ?
+            `UPDATE cartoes SET nome = ?, bandeira = ?, conta_id = ?, limite_total = ?, reintegro_pct = ?, dia_fechamento = ?, dia_vencimento = ?
              WHERE id = ? AND user_id = ?`,
-            [limpar(nome, 80), limpar(bandeira, 30), conta_id, Math.max(dinheiro(limite_total), 0), dia(dia_fechamento), dia(dia_vencimento), id, userId]
+            [limpar(nome, 80), limpar(bandeira, 30), conta_id, Math.max(dinheiro(limite_total), 0), porcentagem(reintegro_pct), dia(dia_fechamento), dia(dia_vencimento), id, userId]
         );
         return res.affectedRows > 0;
     }
@@ -103,8 +113,11 @@ class Cartao {
             ),
             this.faturaPaga(cartao.id, mes)
         ]);
-        const total = dinheiro(compras.reduce((s, c) => s + Number(c.valor), 0));
-        return { mes, compras, total, paga, ...fatura.datasDaFatura(mes, cartao.dia_fechamento, cartao.dia_vencimento) };
+        // Cada compra traz `liquido` (valor menos o reintegro). `total` e o que se paga; `bruto` e `reintegro` explicam a conta.
+        compras.forEach((c) => { c.liquido = dinheiro(Number(c.valor) - Number(c.reintegro_valor)); });
+        const total = dinheiro(compras.reduce((s, c) => s + c.liquido, 0));
+        const reintegro = dinheiro(compras.reduce((s, c) => s + Number(c.reintegro_valor), 0));
+        return { mes, compras, total, reintegro, bruto: dinheiro(total + reintegro), paga, ...fatura.datasDaFatura(mes, cartao.dia_fechamento, cartao.dia_vencimento) };
     }
 
     // Fatura mais antiga anterior a `mesAberto` que tem compras e ainda nao foi paga (ja fechou: e a que pede pagamento).
@@ -129,8 +142,11 @@ class Cartao {
     // Assinatura (e_fixo) ou parcelas de uma cobranca periodica (repetir): cria uma compra por mes/periodo, cada
     // uma caindo na fatura certa pela sua propria data. Mesma logica de Lancamento.criar, sem o status pago/pendente
     // (nao existe por compra: a fatura inteira e paga de uma vez).
-    static async criarCompra(userId, cartao, { descricao, valor, data, categoria_id, client_id = null, e_fixo = false, repetir = false, periodicidade = 'mensal', quantidade_repeticoes = 1 }) {
+    // `reintegro`: a compra tem o reintegro do cartao (cartao.reintegro_pct); cada ocorrencia da serie guarda a
+    // porcentagem e o valor devolvido.
+    static async criarCompra(userId, cartao, { descricao, valor, data, categoria_id, client_id = null, e_fixo = false, repetir = false, periodicidade = 'mensal', quantidade_repeticoes = 1, reintegro = false }) {
         if (categoria_id) await Lancamento.validarPropriedade(userId, null, categoria_id);
+        const pct = reintegro ? porcentagem(cartao.reintegro_pct) : 0;
         const eFixo = !!e_fixo;
         const eRepetir = !eFixo && !!repetir;
         const qtdPedida = eRepetir ? Math.min(Math.max(parseInt(quantidade_repeticoes, 10) || 1, 1), 60) : 1;
@@ -148,9 +164,9 @@ class Cartao {
                 const dataOcorrencia = addMonthsYMD(data, i * passo);
                 const mes = await this.mesDeNovaCompra(cartao, dataOcorrencia);
                 const [res] = await conn.query(
-                    `INSERT INTO cartao_compras (user_id, cartao_id, categoria_id, descricao, valor, data_compra, fatura_mes, serie_id, recorrente, client_id)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [userId, cartao.id, categoria_id || null, descLimpa, valorLimpo, dataOcorrencia, mes, serieId, eFixo ? 1 : 0, i === 0 ? client_id : null]
+                    `INSERT INTO cartao_compras (user_id, cartao_id, categoria_id, descricao, valor, reintegro_pct, reintegro_valor, data_compra, fatura_mes, serie_id, recorrente, client_id)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [userId, cartao.id, categoria_id || null, descLimpa, valorLimpo, pct, valorReintegro(valorLimpo, pct), dataOcorrencia, mes, serieId, eFixo ? 1 : 0, i === 0 ? client_id : null]
                 );
                 if (i === 0) primeiro = { id: res.insertId, mes };
             }
@@ -219,24 +235,30 @@ class Cartao {
     // Edita uma compra de fatura em aberto; a fatura e recalculada pela nova data. Devolve o mes da fatura ou null.
     // Compra em serie com escopo "esta_e_proximas" (ex.: a assinatura mudou de preco): descricao, valor e categoria
     // valem tambem para as proximas ocorrencias ainda nao pagas; a data muda so nesta.
-    static async atualizarCompra(id, cartao, userId, { descricao, valor, data, categoria_id }, escopo = 'apenas_esta') {
+    // `reintegro` (true/false) liga ou desliga o reintegro da compra: ao ligar, vale a porcentagem que a compra ja tinha
+    // (ou, se nao tinha, a do cartao hoje); o valor devolvido e recalculado sobre o valor novo. Nas ocorrencias seguintes
+    // da serie o reintegro acompanha o que foi escolhido aqui.
+    static async atualizarCompra(id, cartao, userId, { descricao, valor, data, categoria_id, reintegro = false }, escopo = 'apenas_esta') {
         if (categoria_id) await Lancamento.validarPropriedade(userId, null, categoria_id);
         const [rows] = await db.query(
-            "SELECT fatura_mes, serie_id, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra FROM cartao_compras WHERE id = ? AND cartao_id = ? AND user_id = ? LIMIT 1",
+            "SELECT fatura_mes, serie_id, reintegro_pct, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra FROM cartao_compras WHERE id = ? AND cartao_id = ? AND user_id = ? LIMIT 1",
             [id, cartao.id, userId]
         );
         if (!rows.length || (await this.faturaPaga(cartao.id, rows[0].fatura_mes))) return null;
         const mes = await this.mesDeNovaCompra(cartao, data);
+        const valorLimpo = dinheiro(valor);
+        const pct = reintegro ? (porcentagem(rows[0].reintegro_pct) || porcentagem(cartao.reintegro_pct)) : 0;
         await db.query(
-            'UPDATE cartao_compras SET descricao = ?, valor = ?, data_compra = ?, categoria_id = ?, fatura_mes = ? WHERE id = ? AND cartao_id = ? AND user_id = ?',
-            [limpar(descricao, 190), dinheiro(valor), data, categoria_id || null, mes, id, cartao.id, userId]
+            `UPDATE cartao_compras SET descricao = ?, valor = ?, reintegro_pct = ?, reintegro_valor = ?, data_compra = ?, categoria_id = ?, fatura_mes = ?
+             WHERE id = ? AND cartao_id = ? AND user_id = ?`,
+            [limpar(descricao, 190), valorLimpo, pct, valorReintegro(valorLimpo, pct), data, categoria_id || null, mes, id, cartao.id, userId]
         );
         if (escopo === 'esta_e_proximas' && rows[0].serie_id) {
             await db.query(
-                `UPDATE cartao_compras cc SET cc.descricao = ?, cc.valor = ?, cc.categoria_id = ?
+                `UPDATE cartao_compras cc SET cc.descricao = ?, cc.valor = ?, cc.reintegro_pct = ?, cc.reintegro_valor = ?, cc.categoria_id = ?
                  WHERE cc.user_id = ? AND cc.cartao_id = ? AND cc.serie_id = ? AND cc.id <> ? AND cc.data_compra >= ?
                    AND NOT EXISTS (SELECT 1 FROM cartao_faturas f WHERE f.cartao_id = cc.cartao_id AND f.mes = cc.fatura_mes)`,
-                [limpar(descricao, 190), dinheiro(valor), categoria_id || null, userId, cartao.id, rows[0].serie_id, id, rows[0].data_compra]
+                [limpar(descricao, 190), valorLimpo, pct, valorReintegro(valorLimpo, pct), categoria_id || null, userId, cartao.id, rows[0].serie_id, id, rows[0].data_compra]
             );
         }
         return mes;
@@ -245,7 +267,7 @@ class Cartao {
     // Faturas em aberto (com compras) de cartoes ativos que vencem em alguma das datas. Usado pelo lembrete de vencimento.
     static async vencimentos(userId, datas) {
         const [rows] = await db.query(
-            `SELECT k.id AS cartao_id, k.nome, k.dia_fechamento, k.dia_vencimento, ct.moeda, cc.fatura_mes AS mes, SUM(cc.valor) AS total
+            `SELECT k.id AS cartao_id, k.nome, k.dia_fechamento, k.dia_vencimento, ct.moeda, cc.fatura_mes AS mes, SUM(${LIQUIDO}) AS total
              FROM cartao_compras cc
              JOIN cartoes k ON k.id = cc.cartao_id AND k.status = 'ativo'
              JOIN contas ct ON ct.id = k.conta_id
@@ -315,7 +337,8 @@ class Cartao {
         try {
             for (const c of f.compras) {
                 const [lancId] = await Lancamento.criar(userId, {
-                    tipo: 'despesa', conta_id: cartao.conta_id, categoria_id: c.categoria_id, valor: c.valor,
+                    // O lancamento sai pelo que de fato foi pago: a compra menos o reintegro.
+                    tipo: 'despesa', conta_id: cartao.conta_id, categoria_id: c.categoria_id, valor: c.liquido,
                     descricao: limpar(`${c.descricao} · ${cartao.nome}`, 190),
                     data_competencia: dataPagamento, status: 'pago', data_pagamento: dataPagamento
                 });

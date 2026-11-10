@@ -607,7 +607,8 @@ document.addEventListener('DOMContentLoaded', function () {
   gfBinders.push(function (root) {
     root.querySelectorAll('form').forEach(function (form) {
       var sel = form.querySelector('select[name="conta_id"]');
-      var valor = form.querySelector('input[name="valor"][data-money]');
+      // Formulario de cartao: o campo e o limite total (limite_total), na moeda da conta que paga a fatura.
+      var valor = form.querySelector('input[name="valor"][data-money]') || form.querySelector('input[name="limite_total"][data-money]');
       if (!sel || !valor || sel.getAttribute('data-gf-moeda') === '1') return;
       sel.setAttribute('data-gf-moeda', '1');
       var aplicar = function () {
@@ -617,6 +618,35 @@ document.addEventListener('DOMContentLoaded', function () {
       };
       sel.addEventListener('change', aplicar);
       aplicar();
+    });
+  });
+
+  // Compra no cartao com reintegro: ao marcar "Teve reintegro" mostra quanto o cartao devolve (porcentagem do cartao
+  // sobre o valor digitado) e quanto sobra a pagar. O servidor refaz a conta ao salvar (Cartao.criarCompra).
+  gfBinders.push(function (root) {
+    root.querySelectorAll('[data-gf-reintegro]').forEach(function (toggle) {
+      if (toggle.getAttribute('data-gf-bound') === '1') return;
+      toggle.setAttribute('data-gf-bound', '1');
+      var form = toggle.closest('form');
+      var campoValor = form ? form.querySelector('input[name="valor"]') : null;
+      var saida = form ? form.querySelector('[data-gf-reintegro-calculo]') : null;
+      if (!campoValor || !saida) return;
+      var pct = parseFloat(toggle.getAttribute('data-pct')) || 0;
+      var cod = toggle.getAttribute('data-moeda') || null;
+      var modelo = saida.getAttribute('data-txt') || '';
+      var atualizar = function () {
+        var R = window.AppRegras;
+        var valor = R && campoValor.value ? R.parseMoeda(campoValor.value) : 0;
+        saida.hidden = !(toggle.checked && valor > 0 && pct > 0);
+        if (saida.hidden) return;
+        var reintegro = Math.round(valor * pct) / 100;
+        saida.textContent = modelo
+          .replace('{reintegro}', gfFormatarValorMoeda(reintegro, cod))
+          .replace('{pagar}', gfFormatarValorMoeda(Math.round((valor - reintegro) * 100) / 100, cod));
+      };
+      toggle.addEventListener('change', atualizar);
+      campoValor.addEventListener('input', atualizar);
+      atualizar();
     });
   });
 

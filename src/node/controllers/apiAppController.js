@@ -237,11 +237,15 @@ const OPERACOES = {
         const cartao = linha ? await Cartao.buscar(linha.id, userId) : null;
         if (!cartao || cartao.status !== 'ativo') throw new ErroOp('cartao_invalido');
         const categoriaId = await categoriaDoUsuario(userId, dados.categoria_id);
+        const serie = serieDe(dados);
         const r = await Cartao.criarCompra(userId, cartao, {
             descricao: texto(dados.descricao, 190, { obrigatorio: true, campo: 'descricao' }),
             valor: valorPositivo(dados.valor),
             data: dataYMD(dados.data_compra, { obrigatoria: true }),
-            categoria_id: categoriaId, client_id: clientId
+            categoria_id: categoriaId, client_id: clientId,
+            // Assinatura / parcelas e reintegro, como no formulario do site.
+            e_fixo: serie.eFixo, repetir: serie.repetir, periodicidade: serie.periodicidade, quantidade_repeticoes: serie.quantidade,
+            reintegro: ['1', 1, true, 'true'].includes(dados.reintegro)
         });
         return { id_servidor: r.id, updated_at: await tsLinha('cartao_compras', r.id) };
     },
@@ -377,8 +381,8 @@ class ApiAppController {
                  DATE_FORMAT(data_competencia, '%Y-%m-%d') AS data_competencia, DATE_FORMAT(data_pagamento, '%Y-%m-%d') AS data_pagamento`,
                 'l', janela && !(cur && cur.l && cur.l.fim) ? ' AND data_competencia BETWEEN ? AND ?' : '', janela && !(cur && cur.l && cur.l.fim) ? janela : []);
 
-            const cartoes = await pagina('cartoes', 'id, client_id, conta_id, nome, bandeira, limite_total, dia_fechamento, dia_vencimento, status', 'r');
-            const compras = await pagina('cartao_compras', "id, client_id, cartao_id, categoria_id, descricao, valor, fatura_mes, lancamento_id, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra", 'o');
+            const cartoes = await pagina('cartoes', 'id, client_id, conta_id, nome, bandeira, limite_total, reintegro_pct, dia_fechamento, dia_vencimento, status', 'r');
+            const compras = await pagina('cartao_compras', "id, client_id, cartao_id, categoria_id, descricao, valor, reintegro_pct, reintegro_valor, fatura_mes, lancamento_id, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra", 'o');
             const faturas = await pagina('cartao_faturas', "id, client_id, cartao_id, mes, total, DATE_FORMAT(pago_em, '%Y-%m-%d') AS pago_em", 'f');
 
             let ultimaExclusao;

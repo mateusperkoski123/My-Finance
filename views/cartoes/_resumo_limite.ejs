@@ -1,0 +1,40 @@
+<%# Resumo do limite em destaque: limite total no alto, a divida (gastos que descontam do limite) embaixo e o que sobrou.
+   Parametros: limite, usado (divida total = faturas ainda nao pagas), moedaCod, compacto (opcional: versao menor para a lista de cartoes) %>
+<%
+const _lim = Number(limite) || 0;
+const _div = Number(usado) || 0;
+const _sobra = _lim - _div;
+const _estourou = _lim > 0 && _sobra < 0;
+const _pctUsado = _lim > 0 ? Math.min(Math.round(_div / _lim * 100), 100) : 0;
+const _compacto = typeof compacto !== 'undefined' && compacto;
+%>
+<div class="limite-resumo<%= _compacto ? ' limite-resumo--compacto' : '' %>">
+<% if (_lim > 0) { %>
+    <div class="limite-resumo__linha limite-resumo__linha--limite">
+        <span class="limite-resumo__rotulo"><i class="ph ph-credit-card"></i> <%= t('cartoes.resumo_limite') %></span>
+        <b class="limite-resumo__valor num"><%= moeda(_lim, moedaCod) %></b>
+    </div>
+    <div class="limite-resumo__linha limite-resumo__linha--divida">
+        <span class="limite-resumo__rotulo">
+            <i class="ph ph-minus-circle"></i> <%= t('cartoes.resumo_divida') %>
+            <% if (!_compacto) { %><small><%= t('cartoes.resumo_divida_ajuda') %></small><% } %>
+        </span>
+        <b class="limite-resumo__valor num">− <%= moeda(_div, moedaCod) %></b>
+    </div>
+    <div class="cartao-barra" role="progressbar" aria-valuenow="<%= _pctUsado %>" aria-valuemin="0" aria-valuemax="100"><i class="<%= _pctUsado >= 90 ? 'is-alto' : '' %>" style="width: <%= _pctUsado %>%;"></i></div>
+    <div class="limite-resumo__linha limite-resumo__linha--sobra<%= _estourou ? ' is-estourou' : '' %>">
+        <span class="limite-resumo__rotulo"><i class="ph ph-equals"></i> <%= t('cartoes.resumo_sobrou') %> <small><%= t('cartoes.pct_usado', { pct: _pctUsado }) %></small></span>
+        <b class="limite-resumo__valor num"><%= moeda(Math.max(_sobra, 0), moedaCod) %></b>
+    </div>
+    <% if (_estourou) { %><p class="limite-resumo__aviso"><i class="ph ph-warning-circle"></i> <%= t('cartoes.resumo_estourou', { valor: moeda(-_sobra, moedaCod) }) %></p><% } %>
+<% } else { %>
+    <div class="limite-resumo__linha limite-resumo__linha--divida">
+        <span class="limite-resumo__rotulo">
+            <i class="ph ph-minus-circle"></i> <%= t('cartoes.resumo_divida') %>
+            <% if (!_compacto) { %><small><%= t('cartoes.resumo_divida_ajuda') %></small><% } %>
+        </span>
+        <b class="limite-resumo__valor num"><%= moeda(_div, moedaCod) %></b>
+    </div>
+    <p class="muted limite-resumo__sem-limite"><%= t('cartoes.resumo_sem_limite') %></p>
+<% } %>
+</div>

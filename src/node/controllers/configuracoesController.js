@@ -137,9 +137,9 @@ const configuracoesController = {
         }));
         // Cartoes de credito: compras em aberto (ainda fora do saldo) e faturas pagas tambem fazem parte do backup.
         const [cartoes] = await db.query(
-            'SELECT id, conta_id, nome, bandeira, limite_total, dia_fechamento, dia_vencimento, status FROM cartoes WHERE user_id = ? ORDER BY id', [userId]);
+            'SELECT id, conta_id, nome, bandeira, limite_total, reintegro_pct, dia_fechamento, dia_vencimento, status FROM cartoes WHERE user_id = ? ORDER BY id', [userId]);
         const [cartaoCompras] = await db.query(
-            `SELECT id, cartao_id, categoria_id, descricao, valor, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra, fatura_mes,
+            `SELECT id, cartao_id, categoria_id, descricao, valor, reintegro_pct, reintegro_valor, DATE_FORMAT(data_compra, '%Y-%m-%d') AS data_compra, fatura_mes,
                     lancamento_id, serie_id, recorrente
              FROM cartao_compras WHERE user_id = ? ORDER BY id`, [userId]);
         const [cartaoFaturas] = await db.query(
@@ -330,6 +330,7 @@ const configuracoesController = {
             // 4. Cartoes de credito (backups a partir de nov/2026): cartao (mescla por nome + conta), faturas pagas e compras.
             // Cartao alem do limite do plano entra arquivado (os dados ficam guardados e podem ser restaurados depois).
             const dia = (v) => Math.min(Math.max(parseInt(v, 10) || 1, 1), 31);
+            const pct = (v) => Math.min(Math.max(Math.round((parseFloat(v) || 0) * 100) / 100, 0), 99.99);
             const mesFatura = (v) => (/^\d{4}-(0[1-9]|1[0-2])$/.test(String(v || '')) ? String(v) : null);
             const maxCartoes = req.ehAdmin || !req.assinatura || !req.assinatura.plano ? null : req.assinatura.plano.max_cartoes;
             const [[{ ativosCartoes }]] = await conn.query("SELECT COUNT(*) AS ativosCartoes FROM cartoes WHERE user_id = ? AND status = 'ativo'", [userId]);
@@ -345,10 +346,10 @@ const configuracoesController = {
                 if (status === 'ativo' && maxCartoes !== null && maxCartoes !== undefined && cartoesAtivos >= maxCartoes) status = 'arquivado';
                 if (status === 'ativo') cartoesAtivos++;
                 const [r] = await conn.query(
-                    `INSERT INTO cartoes (user_id, conta_id, nome, bandeira, limite_total, dia_fechamento, dia_vencimento, status)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                    `INSERT INTO cartoes (user_id, conta_id, nome, bandeira, limite_total, reintegro_pct, dia_fechamento, dia_vencimento, status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     [userId, contaId, nome, String(k.bandeira || '').trim().slice(0, 30), Math.max(parseFloat(k.limite_total) || 0, 0),
-                     dia(k.dia_fechamento), dia(k.dia_vencimento), status]
+                     pct(k.reintegro_pct), dia(k.dia_fechamento), dia(k.dia_vencimento), status]
                 );
                 cartaoMap[k.id] = r.insertId;
             }
@@ -373,9 +374,10 @@ const configuracoesController = {
                 );
                 if (dup.length) continue;
                 await conn.query(
-                    `INSERT INTO cartao_compras (user_id, cartao_id, categoria_id, descricao, valor, data_compra, fatura_mes, lancamento_id, serie_id, recorrente)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                    [userId, cartaoId, c.categoria_id ? (catMap[c.categoria_id] || null) : null, descricao, valor, dataCompra, mes,
+                    `INSERT INTO cartao_compras (user_id, cartao_id, categoria_id, descricao, valor, reintegro_pct, reintegro_valor, data_compra, fatura_mes, lancamento_id, serie_id, recorrente)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [userId, cartaoId, c.categoria_id ? (catMap[c.categoria_id] || null) : null, descricao, valor,
+                     pct(c.reintegro_pct), Math.min(Math.max(parseFloat(c.reintegro_valor) || 0, 0), valor), dataCompra, mes,
                      c.lancamento_id ? (lancMap[c.lancamento_id] || null) : null,
                      c.serie_id ? String(c.serie_id).slice(0, 36) : null, c.recorrente ? 1 : 0]
                 );

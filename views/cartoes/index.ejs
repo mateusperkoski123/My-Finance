@@ -34,33 +34,17 @@
     </div>
 <% } else { %>
     <div class="cartao-grid">
-    <% cartoes.forEach(function (k) {
-        const limite = Number(k.limite_total), usado = Number(k.usado);
-        const pct = limite > 0 ? Math.min(Math.round(usado / limite * 100), 100) : 0;
-        const disponivel = Math.max(limite - usado, 0);
-    %>
+    <% cartoes.forEach(function (k) { %>
         <div class="card cartao-card">
             <div class="cartao-card__topo">
                 <span class="cartao-card__icone"><i class="ph ph-credit-card"></i></span>
                 <div>
                     <strong><%= k.nome %></strong>
-                    <div class="muted" style="font-size: 13px;"><%= k.bandeira || k.conta_nome %></div>
+                    <div class="muted" style="font-size: 13px;"><%= k.bandeira || k.conta_nome %><% if (Number(k.reintegro_pct) > 0) { %> · <span class="badge badge-sucesso"><i class="ph ph-arrow-u-up-left"></i> <%= t('cartoes.reintegro_pct_cartao', { pct: String(Number(k.reintegro_pct)).replace('.', lang === 'en-US' ? '.' : ',') }) %></span><% } %></div>
                 </div>
             </div>
-            <div>
-                <div class="muted" style="font-size: 13px;"><%= t('cartoes.limite_usado') %></div>
-                <div class="cartao-card__valor num"><%= moeda(usado, k.conta_moeda) %></div>
-            </div>
-            <% if (limite > 0) { %>
-            <div>
-                <div class="cartao-barra" role="progressbar" aria-valuenow="<%= pct %>" aria-valuemin="0" aria-valuemax="100"><i class="<%= pct >= 90 ? 'is-alto' : '' %>" style="width: <%= pct %>%;"></i></div>
-                <div class="muted cartao-card__pct"><%= t('cartoes.pct_usado', { pct: pct }) %></div>
-            </div>
-            <div class="cartao-card__limites">
-                <div><span class="muted"><%= t('cartoes.limite_disponivel') %></span><b class="num"><%= moeda(disponivel, k.conta_moeda) %></b></div>
-                <div><span class="muted"><%= t('cartoes.limite_total') %></span><b class="num"><%= moeda(limite, k.conta_moeda) %></b></div>
-            </div>
-            <% } %>
+            <%# Limite total no alto, a divida (gastos que descontam do limite) embaixo e o que sobrou. %>
+            <%- include('_resumo_limite', { limite: k.limite_total, usado: k.usado, moedaCod: k.conta_moeda, compacto: true }) %>
             <div class="cartao-card__dias muted"><span><%= t('cartoes.fecha_dia', { dia: k.dia_fechamento }) %></span><span><%= t('cartoes.vence_dia', { dia: k.dia_vencimento }) %></span></div>
             <a class="btn btn-outline cartao-card__ver" href="/cartoes/<%= k.id %>"><span><%= t('cartoes.ver_fatura') %></span> <i class="ph ph-arrow-right"></i></a>
             <div class="cartao-card__acoes">

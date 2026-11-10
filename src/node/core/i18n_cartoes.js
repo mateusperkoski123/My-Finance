@@ -118,5 +118,34 @@ module.exports = {
     'cartoes.serie_apenas_esta': ['Só esta', 'Solo esta', 'Only this one'],
     'cartoes.serie_proximas': ['Esta e as próximas (ainda não pagas)', 'Esta y las próximas (aún no pagadas)', 'This and the next ones (not paid yet)'],
     'cartoes.excluir_serie_ajuda': ['Para cancelar uma assinatura ou as parcelas que faltam, escolha "Esta e as próximas". O que já está em faturas pagas não muda.', 'Para cancelar una suscripción o las cuotas que faltan, elegí "Esta y las próximas". Lo que ya está en facturas pagadas no cambia.', 'To cancel a subscription or the remaining installments, choose "This and the next ones". What is already on paid statements does not change.'],
-    'cartoes.flash_compras_excluidas': ['{n} compras excluídas.', '{n} compras eliminadas.', '{n} purchases deleted.']
+    'cartoes.flash_compras_excluidas': ['{n} compras excluídas.', '{n} compras eliminadas.', '{n} purchases deleted.'],
+
+    // ---- Reintegro (o cartao devolve uma porcentagem da compra) ----
+    'cartoes.campo_reintegro': ['Reintegro do cartão (%)', 'Reintegro de la tarjeta (%)', 'Card cashback (%)'],
+    'cartoes.ajuda_reintegro': ['Se o cartão devolve uma porcentagem das compras, informe aqui (ex.: 20). Em cada compra você marca se teve reintegro e o valor é descontado da fatura. Deixe em branco se não tiver.', 'Si la tarjeta te devuelve un porcentaje de las compras, ponelo acá (ej.: 20). En cada compra marcás si tuvo reintegro y el valor se descuenta de la factura. Dejalo vacío si no tiene.', 'If the card gives back a percentage of purchases, enter it here (e.g. 20). On each purchase you mark whether it had cashback and the amount is deducted from the statement. Leave it empty if it has none.'],
+    'cartoes.compra_reintegro': ['Teve reintegro', 'Tuvo reintegro', 'Had cashback'],
+    'cartoes.compra_reintegro_dica': ['O cartão devolve {pct}% desta compra e o valor é descontado da fatura.', 'La tarjeta devuelve el {pct}% de esta compra y el valor se descuenta de la factura.', 'The card gives back {pct}% of this purchase and the amount is deducted from the statement.'],
+    'cartoes.reintegro_calculo': ['Reintegro: {reintegro} · Você paga: {pagar}', 'Reintegro: {reintegro} · Pagás: {pagar}', 'Cashback: {reintegro} · You pay: {pagar}'],
+    'cartoes.reintegro_etiqueta': ['Reintegro {pct}%', 'Reintegro {pct}%', 'Cashback {pct}%'],
+    'cartoes.reintegro_pct_cartao': ['Reintegro de {pct}%', 'Reintegro del {pct}%', '{pct}% cashback'],
+    'cartoes.fatura_compras': ['Compras', 'Compras', 'Purchases'],
+    'cartoes.fatura_reintegro': ['Reintegro', 'Reintegro', 'Cashback'],
+    'cartoes.pagar_reintegro': ['Já descontado o reintegro de {valor}.', 'Ya descontado el reintegro de {valor}.', 'Cashback of {valor} already deducted.'],
+
+    // ---- Resumo do limite: limite no alto, divida embaixo e o que sobrou ----
+    'cartoes.resumo_limite': ['Limite total do cartão', 'Límite total de la tarjeta', 'Total card limit'],
+    'cartoes.resumo_divida': ['Dívida total do cartão', 'Deuda total de la tarjeta', 'Total card debt'],
+    'cartoes.resumo_divida_ajuda': ['Soma de todas as faturas ainda não pagas.', 'Suma de todas las facturas aún no pagadas.', 'Sum of all statements not paid yet.'],
+    'cartoes.resumo_sobrou': ['Quanto sobrou do limite', 'Cuánto te queda del límite', 'Limit left'],
+    'cartoes.resumo_sem_limite': ['Informe o limite total do cartão (botão Editar) para ver quanto ainda pode gastar.', 'Ingresá el límite total de la tarjeta (botón Editar) para ver cuánto podés gastar todavía.', 'Enter the card\'s total limit (Edit button) to see how much you can still spend.'],
+    'cartoes.resumo_estourou': ['Você passou do limite em {valor}.', 'Pasaste del límite en {valor}.', 'You are over the limit by {valor}.'],
+
+    // ---- Compra no cartao: mesmo formulario do lancamento, so com o cartao ----
+    'cartoes.compra_cartao': ['Cartão', 'Tarjeta', 'Card'],
+    'cartoes.compra_cartao_dica': ['Entra na fatura deste cartão. O saldo da conta só muda quando você pagar a fatura.', 'Entra en la factura de esta tarjeta. El saldo de la cuenta solo cambia cuando pagás la factura.', 'Goes on this card\'s statement. The account balance only changes when you pay the statement.'],
+    'cartoes.compra_fixa': ['Assinatura (compra fixa)', 'Suscripción (compra fija)', 'Subscription (recurring purchase)'],
+    'cartoes.compra_fixa_dica': ['Repete todo mês: já lança os próximos 24 meses nas faturas.', 'Se repite cada mes: ya carga los próximos 24 meses en las facturas.', 'Repeats every month: adds the next 24 months to the statements.'],
+    'cartoes.compra_repetir': ['Parcelar / repetir compra', 'Cuotas / repetir compra', 'Installments / repeat purchase'],
+    'cartoes.compra_repetir_dica': ['Parcelas ou cobranças periódicas: lança uma compra por período, cada uma na fatura certa pela data.', 'Cuotas o cobros periódicos: carga una compra por período, cada una en la factura correcta según la fecha.', 'Installments or periodic charges: adds one purchase per period, each on the right statement by its date.'],
+    'cartoes.salvar_compra': ['Salvar compra', 'Guardar compra', 'Save purchase']
 };

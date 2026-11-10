@@ -3486,6 +3486,41 @@ a.navbar__avatar { text-decoration: none; }
 .cartao-compra__info strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 480px) { .cartao-grid { grid-template-columns: 1fr; } }
 
+/* Resumo do limite do cartao: limite total no alto, a divida (gastos que descontam do limite) embaixo e o que sobrou. */
+.limite-resumo { display: flex; flex-direction: column; gap: 10px; padding: 16px 18px; border: 1px solid var(--border); border-radius: 16px; background: var(--card); box-shadow: var(--shadow); margin-bottom: 12px; }
+.limite-resumo__linha { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; }
+.limite-resumo__rotulo { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; font-weight: 600; font-size: 14px; color: var(--muted); }
+.limite-resumo__rotulo small { font-weight: 400; font-size: 12px; }
+.limite-resumo__linha--divida .limite-resumo__rotulo small { flex-basis: 100%; }
+.limite-resumo__valor { font-size: 22px; font-weight: 800; letter-spacing: -.01em; }
+.limite-resumo__linha--limite .limite-resumo__valor { font-size: 28px; color: var(--text); }
+.limite-resumo__linha--divida .limite-resumo__valor { color: var(--red); }
+.limite-resumo__linha--sobra { padding: 12px 14px; border-radius: 12px; background: var(--green-bg); }
+.limite-resumo__linha--sobra .limite-resumo__rotulo { color: var(--green); }
+.limite-resumo__linha--sobra .limite-resumo__valor { font-size: 28px; color: var(--green); }
+.limite-resumo__linha--sobra.is-estourou { background: var(--red-bg); }
+.limite-resumo__linha--sobra.is-estourou .limite-resumo__rotulo, .limite-resumo__linha--sobra.is-estourou .limite-resumo__valor { color: var(--red); }
+.limite-resumo__aviso { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; font-weight: 600; color: var(--red); }
+.limite-resumo__sem-limite { margin: 0; font-size: 13px; }
+/* No celular o nome da compra quebra em linhas (com as etiquetas de parcela e reintegro ele ficava cortado em "Celular ..."). */
+@media (max-width: 480px) { .cartao-compra__info strong { white-space: normal; overflow: visible; } }
+.limite-resumo .cartao-barra { height: 10px; }
+.limite-resumo--compacto { padding: 12px 14px; gap: 8px; box-shadow: none; background: var(--bg); margin-bottom: 0; }
+.limite-resumo--compacto .limite-resumo__rotulo { font-size: 13px; }
+.limite-resumo--compacto .limite-resumo__valor { font-size: 17px; }
+.limite-resumo--compacto .limite-resumo__linha--limite .limite-resumo__valor, .limite-resumo--compacto .limite-resumo__linha--sobra .limite-resumo__valor { font-size: 21px; }
+.limite-resumo--compacto .limite-resumo__linha--sobra { padding: 9px 12px; }
+.limite-resumo--compacto .cartao-barra { height: 8px; background: var(--card); }
+
+/* Reintegro (o cartao devolve uma porcentagem da compra) */
+.cartao-compra__valor { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+.cartao-compra__valor s { font-size: 12px; font-weight: 400; color: var(--muted); }
+.cartao-resumo__conta { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+.cartao-resumo__conta b { color: var(--text); }
+.cartao-resumo__conta .is-reintegro, .cartao-resumo__conta .is-reintegro b { color: var(--green); }
+.reintegro-calculo { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--green-bg); color: var(--green); font-size: 14px; font-weight: 600; }
+.lanc-campo__fixo { font-weight: 600; }
+
 /* Titulo "Configuracoes" no topo so no celular (no computador ele ja esta no menu lateral). */
 @media (min-width: 821px) { .settings-titulo-mobile { display: none; } }
 

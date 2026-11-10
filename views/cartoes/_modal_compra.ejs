@@ -1,56 +1,166 @@
-<%# Parametros: idModal, acao, titulo, categorias, hoje, moedaCod, compra (opcional: preenche o formulario), mes (opcional) %>
-<% const _c = typeof compra !== 'undefined' && compra ? compra : {}; %>
-<div class="modal-backdrop" id="<%= idModal %>" data-modal>
-    <div class="modal card">
+<%# Compra no cartao: o MESMO formulario do lancamento de despesa (partials/modal_lancamento.ejs), so que o pagamento e sempre
+   neste cartao (sem escolher conta nem status: pago e pendente so existem na fatura).
+   Parametros: idModal, acao, titulo, categorias (arvore de despesa), hoje, moedaCod, cartao, compra (opcional: preenche o
+   formulario e e a edicao), mes (opcional).
+   Novo: assinatura (fixa) e parcelas (repetir). Edicao de compra em serie: escolhe se vale so para esta ou para as proximas.
+   A categoria e a subcategoria usam o mesmo script do Painel (window.gfCategoriasArvore, embutido em cartoes/fatura.ejs). %>
+<%
+const _c = typeof compra !== 'undefined' && compra ? compra : {};
+const _edicao = !!_c.id;
+// A categoria guardada na compra pode ser uma subcategoria: o select de categoria mostra o pai e o de subcategoria a filha.
+let _catPai = '', _subAtual = '';
+if (_c.categoria_id) {
+    const cid = Number(_c.categoria_id);
+    const pai = categorias.find((p) => p.id === cid);
+    if (pai) { _catPai = pai.id; }
+    else {
+        const outro = categorias.find((p) => p.subcategorias.some((s) => s.id === cid));
+        if (outro) { _catPai = outro.id; _subAtual = cid; }
+    }
+}
+// Reintegro: porcentagem desta compra (se ja tinha) ou a do cartao hoje.
+const _pctCompra = Number(_c.reintegro_pct) || 0;
+const _pctCartao = Number(cartao.reintegro_pct) || 0;
+const _pctUsar = _pctCompra > 0 ? _pctCompra : _pctCartao;
+const _comReintegro = _pctUsar > 0;
+const _pctTexto = String(_pctUsar).replace('.', lang === 'en-US' ? '.' : ',');
+%>
+<div class="modal-backdrop modal-backdrop--lanc" id="<%= idModal %>" data-modal>
+    <div class="modal card modal--lanc modal--despesa">
         <div class="modal__header">
-            <h3><%= titulo %></h3>
+            <div class="modal__titulo">
+                <span class="modal__icone"><i class="ph ph-credit-card"></i></span>
+                <h2><%= titulo %></h2>
+            </div>
             <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
         </div>
-        <form method="post" action="<%= acao %>" class="form">
+
+        <form method="post" action="<%= acao %>" class="form lanc-form" data-gf-moeda="<%= moedaCod %>">
             <%- csrfCampo %>
             <% if (typeof mes !== 'undefined' && mes) { %><input type="hidden" name="mes" value="<%= mes %>"><% } %>
+
+            <h4 class="lanc-form__secao"><%= t('modal.inf_basicas') %></h4>
+
             <div class="form-group">
-                <label for="<%= idModal %>-desc"><%= t('cartoes.compra_descricao') %> *</label>
-                <input class="input" type="text" id="<%= idModal %>-desc" name="descricao" maxlength="190" required value="<%= _c.descricao || '' %>">
+                <label for="<%= idModal %>-descricao"><%= t('modal.descricao') %></label>
+                <input class="input" type="text" id="<%= idModal %>-descricao" name="descricao" maxlength="190" autocomplete="off" required value="<%= _c.descricao || '' %>">
             </div>
-            <div class="compras-fila">
-                <div class="form-group">
-                    <label for="<%= idModal %>-valor"><%= t('cartoes.compra_valor') %> (<%= moedaCod %>) *</label>
-                    <input class="input" type="text" id="<%= idModal %>-valor" name="valor" inputmode="decimal" maxlength="20" required autocomplete="off" value="<%= _c.valor ? Number(_c.valor).toFixed(2) : '' %>">
-                </div>
-                <div class="form-group">
-                    <label for="<%= idModal %>-data"><%= t('cartoes.compra_data') %></label>
-                    <input class="input" type="date" id="<%= idModal %>-data" name="data" value="<%= _c.data_compra ? formatDate(_c.data_compra) : hoje %>">
-                </div>
-            </div>
+
             <div class="form-group">
-                <label for="<%= idModal %>-categoria"><%= t('cartoes.compra_categoria') %></label>
-                <select class="input" id="<%= idModal %>-categoria" name="categoria_id">
+                <label for="<%= idModal %>-valor"><%= t('modal.valor') %></label>
+                <input class="input lanc-form__valor" type="text" id="<%= idModal %>-valor" name="valor" data-money data-money-positivo data-moeda-cod="<%= moedaCod %>" required value="<%= _c.valor ? Number(_c.valor).toFixed(2) : '' %>">
+            </div>
+
+            <div class="form-group">
+                <label for="<%= idModal %>-categoria"><%= t('comum.categoria') %></label>
+                <select class="input" id="<%= idModal %>-categoria" name="categoria_id" data-gf-categoria-select data-subcategoria-atual="<%= _subAtual %>">
                     <option value=""><%= t('cartoes.sem_categoria') %></option>
-                    <% categorias.forEach(function (c) { %>
-                        <% if (c.subcategorias.length) { %>
-                        <optgroup label="<%= c.nome %>">
-                            <option value="<%= c.id %>" <%= Number(_c.categoria_id) === c.id ? 'selected' : '' %>><%= c.nome %></option>
-                            <% c.subcategorias.forEach(function (s) { %><option value="<%= s.id %>" <%= Number(_c.categoria_id) === s.id ? 'selected' : '' %>><%= c.nome %> › <%= s.nome %></option><% }) %>
-                        </optgroup>
-                        <% } else { %>
-                        <option value="<%= c.id %>" <%= Number(_c.categoria_id) === c.id ? 'selected' : '' %>><%= c.nome %></option>
-                        <% } %>
+                    <% categorias.forEach(function (cat) { %>
+                        <option value="<%= cat.id %>" <%= _catPai === cat.id ? 'selected' : '' %>><%= cat.nome %></option>
                     <% }) %>
                 </select>
+            </div>
+
+            <div class="form-group">
+                <label for="<%= idModal %>-subcategoria"><%= t('comum.subcategoria') %></label>
+                <select class="input" id="<%= idModal %>-subcategoria" name="subcategoria_id" data-gf-subcategoria-select disabled>
+                    <option value=""><%= t('modal.sel_cat_primeiro') %></option>
+                </select>
+            </div>
+
+            <h4 class="lanc-form__secao"><%= t('modal.config_transacao') %></h4>
+
+            <%# Pagamento sempre neste cartao: so mostra qual e. %>
+            <div class="lanc-campo">
+                <div class="lanc-campo__rotulo">
+                    <span class="lanc-campo__ico"><i class="ph ph-credit-card"></i></span>
+                    <strong><%= t('cartoes.compra_cartao') %></strong>
+                </div>
+                <span class="lanc-campo__fixo"><%= cartao.nome %><%= cartao.bandeira ? ' · ' + cartao.bandeira : '' %></span>
+                <small class="muted"><%= t('cartoes.compra_cartao_dica') %></small>
+            </div>
+
+            <% if (_comReintegro) { %>
+            <div class="lanc-campo lanc-campo--linha">
+                <div class="lanc-campo__rotulo">
+                    <span class="lanc-campo__ico"><i class="ph ph-arrow-u-up-left"></i></span>
+                    <div>
+                        <strong><%= t('cartoes.compra_reintegro') %></strong>
+                        <small><%= t('cartoes.compra_reintegro_dica', { pct: _pctTexto }) %></small>
+                    </div>
+                </div>
+                <label class="toggle">
+                    <input type="checkbox" name="reintegro" value="1" data-gf-reintegro data-pct="<%= _pctUsar %>" data-moeda="<%= moedaCod %>" aria-label="<%= t('cartoes.compra_reintegro') %>" <%= _pctCompra > 0 ? 'checked' : '' %>>
+                    <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                </label>
+            </div>
+            <p class="reintegro-calculo" data-gf-reintegro-calculo data-txt="<%= t('cartoes.reintegro_calculo', { reintegro: '{reintegro}', pagar: '{pagar}' }) %>" aria-live="polite" hidden></p>
+            <% } %>
+
+            <div class="lanc-campo">
+                <label class="lanc-campo__rotulo" for="<%= idModal %>-data">
+                    <span class="lanc-campo__ico"><i class="ph ph-calendar"></i></span>
+                    <strong><%= t('cartoes.compra_data') %></strong>
+                </label>
+                <input class="input" type="date" id="<%= idModal %>-data" name="data" value="<%= _c.data_compra ? formatDate(_c.data_compra) : hoje %>" required>
                 <small class="muted"><%= t('cartoes.compra_vai_para') %></small>
             </div>
-            <% if (_c.serie_id) { %>
-            <%# Assinatura/parcelas: a alteracao pode valer so para esta ou tambem para as proximas ainda nao pagas. %>
-            <div class="form-group">
-                <p class="muted" style="font-size: 13px; margin: 0 0 6px;"><%= t('cartoes.serie_escopo') %></p>
+
+            <% if (!_edicao) { %>
+            <%# Assinatura (todo mes, 24 meses) ou parcelas / cobranca periodica: uma compra por periodo, cada uma na fatura certa pela data. %>
+            <div class="lanc-grupo">
+                <div class="lanc-campo lanc-campo--linha">
+                    <div class="lanc-campo__rotulo">
+                        <span class="lanc-campo__ico"><i class="ph ph-push-pin"></i></span>
+                        <div>
+                            <strong><%= t('cartoes.compra_fixa') %></strong>
+                            <small><%= t('cartoes.compra_fixa_dica') %></small>
+                        </div>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="e_fixo" value="1" aria-label="<%= t('cartoes.compra_fixa') %>">
+                        <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                    </label>
+                </div>
+
+                <div class="lanc-campo lanc-campo--linha">
+                    <div class="lanc-campo__rotulo">
+                        <span class="lanc-campo__ico"><i class="ph ph-arrows-clockwise"></i></span>
+                        <div>
+                            <strong><%= t('cartoes.compra_repetir') %></strong>
+                            <small><%= t('cartoes.compra_repetir_dica') %></small>
+                        </div>
+                    </div>
+                    <label class="toggle">
+                        <input type="checkbox" name="repetir" value="1" data-gf-toggle-repetir aria-label="<%= t('cartoes.compra_repetir') %>">
+                        <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                    </label>
+                </div>
+
+                <div class="lanc-campo" data-gf-repetir-alvo hidden>
+                    <label class="lanc-campo__rotulo" for="<%= idModal %>-per"><strong><%= t('modal.periodicidade') %></strong></label>
+                    <select class="input" id="<%= idModal %>-per" name="periodicidade">
+                        <% ['mensal', 'trimestral', 'semestral', 'anual'].forEach((p) => { %>
+                        <option value="<%= p %>"><%= t('modal.per_' + p) %></option>
+                        <% }) %>
+                    </select>
+                    <label class="lanc-campo__rotulo" for="<%= idModal %>-qtd" style="margin-top: 10px;"><strong><%= t('modal.qtd_repeticoes') %></strong></label>
+                    <input class="input" type="number" id="<%= idModal %>-qtd" name="quantidade_repeticoes" min="2" max="60" value="12" inputmode="numeric">
+                    <%- include('../partials/repetir_explica') %>
+                </div>
+            </div>
+            <% } else if (_c.serie_id) { %>
+            <%# Compra que se repete (assinatura/parcelas): a alteracao pode valer so para esta ou tambem para as proximas ainda nao pagas. %>
+            <div class="lanc-campo">
+                <p class="lanc-serie__titulo"><%= t('cartoes.serie_escopo') %></p>
                 <label class="lanc-serie__opcao"><input type="radio" name="escopo_serie" value="apenas_esta" checked> <%= t('cartoes.serie_apenas_esta') %></label>
                 <label class="lanc-serie__opcao"><input type="radio" name="escopo_serie" value="esta_e_proximas"> <%= t('cartoes.serie_proximas') %></label>
             </div>
             <% } %>
-            <div class="modal__actions">
-                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
-                <button type="submit" class="btn btn-primary"><i class="ph ph-floppy-disk"></i> <%= t('clientes.salvar') %></button>
+
+            <div class="modal-rodape">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('modal.cancelar') %></button>
+                <button type="submit" class="btn btn-salvar"><i class="ph ph-floppy-disk"></i> <%= _edicao ? t('modal.salvar') : t('cartoes.salvar_compra') %></button>
             </div>
         </form>
     </div>

@@ -16,7 +16,17 @@ async function cartaoDoUsuario(req, res) {
 
 const dadosCartao = (b) => ({
     nome: String(b.nome || '').trim(), bandeira: b.bandeira, conta_id: inteiro(b.conta_id),
-    limite_total: parseMoeda(b.limite_total), dia_fechamento: b.dia_fechamento, dia_vencimento: b.dia_vencimento
+    limite_total: parseMoeda(b.limite_total), reintegro_pct: b.reintegro_pct, dia_fechamento: b.dia_fechamento, dia_vencimento: b.dia_vencimento
+});
+
+// Campos de uma compra vindos do formulario (igual ao de lancamento: categoria + subcategoria, fixa/repetir, reintegro).
+const ligado = (v) => v === '1' || v === 1 || v === true || v === 'on';
+const dadosCompra = (b) => ({
+    descricao: String(b.descricao || '').trim(),
+    valor: parseMoeda(b.valor),
+    data: dataValida(b.data) ? b.data : hoje(),
+    categoria_id: inteiro(b.subcategoria_id) || inteiro(b.categoria_id) || null,
+    reintegro: ligado(b.reintegro)
 });
 
 // Limite de cartoes ativos do plano (Basico 1, Premium 3, Pro 6). Vale para criar e restaurar; admin nao tem limite.
@@ -86,6 +96,8 @@ const cartoesController = {
         ]);
         res.render('cartoes/fatura', {
             title: cartao.nome, menuAtivo: 'cartoes', cartao, fatura: f, categorias, contas, usado,
+            // Mesma arvore (categoria > subcategorias) que o modal de lancamento usa para preencher a subcategoria.
+            categoriasArvore: categorias,
             // Fatura de um mes depois da que esta aberta agora: so tem cobrancas programadas (assinaturas, parcelas) e
             // ainda nao pode ser paga.
             futura: mes > aberto,
@@ -96,13 +108,17 @@ const cartoesController = {
     adicionarCompra: async (req, res) => {
         const cartao = await cartaoDoUsuario(req, res);
         if (!cartao) return;
-        const valor = parseMoeda(req.body.valor);
-        const descricao = String(req.body.descricao || '').trim();
-        const data = dataValida(req.body.data) ? req.body.data : hoje();
+        const { descricao, valor, data, categoria_id, reintegro } = dadosCompra(req.body);
         if (!descricao || !(valor > 0)) { avisar(req, 'erro', req.t('cartoes.erro_compra')); return res.redirect(`/cartoes/${cartao.id}`); }
+        // Assinatura (fixa) e parcelas (repetir): uma compra por mes/periodo, cada uma na fatura certa pela data.
+        const eFixo = ligado(req.body.e_fixo);
         let mes;
         try {
-            mes = (await Cartao.criarCompra(req.user.id, cartao, { descricao, valor, data, categoria_id: inteiro(req.body.categoria_id) || null })).mes;
+            mes = (await Cartao.criarCompra(req.user.id, cartao, {
+                descricao, valor, data, categoria_id, reintegro,
+                e_fixo: eFixo, repetir: !eFixo && ligado(req.body.repetir),
+                periodicidade: req.body.periodicidade, quantidade_repeticoes: req.body.quantidade_repeticoes || '1'
+            })).mes;
             avisar(req, 'sucesso', req.t('cartoes.flash_compra'));
         } catch (err) {
             if (!err.codigo) throw err;
@@ -114,15 +130,13 @@ const cartoesController = {
     editarCompra: async (req, res) => {
         const cartao = await cartaoDoUsuario(req, res);
         if (!cartao) return;
-        const valor = parseMoeda(req.body.valor);
-        const descricao = String(req.body.descricao || '').trim();
-        const data = dataValida(req.body.data) ? req.body.data : hoje();
+        const { descricao, valor, data, categoria_id, reintegro } = dadosCompra(req.body);
         const voltar = (mes) => res.redirect(`/cartoes/${cartao.id}${mes ? `?mes=${mes}` : ''}`);
         if (!descricao || !(valor > 0)) { avisar(req, 'erro', req.t('cartoes.erro_compra')); return voltar(fatura.mesValido(req.body.mes) ? req.body.mes : null); }
         let mes = null;
         const escopo = req.body.escopo_serie === 'esta_e_proximas' ? 'esta_e_proximas' : 'apenas_esta';
         try {
-            mes = await Cartao.atualizarCompra(inteiro(req.params.compraId), cartao, req.user.id, { descricao, valor, data, categoria_id: inteiro(req.body.categoria_id) || null }, escopo);
+            mes = await Cartao.atualizarCompra(inteiro(req.params.compraId), cartao, req.user.id, { descricao, valor, data, categoria_id, reintegro }, escopo);
             avisar(req, mes ? 'sucesso' : 'erro', req.t(mes ? 'cartoes.flash_compra_salva' : 'cartoes.erro_compra_paga'));
         } catch (err) {
             if (!err.codigo) throw err;

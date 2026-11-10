@@ -103,10 +103,13 @@
             const valor = R.parseMoeda(fd.get('valor'));
             const descricao = String(fd.get('descricao') || '').trim();
             if (!cartaoId || !descricao || !(valor > 0)) return { erro: 'invalido' };
-            const dados = { cartao_id: cartaoId, descricao, valor, data_compra: dataDe(form, 'data') };
-            const categoria = fd.get('categoria_id');
+            const serie = serieDe(fd);
+            if (!serie) return { erro: 'invalido' };
+            const dados = Object.assign({ cartao_id: cartaoId, descricao, valor, data_compra: dataDe(form, 'data') }, serie);
+            const categoria = fd.get('subcategoria_id') || fd.get('categoria_id');
             if (categoria) dados.categoria_id = Number(categoria);
-            return { tabela: 'cartao_compras', acao: 'create', dados, resumo: { titulo: descricao, valor: -valor, moeda: form.dataset.gfMoeda || undefined, tipo: 'compra_cartao' } };
+            if (fd.get('reintegro') === '1') dados.reintegro = true; // o servidor aplica a porcentagem do cartao
+            return { tabela: 'cartao_compras', acao: 'create', dados, resumo: { titulo: descricao, valor: -valor, moeda: form.dataset.gfMoeda || undefined, tipo: 'compra_cartao', serie: serie.e_fixo ? 'fixo' : (serie.repetir ? serie.quantidade_repeticoes : null) } };
         }
         if (tipo === 'pagar') {
             const id = Number((form.getAttribute('action').match(/\/lancamentos\/(\d+)\//) || [])[1]);

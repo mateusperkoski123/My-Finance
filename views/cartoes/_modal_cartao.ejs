@@ -1,5 +1,11 @@
 <%# Parametros: idModal, acao, titulo, contas, cartao (opcional: preenche o formulario), voltar (opcional) %>
-<% const _k = typeof cartao !== 'undefined' && cartao ? cartao : {}; %>
+<%
+const _k = typeof cartao !== 'undefined' && cartao ? cartao : {};
+// Moeda do cartao = a da conta escolhida (a primeira, num cartao novo): o limite e escrito e mostrado nessa moeda.
+const _contaInicial = contas.find((c) => Number(c.id) === Number(_k.conta_id)) || contas[0] || {};
+const _moedaCartao = _contaInicial.moeda || currency;
+const _pctTexto = Number(_k.reintegro_pct) > 0 ? String(Number(_k.reintegro_pct)).replace('.', lang === 'en-US' ? '.' : ',') : '';
+%>
 <div class="modal-backdrop" id="<%= idModal %>" data-modal>
     <div class="modal card">
         <div class="modal__header">
@@ -20,13 +26,19 @@
             <div class="form-group">
                 <label for="<%= idModal %>-conta"><%= t('cartoes.campo_conta') %> *</label>
                 <select class="input" id="<%= idModal %>-conta" name="conta_id" required>
-                    <% contas.forEach(function (c) { %><option value="<%= c.id %>" <%= Number(_k.conta_id) === c.id ? 'selected' : '' %>><%= c.nome %> (<%= c.moeda %>)</option><% }) %>
+                    <% contas.forEach(function (c) { %><option value="<%= c.id %>" data-moeda="<%= c.moeda %>" <%= Number(_k.conta_id) === c.id ? 'selected' : '' %>><%= c.nome %> (<%= c.moeda %>)</option><% }) %>
                 </select>
                 <small class="muted"><%= t('cartoes.ajuda_conta') %></small>
             </div>
+            <%# data-money: o campo se escreve no formato da moeda da conta escolhida (Gs. 5.000.000, R$ 5.000,00...). %>
             <div class="form-group">
                 <label for="<%= idModal %>-limite"><%= t('cartoes.campo_limite') %></label>
-                <input class="input" type="text" id="<%= idModal %>-limite" name="limite_total" inputmode="decimal" maxlength="20" autocomplete="off" value="<%= _k.limite_total ? Number(_k.limite_total).toFixed(2) : '' %>">
+                <input class="input" type="text" id="<%= idModal %>-limite" name="limite_total" data-money data-moeda-cod="<%= _moedaCartao %>" maxlength="24" value="<%= Number(_k.limite_total) > 0 ? Number(_k.limite_total).toFixed(2) : '' %>">
+            </div>
+            <div class="form-group">
+                <label for="<%= idModal %>-reintegro"><%= t('cartoes.campo_reintegro') %></label>
+                <input class="input" type="text" id="<%= idModal %>-reintegro" name="reintegro_pct" inputmode="decimal" maxlength="5" autocomplete="off" placeholder="0" value="<%= _pctTexto %>">
+                <small class="muted"><%= t('cartoes.ajuda_reintegro') %></small>
             </div>
             <div class="compras-fila">
                 <div class="form-group">
