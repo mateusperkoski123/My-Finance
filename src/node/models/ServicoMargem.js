@@ -58,15 +58,25 @@ class ServicoMargem {
         let cusPorMes = new Map();
         let itens = [];
         if (servico.categoria_custo_id) {
+            // Compras no cartao ainda NAO pagas (lancamento_id nulo) tambem sao custo: so viram lancamento quando a fatura e paga, e
+            // as ja pagas ja aparecem como lancamento (nao contam duas vezes). Entram no mes da compra, como pendentes.
             const [cus] = await db.query(
-                `SELECT DATE_FORMAT(l.data_competencia, '%Y-%m') AS ym, COALESCE(SUM(ABS(l.valor)), 0) AS total,
-                        COALESCE(SUM(CASE WHEN l.status = 'pago' THEN ABS(l.valor) ELSE 0 END), 0) AS pago
-                 FROM lancamentos l
-                 JOIN categorias c ON c.id = l.categoria_id
-                 JOIN contas cb ON cb.id = l.conta_id
-                 WHERE l.user_id = ? AND l.tipo = 'despesa' AND (c.id = ? OR c.parent_id = ?) AND l.data_competencia BETWEEN ? AND ?${filtroMoeda}
-                 GROUP BY ym`,
-                [userId, servico.categoria_custo_id, servico.categoria_custo_id, janela.inicio, janela.fim, ...parMoeda]
+                `SELECT ym, COALESCE(SUM(total), 0) AS total, COALESCE(SUM(pago), 0) AS pago FROM (
+                     SELECT DATE_FORMAT(l.data_competencia, '%Y-%m') AS ym, ABS(l.valor) AS total, IF(l.status = 'pago', ABS(l.valor), 0) AS pago
+                     FROM lancamentos l
+                     JOIN categorias c ON c.id = l.categoria_id
+                     JOIN contas cb ON cb.id = l.conta_id
+                     WHERE l.user_id = ? AND l.tipo = 'despesa' AND (c.id = ? OR c.parent_id = ?) AND l.data_competencia BETWEEN ? AND ?${filtroMoeda}
+                     UNION ALL
+                     SELECT DATE_FORMAT(k.data_compra, '%Y-%m'), k.valor, 0
+                     FROM cartao_compras k
+                     JOIN categorias c ON c.id = k.categoria_id
+                     JOIN cartoes ct ON ct.id = k.cartao_id
+                     JOIN contas cb ON cb.id = ct.conta_id
+                     WHERE k.user_id = ? AND k.lancamento_id IS NULL AND (c.id = ? OR c.parent_id = ?) AND k.data_compra BETWEEN ? AND ?${filtroMoeda}
+                 ) x GROUP BY ym`,
+                [userId, servico.categoria_custo_id, servico.categoria_custo_id, janela.inicio, janela.fim, ...parMoeda,
+                    userId, servico.categoria_custo_id, servico.categoria_custo_id, janela.inicio, janela.fim, ...parMoeda]
             );
             cusPorMes = new Map(cus.map((r) => [r.ym, r]));
 
@@ -78,11 +88,17 @@ class ServicoMargem {
                  ORDER BY (c.id = ?) DESC, c.nome`,
                 [userId, servico.categoria_custo_id, servico.categoria_custo_id, janela.inicio, janela.fim, servico.categoria_custo_id]
             );
+            const idsCats = cats.map((c) => c.id).concat([0]);
+            const desde = limitesDoMes(anterior.ano, anterior.mes).inicio;
             const [lan] = await db.query(
-                `SELECT l.categoria_id, DATE_FORMAT(l.data_competencia, '%Y-%m') AS ym, ABS(l.valor) AS valor, l.status, DATE_FORMAT(l.data_competencia, '${ND}') AS data
+                `SELECT l.categoria_id, DATE_FORMAT(l.data_competencia, '%Y-%m') AS ym, ABS(l.valor) AS valor, l.status, DATE_FORMAT(l.data_competencia, '${ND}') AS data, 0 AS cartao
                  FROM lancamentos l JOIN contas cb ON cb.id = l.conta_id
-                 WHERE l.user_id = ? AND l.tipo = 'despesa' AND l.categoria_id IN (?) AND l.data_competencia BETWEEN ? AND ?${filtroMoeda}`,
-                [userId, cats.map((c) => c.id).concat([0]), limitesDoMes(anterior.ano, anterior.mes).inicio, atual.fim, ...parMoeda]
+                 WHERE l.user_id = ? AND l.tipo = 'despesa' AND l.categoria_id IN (?) AND l.data_competencia BETWEEN ? AND ?${filtroMoeda}
+                 UNION ALL
+                 SELECT k.categoria_id, DATE_FORMAT(k.data_compra, '%Y-%m'), k.valor, 'pendente', DATE_FORMAT(k.data_compra, '${ND}'), 1
+                 FROM cartao_compras k JOIN cartoes ct ON ct.id = k.cartao_id JOIN contas cb ON cb.id = ct.conta_id
+                 WHERE k.user_id = ? AND k.lancamento_id IS NULL AND k.categoria_id IN (?) AND k.data_compra BETWEEN ? AND ?${filtroMoeda}`,
+                [userId, idsCats, desde, atual.fim, ...parMoeda, userId, idsCats, desde, atual.fim, ...parMoeda]
             );
             const temSubs = cats.some((c) => c.parent_id);
             itens = cats
@@ -99,7 +115,7 @@ class ServicoMargem {
                 it.anterior = doAnt.reduce((s, x) => s + num(x.valor), 0);
                 it.variacao = it.valor - it.anterior;
                 it.dia = doMes.length ? parseInt(doMes[0].data.slice(8, 10), 10) : null;
-                it.estado = !doMes.length ? null : (doMes.every((x) => x.status === 'pago') ? 'pago' : (doMes.some((x) => x.data < hoje && x.status !== 'pago') ? 'atrasado' : 'pendente'));
+                it.estado = !doMes.length ? null : (doMes.every((x) => x.status === 'pago') ? 'pago' : (doMes.some((x) => !x.cartao && x.data < hoje && x.status !== 'pago') ? 'atrasado' : 'pendente')); // compra de cartao espera a fatura: nunca "atrasada"
             }
         }
 
