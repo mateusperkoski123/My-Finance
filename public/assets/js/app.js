@@ -363,7 +363,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (campoStatus) campoStatus.hidden = ehCartao;
         if (campoFixoRepetir) campoFixoRepetir.hidden = ehCartao;
         if (selectConta) selectConta.required = !ehCartao;
-        if (selectCartao) selectCartao.required = ehCartao;
+        if (selectCartao) { selectCartao.required = ehCartao; selectCartao.disabled = !ehCartao; } // escondido nao pode ser enviado
       };
       grupo.querySelectorAll('input[name="forma_pagamento"]').forEach(function (r) { r.addEventListener('change', atualizar); });
       atualizar();

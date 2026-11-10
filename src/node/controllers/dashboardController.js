@@ -154,7 +154,8 @@ const dashboardController = {
         // Despesa paga com cartao de credito: vira uma (ou, fixa/repetida, varias) compra do cartao, fora do saldo e
         // dos lancamentos ate a fatura ser paga. Nao ha status pago/pendente por compra (isso e por fatura), mas
         // assinatura (fixa) e parcelas (repetir) funcionam igual aos lancamentos: uma ocorrencia por mes/periodo.
-        if (b.cartao_id && b.tipo !== 'receita') {
+        // So vira compra de cartao quando "Pagar com cartao" foi escolhido: o campo do cartao fica escondido (mas e enviado) no modo "conta".
+        if (b.forma_pagamento === 'cartao' && b.cartao_id && b.tipo !== 'receita') {
             const cartao = await Cartao.buscar(parseInt(b.cartao_id, 10) || 0, userId);
             if (!cartao || cartao.status !== 'ativo') {
                 req.session.flash = { tipo: 'erro', mensagem: req.t('modal.cartao_invalido') };
