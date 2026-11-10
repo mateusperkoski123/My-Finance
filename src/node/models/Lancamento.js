@@ -556,6 +556,24 @@ class Lancamento {
         return apagados;
     }
 
+    // Mudanca de categoria em lote: troca SO a categoria (valor, data, conta e situacao pago/pendente ficam como estao) dos
+    // lancamentos de receita e despesa informados. Ajustes e transferencias nao tem categoria escolhida pela pessoa, entao ficam de fora.
+    // `updated_at` muda para o app (sincronizacao) receber a nova categoria. Devolve quantos foram movidos e quantos ficaram de fora.
+    static async mudarCategoriaLote(userId, ids, categoriaId) {
+        const unicos = [...new Set((ids || []).map((v) => parseInt(v, 10)).filter((n) => Number.isFinite(n) && n > 0))].slice(0, 5000);
+        let movidos = 0;
+        for (let i = 0; i < unicos.length; i += 400) {
+            const lote = unicos.slice(i, i + 400);
+            const [r] = await db.query(
+                `UPDATE lancamentos SET categoria_id = ?, updated_at = NOW(3)
+                 WHERE user_id = ? AND tipo IN ('receita', 'despesa') AND id IN (${lote.map(() => '?').join(',')})`,
+                [categoriaId, userId, ...lote]
+            );
+            movidos += r.affectedRows;
+        }
+        return { movidos, ignorados: unicos.length - movidos };
+    }
+
     // Ids (entre os informados) que foram criados pelo pagamento de uma fatura de cartao. Apagar um deles deixaria a fatura
     // "paga" com o dinheiro de volta na conta: so o "Desfazer pagamento" do cartao pode tira-los.
     static async idsDeFatura(userId, ids) {

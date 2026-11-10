@@ -435,6 +435,15 @@ const relatoriosController = {
 
         // Base da lista compartilhada: mantem aba e periodo nos links (busca, abas de tipo, agrupar, ordenar, paginacao).
         const listaParams = Object.assign({ aba }, periodoParams);
+        // O que acompanha o usuario quando ele so muda o PERIODO (mes anterior/seguinte, Hoje, 7 dias, Anual, datas): filtros da
+        // lista, vista do Estado financeiro e comparacao com o ano passado. Sem isso, cada troca de mes voltava ao Estado geral.
+        // Comparacao com datas escolhidas nao entra (as datas ficariam velhas); a pagina volta ao inicio (pagina nao entra).
+        const contextoParams = {};
+        ['categoria_id', 'subcategoria_id', 'tipo', 'busca', 'nivel', 'vista', 'ordenar', 'agrupar', 'por_pagina'].forEach((k) => {
+            const v = cleanVal(query[k]);
+            if (v) contextoParams[k] = v;
+        });
+        if (avancado && query.comparar === 'ano') contextoParams.comparar = 'ano';
         const limparUrl = '/relatorios?' + new URLSearchParams(
             aba === 'demonstrativo' ? Object.assign({ aba }, periodoParams, cmpParams, filtros.tipo !== 'todas' && ['receita', 'despesa'].includes(filtros.tipo) ? { tipo: filtros.tipo } : {}) : listaParams
         ).toString();
@@ -456,6 +465,7 @@ const relatoriosController = {
             porPagina,
             listaBase: '/relatorios',
             listaParams,
+            contextoParams,
             limparUrl,
             agruparOpcoes: ['sem_agrupamento', 'categoria', 'subcategoria', 'vencimento', 'criacao', 'conta'].concat(aba === 'pendentes' ? [] : ['status']),
             lancamentos: dadosLista ? dadosLista.lancamentos : [],

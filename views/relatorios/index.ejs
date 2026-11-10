@@ -12,7 +12,9 @@
 
 <%# Parametros que identificam o periodo nos links entre abas e presets. %>
 <% const _qs = (extra) => new URLSearchParams(Object.assign({}, periodoParams, extra || {})).toString(); %>
-<% const _mesLink = (m, a) => '/relatorios?' + new URLSearchParams({ aba: aba, preset: 'mes', mes: m, ano: a }).toString(); %>
+<%# Troca so o PERIODO: filtros (categoria, tipo, busca...), vista do Estado financeiro e comparacao acompanham (contextoParams). %>
+<% const _perLink = (extra) => '/relatorios?' + new URLSearchParams(Object.assign({}, contextoParams, { aba: aba }, extra)).toString(); %>
+<% const _mesLink = (m, a) => _perLink({ preset: 'mes', mes: m, ano: a }); %>
 <div class="contas-toolbar">
     <div class="tabs tabs--grade">
         <a href="/relatorios?aba=graficos&<%= _qs() %>" class="tabs__item <%= aba === 'graficos' ? 'is-active' : '' %>"><i class="ph ph-chart-pie-slice"></i> <%= t('relatorios.aba_graficos') %></a>
@@ -27,6 +29,7 @@
 <!-- Barra de periodo (mes anterior/proximo, atalhos e periodo personalizado) -->
 <form method="get" action="/relatorios" class="card" style="margin-bottom: 20px; padding: 14px 18px;">
     <input type="hidden" name="aba" value="<%= aba %>">
+    <% Object.keys(contextoParams).forEach((k) => { %><input type="hidden" name="<%= k %>" value="<%= contextoParams[k] %>"><% }) %>
     <div class="mes-nav">
         <a class="btn btn-outline btn-sm" href="<%= _mesLink(periodo.mes_anterior, periodo.ano_anterior) %>" aria-label="<%= t('painel.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
         <div class="mes-nav__centro">
@@ -36,10 +39,10 @@
         <a class="btn btn-outline btn-sm" href="<%= _mesLink(periodo.mes_proximo, periodo.ano_proximo) %>" aria-label="<%= t('painel.mes_proximo') %>"><i class="ph ph-caret-right"></i></a>
     </div>
     <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center;">
-        <a href="/relatorios?aba=<%= aba %>&preset=hoje" class="btn <%= periodo.preset === 'hoje' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.hoje') %></a>
-        <a href="/relatorios?aba=<%= aba %>&preset=7dias" class="btn <%= periodo.preset === '7dias' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= aba === 'pendentes' ? t('filtro.proximos_7dias') : t('filtro.7dias') %></a>
-        <a href="/relatorios?aba=<%= aba %>&preset=anual&ano=<%= periodo.ano %>" class="btn <%= periodo.preset === 'anual' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.anual') %></a>
-        <a href="/relatorios?aba=<%= aba %>&preset=mes" class="btn <%= periodo.preset === 'mes' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
+        <a href="<%= _perLink({ preset: 'hoje' }) %>" class="btn <%= periodo.preset === 'hoje' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.hoje') %></a>
+        <a href="<%= _perLink({ preset: '7dias' }) %>" class="btn <%= periodo.preset === '7dias' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= aba === 'pendentes' ? t('filtro.proximos_7dias') : t('filtro.7dias') %></a>
+        <a href="<%= _perLink({ preset: 'anual', ano: periodo.ano }) %>" class="btn <%= periodo.preset === 'anual' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.anual') %></a>
+        <a href="<%= _perLink({ preset: 'mes' }) %>" class="btn <%= periodo.preset === 'mes' ? 'btn-primary' : 'btn-outline' %> btn-sm" style="border-radius: 20px;"><%= t('filtro.mes_atual') %></a>
     </div>
 
     <!-- Periodo personalizado (recolhido por padrao) -->

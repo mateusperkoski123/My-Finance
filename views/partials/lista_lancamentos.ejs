@@ -115,6 +115,20 @@ function gfAtualizarParam(chave, valor) {
             <span class="muted" id="lote-lanc-contagem" style="font-size: 13px;"></span>
             <button type="button" class="link-botao" id="lote-lanc-filtro" hidden></button>
             <button type="button" class="link-botao" id="lote-lanc-limpar" hidden><%= t('lote.limpar') %></button>
+            <span id="lote-lanc-mover-grupo" hidden>
+                <span style="display: inline-flex; align-items: center; gap: 6px; flex-wrap: nowrap; white-space: nowrap;">
+                    <select class="input" id="lote-lanc-destino" name="categoria_destino" style="padding: 5px 10px; font-size: 13px; border-radius: 10px; max-width: 260px;" aria-label="<%= t('lote.mover_escolha') %>">
+                        <option value=""><%= t('lote.mover_escolha') %></option>
+                        <% (typeof categoriasArvore !== 'undefined' ? categoriasArvore : []).filter(function (cat) { return !cat.sistema; }).forEach(function (cat) { %>
+                            <option value="<%= cat.id %>" data-nome="<%= cat.nome %>"><%= cat.nome %></option>
+                            <% (cat.subcategorias || []).forEach(function (sub) { %>
+                                <option value="<%= sub.id %>" data-nome="<%= cat.nome %> › <%= sub.nome %>">&nbsp;&nbsp;↳ <%= sub.nome %></option>
+                            <% }) %>
+                        <% }) %>
+                    </select>
+                    <button type="button" class="btn btn-outline btn-sm" id="lote-lanc-mover"><i class="ph ph-folder-simple"></i> <%= t('lote.mover') %></button>
+                </span>
+            </span>
             <button type="submit" class="btn btn-danger btn-sm" id="lote-lanc-excluir" hidden><i class="ph ph-trash"></i> <%= t('lote.excluir') %></button>
         </div>
         <div class="lote-barra__todos" id="lote-lanc-extra" hidden>
@@ -135,7 +149,15 @@ function gfAtualizarParam(chave, valor) {
         var limpar = document.getElementById('lote-lanc-limpar');
         var extra = document.getElementById('lote-lanc-extra');
         var simular = document.getElementById('lote-lanc-simular');
-        var TOTAL = <%= totalRegistros || 0 %>;
+        // Mudar categoria em lote: o mesmo formulario serve a duas acoes (excluir / mover); a rota e escolhida antes de cada envio.
+        var URL_EXCLUIR = '/lancamentos/excluir-lote', URL_MOVER = '/lancamentos/mudar-categoria-lote';
+        var moverGrupo = document.getElementById('lote-lanc-mover-grupo');
+        var destino = document.getElementById('lote-lanc-destino');
+        var botaoMover = document.getElementById('lote-lanc-mover');
+        var txtMover = <%- JSON.stringify(t('lote.mover_confirmar', { n: '{n}', cat: '{cat}' })) %>;
+        var txtMoverTodos = <%- JSON.stringify(t('lote.mover_confirmar_todos', { n: '{n}', cat: '{cat}' })) %>;
+        var txtMoverEscolha = <%- JSON.stringify(t('lote.mover_escolher_antes')) %>;
+        var TOTAL =<%= totalRegistros || 0 %>;
         var txtSel = <%- JSON.stringify(t('lote.selecionados', { n: '{n}' })) %>;
         var txtConf = <%- JSON.stringify(t('lote.confirmar', { n: '{n}' })) %>;
         var txtConfTodos = <%- JSON.stringify(t('lote.confirmar_todos')) %>;
@@ -148,6 +170,7 @@ function gfAtualizarParam(chave, valor) {
             var todasPaginas = modo.value === '1';
             contagem.textContent = todasPaginas ? txtAtivo : (n ? txtSel.replace('{n}', n) : '');
             botao.hidden = n === 0 && !todasPaginas;
+            if (moverGrupo) moverGrupo.hidden = botao.hidden;
             todos.checked = todasPaginas || (n > 0 && n === lista.length);
             todos.indeterminate = !todasPaginas && n > 0 && n < lista.length;
             // so oferece "todos do filtro" quando a pagina inteira esta marcada e ha mais lancamentos alem dela
@@ -162,7 +185,20 @@ function gfAtualizarParam(chave, valor) {
         linkFiltro.addEventListener('click', function () { modo.value = '1'; atualizar(); });
         limpar.addEventListener('click', function () { modo.value = ''; itens().forEach(function (i) { i.checked = false; }); atualizar(); });
         // Ensaio: manda o formulario pedindo so a contagem (sem confirmacao, porque nada e apagado).
+        // Excluir: volta a rota e o texto da confirmacao do proprio "excluir" (a pessoa pode ter cancelado um "mover" antes).
+        botao.addEventListener('click', function () { form.action = URL_EXCLUIR; atualizar(); });
+        if (botaoMover) botaoMover.addEventListener('click', function () {
+            if (!destino.value) { window.alert(txtMoverEscolha); destino.focus(); return; }
+            var n = itens().filter(function (i) { return i.checked; }).length;
+            var todasPaginas = modo.value === '1';
+            var nome = destino.options[destino.selectedIndex].getAttribute('data-nome') || destino.options[destino.selectedIndex].text;
+            form.action = URL_MOVER;
+            simular.value = '';
+            form.setAttribute('data-confirm', (todasPaginas ? txtMoverTodos.replace('{n}', TOTAL) : txtMover.replace('{n}', n)).replace('{cat}', nome));
+            if (form.requestSubmit) form.requestSubmit(); else form.submit();
+        });
         document.getElementById('lote-lanc-ensaio').addEventListener('click', function () {
+            form.action = URL_EXCLUIR;
             simular.value = '1';
             form.setAttribute('data-confirm', '');
             form.submit();

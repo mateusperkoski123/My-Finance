@@ -16,6 +16,26 @@ const voltarOuInicio = (req) => caminhoLocal(req.body && req.body.voltar) || '/'
 
 const cleanVal = (v) => (v && v !== 'null' && v !== 'undefined' && v !== '' && v !== 'sem_agrupamento') ? String(v).trim() : null;
 
+// Quais lancamentos uma acao em lote atinge: os marcados na lista (ids) ou "todos os N do filtro", que refaz a consulta da tela
+// (periodo, tipo, categoria, busca) no servidor, em todas as paginas. Serve a exclusao e a mudanca de categoria em lote.
+const selecionarLote = async (req) => {
+    const b = req.body || {};
+    if (b.todos !== '1') return { ids: [].concat(b.ids || []), mantidos: 0, total: 0, todos: false };
+    const hoje = hojeLocal();
+    let periodo;
+    if (b.todo_periodo === '1') {
+        periodo = { inicio: '2000-01-01', fim: '2100-12-31' };
+    } else if (dataValida(b.data_inicio) && dataValida(b.data_fim) && b.data_inicio <= b.data_fim) {
+        periodo = { inicio: b.data_inicio, fim: b.data_fim };
+    } else {
+        const { mes, ano } = mesAnoValidos(b.mes, b.ano, hoje);
+        periodo = { inicio: toLocalYMD(new Date(ano, mes - 1, 1)), fim: toLocalYMD(new Date(ano, mes, 0)) };
+    }
+    const filtros = { tipo: cleanVal(b.tipo) || 'todas', busca: cleanVal(b.busca) || '', categoria_id: cleanVal(b.categoria_id), subcategoria_id: cleanVal(b.subcategoria_id) };
+    const r = await Lancamento.idsPorFiltro(req.user.id, periodo, filtros, { manter: String(b.manter || '').slice(0, 80) });
+    return { ids: r.ids, mantidos: r.mantidos, total: r.total, todos: true };
+};
+
 const dashboardController = {
     index: async (req, res) => {
         const userId = req.user.id;
@@ -400,31 +420,11 @@ const dashboardController = {
     // Excluir varios lancamentos de uma vez (os marcados na lista). Transferencias levam as duas pernas.
     excluirLancamentosLote: async (req, res) => {
         const b = req.body || {};
-        let ids;
-        let mantidos = 0;
-        let total = 0;
-        if (b.todos === '1') {
-            // "Todos os N do filtro": refaz a consulta da tela (periodo, tipo, categoria, busca) no servidor, em todas as paginas.
-            const hoje = hojeLocal();
-            let periodo;
-            if (b.todo_periodo === '1') {
-                periodo = { inicio: '2000-01-01', fim: '2100-12-31' };
-            } else if (dataValida(b.data_inicio) && dataValida(b.data_fim) && b.data_inicio <= b.data_fim) {
-                periodo = { inicio: b.data_inicio, fim: b.data_fim };
-            } else {
-                const { mes, ano } = mesAnoValidos(b.mes, b.ano, hoje);
-                periodo = { inicio: toLocalYMD(new Date(ano, mes - 1, 1)), fim: toLocalYMD(new Date(ano, mes, 0)) };
-            }
-            const filtros = { tipo: cleanVal(b.tipo) || 'todas', busca: cleanVal(b.busca) || '', categoria_id: cleanVal(b.categoria_id), subcategoria_id: cleanVal(b.subcategoria_id) };
-            const r = await Lancamento.idsPorFiltro(req.user.id, periodo, filtros, { manter: String(b.manter || '').slice(0, 80) });
-            ids = r.ids; mantidos = r.mantidos; total = r.total;
-            if (b.simular === '1') {
-                // Ensaio: so conta, nao apaga nada.
-                req.session.flash = { tipo: 'sucesso', mensagem: req.t('lote.simulacao', { n: ids.length, m: mantidos, total }) };
-                return res.redirect(destinoRetorno(req));
-            }
-        } else {
-            ids = [].concat(b.ids || []);
+        let { ids, mantidos, total, todos } = await selecionarLote(req);
+        if (todos && b.simular === '1') {
+            // Ensaio: so conta, nao apaga nada.
+            req.session.flash = { tipo: 'sucesso', mensagem: req.t('lote.simulacao', { n: ids.length, m: mantidos, total }) };
+            return res.redirect(destinoRetorno(req));
         }
         // Os lancamentos de faturas de cartao pagas ficam (so saem desfazendo o pagamento na tela do cartao).
         const daFatura = await Lancamento.idsDeFatura(req.user.id, ids);
@@ -438,6 +438,44 @@ const dashboardController = {
         }
         const n = await Lancamento.excluirLote(req.user.id, ids);
         req.session.flash = { tipo: 'sucesso', mensagem: mantidos ? req.t('lote.excluidos_mantidos', { n, m: mantidos }) : req.t('lote.excluidos', { n }) };
+        res.redirect(destinoRetorno(req));
+    },
+
+    // Mudar a categoria de varios lancamentos de uma vez (os marcados na lista, ou todos os do filtro). So troca a categoria:
+    // valor, data, conta e situacao (pago/pendente) continuam como estao. Ajustes, transferencias e pagamentos de fatura nao entram.
+    mudarCategoriaLote: async (req, res) => {
+        const userId = req.user.id;
+        const b = req.body || {};
+        const destinoId = parseInt(b.categoria_destino, 10);
+        const destino = destinoId > 0 ? await Categoria.buscarPorId(destinoId, userId) : null;
+        // So categoria ativa do proprio usuario e que nao seja de sistema (Ajuste de saldo, Transferencia).
+        if (!destino || destino.sistema || destino.status !== 'ativa') {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('lote.categoria_invalida') };
+            return res.redirect(destinoRetorno(req));
+        }
+        const pai = destino.parent_id ? await Categoria.buscarPorId(destino.parent_id, userId) : null;
+        const nomeDestino = pai ? `${pai.nome} › ${destino.nome}` : destino.nome;
+
+        let { ids, mantidos } = await selecionarLote(req);
+        const daFatura = await Lancamento.idsDeFatura(userId, ids);
+        if (daFatura.size) {
+            ids = ids.filter((v) => !daFatura.has(parseInt(v, 10)));
+            mantidos += daFatura.size;
+        }
+        if (!ids.length) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('lote.nenhum') };
+            return res.redirect(destinoRetorno(req));
+        }
+        const r = await Lancamento.mudarCategoriaLote(userId, ids, destino.id);
+        if (!r.movidos) {
+            req.session.flash = { tipo: 'erro', mensagem: req.t('lote.nenhum_movivel') };
+            return res.redirect(destinoRetorno(req));
+        }
+        const naoMovidos = mantidos + r.ignorados;
+        req.session.flash = {
+            tipo: 'sucesso',
+            mensagem: naoMovidos ? req.t('lote.movidos_ignorados', { n: r.movidos, cat: nomeDestino, m: naoMovidos }) : req.t('lote.movidos', { n: r.movidos, cat: nomeDestino })
+        };
         res.redirect(destinoRetorno(req));
     },
 
