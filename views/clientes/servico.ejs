@@ -1,0 +1,152 @@
+<%# Tela do servico: receita das cuotas, custo (categoria de custo) e margem do mes. Espera: servico, d (ServicoMargem.detalhe), mes, ano, anterior, proximo, categoriaCusto. %>
+<%
+const _m = function (v) { return moeda(v, d.moeda || undefined); };
+const _pct = function (v) { return v === null || v === undefined ? '—' : (Math.round(v * 10) / 10).toString().replace('.', ','); };
+const _link = function (x) { return '/clientes/servicos/' + servico.id + '?mes=' + x.mes + '&ano=' + x.ano; };
+const _badge = function (estado, rotuloPago) {
+    if (estado === 'pago') return '<span class="badge badge-sucesso">' + rotuloPago + '</span>';
+    if (estado === 'atrasado') return '<span class="badge badge-pendente">' + t('servico.estado_atrasado') + '</span>';
+    if (estado === 'pendente') return '<span class="badge badge-alerta">' + t('servico.estado_pendente') + '</span>';
+    return '';
+};
+const _nomeMes = t('painel.mes.' + mes) + ' ' + ano;
+%>
+<div class="page-header page-header--acoes">
+    <div>
+        <p class="muted" style="margin: 0 0 6px;"><a href="/clientes/servicos"><i class="ph ph-arrow-left"></i> <%= t('servico.voltar') %></a></p>
+        <h1><i class="ph ph-wrench"></i> <%= servico.nome %></h1>
+        <p class="muted">
+            <% if (Number(servico.valor_padrao) > 0) { %><%= t('servico.sub_cuota', { valor: _m(Number(servico.valor_padrao)) }) %> · <% } %>
+            <% if (servico.dia_vencimento) { %><%= t('servico.sub_dia', { dia: servico.dia_vencimento }) %> · <% } %>
+            <%= t('servico.equilibrio_valor', { n: d.nClientes }) %>
+        </p>
+    </div>
+    <div class="page-header__botoes">
+        <a class="btn btn-outline" href="/clientes/servicos"><i class="ph ph-pencil-simple"></i> <%= t('clientes.editar') %></a>
+    </div>
+</div>
+
+<% if (d.temCusto && categoriaCusto) { %>
+    <p class="muted" style="font-size: 13px; margin: -4px 0 18px;"><i class="ph ph-receipt"></i> <%= t('servico.cat_custo_linha', { cat: categoriaCusto.nome }) %> &nbsp;<a href="/clientes/servicos"><%= t('servico.alterar') %></a></p>
+<% } else { %>
+    <div class="alert alert-aviso clientes-aviso" style="margin-bottom: 16px;">
+        <i class="ph-bold ph-info"></i>
+        <span><%= t('servico.sem_custo_aviso') %></span>
+        <a class="btn btn-sm btn-outline" href="/clientes/servicos"><%= t('clientes.editar') %></a>
+    </div>
+<% } %>
+
+<div class="mes-nav" style="margin-bottom: 16px;">
+    <a class="btn btn-outline btn-sm" href="<%= _link(anterior) %>" aria-label="<%= t('painel.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
+    <div class="mes-nav__centro"><strong><%= _nomeMes %></strong></div>
+    <a class="btn btn-outline btn-sm" href="<%= _link(proximo) %>" aria-label="<%= t('painel.mes_proximo') %>"><i class="ph ph-caret-right"></i></a>
+</div>
+
+<section class="clientes-resumo">
+    <div class="resumo-grid">
+        <div class="card resumo-card">
+            <span class="resumo-card__label"><%= t('servico.card_receita') %></span>
+            <span class="resumo-card__valor" style="color: var(--green);"><%= _m(d.receita) %></span>
+            <span class="resumo-card__sub muted"><%= t('servico.card_receita_sub', { n: d.nClientes, valor: _m(d.recebido) }) %></span>
+        </div>
+        <div class="card resumo-card">
+            <span class="resumo-card__label"><%= t('servico.card_custo') %></span>
+            <span class="resumo-card__valor" style="color: var(--red);"><%= _m(d.custo) %></span>
+            <span class="resumo-card__sub muted"><%= d.temCusto ? (d.porCliente ? t('servico.card_custo_sub', { valor: _m(d.porCliente.custo) }) : '') : t('servico.card_custo_sem') %></span>
+        </div>
+        <div class="card resumo-card">
+            <span class="resumo-card__label"><%= t('servico.card_margem') %></span>
+            <span class="resumo-card__valor" style="color: <%= d.margem < 0 ? 'var(--red)' : 'var(--green)' %>;"><%= _m(d.margem) %></span>
+            <span class="resumo-card__sub muted"><%= d.pct !== null && d.porCliente ? t('servico.card_margem_sub', { pct: _pct(d.pct), valor: _m(d.porCliente.margem) }) : '' %></span>
+        </div>
+        <div class="card resumo-card">
+            <span class="resumo-card__label"><%= t('servico.card_equilibrio') %></span>
+            <% if (d.equilibrio !== null) { %>
+                <span class="resumo-card__valor"><%= t('servico.equilibrio_valor', { n: d.equilibrio }) %></span>
+                <span class="resumo-card__sub muted"><%= d.folga >= 0 ? t('servico.equilibrio_folga', { total: d.nClientes, folga: d.folga }) : t('servico.equilibrio_falta', { total: d.nClientes, falta: -d.folga }) %></span>
+            <% } else { %>
+                <span class="resumo-card__valor">—</span>
+                <span class="resumo-card__sub muted"><%= t('servico.equilibrio_nenhum') %></span>
+            <% } %>
+        </div>
+    </div>
+</section>
+
+<% if (d.temCusto) { %>
+<h2 class="venda-secao__titulo" style="margin: 24px 0 10px;"><i class="ph ph-credit-card"></i> <%= t('servico.sec_custo') %></h2>
+<div class="card tabela-wrapper clientes-tabela">
+    <% if (!d.itens.length || !d.itens.some(function (i) { return i.valor > 0 || i.anterior > 0; })) { %>
+        <p class="muted" style="padding: 20px; margin: 0;"><%= t('servico.sem_custo_mes') %></p>
+    <% } else { %>
+    <table class="tabela">
+        <thead><tr>
+            <th><%= t('servico.col_item') %></th><th><%= t('servico.col_vence') %></th>
+            <th class="tabela__num"><%= t('servico.col_mes_ant') %></th><th class="tabela__num"><%= t('servico.col_este_mes') %></th>
+            <th class="tabela__num"><%= t('servico.col_variacao') %></th><th><%= t('servico.col_estado') %></th>
+        </tr></thead>
+        <tbody>
+        <% d.itens.forEach(function (i) { %>
+            <tr>
+                <td><strong><%= i.direto ? t('servico.sem_subcategoria') : i.nome %></strong></td>
+                <td><%= i.dia ? t('servico.dia', { dia: i.dia }) : '—' %></td>
+                <td class="tabela__num"><%= i.anterior ? _m(i.anterior) : '—' %></td>
+                <td class="tabela__num"><strong><%= i.valor ? _m(i.valor) : '—' %></strong></td>
+                <td class="tabela__num" style="color: <%= i.variacao > 0 ? 'var(--red)' : 'var(--muted)' %>;"><%= i.variacao === 0 ? '—' : (i.variacao > 0 ? '+' : '−') + _m(Math.abs(i.variacao)) %></td>
+                <td><%- _badge(i.estado, t('servico.estado_pago')) %></td>
+            </tr>
+        <% }) %>
+            <tr style="font-weight: 700;">
+                <td><%= t('servico.total') %></td><td></td>
+                <td class="tabela__num"><%= _m(d.totalAnterior) %></td><td class="tabela__num"><%= _m(d.custo) %></td>
+                <td class="tabela__num" style="color: <%= d.custo - d.totalAnterior > 0 ? 'var(--red)' : 'var(--muted)' %>;"><%= d.custo - d.totalAnterior === 0 ? '—' : (d.custo - d.totalAnterior > 0 ? '+' : '−') + _m(Math.abs(d.custo - d.totalAnterior)) %></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+    <% } %>
+</div>
+<% } %>
+
+<h2 class="venda-secao__titulo" style="margin: 24px 0 10px;"><i class="ph ph-users"></i> <%= t('servico.sec_clientes') %></h2>
+<div class="card tabela-wrapper clientes-tabela">
+    <% if (!d.clientes.length) { %>
+        <p class="muted" style="padding: 20px; margin: 0;"><%= t('servico.sem_clientes') %></p>
+    <% } else { %>
+    <table class="tabela">
+        <thead><tr><th><%= t('servico.col_cliente') %></th><th class="tabela__num"><%= t('servico.col_cuota') %></th><th><%= t('servico.col_venc') %></th><th><%= t('servico.col_estado') %></th></tr></thead>
+        <tbody>
+        <% d.clientes.forEach(function (c) { %>
+            <tr>
+                <td><a href="/clientes/<%= c.id %>" style="color: inherit;"><strong><%= c.nome %></strong></a></td>
+                <td class="tabela__num"><%= _m(c.valor) %></td>
+                <td><%= t('servico.sub_dia', { dia: c.dia }) %></td>
+                <td><%- _badge(c.estado, t('servico.estado_cobrado')) %></td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+    <% } %>
+</div>
+
+<h2 class="venda-secao__titulo" style="margin: 24px 0 10px;"><i class="ph ph-chart-bar"></i> <%= t('servico.sec_historico') %></h2>
+<div class="card tabela-wrapper clientes-tabela">
+    <table class="tabela">
+        <thead><tr>
+            <th><%= t('servico.col_mes') %></th><th class="tabela__num"><%= t('servico.col_clientes') %></th><th class="tabela__num"><%= t('servico.col_receita') %></th>
+            <th class="tabela__num"><%= t('servico.col_custo') %></th><th class="tabela__num"><%= t('servico.col_margem') %></th><th class="tabela__num">%</th>
+        </tr></thead>
+        <tbody>
+        <% d.historico.forEach(function (h) { %>
+            <tr <%- h.atual ? 'style="background: var(--bg-soft, rgba(22,163,74,.08)); font-weight: 600;"' : '' %>>
+                <td><a href="<%= _link({ mes: h.mes, ano: h.ano }) %>" style="color: inherit;"><%= t('painel.mes.' + h.mes) %> <%= h.ano %></a></td>
+                <td class="tabela__num"><%= h.clientes %></td>
+                <td class="tabela__num"><%= _m(h.receita) %></td>
+                <td class="tabela__num"><%= d.temCusto ? _m(h.custo) : '—' %></td>
+                <td class="tabela__num" style="color: <%= h.margem < 0 ? 'var(--red)' : 'var(--green)' %>;"><%= _m(h.margem) %></td>
+                <td class="tabela__num"><%= h.pct === null ? '—' : Math.round(h.pct) + '%' %></td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+</div>
+<p class="muted" style="font-size: 13px; margin-top: 12px;"><i class="ph ph-info"></i> <%= t('servico.nota') %></p>

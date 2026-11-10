@@ -208,6 +208,7 @@ const uploadClientes = (req, res, next) => {
 router.get('/clientes', requireAuth, exigirClientes, clientesController.painel);
 router.get('/clientes/lista', requireAuth, exigirClientes, clientesController.lista);
 router.get('/clientes/servicos', requireAuth, exigirClientes, clientesController.servicos);
+router.get('/clientes/servicos/:id(\\d+)', requireAuth, exigirClientes, clientesController.servicoDetalhe);
 router.post('/clientes/servicos/criar', requireAuth, exigirClientes, clientesController.criarServico);
 router.post('/clientes/servicos/:id/atualizar', requireAuth, exigirClientes, clientesController.atualizarServico);
 router.post('/clientes/servicos/:id/arquivar', requireAuth, exigirClientes, clientesController.arquivarServico);

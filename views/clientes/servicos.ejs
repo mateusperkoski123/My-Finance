@@ -33,12 +33,13 @@
         <tbody>
         <% servicos.forEach(function (s) { %>
             <tr>
-                <td><strong><%= s.nome %></strong></td>
+                <td><a href="/clientes/servicos/<%= s.id %>" style="color: inherit;" title="<%= t('servico.ver_margem') %>"><strong><%= s.nome %></strong></a></td>
                 <td class="tabela__num"><%= Number(s.valor_padrao) > 0 ? moeda(s.valor_padrao) : '-' %></td>
                 <td><%= s.dia_vencimento ? t('clientes.vence_dia', { dia: s.dia_vencimento }) : '-' %></td>
                 <td class="tabela__num"><%= s.contratos_ativos %></td>
                 <td class="clientes-acoes">
                     <% if (!arquivados) { %>
+                    <a class="btn btn-outline btn-sm" href="/clientes/servicos/<%= s.id %>"><i class="ph ph-chart-line-up"></i> <%= t('servico.margem_botao') %></a>
                     <a class="btn btn-outline btn-sm" href="/clientes/vendas/nova?servico=<%= s.id %>"><i class="ph ph-shopping-bag"></i> <%= t('clientes.vender_servico') %></a>
                     <button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-servico-<%= s.id %>"><i class="ph ph-pencil-simple"></i> <%= t('clientes.editar') %></button>
                     <form method="post" action="/clientes/servicos/<%= s.id %>/arquivar" style="display: inline;" <% if (Number(s.contratos_ativos) > 0) { %>data-confirm="<%= t('clientes.confirmar_arquivar_servico') %>"<% } %>>
@@ -81,6 +82,16 @@
             <div class="form-group">
                 <label><%= t('clientes.dia_padrao') %></label>
                 <input class="input" type="number" name="dia" min="1" max="31" value="<%= s && s.dia_vencimento ? s.dia_vencimento : '' %>">
+            </div>
+            <div class="form-group">
+                <label><%= t('servico.cat_custo_label') %></label>
+                <select class="input" name="categoria_custo_id">
+                    <option value=""><%= t('servico.cat_custo_nenhuma') %></option>
+                    <% (typeof categoriasCusto !== 'undefined' ? categoriasCusto : []).forEach(function (c) { %>
+                        <option value="<%= c.id %>" <%= s && Number(s.categoria_custo_id) === c.id ? 'selected' : '' %>><%= c.nome %></option>
+                    <% }) %>
+                </select>
+                <small class="muted" style="font-size: 12px;"><%= t('servico.cat_custo_ajuda') %></small>
             </div>
             <p class="muted" style="font-size: 13px;"><%= t('clientes.servico_ajuda') %></p>
             <div class="modal__actions">

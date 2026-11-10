@@ -1,9 +1,11 @@
 const Cliente = require('../models/Cliente');
 const Venda = require('../models/Venda');
 const Conta = require('../models/Conta');
+const Categoria = require('../models/Categoria');
+const ServicoMargem = require('../models/ServicoMargem');
 const regras = require('../core/clientes_regras');
 const importacao = require('../core/clientes_import');
-const { dataValida, parseMoeda, moeda, hojeLocal, toLocalYMD } = require('../core/helpers');
+const { dataValida, parseMoeda, moeda, hojeLocal, toLocalYMD, mesAnoValidos } = require('../core/helpers');
 const { caminhoLocal } = require('../middleware/authMiddleware');
 
 const POR_PAGINA = 30;
@@ -256,8 +258,27 @@ const clientesController = {
     servicos: async (req, res) => {
         const arquivados = req.query.aba === 'arquivados';
         const servicos = await Cliente.listarServicos(req.user.id, { arquivados });
+        // Categorias onde o custo de um servico pode ficar: as de despesa do usuario (a de "Servicos" e as de sistema nao servem).
+        const [u] = await require('../config/db').query('SELECT categoria_servicos_id FROM users WHERE id = ? LIMIT 1', [req.user.id]);
+        const semServicos = u[0] ? u[0].categoria_servicos_id : null;
+        const categoriasCusto = (await Categoria.buscarArvore(req.user.id, false)).filter((c) => !c.sistema && c.id !== semServicos);
         res.render('clientes/servicos', {
-            title: req.t('clientes.aba_servicos'), menuAtivo: 'clientes', aba: 'servicos', servicos, arquivados
+            title: req.t('clientes.aba_servicos'), menuAtivo: 'clientes', aba: 'servicos', servicos, arquivados, categoriasCusto
+        });
+    },
+
+    // Tela do servico: receita das cuotas, custo (categoria de custo) e margem do mes, com o historico dos ultimos meses.
+    servicoDetalhe: async (req, res) => {
+        const servico = await Cliente.buscarServico(inteiro(req.params.id), req.user.id);
+        if (!servico) return res.status(404).render('404', { title: req.t('erro404.titulo') });
+        const { mes, ano } = mesAnoValidos(req.query.mes, req.query.ano, hojeLocal());
+        const d = await ServicoMargem.detalhe(req.user.id, servico, { ano, mes, hoje: hoje() });
+        const ant = new Date(ano, mes - 2, 1), prox = new Date(ano, mes, 1);
+        let categoriaCusto = null;
+        if (servico.categoria_custo_id) categoriaCusto = await Categoria.buscarPorId(servico.categoria_custo_id, req.user.id);
+        res.render('clientes/servico', {
+            title: servico.nome, menuAtivo: 'clientes', aba: 'servicos', servico, d, mes, ano, categoriaCusto,
+            anterior: { mes: ant.getMonth() + 1, ano: ant.getFullYear() }, proximo: { mes: prox.getMonth() + 1, ano: prox.getFullYear() }
         });
     },
 
@@ -265,7 +286,9 @@ const clientesController = {
         const nome = String(req.body.nome || '').trim().slice(0, 120);
         const valor = req.body.valor ? parseMoeda(req.body.valor) : 0;
         const dia = inteiro(req.body.dia);
-        return { nome, valor: valor > 0 ? valor : 0, dia: dia >= 1 && dia <= 31 ? dia : null };
+        // Campo ausente = nao mexe; vazio = sem categoria de custo (so o formulario novo envia este campo)
+        const custo = 'categoria_custo_id' in req.body ? (inteiro(req.body.categoria_custo_id) || null) : undefined;
+        return { nome, valor: valor > 0 ? valor : 0, dia: dia >= 1 && dia <= 31 ? dia : null, categoriaCusto: custo };
     },
 
     criarServico: async (req, res) => {

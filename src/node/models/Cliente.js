@@ -90,12 +90,13 @@ class Cliente {
         return rows[0] || null;
     }
 
-    static async criarServico(userId, { nome, valor, dia }, conn = db) {
+    static async criarServico(userId, { nome, valor, dia, categoriaCusto = null }, conn = db) {
         const catId = await this.subcategoriaDoServico(userId, nome, conn);
+        const custoId = await require('./ServicoMargem').custoValido(userId, categoriaCusto, conn);
         try {
             const [r] = await conn.query(
-                'INSERT INTO cliente_servicos (user_id, nome, valor_padrao, dia_vencimento, categoria_id) VALUES (?, ?, ?, ?, ?)',
-                [userId, nome, valor || 0, dia || null, catId]
+                'INSERT INTO cliente_servicos (user_id, nome, valor_padrao, dia_vencimento, categoria_id, categoria_custo_id) VALUES (?, ?, ?, ?, ?, ?)',
+                [userId, nome, valor || 0, dia || null, catId, custoId]
             );
             return { id: r.insertId, categoriaId: catId };
         } catch (err) {
@@ -104,9 +105,11 @@ class Cliente {
         }
     }
 
-    static async atualizarServico(userId, id, { nome, valor, dia }) {
+    static async atualizarServico(userId, id, { nome, valor, dia, categoriaCusto }) {
         const atual = await this.buscarServico(id, userId);
         if (!atual) return { naoEncontrado: true };
+        // Categoria de custo: so muda quando o formulario a envia (vazia = sem custo); outros chamadores nao a tocam.
+        const custoId = categoriaCusto === undefined ? atual.categoria_custo_id : await require('./ServicoMargem').custoValido(userId, categoriaCusto);
         let catId = atual.categoria_id;
         if (nome !== atual.nome) {
             const [dup] = await db.query('SELECT id FROM cliente_servicos WHERE user_id = ? AND nome = ? AND id <> ? LIMIT 1', [userId, nome, id]);
@@ -119,8 +122,8 @@ class Cliente {
             else catId = await this.subcategoriaDoServico(userId, nome);
         }
         await db.query(
-            'UPDATE cliente_servicos SET nome = ?, valor_padrao = ?, dia_vencimento = ?, categoria_id = ? WHERE id = ? AND user_id = ?',
-            [nome, valor || 0, dia || null, catId, id, userId]
+            'UPDATE cliente_servicos SET nome = ?, valor_padrao = ?, dia_vencimento = ?, categoria_id = ?, categoria_custo_id = ? WHERE id = ? AND user_id = ?',
+            [nome, valor || 0, dia || null, catId, custoId, id, userId]
         );
         if (nome !== atual.nome) await this.refrescarDescricoes(userId, { servicoId: id });
         return { ok: true };
