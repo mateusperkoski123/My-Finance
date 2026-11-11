@@ -67,7 +67,7 @@
             <span class="resumo-card__sub muted"><%= t('clientes.cuotas_n', { n: r.pendentes_n }) %></span>
         </div>
         <div class="card resumo-card">
-            <span class="resumo-card__label"><%= t('clientes.card_vencidas') %></span>
+            <span class="resumo-card__label"><%= t(_todos ? 'clientes.card_vencidas_total' : 'clientes.card_vencidas') %></span>
             <span class="resumo-card__valor" style="color: var(--red);"><%= moeda(r.vencidas_v, r.moeda) %></span>
             <span class="resumo-card__sub muted"><%= t('clientes.cuotas_n', { n: r.vencidas_n }) %></span>
         </div>
