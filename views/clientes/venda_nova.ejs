@@ -98,6 +98,20 @@
             <div class="venda-formas" role="radiogroup" aria-label="<%= t('vendas.passo_pagamento') %>">
                 <label class="venda-forma"><input type="radio" name="forma" value="avista" checked> <span><strong><%= t('vendas.forma_avista') %></strong><small class="muted"><%= t('vendas.forma_avista_ajuda') %></small></span></label>
                 <label class="venda-forma"><input type="radio" name="forma" value="prazo"> <span><strong><%= t('vendas.forma_prazo') %></strong><small class="muted"><%= t('vendas.forma_prazo_ajuda') %></small></span></label>
+                <label class="venda-forma venda-forma--larga"><input type="radio" name="forma" value="parcial"> <span><strong><%= t('vendas.forma_parcial') %></strong><small class="muted"><%= t('vendas.forma_parcial_ajuda') %></small></span></label>
+            </div>
+            <div id="venda-parcial" hidden>
+                <div class="clientes-fila">
+                    <div class="form-group">
+                        <label for="venda-recebido"><%= t('vendas.campo_recebido') %></label>
+                        <input class="input" type="text" id="venda-recebido" name="valor_recebido" data-money data-money-positivo inputmode="decimal">
+                    </div>
+                    <div class="form-group">
+                        <label for="venda-venc-resto"><%= t('vendas.campo_vencimento_resto') %></label>
+                        <input class="input" type="date" id="venda-venc-resto" name="vencimento_resto" value="<%= hoje %>">
+                    </div>
+                </div>
+                <p class="muted venda-parcelas-previa" id="venda-parcial-previa"></p>
             </div>
             <div id="venda-prazo" hidden>
                 <div class="clientes-fila">
@@ -159,7 +173,8 @@
         registrar: t('vendas.registrar_total', { total: '{total}' }), registrarVazio: t('vendas.registrar'),
         previa: t('vendas.previa_parcelas', { n: '{n}', valor: '{valor}' }), previaUltima: t('vendas.previa_ultima', { valor: '{valor}' }),
         previaEntrada: t('vendas.previa_entrada'), vencUnica: t('vendas.campo_vencimento'), vencPrimeira: t('vendas.campo_vencimento_1'),
-        semCusto: t('vendas.lucro_sem_custo')
+        semCusto: t('vendas.lucro_sem_custo'), erroRecebido: t('vendas.erro_recebido'),
+        previaParcial: t('vendas.previa_parcial', { recebido: '{recebido}', resto: '{resto}' })
     }).replace(/</g, '\\u003c') %>;
     const MAX_ITENS = <%= maxItens %>;
     const porId = new Map(PRODUTOS.map(function (p) { return [p.key, p]; }));
@@ -170,6 +185,8 @@
     const parcelas = document.getElementById('venda-parcelas');
     const vencimento = document.getElementById('venda-vencimento');
     const entrada = document.getElementById('venda-entrada');
+    const recebido = document.getElementById('venda-recebido');
+    const vencResto = document.getElementById('venda-venc-resto');
     const erroEl = document.getElementById('venda-erro');
     const carrinho = []; // { produto, el, qtd, preco(input) }
 
@@ -323,7 +340,18 @@
 
     // ---------- Pagamento ----------
     function forma() { const r = form.querySelector('input[name="forma"]:checked'); return r ? r.value : 'avista'; }
+    // "Recebi uma parte": valor ja recebido + vencimento do resto; mostra quanto entra agora e quanto falta.
+    function atualizarParcial() {
+        const parcial = forma() === 'parcial';
+        document.getElementById('venda-parcial').hidden = !parcial;
+        const previa = document.getElementById('venda-parcial-previa');
+        const t = totais().total;
+        const rec = ler(recebido);
+        if (!parcial || !(t > 0) || !(rec > 0) || rec >= t) { previa.textContent = ''; return; }
+        previa.textContent = TXT.previaParcial.replace('{recebido}', fmt(rec)).replace('{resto}', fmt(arred(t - rec)));
+    }
     function atualizarPrazo() {
+        atualizarParcial();
         const prazo = forma() === 'prazo';
         document.getElementById('venda-prazo').hidden = !prazo;
         const n = parseInt(parcelas.value, 10) || 1;
@@ -342,7 +370,10 @@
     form.querySelectorAll('input[name="forma"]').forEach(function (r) { r.addEventListener('change', atualizarPrazo); });
     parcelas.addEventListener('change', atualizarPrazo);
     entrada.addEventListener('change', atualizarPrazo);
+    recebido.addEventListener('input', atualizarParcial);
+    recebido.addEventListener('change', atualizarParcial);
     conta.addEventListener('change', function () {
+        if (window.gfDefinirMoedaCampo) window.gfDefinirMoedaCampo(recebido, moedaConta());
         carrinho.forEach(function (i) { if (window.gfDefinirMoedaCampo) window.gfDefinirMoedaCampo(i.preco, moedaConta()); });
         atualizar();
     });
@@ -356,6 +387,8 @@
         else if (semEstoque) msg = semEstoque.produto.nome + ': ' + TXT.erroEstoque.replace('{n}', Math.max(0, semEstoque.produto.estoque));
         else if (!(t.total > 0)) msg = TXT.erroTotal;
         else if (forma() === 'prazo' && !vencimento.value) msg = TXT.erroVenc;
+        else if (forma() === 'parcial' && !(ler(recebido) > 0 && ler(recebido) < t.total)) msg = TXT.erroRecebido;
+        else if (forma() === 'parcial' && !vencResto.value) msg = TXT.erroVenc;
         if (msg) { e.preventDefault(); mostrarErro(msg); erroEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
         document.getElementById('venda-itens-json').value = JSON.stringify(carrinho.map(function (i) {
             const item = { quantidade: i.qtd, preco: arred(ler(i.preco)) };

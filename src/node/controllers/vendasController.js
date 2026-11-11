@@ -6,7 +6,7 @@ const regras = require('../core/vendas_regras');
 const { periodoDoMes, linkWhatsapp, linkWhatsappApp } = require('../core/clientes_regras');
 const { validarImagem } = require('../core/uploads');
 const { dimensoesImagem } = require('../core/ia_midia');
-const { dataValida, moeda, hojeLocal, toLocalYMD } = require('../core/helpers');
+const { dataValida, parseMoeda, moeda, hojeLocal, toLocalYMD } = require('../core/helpers');
 const { caminhoLocal } = require('../middleware/authMiddleware');
 
 const POR_PAGINA = 30;
@@ -176,14 +176,20 @@ const vendasController = {
         const itens = regras.validarItens(b.itens_json);
         if (!itens.ok) { avisar(req, 'erro', req.t('vendas.erro_' + itens.erro, { max: regras.MAX_ITENS })); return res.redirect(volta); }
         const dataVenda = dataValida(b.data) ? b.data : hoje();
-        const pg = regras.validarPagamento({ forma: b.forma, parcelas: b.parcelas, vencimento: b.vencimento, entrada: b.entrada, dataVenda });
+        const parcial = b.forma === 'parcial';
+        const pg = regras.validarPagamento({
+            forma: b.forma, parcelas: b.parcelas, entrada: b.entrada, dataVenda,
+            vencimento: parcial ? b.vencimento_resto : b.vencimento,
+            recebido: parcial ? parseMoeda(b.valor_recebido) : 0
+        });
         if (!pg.ok) { avisar(req, 'erro', req.t('vendas.erro_' + pg.erro, { max: regras.MAX_PARCELAS })); return res.redirect(volta); }
         try {
             const r = await Venda.criarVenda(req.user.id, {
                 clienteId, contaId: inteiro(b.conta_id), dataVenda, itens: itens.itens, pagamento: pg.dados,
                 observacoes: String(b.observacoes || '').trim().slice(0, 500)
             });
-            avisar(req, 'sucesso', req.t(pg.dados.forma === 'avista' ? 'vendas.flash_criada_avista' : 'vendas.flash_criada_prazo', { n: r.numero, parcelas: r.parcelas }));
+            if (r.resto !== null) avisar(req, 'sucesso', req.t('vendas.flash_criada_parcial', { n: r.numero, resto: moeda(r.resto, r.moeda) }));
+            else avisar(req, 'sucesso', req.t(pg.dados.forma === 'avista' ? 'vendas.flash_criada_avista' : 'vendas.flash_criada_prazo', { n: r.numero, parcelas: r.parcelas }));
             res.redirect(`/clientes/vendas/${r.id}`);
         } catch (err) {
             if (!err.codigo) throw err;

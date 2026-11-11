@@ -67,8 +67,16 @@ function dadosEntrada(body) {
 }
 
 // Forma de pagamento: 'avista' (ja recebido na data da venda) ou 'prazo' (1 a 48 parcelas mensais a partir do 1o vencimento).
-function validarPagamento({ forma, parcelas, vencimento, entrada, dataVenda }) {
+// 'parcial': o cliente ja pagou uma parte (`recebido`, entra paga na data da venda) e o resto vence em `vencimento`.
+// Guarda como 'prazo' em 2 parcelas (1a = o que foi recebido, 2a = o que falta); o total so e conhecido no banco,
+// la se confere que o recebido e maior que zero e menor que o total.
+function validarPagamento({ forma, parcelas, vencimento, entrada, dataVenda, recebido }) {
     const { dataValida } = require('./helpers');
+    if (forma === 'parcial') {
+        if (!(recebido > 0) || recebido >= MAX_VALOR) return { ok: false, erro: 'recebido' };
+        if (!dataValida(vencimento)) return { ok: false, erro: 'vencimento' };
+        return { ok: true, dados: { forma: 'prazo', parcelas: 2, primeiro: dataVenda, primeiraPaga: true, recebido, vencimentoResto: vencimento } };
+    }
     if (forma !== 'prazo') return { ok: true, dados: { forma: 'avista', parcelas: 1, primeiro: dataVenda, primeiraPaga: true } };
     const n = parseInt(parcelas, 10) || 1;
     if (n < 1 || n > MAX_PARCELAS) return { ok: false, erro: 'parcelas' };

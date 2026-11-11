@@ -341,8 +341,18 @@ class Venda {
             // Parcelas = receitas. A vista: uma so, paga na data da venda. A prazo: mensais a partir do 1o vencimento.
             const categoriaId = await this.categoriaVendas(userId, conn);
             const avista = pagamento.forma === 'avista';
-            const datas = avista ? [{ num: 1, data: dataVenda }] : regras.datasDasParcelas(pagamento.primeiro, pagamento.parcelas);
-            const valores = regras.dividirEmParcelas(total, datas.length, casas);
+            const parcial = !avista && pagamento.recebido > 0;
+            if (parcial && !(regras.arredondar(pagamento.recebido, casas) < total)) throw falha('recebido');
+            const datas = avista ? [{ num: 1, data: dataVenda }]
+                : parcial ? [{ num: 1, data: dataVenda }, { num: 2, data: pagamento.vencimentoResto }]
+                    : regras.datasDasParcelas(pagamento.primeiro, pagamento.parcelas);
+            let valores;
+            if (parcial) {
+                const recebido = regras.arredondar(pagamento.recebido, casas);
+                valores = [recebido, regras.arredondar(total - recebido, casas)];
+            } else {
+                valores = regras.dividirEmParcelas(total, datas.length, casas);
+            }
             const hoje = hojeYMD();
             const lancamentos = datas.map((d, i) => {
                 const pago = avista || (i === 0 && pagamento.primeiraPaga);
@@ -358,7 +368,7 @@ class Venda {
                 [lancamentos]
             );
             await conn.commit();
-            return { id: vendaId, numero: seq.n, parcelas: datas.length };
+            return { id: vendaId, numero: seq.n, parcelas: datas.length, resto: parcial ? valores[1] : null, moeda: cta.moeda };
         } catch (err) {
             await conn.rollback();
             throw err;
