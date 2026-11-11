@@ -173,15 +173,7 @@ document.addEventListener('keydown', function (e) {
 });
 </script>
 <main class="container">
-    <!-- PWA Banners -->
-    <div id="pwa-update-banner" class="alert alert-aviso pwa-banner" style="display: none; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-            <i class="ph ph-arrows-clockwise" style="font-size: 20px;"></i>
-            <span><%= t('pwa.atualizacao_disponivel') %></span>
-        </div>
-        <button type="button" id="btn-pwa-update" class="btn btn-sm btn-primary"><%= t('pwa.atualizar') %></button>
-    </div>
-
+    <!-- PWA Banners (a atualizacao de versao e automatica, sem aviso: ver o script no fim desta pagina) -->
     <div id="pwa-install-banner" class="alert alert-aviso pwa-banner" role="dialog" aria-live="polite" style="display: none; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 8px; flex: 1;">
             <i class="ph ph-download-simple" style="font-size: 20px;"></i>
@@ -394,40 +386,61 @@ window.GF_OFF_T = {
     const GF_USER_ID = <%- usuarioLogado ? Number(usuarioLogado.id) : 'null' %>;
     window.GF_USER_ID = GF_USER_ID;
     const NA_TELA_DE_ENTRADA = /^\/(login|cadastro)(\/|$)/.test(location.pathname);
-    let atualizacaoPedida = false;
 
     function avisarServiceWorker(msg) {
         if (!('serviceWorker' in navigator)) return;
         navigator.serviceWorker.ready.then(function(reg) { if (reg.active) reg.active.postMessage(msg); }).catch(function() {});
     }
 
+    // Atualizacao automatica, sem aviso nem botao: a versao nova do service worker assume sozinha e a tela recarrega
+    // quando for seguro (sem formulario aberto, campo em edicao, passo a passo ou sincronizacao em andamento). Se nao
+    // der agora, tenta de novo a cada 5 s; e qualquer tela aberta depois ja vem na versao nova.
+    let recarregarPendente = false;
+    let formularioAlterado = false;
+    document.addEventListener('input', function(e) { if (e.target && e.target.form) formularioAlterado = true; }, true);
+    function podeRecarregar() {
+        if (!navigator.onLine || formularioAlterado) return false;
+        if (document.querySelector('.modal-backdrop.is-open, [data-modal].is-open, dialog[open], .onb-veu')) return false;
+        const ativo = document.activeElement;
+        if (ativo && ativo.matches && ativo.matches('input, textarea, select, [contenteditable="true"]')) return false;
+        if (window.AppSync && typeof window.AppSync.ocupado === 'function' && window.AppSync.ocupado()) return false;
+        return true;
+    }
+    function tentarRecarregar() {
+        if (recarregarPendente && podeRecarregar()) {
+            recarregarPendente = false;
+            window.location.reload();
+        }
+    }
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
+            // Primeira visita (sem service worker ainda): nada para atualizar, entao nada de recarregar.
+            const tinhaVersaoAnterior = !!navigator.serviceWorker.controller;
             navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
                 .then(function(reg) {
-                    // Versao nova ja instalada e esperando (ex.: aba aberta durante o deploy)
-                    if (reg.waiting && navigator.serviceWorker.controller) {
-                        const aviso = document.getElementById('pwa-update-banner');
-                        if (aviso) aviso.style.display = 'flex';
-                    }
-                    reg.addEventListener('updatefound', function() {
-                        const novo = reg.installing;
-                        if (!novo) return;
-                        novo.addEventListener('statechange', function() {
-                            if (novo.state === 'installed' && navigator.serviceWorker.controller) {
-                                const aviso = document.getElementById('pwa-update-banner');
-                                if (aviso) aviso.style.display = 'flex';
-                            }
-                        });
+                    // Versao nova que ficou esperando (service worker antigo, de antes da atualizacao automatica)
+                    if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                    // O app instalado pode ficar dias aberto na mesma tela: procura versao nova ao voltar para ele
+                    // (no maximo a cada 5 min) e a cada 30 min.
+                    let ultimaBusca = Date.now();
+                    const buscarVersao = function() { ultimaBusca = Date.now(); reg.update().catch(function() {}); };
+                    document.addEventListener('visibilitychange', function() {
+                        if (document.visibilityState === 'visible' && Date.now() - ultimaBusca > 5 * 60 * 1000) buscarVersao();
                     });
+                    setInterval(buscarVersao, 30 * 60 * 1000);
                 }).catch(function(err) {
                     console.warn('SW registration failed:', err);
                 });
 
-            // So recarrega quando o proprio usuario pediu a atualizacao (nunca no meio de um formulario).
             navigator.serviceWorker.addEventListener('controllerchange', function() {
-                if (atualizacaoPedida) window.location.reload();
+                if (!tinhaVersaoAnterior) return;
+                recarregarPendente = true;
+                tentarRecarregar();
             });
+            setInterval(tentarRecarregar, 5000);
+            // Saiu do app ou trocou de aba: bom momento para recarregar sem atrapalhar.
+            document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'hidden') tentarRecarregar(); });
 
             if (GF_USER_ID) {
                 avisarServiceWorker({ type: 'SET_USER', id: String(GF_USER_ID) });
@@ -447,20 +460,6 @@ window.GF_OFF_T = {
             if (window.AppSync && window.AppSync.encerrarSessaoLocal) window.AppSync.encerrarSessaoLocal();
         }
     }, true);
-
-    const btnUpdate = document.getElementById('btn-pwa-update');
-    if (btnUpdate) {
-        btnUpdate.addEventListener('click', function() {
-            if (navigator.serviceWorker) {
-                navigator.serviceWorker.getRegistration().then(function(reg) {
-                    if (reg && reg.waiting) {
-                        atualizacaoPedida = true;
-                        reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                    }
-                });
-            }
-        });
-    }
 })();
 </script>
 </body>

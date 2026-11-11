@@ -270,8 +270,6 @@ module.exports = {
     'offline.recursos_titulo': ['O que você pode fazer offline?', '¿Qué podés hacer sin conexión?', 'What can you do offline?'],
     'offline.recursos_item1': ['Navegar pelas páginas salvas recentemente', 'Navegar por las páginas guardadas recientemente', 'Browse recently cached pages'],
     'offline.recursos_item2': ['Seus dados sincronizarão automaticamente quando a conexão retornar', 'Tus datos se sincronizarán automáticamente al recuperar la conexión', 'Your data will sync automatically when connection restores'],
-    'pwa.atualizacao_disponivel': ['Nova versão disponível', 'Nueva versión disponible', 'New version available'],
-    'pwa.atualizar': ['Atualizar', 'Actualizar', 'Update'],
     'pwa.online': ['Conectado', 'Conectado', 'Online'],
     'pwa.offline': ['Sem conexão', 'Sin conexión', 'Offline'],
     'pwa.instalar_app': ['Instalar App', 'Instalar App', 'Install App'],

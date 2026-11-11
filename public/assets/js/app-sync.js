@@ -202,6 +202,8 @@
     }
 
     exports.executarSincronizacao = executarSincronizacao;
+    // A atualizacao automatica de versao (layout.ejs) nao recarrega a tela no meio de uma sincronizacao.
+    exports.ocupado = () => emAndamento;
     exports.encerrarSessaoLocal = encerrarSessaoLocal;
     exports.iniciar = iniciar;
 

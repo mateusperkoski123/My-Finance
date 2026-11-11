@@ -29,6 +29,9 @@ module.exports = {
     // Tamanho minimo de senha nova (cadastro, redefinicao e troca). Senhas antigas mais curtas continuam entrando.
     SENHA_MINIMA: 8,
     EMAIL_SUPORTE: process.env.SUPPORT_EMAIL || '',
+    // Faixa "confirme seu e-mail" no topo das telas. Desligada em 2026-11-11 a pedido do Mateus enquanto a confirmacao de
+    // e-mail nao esta resolvida (o status continua em Configuracoes > Conta). Para voltar a pedir, troque para true.
+    PEDIR_CONFIRMACAO_EMAIL: false,
     // Titular do servico no Paraguai (dados publicos, os mesmos da factura): aparece nos Termos/Politica e no comprovante
     // de pagamento. As variaveis EMPRESA_* do ambiente substituem, se existirem. O Brasil tem dados proprios (legal.js).
     EMPRESA: {

@@ -45,7 +45,7 @@ async function contaMiddleware(req, res, next) {
     const ass = await Assinatura.garantir(user.id, ehAdmin ? 'beta' : 'pendente');
     req.assinatura = ass;
     res.locals.assinatura = ass;
-    res.locals.emailNaoVerificado = !user.email_verificado_em;
+    res.locals.emailNaoVerificado = negocio.PEDIR_CONFIRMACAO_EMAIL && !user.email_verificado_em;
     // O plano atual inclui o recurso? (ex.: pode('rec_estado')). Admin sempre pode.
     req.pode = (recurso) => Boolean(ehAdmin || (ass.plano && ass.plano[recurso]));
     res.locals.pode = req.pode;

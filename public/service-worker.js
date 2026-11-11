@@ -61,7 +61,9 @@ self.addEventListener('install', (event) => {
                 if (resp.ok && !resp.redirected) await cache.put(url, resp);
             } catch (e) { /* opcional */ }
         }));
-        // Sem skipWaiting aqui: a versao nova espera o usuario aceitar (ou fechar todas as abas).
+        // Atualizacao automatica: a versao nova assume na hora, sem esperar o usuario. A pagina (layout.ejs) recarrega
+        // quando for seguro; ate la, a proxima tela aberta ja vem desta versao.
+        await self.skipWaiting();
     })());
 });
 
