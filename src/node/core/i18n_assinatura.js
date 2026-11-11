@@ -394,4 +394,16 @@ module.exports = {
     'avisoplano.email_assunto': ['{titulo} - {app}', '{titulo} - {app}', '{titulo} - {app}'],
     'avisoplano.email_rodape': ['Você recebe este aviso porque tem uma conta no {app}. Se não quiser continuar, não precisa fazer nada.', 'Recibís este aviso porque tenés una cuenta en {app}. Si no querés continuar, no tenés que hacer nada.', 'You are receiving this notice because you have an account on {app}. If you do not want to continue, you do not need to do anything.'],
     'assinatura.como_pagar_online': ['O pagamento é feito pelo Pagopar e o plano é ativado assim que o pagamento é confirmado. Dúvidas:', 'El pago se hace por Pagopar y el plan se activa apenas se confirma el pago. Consultas:', 'Payment is made through Pagopar and your plan is activated as soon as the payment is confirmed. Questions:'],
+
+    // Avisos para os administradores (core/avisos_admin.js): push e e-mail. {plano} ja vem com "Plano".
+    'avisoadmin.conta.titulo': ['Nova conta: {nome}', 'Nueva cuenta: {nome}', 'New account: {nome}'],
+    'avisoadmin.via_email': ['cadastro com e-mail', 'registro con correo', 'e-mail sign-up'],
+    'avisoadmin.via_google': ['entrou com o Google', 'entró con Google', 'signed up with Google'],
+    'avisoadmin.origem': ['veio de {origem}', 'vino de {origem}', 'came from {origem}'],
+    'avisoadmin.teste.titulo': ['Começou o teste: {nome}', 'Empezó la prueba: {nome}', 'Trial started: {nome}'],
+    'avisoadmin.teste.texto': ['{plano} por {dias} {dias:dia|dias} · {email}', '{plano} por {dias} {dias:día|días} · {email}', '{plano} for {dias} {dias:day|days} · {email}'],
+    'avisoadmin.pago.titulo': ['Plano contratado: {nome}', 'Plan contratado: {nome}', 'Plan purchased: {nome}'],
+    'avisoadmin.pago.texto': ['{plano} {ciclo} · {valor} pago pelo Pagopar · {email}', '{plano} {ciclo} · {valor} pagado por Pagopar · {email}', '{plano} {ciclo} · {valor} paid through Pagopar · {email}'],
+    'avisoadmin.botao': ['Ver cliente no admin', 'Ver cliente en el admin', 'See customer in admin'],
+    'avisoadmin.email_rodape': ['Aviso automático para os administradores do {app}.', 'Aviso automático para los administradores de {app}.', 'Automatic notice for {app} administrators.'],
 };

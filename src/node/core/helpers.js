@@ -254,8 +254,14 @@ function urlBase(req) {
     return `${req.protocol || 'http'}://${req.get('host')}`;
 }
 
+// O mesmo endereco para quem nao tem requisicao (agendador, avisos em segundo plano).
+function urlPublica() {
+    return urlBase({ protocol: 'http', get: () => `localhost:${process.env.PORT || 3000}` });
+}
+
 module.exports = {
     urlBase,
+    urlPublica,
     fusoAtual,
     comFuso,
     descricaoLancamento,

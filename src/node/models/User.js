@@ -126,7 +126,9 @@ class User {
 
         await require('./Categoria').criarPadrao(result.insertId, idioma);
         await require('./Assinatura').criarPendente(result.insertId);
-        return this.findById(result.insertId);
+        const novo = await this.findById(result.insertId);
+        if (novo) novo.criadaAgora = true; // o login com Google avisa os administradores so de conta nova
+        return novo;
     }
 
     static async registrarAcesso(userId) {

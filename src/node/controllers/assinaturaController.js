@@ -31,6 +31,8 @@ async function concluirPedido(pedido) {
     } catch (err) {
         console.error('Falha ao registrar a indicacao do pedido ' + pedido.id + ':', err.message);
     }
+    // Aviso aos administradores (em segundo plano). marcarPago acima garante que isto roda uma vez por pedido.
+    require('../core/avisos_admin').planoContratado(pedido);
     return true;
 }
 
@@ -68,6 +70,7 @@ const assinaturaController = {
             return res.redirect('/assinatura');
         }
         delete req.session.plano_teste;
+        require('../core/avisos_admin').testeIniciado(req.user.id, plano.codigo, trialDias()); // em segundo plano
         req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.teste_iniciado', { plano: req.t('plano.' + plano.codigo + '.nome'), dias: trialDias() }) };
         res.redirect('/');
     },

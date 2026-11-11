@@ -73,6 +73,14 @@ async function sendPlanNotice(email, { titulo, texto, botao, link }, lang = 'pt-
     });
 }
 
+// Aviso para um administrador (conta nova, teste iniciado, plano pago), com textos ja prontos no idioma dele (core/avisos_admin.js).
+async function sendAdminNotice(email, { titulo, texto, link }, lang = 'pt-BR') {
+    await enviar({
+        to: email, subject: t('avisoplano.email_assunto', { titulo, app: NOME_APP }, lang), textoLog: `${titulo} - ${texto}`,
+        html: modelo({ titulo, texto, botao: t('avisoadmin.botao', {}, lang), link, aviso: t('avisoadmin.email_rodape', { app: NOME_APP }, lang), lang })
+    });
+}
+
 // Aviso para o(s) administrador(es) quando alguem pede um plano pago.
 async function sendPlanRequestNotice({ usuario, plano, ciclo, telefone = '', link }) {
     const admins = (process.env.ADMIN_EMAILS || '').split(',').map((e) => e.trim()).filter(Boolean);
@@ -87,4 +95,4 @@ async function sendPlanRequestNotice({ usuario, plano, ciclo, telefone = '', lin
     });
 }
 
-module.exports = { sendResetPasswordEmail, sendVerificationEmail, sendPlanNotice, sendPlanRequestNotice };
+module.exports = { sendResetPasswordEmail, sendVerificationEmail, sendPlanNotice, sendAdminNotice, sendPlanRequestNotice };

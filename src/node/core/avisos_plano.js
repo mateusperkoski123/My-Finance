@@ -12,7 +12,7 @@ const lembretes = require('./lembretes');
 const push = require('./push');
 const mailer = require('./mailer');
 const { dadosPais } = require('./paises');
-const { urlBase } = require('./helpers');
+const { urlPublica } = require('./helpers');
 
 const HORA_INICIO = 9;
 const HORA_FIM = 21; // nao entra
@@ -76,10 +76,7 @@ function montarTextos(aviso, r, agoraMs) {
 }
 
 // Endereco publico do app para o link do e-mail (sem requisicao: o agendador roda sozinho).
-function linkAssinatura() {
-    const base = urlBase({ protocol: 'http', get: () => `localhost:${process.env.PORT || 3000}` });
-    return `${base}/assinatura`;
-}
+const linkAssinatura = () => `${urlPublica()}/assinatura`;
 
 async function enviarAviso(r, aviso, agoraMs) {
     const id = await AvisoPlano.reservar(r.user_id, aviso.tipo, aviso.ref);

@@ -157,6 +157,8 @@ const authController = {
         if (codigoOk && !codigoOk.erro) await User.salvarCodigoDesconto(userId.id, codigoOk.c.codigo);
         delete req.session.codigo_desconto;
         await require('../core/origem').gravarNaConta(userId.id, req);
+        // Aviso aos administradores (em segundo plano: nao espera o envio).
+        require('../core/avisos_admin').contaCriada(userId.id, 'email');
 
         req.session.idioma = idioma;
         await iniciarSessao(req, userId.id);
@@ -359,6 +361,8 @@ const authController = {
                 delete req.session.codigo_desconto;
             }
             await require('../core/origem').gravarNaConta(user.id, req);
+            // Conta nova pelo Google: aviso aos administradores (em segundo plano). Login de conta antiga nao avisa.
+            if (user.criadaAgora) require('../core/avisos_admin').contaCriada(user.id, 'google');
             const destino = await iniciarSessao(req, user.id);
             req.session.flash = { tipo: 'sucesso', mensagem: req.t('flash.google_bemvindo', { nome: user.nome }) };
             res.redirect(destino);
