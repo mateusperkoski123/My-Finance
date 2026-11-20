@@ -1,0 +1,6 @@
+<%# Abas de Contas. Parametro: ativa = 'ativas' | 'arquivadas' | 'transferencias' %>
+<div class="tabs">
+    <a href="/contas" class="tabs__item <%= ativa === 'ativas' ? 'is-active' : '' %>"><%= t('contas.aba_ativas') %></a>
+    <a href="/contas?aba=arquivadas" class="tabs__item <%= ativa === 'arquivadas' ? 'is-active' : '' %>"><%= t('contas.aba_arquivadas') %></a>
+    <a href="/contas/transferencias" class="tabs__item <%= ativa === 'transferencias' ? 'is-active' : '' %>"><i class="ph ph-arrows-left-right"></i> <%= t('contas.aba_transferencias') %></a>
+</div>

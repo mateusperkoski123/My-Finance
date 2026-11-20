@@ -191,6 +191,7 @@ router.post('/contas/:id/definir-padrao', requireAuth, contasController.definirP
 router.post('/contas/:id/ajustar', requireAuth, contasController.ajustarSaldo);
 router.post('/contas/transferir', requireAuth, contasController.transferir);
 router.post('/contas/agendar-transferencia', requireAuth, contasController.agendarTransferencia);
+router.get('/contas/transferencias', requireAuth, contasController.transferencias);
 router.get('/contas/:id/extrato', requireAuth, contasController.extrato);
 
 // Modulo Clientes (cuotas de servicos): liberado por usuario pelo admin. As rotas fixas vem antes de /clientes/:id.

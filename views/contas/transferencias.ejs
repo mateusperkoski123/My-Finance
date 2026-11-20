@@ -1,0 +1,131 @@
+<%
+    const _todos = periodo.mes === 'todos';
+    const _mesNome = _todos ? t('transf.todos_meses') : new Date(Date.UTC(periodo.ano, periodo.numero - 1, 1)).toLocaleDateString(lang, { month: 'long', year: 'numeric', timeZone: 'UTC' });
+    const _link = (o) => {
+        const p = Object.assign({ mes: periodo.mes, estado: estado }, o || {});
+        const qs = [];
+        if (p.mes && p.mes !== periodo.atual) qs.push('mes=' + encodeURIComponent(p.mes));
+        if (p.estado && p.estado !== 'todas') qs.push('estado=' + encodeURIComponent(p.estado));
+        return '/contas/transferencias' + (qs.length ? '?' + qs.join('&') : '');
+    };
+    const _voltar = _link();
+    const _hojeP = hoje.split('-').map(Number);
+    const _atraso = (d) => Math.max(0, Math.round((Date.UTC(_hojeP[0], _hojeP[1] - 1, _hojeP[2]) - Date.UTC(+d.slice(0, 4), +d.slice(5, 7) - 1, +d.slice(8, 10))) / 86400000));
+    // A descricao guarda "Transferência enviada para X - observacao": so a observacao interessa aqui.
+    const _nota = (txt) => { const i = String(txt || '').indexOf(' - '); return i >= 0 ? String(txt).slice(i + 3) : ''; };
+%>
+<div class="page-header page-header--acoes">
+    <div>
+        <h1><i class="ph ph-bank"></i> <%= t('contas.titulo') %></h1>
+        <p class="muted"><%= t('transf.subtitulo') %></p>
+    </div>
+    <div class="page-header__botoes">
+        <a class="btn btn-outline" href="/contas?transferir=1"><i class="ph ph-arrows-left-right"></i> <%= t('contas.transferir') %></a>
+        <a class="btn btn-primary" href="/contas?agendar=1"><i class="ph ph-calendar-plus"></i> <%= t('contas.agendar') %></a>
+    </div>
+</div>
+
+<div class="contas-toolbar" style="margin-bottom: 20px;">
+    <%- include('_abas', { ativa: 'transferencias' }) %>
+</div>
+
+<div class="clientes-periodo">
+    <% if (!_todos) { %>
+    <div class="periodo-nav" style="display: inline-flex; align-items: center; gap: 4px;">
+        <a class="btn btn-outline btn-sm" href="<%= _link({ mes: periodo.anterior }) %>" aria-label="<%= t('transf.mes_anterior') %>"><i class="ph ph-caret-left"></i></a>
+        <strong class="clientes-periodo__mes"><%= _mesNome %></strong>
+        <a class="btn btn-outline btn-sm" href="<%= _link({ mes: periodo.proximo }) %>" aria-label="<%= t('transf.mes_seguinte') %>"><i class="ph ph-caret-right"></i></a>
+    </div>
+    <% if (periodo.mes !== periodo.atual) { %><a class="btn btn-outline btn-sm" href="<%= _link({ mes: periodo.atual }) %>"><%= t('transf.este_mes') %></a><% } %>
+    <a class="btn btn-outline btn-sm" href="<%= _link({ mes: 'todos' }) %>"><%= t('transf.todos_meses') %></a>
+    <% } else { %>
+    <strong class="clientes-periodo__mes"><%= _mesNome %></strong>
+    <a class="btn btn-outline btn-sm" href="<%= _link({ mes: periodo.atual }) %>"><%= t('transf.este_mes') %></a>
+    <% } %>
+</div>
+
+<% resumo.forEach(function (r) { %>
+<section class="clientes-resumo">
+    <% if (resumo.length > 1) { %><span class="badge badge-neutro"><%= r.moeda %></span><% } %>
+    <div class="resumo-grid">
+        <div class="card resumo-card">
+            <span class="resumo-card__label"><%= t('transf.card_programadas') %></span>
+            <span class="resumo-card__valor" style="color: var(--orange, #c2750a);"><%= moeda(r.prog_v, r.moeda) %></span>
+            <span class="resumo-card__sub muted"><%= t('transf.n', { n: r.prog_n }) %></span>
+        </div>
+        <div class="card resumo-card">
+            <span class="resumo-card__label"><%= t('transf.card_realizadas') %></span>
+            <span class="resumo-card__valor" style="color: var(--green);"><%= moeda(r.real_v, r.moeda) %></span>
+            <span class="resumo-card__sub muted"><%= t('transf.n', { n: r.real_n }) %></span>
+        </div>
+    </div>
+</section>
+<% }) %>
+
+<div class="tabs" style="margin-bottom: 12px;">
+    <a class="tabs__item <%= estado === 'todas' ? 'is-active' : '' %>" href="<%= _link({ estado: 'todas' }) %>"><%= t('transf.f_todas') %></a>
+    <a class="tabs__item <%= estado === 'programadas' ? 'is-active' : '' %>" href="<%= _link({ estado: 'programadas' }) %>"><%= t('transf.f_programadas') %></a>
+    <a class="tabs__item <%= estado === 'realizadas' ? 'is-active' : '' %>" href="<%= _link({ estado: 'realizadas' }) %>"><%= t('transf.f_realizadas') %></a>
+</div>
+
+<div class="card tabela-wrapper">
+    <% if (!transferencias.length) { %>
+        <p class="muted" style="padding: 20px; margin: 0;"><%= t(temTransferencias ? 'transf.vazio_filtro' : 'transf.vazio') %></p>
+    <% } else { %>
+    <table class="tabela">
+        <thead>
+            <tr>
+                <th><%= t('transf.col_data') %></th>
+                <th><%= t('transf.col_contas') %></th>
+                <th class="tabela__num"><%= t('transf.col_valor') %></th>
+                <th><%= t('transf.col_estado') %></th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        <% transferencias.forEach(function (x) {
+            const feita = x.status === 'pago';
+            const atraso = !feita ? _atraso(x.data) : 0;
+            const nota = _nota(x.descricao);
+            const outraMoeda = x.moeda_destino && x.moeda_destino !== x.moeda_origem;
+        %>
+            <tr>
+                <td><%= formatDate(x.data, 'DD/MM/YYYY') %></td>
+                <td>
+                    <strong><%= x.origem %></strong> <i class="ph ph-arrow-right muted"></i> <strong><%= x.destino || '—' %></strong>
+                    <% if (nota) { %><div class="muted" style="font-size: 12px;"><%= nota %></div><% } %>
+                    <% if (x.serie_id) { %><div class="muted" style="font-size: 12px;"><i class="ph ph-repeat"></i> <%= t('transf.em_serie') %></div><% } %>
+                </td>
+                <td class="tabela__num">
+                    <%= moeda(x.valor_saida, x.moeda_origem) %>
+                    <% if (outraMoeda && x.valor_entrada) { %><div class="muted" style="font-size: 12px;"><%= t('transf.recebe', { valor: moeda(x.valor_entrada, x.moeda_destino) }) %></div><% } %>
+                </td>
+                <td>
+                    <% if (feita) { %><span class="badge badge-sucesso"><%= t('transf.st_realizada') %><% if (x.pago_em) { %> · <%= formatDate(x.pago_em, 'DD/MM/YYYY') %><% } %></span>
+                    <% } else if (atraso > 0) { %><span class="badge badge-pendente"><%= t('transf.st_atrasada', { n: atraso }) %></span>
+                    <% } else if (x.data === hoje) { %><span class="badge badge-alerta"><%= t('transf.st_hoje') %></span>
+                    <% } else { %><span class="badge badge-neutro"><%= t('transf.st_programada') %></span><% } %>
+                </td>
+                <td class="clientes-acoes">
+                    <% if (!feita) { %>
+                        <form method="post" action="/lancamentos/<%= x.id %>/marcar-pago" style="display: inline;">
+                            <%- csrfCampo %><input type="hidden" name="voltar" value="<%= _voltar %>">
+                            <button type="submit" class="btn btn-sm btn-primary"><i class="ph ph-check"></i> <%= t('transf.marcar_realizada') %></button>
+                        </form>
+                        <form method="post" action="/lancamentos/<%= x.id %>/excluir" style="display: inline;" data-confirm="<%= t('transf.confirmar_excluir') %>">
+                            <%- csrfCampo %><input type="hidden" name="voltar" value="<%= _voltar %>"><input type="hidden" name="escopo_serie" value="apenas_esta">
+                            <button type="submit" class="btn btn-sm btn-outline" title="<%= t('transf.excluir') %>" aria-label="<%= t('transf.excluir') %>"><i class="ph ph-trash"></i></button>
+                        </form>
+                    <% } else { %>
+                        <form method="post" action="/lancamentos/<%= x.id %>/marcar-pago" style="display: inline;" data-confirm="<%= t('transf.confirmar_desfazer') %>">
+                            <%- csrfCampo %><input type="hidden" name="voltar" value="<%= _voltar %>"><input type="hidden" name="status" value="pendente">
+                            <button type="submit" class="btn btn-sm btn-outline"><i class="ph ph-arrow-counter-clockwise"></i> <%= t('transf.desfazer') %></button>
+                        </form>
+                    <% } %>
+                </td>
+            </tr>
+        <% }) %>
+        </tbody>
+    </table>
+    <% } %>
+</div>

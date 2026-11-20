@@ -67,6 +67,15 @@ app.get('/service-worker.js', (req, res) => {
 // Static files
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Paginas do app (HTML por usuario): sem este cabecalho o navegador e a hospedagem podiam reaproveitar uma copia antiga
+// e o menu parecia nao trocar de modulo ate um Ctrl+Shift+R. "private" = so o navegador do dono; "no-cache" = pergunta ao
+// servidor a cada visita (continua usando a copia se nada mudou). Rotas que definem o proprio Cache-Control (fotos,
+// manifest, /ping) trocam este valor depois.
+app.use((req, res, next) => {
+    if (req.method === 'GET' || req.method === 'HEAD') res.setHeader('Cache-Control', 'private, no-cache');
+    next();
+});
+
 // Em producao a chave de sessao e obrigatoria (nao ha valor padrao no codigo).
 const SESSION_SECRET = process.env.SESSION_SECRET;
 if (!SESSION_SECRET && process.env.NODE_ENV === 'production') {

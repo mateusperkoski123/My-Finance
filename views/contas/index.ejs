@@ -11,10 +11,7 @@
 </div>
 
 <div class="contas-toolbar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-    <div class="tabs">
-        <a href="/contas" class="tabs__item <%= !abaArquivadas ? 'is-active' : '' %>"><%= t('contas.aba_ativas') %></a>
-        <a href="/contas?aba=arquivadas" class="tabs__item <%= abaArquivadas ? 'is-active' : '' %>"><%= t('contas.aba_arquivadas') %></a>
-    </div>
+    <%- include('_abas', { ativa: abaArquivadas ? 'arquivadas' : 'ativas' }) %>
     <div class="contas-resumo-topo" style="display: flex; align-items: center; gap: 4px 12px; flex-wrap: wrap;">
         <span class="badge badge-neutro" style="font-size: 13px; font-weight: 600;"><%= t('contas.n_contas', { n: totalContas }) %></span>
         <span class="muted"><%= t('contas.saldo_total') %>:</span>
@@ -650,6 +647,14 @@ window.addEventListener('load', () => {
 document.addEventListener('click', () => setTimeout(() => {
     document.querySelectorAll('form').forEach((f) => { if (f._gfAtualizarCambio) f._gfAtualizarCambio(); });
 }, 0));
+
+// A aba Transferencias leva para ca com ?agendar=1 / ?transferir=1: abre o modal correspondente.
+window.addEventListener('load', () => {
+    const q = new URLSearchParams(location.search);
+    const alvo = q.get('agendar') ? 'modal-agendar-transferencia' : (q.get('transferir') ? 'modal-transferir' : null);
+    const botao = alvo && document.querySelector('.page-header__botoes [data-modal-open="' + alvo + '"]');
+    if (botao) botao.click();
+});
 
 // No carregamento (esconde os saldos ocultos) e de novo quando o app.js ja definiu o formatador (acerta o saldo total).
 document.addEventListener('DOMContentLoaded', aplicarEstadosOlho);

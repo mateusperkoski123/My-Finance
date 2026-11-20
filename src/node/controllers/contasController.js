@@ -3,6 +3,7 @@ const Categoria = require('../models/Categoria');
 const Lancamento = require('../models/Lancamento');
 const Cartao = require('../models/Cartao');
 const db = require('../config/db');
+const { periodoDoMes } = require('../core/clientes_regras');
 const { parseMoeda, toLocalYMD, hojeLocal, dataValida, mesAnoValidos, corValida, normalizarMoeda, calcularCambio } = require('../core/helpers');
 
 const MESES_FIXO = 24;
@@ -51,6 +52,30 @@ const contasController = {
             });
         } catch (err) {
             console.error('Erro em contasController.index:', err);
+            res.status(500).render('500', { message: req.t('flash.conta_erro_listar') });
+        }
+    },
+
+    // Transferencias entre contas, mes a mes: programadas (pendentes) e realizadas (pagas). "todos" junta todos os meses.
+    transferencias: async (req, res) => {
+        try {
+            const hoje = toLocalYMD(hojeLocal());
+            const periodo = periodoDoMes(req.query.mes, hoje);
+            const estado = ['programadas', 'realizadas'].includes(req.query.estado) ? req.query.estado : 'todas';
+            const todas = await Lancamento.listarTransferencias(req.user.id, periodo.inicio, periodo.fim);
+            // Os totais do mes ignoram o filtro de situacao; so a lista obedece a ele. Cada moeda no seu total.
+            const resumo = [];
+            todas.forEach((t) => {
+                let r = resumo.find((x) => x.moeda === t.moeda_origem);
+                if (!r) { r = { moeda: t.moeda_origem, prog_n: 0, prog_v: 0, real_n: 0, real_v: 0 }; resumo.push(r); }
+                if (t.status === 'pago') { r.real_n++; r.real_v += Number(t.valor_saida); } else { r.prog_n++; r.prog_v += Number(t.valor_saida); }
+            });
+            const lista = todas.filter((t) => estado === 'todas' || (estado === 'realizadas') === (t.status === 'pago'));
+            res.render('contas/transferencias', {
+                title: req.t('transf.titulo'), periodo, estado, resumo, transferencias: lista, hoje, temTransferencias: todas.length > 0
+            });
+        } catch (err) {
+            console.error('Erro em contasController.transferencias:', err);
             res.status(500).render('500', { message: req.t('flash.conta_erro_listar') });
         }
     },

@@ -301,6 +301,25 @@ class Lancamento {
         }
     }
 
+    // Transferencias entre contas de um periodo, uma linha por transferencia (a perna de saida, com o destino vindo do par).
+    // Pendente = programada; paga = realizada. Entre moedas diferentes `valor_entrada` e o que chegou na conta de destino.
+    static async listarTransferencias(userId, inicio, fim) {
+        const [rows] = await db.query(
+            `SELECT s.id, s.serie_id, s.recorrente, s.status, s.descricao,
+                    DATE_FORMAT(s.data_competencia, '%Y-%m-%d') AS data, DATE_FORMAT(s.data_pagamento, '%Y-%m-%d') AS pago_em,
+                    ABS(s.valor) AS valor_saida, co.id AS origem_id, co.nome AS origem, co.moeda AS moeda_origem,
+                    e.conta_id AS destino_id, cd.nome AS destino, cd.moeda AS moeda_destino, ABS(e.valor) AS valor_entrada
+             FROM lancamentos s
+             JOIN contas co ON co.id = s.conta_id
+             LEFT JOIN lancamentos e ON e.id = s.transferencia_par_id AND e.user_id = s.user_id
+             LEFT JOIN contas cd ON cd.id = e.conta_id
+             WHERE s.user_id = ? AND s.tipo = 'transferencia' AND s.valor < 0 AND s.data_competencia BETWEEN ? AND ?
+             ORDER BY s.data_competencia, s.id`,
+            [userId, inicio, fim]
+        );
+        return rows;
+    }
+
     static async atualizar(id, userId, data, escopoSerie = 'apenas_esta') {
         const itemAtual = await this.buscarPorId(id, userId);
         if (!itemAtual) return false;
