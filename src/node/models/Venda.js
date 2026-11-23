@@ -422,7 +422,7 @@ class Venda {
         if (!vendas.length) return vendas;
         const ids = vendas.map((v) => v.id);
         const [itens] = await db.query(
-            `SELECT i.venda_id, i.produto_id, i.servico_id, i.nome, i.quantidade, i.preco_unit, i.custo_unit, UNIX_TIMESTAMP(p.foto_em) AS foto_v
+            `SELECT i.id, i.venda_id, i.produto_id, i.servico_id, i.nome, i.quantidade, i.preco_unit, i.custo_unit, UNIX_TIMESTAMP(p.foto_em) AS foto_v
              FROM cliente_venda_itens i LEFT JOIN cliente_produtos p ON p.id = i.produto_id
              WHERE i.venda_id IN (?) ORDER BY i.id`,
             [ids]
@@ -549,6 +549,68 @@ class Venda {
             await conn.query("UPDATE cliente_vendas SET status = 'cancelada', cancelada_em = ? WHERE id = ? AND user_id = ?", [hojeYMD(), id, userId]);
             await conn.commit();
             return { ok: true, removidas: del.affectedRows, mantidas: Number(fica.n) || 0 };
+        } catch (err) {
+            await conn.rollback();
+            throw err;
+        } finally {
+            conn.release();
+        }
+    }
+
+    // Corrige o preco por unidade dos itens (`precos`: { idDoItem: preco }; item que nao vem fica como esta). O total muda
+    // e o que ja foi recebido continua igual: o que falta (total novo - recebido) e dividido em partes iguais entre as
+    // parcelas ainda pendentes, nas mesmas datas. Se nao falta nada, as pendentes saem. A quantidade e o estoque nao mudam.
+    // Erros com `codigo`: nao_encontrada, preco, total, quitada (nao ha parcela pendente), menor_recebido.
+    static async editarPrecos(userId, id, precos) {
+        const conn = await db.getConnection();
+        try {
+            await conn.beginTransaction();
+            const [[v]] = await conn.query(
+                `SELECT v.id, v.status, cb.moeda FROM cliente_vendas v JOIN contas cb ON cb.id = v.conta_id
+                 WHERE v.id = ? AND v.user_id = ? FOR UPDATE`,
+                [id, userId]
+            );
+            if (!v || v.status !== 'ativa') throw falha('nao_encontrada');
+            const casas = regras.casasDaMoeda(v.moeda);
+            const [itens] = await conn.query('SELECT id, quantidade, preco_unit FROM cliente_venda_itens WHERE venda_id = ? FOR UPDATE', [id]);
+            let total = 0;
+            const mudados = [];
+            for (const it of itens) {
+                const pedido = precos[it.id];
+                const preco = pedido === undefined ? Number(it.preco_unit) : regras.arredondar(pedido, casas);
+                if (!Number.isFinite(preco) || preco < 0 || preco >= 1e12) throw falha('preco');
+                if (preco !== Number(it.preco_unit)) mudados.push([preco, it.id]);
+                total += preco * it.quantidade;
+            }
+            total = regras.arredondar(total, casas);
+            if (!(total > 0) || total >= 1e12) throw falha('total');
+
+            const [[rec]] = await conn.query(
+                "SELECT COALESCE(SUM(valor), 0) AS recebido FROM lancamentos WHERE user_id = ? AND venda_id = ? AND status = 'pago'", [userId, id]
+            );
+            const [pend] = await conn.query(
+                `SELECT id FROM lancamentos WHERE user_id = ? AND venda_id = ? AND status = 'pendente'
+                 ORDER BY data_competencia, cuota_num, id FOR UPDATE`,
+                [userId, id]
+            );
+            if (!pend.length) throw falha('quitada');
+            const resto = regras.arredondar(total - Number(rec.recebido), casas);
+            if (resto < 0) throw falha('menor_recebido');
+
+            for (const [preco, itemId] of mudados) await conn.query('UPDATE cliente_venda_itens SET preco_unit = ? WHERE id = ? AND venda_id = ?', [preco, itemId, id]);
+            if (resto === 0) {
+                const ids = pend.map((p) => p.id);
+                await SyncExclusao.registrar('lancamentos', 'user_id = ? AND id IN (?)', [userId, ids], conn);
+                await conn.query('DELETE FROM lancamentos WHERE user_id = ? AND id IN (?)', [userId, ids]);
+            } else {
+                const valores = regras.dividirEmParcelas(resto, pend.length, casas);
+                for (let i = 0; i < pend.length; i++) {
+                    await conn.query('UPDATE lancamentos SET valor = ?, updated_at = NOW(3) WHERE id = ? AND user_id = ?', [valores[i], pend[i].id, userId]);
+                }
+            }
+            await conn.query('UPDATE cliente_vendas SET total = ? WHERE id = ? AND user_id = ?', [total, id, userId]);
+            await conn.commit();
+            return { total, resto, moeda: v.moeda };
         } catch (err) {
             await conn.rollback();
             throw err;

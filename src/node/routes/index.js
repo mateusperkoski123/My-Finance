@@ -247,6 +247,7 @@ router.get('/clientes/vendas/nova', requireAuth, exigirClientes, vendasControlle
 router.post('/clientes/vendas/criar', requireAuth, exigirClientes, vendasController.criarVenda);
 router.get('/clientes/vendas/:id(\\d+)', requireAuth, exigirClientes, vendasController.detalhe);
 router.post('/clientes/vendas/:id(\\d+)/cancelar', requireAuth, exigirClientes, vendasController.cancelar);
+router.post('/clientes/vendas/:id(\\d+)/editar', requireAuth, exigirClientes, vendasController.editar);
 router.get('/clientes/busca', requireAuth, exigirClientes, vendasController.buscarClientes);
 router.get('/clientes/:id(\\d+)', requireAuth, exigirClientes, clientesController.ficha);
 router.post('/clientes/:id(\\d+)/atualizar', requireAuth, exigirClientes, clientesController.atualizarCliente);

@@ -39,6 +39,7 @@
                 <% if (Number(_v.parcelas) > 1) { %><span class="badge badge-neutro"><%= t('clientes.pagaram_de', { pagas: _v.quitadas, total: _v.parcelas }) %></span><% } %>
                 <% if (_waComp) { %><a class="btn btn-outline btn-sm" href="<%= _waComp %>" data-wa-app="<%= _waCompApp %>" target="whatsapp"><i class="ph ph-whatsapp-logo" style="color: #25d366;"></i> <%= t('vendas.enviar_comprovante') %></a><% } %>
                 <% if (_proxima) { %><button type="button" class="btn btn-outline btn-sm" data-pagar-id="<%= _proxima.id %>" data-pagar-resumo="<%= _v.cliente_nome + ' · ' + t('vendas.venda_n', { n: _v.numero }) + ' · ' + moeda(_proxima.valor, _v.moeda) %>" data-pagar-valor="<%= Number(_proxima.valor) %>" data-pagar-moeda="<%= _v.moeda %>" data-pagar-conta="<%= _proxima.conta_id %>" data-pagar-venc="<%= _proxima.venc %>"><i class="ph ph-sliders-horizontal"></i> <%= t('clientes.receber_opcoes') %></button><% } %>
+                <% if (_proxima) { %><button type="button" class="btn btn-outline btn-sm" data-modal-open="modal-editar-venda-<%= _v.id %>"><i class="ph ph-pencil-simple"></i> <%= t('vendas.editar') %></button><% } %>
                 <button type="button" class="btn btn-outline btn-sm" style="color: var(--red);" data-modal-open="modal-cancelar-venda-<%= _v.id %>"><i class="ph ph-prohibit"></i> <%= t('vendas.cancelar') %></button>
             <% } %>
         </div>
@@ -91,6 +92,71 @@
     <% if (_ativa && !_quitada) { %><p class="muted" style="font-size: 12px; margin: 10px 0 0;"><i class="ph ph-info"></i> <%= t('vendas.dica_chip') %></p><% } %>
     <% } %>
 </div>
+
+<% if (_ativa && _proxima) { %>
+<div class="modal-backdrop" id="modal-editar-venda-<%= _v.id %>" data-modal>
+    <div class="modal card">
+        <div class="modal__header">
+            <h3><%= t('vendas.editar') %> · <%= t('vendas.venda_n', { n: _v.numero }) %></h3>
+            <button type="button" class="modal__fechar" data-modal-close aria-label="<%= t('comum.fechar') %>"><i class="ph ph-x"></i></button>
+        </div>
+        <form method="post" action="/clientes/vendas/<%= _v.id %>/editar" class="form" data-venda-editar data-moeda="<%= _v.moeda %>" data-recebido="<%= Number(_v.recebido) %>">
+            <%- csrfCampo %><input type="hidden" name="voltar" value="<%= voltar %>">
+            <p class="muted" style="margin-top: 0;"><%= t('vendas.editar_ajuda') %></p>
+            <% _v.itens.forEach(function (i) { %>
+            <div class="form-group">
+                <label for="editar-<%= _v.id %>-<%= i.id %>"><%= i.nome %> · <%= i.quantidade %> × <%= t('vendas.preco_unit') %></label>
+                <input class="input" type="text" id="editar-<%= _v.id %>-<%= i.id %>" name="preco_<%= i.id %>" value="<%= Number(i.preco_unit) %>" data-money data-moeda-cod="<%= _v.moeda %>" data-qtd="<%= i.quantidade %>">
+            </div>
+            <% }) %>
+            <p style="margin: 8px 0 0;">
+                <%= t('vendas.editar_novo_total') %>: <strong data-editar-total></strong><br>
+                <span class="muted"><%= t('vendas.editar_recebido') %>: <strong data-editar-recebido></strong></span><br>
+                <%= t('vendas.editar_falta') %>: <strong data-editar-falta></strong>
+            </p>
+            <div class="modal__actions">
+                <button type="button" class="btn btn-outline" data-modal-close><%= t('clientes.cancelar') %></button>
+                <button type="submit" class="btn btn-primary"><i class="ph ph-check-circle"></i> <%= t('vendas.editar_salvar') %></button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+// Mostra, enquanto os precos mudam, o novo total e quanto ainda falta receber (uma vez so por pagina).
+(function () {
+    if (window.__vendaEditarOk) return;
+    window.__vendaEditarOk = true;
+    function formatar(n, moeda) { return window.gfFormatarValorMoeda ? window.gfFormatarValorMoeda(n, moeda) : String(n); }
+    function atualizar(form) {
+        var moeda = form.getAttribute('data-moeda');
+        var R = window.AppRegras;
+        var total = 0;
+        form.querySelectorAll('input[data-qtd]').forEach(function (inp) {
+            var p = R ? (R.parseMoeda(inp.value) || 0) : (parseFloat(inp.value) || 0);
+            total += p * (parseInt(inp.getAttribute('data-qtd'), 10) || 0);
+        });
+        var f = moeda === 'PYG' ? 1 : 100;
+        total = Math.round(total * f) / f;
+        var recebido = parseFloat(form.getAttribute('data-recebido')) || 0;
+        var falta = Math.round((total - recebido) * f) / f;
+        form.querySelector('[data-editar-total]').textContent = formatar(total, moeda);
+        form.querySelector('[data-editar-recebido]').textContent = formatar(recebido, moeda);
+        var elFalta = form.querySelector('[data-editar-falta]');
+        elFalta.textContent = formatar(Math.max(0, falta), moeda);
+        elFalta.style.color = falta < 0 ? 'var(--red)' : '';
+    }
+    document.addEventListener('input', function (e) { var f = e.target.closest && e.target.closest('form[data-venda-editar]'); if (f) atualizar(f); });
+    document.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('[data-modal-open^="modal-editar-venda-"]');
+        if (!b) return;
+        var m = document.getElementById(b.getAttribute('data-modal-open'));
+        var f = m && m.querySelector('form[data-venda-editar]');
+        if (f) atualizar(f);
+    });
+    document.querySelectorAll('form[data-venda-editar]').forEach(atualizar);
+})();
+</script>
+<% } %>
 
 <% if (_ativa) { %>
 <div class="modal-backdrop" id="modal-cancelar-venda-<%= _v.id %>" data-modal>

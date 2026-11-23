@@ -222,6 +222,24 @@ const vendasController = {
         res.redirect(voltarPara(req, `/clientes/vendas/${id}`));
     },
 
+    // Corrige o preco dos itens (campos preco_<idDoItem>); o que falta receber e recalculado.
+    editar: async (req, res) => {
+        const id = inteiro(req.params.id);
+        const precos = {};
+        Object.entries(req.body || {}).forEach(([k, v]) => {
+            const m = /^preco_(\d+)$/.exec(k);
+            if (m) precos[m[1]] = parseMoeda(v);
+        });
+        try {
+            const r = await Venda.editarPrecos(req.user.id, id, precos);
+            avisar(req, 'sucesso', req.t('vendas.flash_editada', { total: moeda(r.total, r.moeda), resto: moeda(r.resto, r.moeda) }));
+        } catch (err) {
+            if (!err.codigo) throw err;
+            avisar(req, 'erro', req.t('vendas.erro_editar_' + err.codigo));
+        }
+        res.redirect(voltarPara(req, `/clientes/vendas/${id}`));
+    },
+
     // Busca de clientes da tela de venda (nome, cedula, RUC ou celular).
     buscarClientes: async (req, res) => {
         const clientes = await Venda.buscarClientes(req.user.id, req.query.q);

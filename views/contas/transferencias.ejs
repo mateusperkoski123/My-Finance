@@ -107,6 +107,11 @@
                     <% } else { %><span class="badge badge-neutro"><%= t('transf.st_programada') %></span><% } %>
                 </td>
                 <td class="clientes-acoes">
+                    <button type="button" class="btn btn-sm btn-outline" title="<%= t('acao.editar') %>" aria-label="<%= t('acao.editar') %>" data-editar-transf="<%= JSON.stringify({
+                        id: x.id, descricao: x.origem + ' → ' + (x.destino || '—'), valor: Number(x.valor_saida), valor_assinado: -Number(x.valor_saida),
+                        moeda: x.moeda_origem, par_valor: x.valor_entrada == null ? null : Number(x.valor_entrada), par_moeda: x.moeda_destino || null,
+                        data_competencia: x.data, data_pagamento: x.pago_em || '', status: x.status, serie: !!x.serie_id
+                    }) %>"><i class="ph ph-pencil-simple"></i></button>
                     <% if (!feita) { %>
                         <form method="post" action="/lancamentos/<%= x.id %>/marcar-pago" style="display: inline;">
                             <%- csrfCampo %><input type="hidden" name="voltar" value="<%= _voltar %>">
@@ -129,3 +134,5 @@
     </table>
     <% } %>
 </div>
+
+<%- include('../partials/modal_editar_transferencia') %>
